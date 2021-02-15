@@ -159,10 +159,12 @@ class Ui_MainWindow(object):
             self.dirIterator = iter(self.fileList)
             self.dirReverser = reversed(self.fileList)
 
-            # while True:
-            # cycle through the iterator until the current file with specified extension is found
-            # if next(self.dirIterator) == fileName:
-            #   break
+            while True:
+            cycle through the iterator until the current file with specified extension is found
+            if next(self.dirIterator) == fileName:
+              break
+            elif next(self.dirReverser) == fileName:
+              break
 
             self.Photo.setPixmap(QtGui.QPixmap.fromImage(image))
             self.Photo.setScaledContents(True)
