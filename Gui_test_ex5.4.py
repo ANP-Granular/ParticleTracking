@@ -24,26 +24,28 @@ class Ui_MainWindow(object):
         self.dirIterator = None
         self.dirReverser = None
         self.fileList = []
+        self.currentfileindex = 0
 
     def setup_ui(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1080, 740)
+        #MainWindow.resize(1080, 740)
+        MainWindow.resize(1280, 960)
         MainWindow.setFocus()
 
         self.Photo = QtWidgets.QLabel(self.centralwidget)
         self.centralwidget.setObjectName("centralwidget")
         self.centralwidget.setFocus()
         self.Photo.setBackgroundRole(QPalette.Base)
-        self.Photo.setGeometry(QtCore.QRect(100, 0, 840, 620))
+        self.Photo.setGeometry(QtCore.QRect(100, 0, 950, 850))
         self.Photo.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.Photo.setScaledContents(True)
         self.Photo.setObjectName("Photo")
         MainWindow.setCentralWidget(self.centralwidget)
         self.pushprevious = QtWidgets.QPushButton(self.centralwidget)
-        self.pushprevious.setGeometry(QtCore.QRect(320, 625, 121, 41))
+        self.pushprevious.setGeometry(QtCore.QRect(400, 825, 121, 41))
         self.pushprevious.setObjectName("pushprevious")
         self.pushnext = QtWidgets.QPushButton(self.centralwidget)
-        self.pushnext.setGeometry(QtCore.QRect(640, 625, 131, 41))
+        self.pushnext.setGeometry(QtCore.QRect(720, 825, 131, 41))
         self.pushnext.setObjectName("pushnext")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -149,22 +151,26 @@ class Ui_MainWindow(object):
             dirpath = os.path.dirname(fileName)
             print('Dir name:', dirpath)
             self.fileList = []
-            for f in os.listdir(dirpath):
+            for idx, f in enumerate(os.listdir(dirpath)):
+                f_compare = os.path.splitext(f)[0]
+                indx_f = f_compare == file_name
+                if indx_f is True:
+                    self.currentfileindex = idx
                 fpath = os.path.join(dirpath, f)
                 # print('fpath name:', fpath)
                 if os.path.isfile(fpath) and f.endswith(('.png', '.jpg', '.jpeg')):
                     self.fileList.append(fpath)
             self.fileList.sort()
             print('Num of items in list:', len(self.fileList))
-            self.dirIterator = iter(self.fileList)
-            self.dirReverser = reversed(self.fileList)
+            # self.dirIterator = iter(self.fileList)
+            # self.dirReverser = reversed(self.fileList)
 
-            while True:
-            cycle through the iterator until the current file with specified extension is found
-            if next(self.dirIterator) == fileName:
-              break
-            elif next(self.dirReverser) == fileName:
-              break
+            # while True:
+            # cycle through the iterator until the current file with specified extension is found
+            # if next(self.dirIterator) == fileName:
+            # break
+            # elif next(self.dirReverser) == fileName:
+            # break
 
             self.Photo.setPixmap(QtGui.QPixmap.fromImage(image))
             self.Photo.setScaledContents(True)
@@ -178,7 +184,8 @@ class Ui_MainWindow(object):
     def show_next(self):
         if self.fileList:
             try:
-                filename = next(self.dirIterator)  # Chooses next image with specified extension
+                self.currentfileindex += 1
+                filename = (self.fileList[self.currentfileindex])  # Chooses next image with specified extension
                 file_name = os.path.split(filename)[-1]
                 file_name = os.path.splitext(file_name)[0]
                 image_next = QtGui.QPixmap(filename).scaled(self.Photo.size(), QtCore.Qt.KeepAspectRatio)
@@ -193,7 +200,7 @@ class Ui_MainWindow(object):
                     print('Next_file {}:'.format(self.imagenumber), file_name)
             except:
                 # the iterator has finished, restart it
-                self.dirIterator = iter(self.fileList)
+                self.currentfileindex = -1
                 self.show_next()
         else:
             # no file list found, load an image
@@ -202,7 +209,8 @@ class Ui_MainWindow(object):
     def show_prev(self):
         if self.fileList:
             try:
-                filename = next(self.dirReverser)  # NEEDS TO BE SOLVED to call PREVIOUS IMAGE!!!!
+                self.currentfileindex -= 1
+                filename = (self.fileList[self.currentfileindex])
                 file_name = os.path.split(filename)[-1]
                 file_name = os.path.splitext(file_name)[0]
                 image_prev = QtGui.QPixmap(filename).scaled(self.Photo.size(), QtCore.Qt.KeepAspectRatio)
@@ -217,7 +225,7 @@ class Ui_MainWindow(object):
                     print('Prev_file {}:'.format(self.imagenumber), file_name)
             except:
                 # the iterator has finished, restart it
-                self.dirReverser = reversed(self.fileList)
+                self.currentfileindex = -1
                 self.show_prev()
         else:
             # no file list found, load an image
