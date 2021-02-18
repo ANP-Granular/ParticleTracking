@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-### Implementation by Adithya Viswanathan on February 2021.
+### Implementation by Adithya & Meera on February 2021.
 
 # based on https://github.com/baoboa/pyqt5/blob/master/examples/widgets/imageviewer.py
 
@@ -20,15 +20,13 @@ class Ui_MainWindow(object):
 
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.scaleFactor = 0.0
-        self.imagenumber = 0
-        self.dirIterator = None
-        self.dirReverser = None
+        # self.dirIterator = None
+        # self.dirReverser = None
         self.fileList = []
         self.currentfileindex = 0
 
     def setup_ui(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        #MainWindow.resize(1080, 740)
         MainWindow.resize(1280, 960)
         MainWindow.setFocus()
 
@@ -36,16 +34,21 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName("centralwidget")
         self.centralwidget.setFocus()
         self.Photo.setBackgroundRole(QPalette.Base)
-        self.Photo.setGeometry(QtCore.QRect(100, 0, 950, 850))
+        self.Photo.setGeometry(QtCore.QRect(50, 0, 1180, 890))
         self.Photo.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.Photo.setScaledContents(True)
         self.Photo.setObjectName("Photo")
+        self.scrollArea = QScrollArea(self.centralwidget)
+        self.scrollArea.setBackgroundRole(QPalette.Dark)
+        self.scrollArea.setGeometry(QtCore.QRect(50, 0, 1180, 890))
+        self.scrollArea.setWidget(self.Photo)
+        self.scrollArea.setVisible(False)
         MainWindow.setCentralWidget(self.centralwidget)
         self.pushprevious = QtWidgets.QPushButton(self.centralwidget)
-        self.pushprevious.setGeometry(QtCore.QRect(400, 825, 121, 41))
+        self.pushprevious.setGeometry(QtCore.QRect(540, 900, 121, 41))
         self.pushprevious.setObjectName("pushprevious")
         self.pushnext = QtWidgets.QPushButton(self.centralwidget)
-        self.pushnext.setGeometry(QtCore.QRect(720, 825, 131, 41))
+        self.pushnext.setGeometry(QtCore.QRect(740, 900, 131, 41))
         self.pushnext.setObjectName("pushnext")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -74,12 +77,6 @@ class Ui_MainWindow(object):
         self.normalSizeAct.setObjectName("Normal Size")
         self.fitToWindowAct = QtWidgets.QAction(MainWindow)
         self.fitToWindowAct.setObjectName("Fit to Window")
-
-        self.scrollArea = QScrollArea(self.centralwidget)
-        self.scrollArea.setBackgroundRole(QPalette.Dark)
-        self.scrollArea.setGeometry(QtCore.QRect(100, 0, 840, 620))
-        self.scrollArea.setWidget(self.Photo)
-        self.scrollArea.setVisible(False)
 
         self.menufile.addAction(self.actionopen)
         self.menufile.addAction(self.actionsave)
@@ -156,6 +153,7 @@ class Ui_MainWindow(object):
                 indx_f = f_compare == file_name
                 if indx_f is True:
                     self.currentfileindex = idx
+
                 fpath = os.path.join(dirpath, f)
                 # print('fpath name:', fpath)
                 if os.path.isfile(fpath) and f.endswith(('.png', '.jpg', '.jpeg')):
@@ -196,8 +194,7 @@ class Ui_MainWindow(object):
                     self.show_next()
                 else:
                     self.Photo.setPixmap(image_next)
-                    self.imagenumber = self.imagenumber + 1
-                    print('Next_file {}:'.format(self.imagenumber), file_name)
+                    print('Next_file {}:'.format(self.currentfileindex), file_name)
             except:
                 # the iterator has finished, restart it
                 self.currentfileindex = -1
@@ -221,8 +218,7 @@ class Ui_MainWindow(object):
                     self.show_prev()
                 else:
                     self.Photo.setPixmap(image_prev)
-                    self.imagenumber = self.imagenumber - 1
-                    print('Prev_file {}:'.format(self.imagenumber), file_name)
+                    print('Prev_file {}:'.format(self.currentfileindex), file_name)
             except:
                 # the iterator has finished, restart it
                 self.currentfileindex = -1
