@@ -28,7 +28,7 @@ class Ui_MainWindow(object):
     # Main Window
     def setup_ui(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1280, 960)
+        MainWindow.resize(1280, 1100)
         MainWindow.setFocus()
         # Label to display content
         self.Photo = QtWidgets.QLabel(self.centralwidget)
