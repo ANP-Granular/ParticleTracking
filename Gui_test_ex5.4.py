@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import *
 
 class Ui_MainWindow(object):
     def __init__(self):
-
+        # Initialize
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.scaleFactor = 0.0
         # self.dirIterator = None
@@ -25,11 +25,12 @@ class Ui_MainWindow(object):
         self.fileList = []
         self.currentfileindex = 0
 
+    # Main Window
     def setup_ui(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1280, 960)
         MainWindow.setFocus()
-
+        # Label to display content
         self.Photo = QtWidgets.QLabel(self.centralwidget)
         self.centralwidget.setObjectName("centralwidget")
         self.centralwidget.setFocus()
@@ -38,12 +39,14 @@ class Ui_MainWindow(object):
         self.Photo.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.Photo.setScaledContents(True)
         self.Photo.setObjectName("Photo")
+        # Scroll area properties
         self.scrollArea = QScrollArea(self.centralwidget)
         self.scrollArea.setBackgroundRole(QPalette.Dark)
         self.scrollArea.setGeometry(QtCore.QRect(50, 0, 1180, 890))
         self.scrollArea.setWidget(self.Photo)
         self.scrollArea.setVisible(False)
         MainWindow.setCentralWidget(self.centralwidget)
+        # Button properties
         self.pushprevious = QtWidgets.QPushButton(self.centralwidget)
         self.pushprevious.setGeometry(QtCore.QRect(540, 900, 121, 41))
         self.pushprevious.setObjectName("pushprevious")
@@ -51,6 +54,7 @@ class Ui_MainWindow(object):
         self.pushnext.setGeometry(QtCore.QRect(740, 900, 131, 41))
         self.pushnext.setObjectName("pushnext")
         MainWindow.setCentralWidget(self.centralwidget)
+        # Menu properties
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
         self.menubar.setObjectName("menubar")
@@ -64,6 +68,7 @@ class Ui_MainWindow(object):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+        # Action properties
         self.openFile = QtWidgets.QAction(MainWindow)
         self.actionopen = QtWidgets.QAction(MainWindow)
         self.actionopen.setObjectName("actionopen")
@@ -77,7 +82,7 @@ class Ui_MainWindow(object):
         self.normalSizeAct.setObjectName("Normal Size")
         self.fitToWindowAct = QtWidgets.QAction(MainWindow)
         self.fitToWindowAct.setObjectName("Fit to Window")
-
+        # Add actions to menu
         self.menufile.addAction(self.actionopen)
         self.menufile.addAction(self.actionsave)
         self.menuView.addAction(self.actionzoom_in)
@@ -90,7 +95,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
+        # Signal to activate actions
         self.pushprevious.clicked.connect(self.show_prev)
         self.pushnext.clicked.connect(self.show_next)
         self.actionzoom_in.triggered.connect(self.zoomIn)
@@ -102,6 +107,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        # Information about actions in menu
         self.menufile.setTitle(_translate("MainWindow", "File"))
         self.menuEdit.setTitle(_translate("MainWindow", "Edit"))
         self.menuView.setTitle(_translate("MainWindow", "View"))
@@ -133,18 +139,17 @@ class Ui_MainWindow(object):
         fileName, _ = QFileDialog.getOpenFileName(None, 'QFileDialog.getOpenFileName()', '',
                                                   'Images (*.png *.jpeg *.jpg)', options=options)
         file_name = os.path.split(fileName)[-1]
-        # File name without extension
-        file_name = os.path.splitext(file_name)[0]
+        file_name = os.path.splitext(file_name)[0]          # File name without extension
         print('File name:', file_name)
 
         if fileName:
-            # image = QtGui.QPixmap(fileName).scaled(self.Photo.size(), QtCore.Qt.KeepAspectRatio)
+            # open file as image
             image = QImage(fileName)
 
             if image.isNull():
                 QMessageBox.information(self, "Image Viewer", "Cannot load %s." % fileName)
                 return
-
+            # Directory
             dirpath = os.path.dirname(fileName)
             print('Dir name:', dirpath)
             self.fileList = []
@@ -152,24 +157,17 @@ class Ui_MainWindow(object):
                 f_compare = os.path.splitext(f)[0]
                 indx_f = f_compare == file_name
                 if indx_f is True:
+                    # Set file index
                     self.currentfileindex = idx
-
                 fpath = os.path.join(dirpath, f)
                 # print('fpath name:', fpath)
                 if os.path.isfile(fpath) and f.endswith(('.png', '.jpg', '.jpeg')):
+                    # Add all image files to a list
                     self.fileList.append(fpath)
+            # Sort according to name / ascending order
             self.fileList.sort()
             print('Num of items in list:', len(self.fileList))
-            # self.dirIterator = iter(self.fileList)
-            # self.dirReverser = reversed(self.fileList)
-
-            # while True:
-            # cycle through the iterator until the current file with specified extension is found
-            # if next(self.dirIterator) == fileName:
-            # break
-            # elif next(self.dirReverser) == fileName:
-            # break
-
+            # Set read image into Label with Pixmap
             self.Photo.setPixmap(QtGui.QPixmap.fromImage(image))
             self.Photo.setScaledContents(True)
             self.scaleFactor = 1.0
@@ -177,15 +175,14 @@ class Ui_MainWindow(object):
             self.fitToWindowAct.setEnabled(True)
             self.updateActions()
 
-            # if not self.fitToWindowAct.isChecked():  #     self.Photo.adjustSize()
-
     def show_next(self):
         if self.fileList:
             try:
-                self.currentfileindex += 1
+                self.currentfileindex += 1  # Increments file index
                 filename = (self.fileList[self.currentfileindex])  # Chooses next image with specified extension
                 file_name = os.path.split(filename)[-1]
                 file_name = os.path.splitext(file_name)[0]
+                # Create Pixmap operator to display image
                 image_next = QtGui.QPixmap(filename).scaled(self.Photo.size(), QtCore.Qt.KeepAspectRatio)
                 if image_next.isNull():
                     # the file is not a valid image, remove it from the list
@@ -193,6 +190,7 @@ class Ui_MainWindow(object):
                     self.fileList.remove(filename)
                     self.show_next()
                 else:
+                    # Set the image into Label with Pixmap
                     self.Photo.setPixmap(image_next)
                     print('Next_file {}:'.format(self.currentfileindex), file_name)
             except:
@@ -206,10 +204,11 @@ class Ui_MainWindow(object):
     def show_prev(self):
         if self.fileList:
             try:
-                self.currentfileindex -= 1
-                filename = (self.fileList[self.currentfileindex])
+                self.currentfileindex -= 1  # Decrements file index
+                filename = (self.fileList[self.currentfileindex])    # Chooses previous image with specified extension
                 file_name = os.path.split(filename)[-1]
                 file_name = os.path.splitext(file_name)[0]
+                # Create Pixmap operator to display image
                 image_prev = QtGui.QPixmap(filename).scaled(self.Photo.size(), QtCore.Qt.KeepAspectRatio)
                 if image_prev.isNull():
                     # the file is not a valid image, remove it from the list
@@ -217,6 +216,7 @@ class Ui_MainWindow(object):
                     self.fileList.remove(filename)
                     self.show_prev()
                 else:
+                    # Set the image into Label with Pixmap
                     self.Photo.setPixmap(image_prev)
                     print('Prev_file {}:'.format(self.currentfileindex), file_name)
             except:
