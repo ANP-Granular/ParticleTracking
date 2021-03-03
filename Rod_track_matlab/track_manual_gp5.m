@@ -31,19 +31,21 @@ item % loop starts from first image value, increaments by 1 till it reaches last
      
     if current~=first_image   % check if both are not equal
     previous = list(item-1);
-    fprintf('yes i~=first_image: %d %d\n', current, first_image);
-    fprintf('Previous: %d\n', (previous));
+%     fprintf('yes i~=first_image: %d %d\n', current, first_image);
+%     fprintf('Previous: %d\n', (previous));
     load([data_folder num2str(previous,'%05d') '.mat']);  
     plot([rod_data_links(actual_rod_num).Point1(1),rod_data_links(actual_rod_num).Point2(1)],[rod_data_links(actual_rod_num).Point1(2),rod_data_links(actual_rod_num).Point2(2)],'-c','linewidth',1); 
     mean_y=(rod_data_links(actual_rod_num).Point1(2)+rod_data_links(actual_rod_num).Point2(2))/2;
-    if isnan(rod_data_links(actual_rod_num).Point1(1))==0
-    xlim([(rod_data_links(actual_rod_num).Point1(1)+rod_data_links(actual_rod_num).Point2(1))/2-120,(rod_data_links(actual_rod_num).Point1(1)+rod_data_links(actual_rod_num).Point2(1))/2+120]);
-    ylim([(rod_data_links(actual_rod_num).Point1(2)+rod_data_links(actual_rod_num).Point2(2))/2-120,(rod_data_links(actual_rod_num).Point1(2)+rod_data_links(actual_rod_num).Point2(2))/2+120]);
-    end;
     
+% % Comment the following 'If' condition if we dont want to zoom-in on clicked area 
+% %     if isnan(rod_data_links(actual_rod_num).Point1(1))==0
+% %     xlim([(rod_data_links(actual_rod_num).Point1(1)+rod_data_links(actual_rod_num).Point2(1))/2-120,(rod_data_links(actual_rod_num).Point1(1)+rod_data_links(actual_rod_num).Point2(1))/2+120]);
+% %     ylim([(rod_data_links(actual_rod_num).Point1(2)+rod_data_links(actual_rod_num).Point2(2))/2-120,(rod_data_links(actual_rod_num).Point1(2)+rod_data_links(actual_rod_num).Point2(2))/2+120]);
+% %     end;
+
     else
     mean_y=960;
-    fprintf('No,mean_y %d\n', mean_y);
+%     fprintf('No,mean_y %d\n', mean_y);
     
     end; 
     try
