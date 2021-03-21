@@ -38,7 +38,6 @@ color = 'blue'
     
 df_col = pd.read_csv('in_csv/rods_df_{:s}.csv'.format(color))
 
-
 #in_folder = 'D:/GAGa/2017_08_Fallturm/shot1/GP34/gp3/images/'
 in_folder = 'in_images/'
 out_folder = 'out_gp3_blue/'
@@ -70,4 +69,3 @@ for i_f in range(100,110):
     
     plt.savefig(out_folder+'blue_{:d}.png'.format(i_f), bbox_inches='tight')
     plt.clf()
-    
