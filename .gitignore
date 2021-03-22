@@ -1,2 +1,4 @@
 
 .idea/inspectionProfiles/profiles_settings.xml
+*.xml
+.idea/Track_Gui.iml
