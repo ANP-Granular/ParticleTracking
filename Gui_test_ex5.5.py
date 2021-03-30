@@ -10,6 +10,7 @@ import sys
 import os
 
 import PyQt5
+from PIL.ImageChops import overlay
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -177,7 +178,8 @@ class Ui_MainWindow(object):
             # Set read image into Label with Pixmap
 
             # self.Photo.paintEvent = self.paintEvent
-
+            self.pixmap = QtGui.QPixmap(self.fileList[self.currentfileindex]). \
+                scaled(self.Photo.size(), QtCore.Qt.KeepAspectRatio)
             self.Photo.setPixmap(QtGui.QPixmap(image))
             self.Photo.setScaledContents(True)
             self.scaleFactor = 1.0
@@ -193,16 +195,18 @@ class Ui_MainWindow(object):
     def drawthat(self, event):
         start = self._start
         end = event.pos()
-        pixmap = QtGui.QPixmap(self.fileList[self.currentfileindex]).\
-            scaled(self.Photo.size(), QtCore.Qt.KeepAspectRatio)
-        qp = QPainter(pixmap)
+        # Magic happens here
+        qp = QPainter(self.pixmap)
         pen = QPen(Qt.black, 5)
         qp.setPen(pen)
         qp.drawText(start.x()-10, start.y()-10, str(self.currentfileindex))
         qp.drawLine(start, end)
+        #qp.drawPixmap(start, pixmap, overlay)
         qp.end()
-        self.Photo.setPixmap(pixmap)
-        print('pixmap')
+        self.Photo.setPixmap(self.pixmap)
+        # for rods to be overlayed, use this
+        # painter.drawPixmap(100, 100, overlay)
+
 
 
     def show_next(self):
