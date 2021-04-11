@@ -6,24 +6,31 @@
 
 # Created by: PyQt5 UI code generator 5.9.12
 ###
-
-import os
 import sys
-import glob
+import os
+
+import PyQt5
+from PIL.ImageChops import overlay
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
-from PyQt5.QtGui import QPalette, QImage
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 
 
 class Ui_MainWindow(object):
     def __init__(self):
+        super().__init__()
         # Initialize
+        self.y = 0
+        self.x = 0
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.scaleFactor = 0.0
         # self.dirIterator = None
         # self.dirReverser = None
         self.fileList = []
         self.currentfileindex = 0
+        # self.x = 0
+        # self.y = 0
 
     # Main Window
     def setup_ui(self, MainWindow):
@@ -39,6 +46,7 @@ class Ui_MainWindow(object):
         self.Photo.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.Photo.setScaledContents(True)
         self.Photo.setObjectName("Photo")
+
         # Scroll area properties
         self.scrollArea = QScrollArea(self.centralwidget)
         self.scrollArea.setBackgroundRole(QPalette.Dark)
@@ -48,14 +56,11 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         # Button properties
         self.pushprevious = QtWidgets.QPushButton(self.centralwidget)
-        self.pushprevious.setGeometry(QtCore.QRect(540, 900, 111, 41))
+        self.pushprevious.setGeometry(QtCore.QRect(540, 900, 121, 41))
         self.pushprevious.setObjectName("pushprevious")
         self.pushnext = QtWidgets.QPushButton(self.centralwidget)
-        self.pushnext.setGeometry(QtCore.QRect(940, 900, 131, 41))
+        self.pushnext.setGeometry(QtCore.QRect(740, 900, 131, 41))
         self.pushnext.setObjectName("pushnext")
-        self.overlay = QtWidgets.QPushButton(self.centralwidget)
-        self.overlay.setGeometry(QtCore.QRect(740, 900, 121, 41))
-        self.overlay.setObjectName("overlay")
         MainWindow.setCentralWidget(self.centralwidget)
         # Menu properties
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -101,7 +106,6 @@ class Ui_MainWindow(object):
         # Signal to activate actions
         self.pushprevious.clicked.connect(self.show_prev)
         self.pushnext.clicked.connect(self.show_next)
-        self.overlay.clicked.connect(self.show_next)
         self.actionzoom_in.triggered.connect(self.zoomIn)
         self.actionzoom_out.triggered.connect(self.zoomOut)
         self.actionopen.triggered.connect(self.file_open)
@@ -119,8 +123,6 @@ class Ui_MainWindow(object):
         self.pushprevious.setShortcut(_translate("MainWindow", "Left"))
         self.pushnext.setText(_translate("MainWindow", "next"))
         self.pushnext.setShortcut(_translate("MainWindow", "Right"))
-        self.overlay.setText(_translate("MainWindow", "overlay"))
-        self.overlay.setShortcut(_translate("MainWindow", "space"))
         self.actionopen.setText(_translate("MainWindow", "open"))
         self.actionopen.setStatusTip(_translate("MainWindow", "opens new file "))
         self.actionopen.setShortcut(_translate("MainWindow", "Ctrl+O"))
@@ -145,12 +147,12 @@ class Ui_MainWindow(object):
         fileName, _ = QFileDialog.getOpenFileName(None, 'QFileDialog.getOpenFileName()', '',
                                                   'Images (*.png *.jpeg *.jpg)', options=options)
         file_name = os.path.split(fileName)[-1]
-        file_name = os.path.splitext(file_name)[0]          # File name without extension
+        file_name = os.path.splitext(file_name)[0]  # File name without extension
         print('File name:', file_name)
 
         if fileName:
             # open file as image
-            image = QImage(fileName)
+            image = QPixmap(fileName)
 
             if image.isNull():
                 QMessageBox.information(self, "Image Viewer", "Cannot load %s." % fileName)
@@ -174,12 +176,38 @@ class Ui_MainWindow(object):
             self.fileList.sort()
             print('Num of items in list:', len(self.fileList))
             # Set read image into Label with Pixmap
-            self.Photo.setPixmap(QtGui.QPixmap.fromImage(image))
+
+            # self.Photo.paintEvent = self.paintEvent
+            self.pixmap = QtGui.QPixmap(self.fileList[self.currentfileindex]). \
+                scaled(self.Photo.size(), QtCore.Qt.KeepAspectRatio)
+            self.Photo.setPixmap(QtGui.QPixmap(image))
             self.Photo.setScaledContents(True)
             self.scaleFactor = 1.0
             self.scrollArea.setVisible(True)
             self.fitToWindowAct.setEnabled(True)
             self.updateActions()
+            self.Photo.mousePressEvent = self.getPixel
+            self.Photo.mouseReleaseEvent = self.drawthat
+
+    def getPixel(self, event):
+        self._start = event.pos()
+
+    def drawthat(self, event):
+        start = self._start
+        end = event.pos()
+        # Magic happens here
+        qp = QPainter(self.pixmap)
+        pen = QPen(Qt.black, 5)
+        qp.setPen(pen)
+        qp.drawText(start.x()-10, start.y()-10, str(self.currentfileindex))
+        qp.drawLine(start, end)
+        #qp.drawPixmap(start, pixmap, overlay)
+        qp.end()
+        self.Photo.setPixmap(self.pixmap)
+        # for rods to be overlayed, use this
+        # painter.drawPixmap(100, 100, overlay)
+
+
 
     def show_next(self):
         if self.fileList:
@@ -211,7 +239,7 @@ class Ui_MainWindow(object):
         if self.fileList:
             try:
                 self.currentfileindex -= 1  # Decrements file index
-                filename = (self.fileList[self.currentfileindex])    # Chooses previous image with specified extension
+                filename = (self.fileList[self.currentfileindex])  # Chooses previous image with specified extension
                 file_name = os.path.split(filename)[-1]
                 file_name = os.path.splitext(file_name)[0]
                 # Create Pixmap operator to display image
@@ -243,7 +271,6 @@ class Ui_MainWindow(object):
         self.Photo.adjustSize()
         self.scaleFactor = 1.0
 
-
     def fitToWindow(self):
         fitToWindow = self.fitToWindowAct.isChecked()
         self.scrollArea.setWidgetResizable(fitToWindow)
@@ -269,9 +296,9 @@ class Ui_MainWindow(object):
         scrollBar.setValue(int(factor * scrollBar.value() + ((factor - 1) * scrollBar.pageStep() / 2)))
 
 
-if __name__ == "__main__":
-    import sys
 
+
+if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
