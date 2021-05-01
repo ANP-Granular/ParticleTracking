@@ -56,14 +56,16 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         # Button properties
         self.pushprevious = QtWidgets.QPushButton(self.centralwidget)
-        self.pushprevious.setGeometry(QtCore.QRect(540, 900, 111, 41))
+        self.pushprevious.setGeometry(QtCore.QRect(380, 900, 111, 41))
         self.pushprevious.setObjectName("pushprevious")
         self.pushnext = QtWidgets.QPushButton(self.centralwidget)
-        self.pushnext.setGeometry(QtCore.QRect(940, 900, 131, 41))
+        self.pushnext.setGeometry(QtCore.QRect(580, 900, 121, 41))
         self.pushnext.setObjectName("pushnext")
         self.overlay = QtWidgets.QPushButton(self.centralwidget)
-        self.overlay.setGeometry(QtCore.QRect(740, 900, 121, 41))
+        self.overlay.setGeometry(QtCore.QRect(780, 900, 131, 41))
         self.overlay.setObjectName("overlay")
+        self.rodnum = QtWidgets.QPushButton('Rod number', self.centralwidget)
+        self.rodnum.setGeometry(QtCore.QRect(980, 900, 141, 41))
         MainWindow.setCentralWidget(self.centralwidget)
         # Menu properties
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -110,6 +112,7 @@ class Ui_MainWindow(object):
         self.pushprevious.clicked.connect(self.show_prev)
         self.pushnext.clicked.connect(self.show_next)
         self.overlay.clicked.connect(self.show_overlay)
+        self.rodnum.clicked.connect(self.choose_rod)
         self.actionzoom_in.triggered.connect(self.zoomIn)
         self.actionzoom_out.triggered.connect(self.zoomOut)
         self.actionopen.triggered.connect(self.file_open)
@@ -129,6 +132,7 @@ class Ui_MainWindow(object):
         self.pushnext.setShortcut(_translate("MainWindow", "Right"))
         self.overlay.setText(_translate("MainWindow", "overlay"))
         self.overlay.setShortcut(_translate("MainWindow", "space"))
+        self.rodnum.setText(_translate("MainWinsdow", "Rodnum"))
         self.actionopen.setText(_translate("MainWindow", "open"))
         self.actionopen.setStatusTip(_translate("MainWindow", "opens new file "))
         self.actionopen.setShortcut(_translate("MainWindow", "Ctrl+O"))
@@ -216,7 +220,6 @@ class Ui_MainWindow(object):
         # to do, if seen is 0, then dotted
         return image2
 
-
     def show_overlay(self):
         filename = (self.fileList[self.currentfileindex])  # Chooses next image with specified extension
         file_name = os.path.split(filename)[-1]
@@ -241,6 +244,13 @@ class Ui_MainWindow(object):
 
         # to do, if seen is 0, then dotted
         self.Photo.setPixmap(pixmap)
+
+    def choose_rod(self):
+        num, ok = QInputDialog.getInt(self, 'Choose a rod', 'Rod number')
+        if ok:
+            rod_choosen = self.setText(str(num))
+            print('Rod number:', rod_choosen)
+            return rod_choosen
 
     def show_next(self):
         if self.fileList:
