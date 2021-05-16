@@ -46,16 +46,15 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName("centralwidget")
         self.centralwidget.setFocus()
         self.Photo.setBackgroundRole(QPalette.Base)
-        self.Photo.setGeometry(QtCore.QRect(50, 50, 1180, 890))
+        self.Photo.setGeometry(QtCore.QRect(50, 0, 1180, 890))
         self.Photo.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.Photo.setScaledContents(True)
         self.Photo.setObjectName("Photo")
-
+        # New label
         self.label = QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(0, 0, 1180, 50))
-        self.label.setText('Open image containing folder')
+        self.label.setGeometry(QtCore.QRect(600, 0, 1180, 30))
+        self.label.setText('Open image in folder')
         MainWindow.setCentralWidget(self.centralwidget)
-
         # Scroll area properties
         self.scrollArea = QScrollArea(self.centralwidget)
         self.scrollArea.setBackgroundRole(QPalette.Dark)
@@ -65,13 +64,13 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         # Button properties
         self.pushprevious = QtWidgets.QPushButton(self.centralwidget)
-        self.pushprevious.setGeometry(QtCore.QRect(340, 950, 111, 41))
+        self.pushprevious.setGeometry(QtCore.QRect(440, 940, 111, 41))
         self.pushprevious.setObjectName("pushprevious")
         self.pushnext = QtWidgets.QPushButton(self.centralwidget)
-        self.pushnext.setGeometry(QtCore.QRect(740, 950, 131, 41))
+        self.pushnext.setGeometry(QtCore.QRect(840, 940, 131, 41))
         self.pushnext.setObjectName("pushnext")
         self.overlay = QtWidgets.QPushButton(self.centralwidget)
-        self.overlay.setGeometry(QtCore.QRect(540, 950, 121, 41))
+        self.overlay.setGeometry(QtCore.QRect(640, 940, 121, 41))
         self.overlay.setObjectName("overlay")
         MainWindow.setCentralWidget(self.centralwidget)
         # Menu properties
@@ -180,7 +179,7 @@ class Ui_MainWindow(object):
 
             # Directory
             dirpath = os.path.dirname(fileName)
-            print('Dir name:', dirpath)
+            print('Dir_name:', dirpath)
             self.fileList = []
             for idx, f in enumerate(os.listdir(dirpath)):
                 f_compare = os.path.splitext(f)[0]
@@ -208,7 +207,7 @@ class Ui_MainWindow(object):
             self.Photo.mousePressEvent = self.getPixel
             self.Photo.mouseReleaseEvent = self.drawthat
             print('Open_file {}:'.format(self.currentfileindex), file_name)
-            self.label.setText('Open_file {}'.format(file_name))
+            self.label.setText('File opened: {}'.format(file_name))
 
     def show_pixmap(self, image, df_part2):
         self.pixmap = QPixmap(image)
@@ -289,7 +288,7 @@ class Ui_MainWindow(object):
                     self.updateActions()
                     print('Next_file {}:'.format(self.currentfileindex), file_name)
                     # Label stuff
-                    self.label.setText('Next_file {}'.format(file_name))
+                    self.label.setText('File: {}'.format(file_name))
                     # self.update()
             except:
                 # the iterator has finished, restart it
@@ -325,7 +324,7 @@ class Ui_MainWindow(object):
                     self.fitToWindowAct.setEnabled(True)
                     self.updateActions()
                     print('Prev_file {}:'.format(self.currentfileindex), file_name)
-                    self.label.setText('Prev_file {}'.format(file_name))
+                    self.label.setText('File: {}'.format(file_name))
 
             except:
                 # the iterator has finished, restart it
