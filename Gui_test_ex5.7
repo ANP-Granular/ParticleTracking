@@ -18,6 +18,8 @@ import numpy as np
 # to do immediately
 # Textbox, when edited, or dropped, then clear
 # delete the qline edits
+# end position textbox move it
+# save things in a new csv
 
 
 
@@ -261,6 +263,7 @@ class Ui_MainWindow(object):
         painter = QPainter(pixmap)
         pen = QPen(Qt.cyan, 3)
         painter.setPen(pen)
+        self.edits = []
         for ind_rod, value in enumerate(df_part2['particle']):
             x1 = df_part2['x1_gp3'][ind_rod] * 10.0
             x2 = df_part2['x2_gp3'][ind_rod] * 10.0
@@ -268,12 +271,15 @@ class Ui_MainWindow(object):
             y2 = df_part2['y2_gp3'][ind_rod] * 10.0
             painter.drawLine(int(x1), int(y1), int(x2), int(y2))
             painter.drawText(int(x1), int(y1), 20, 20, Qt.TextSingleLine, str(value))
-            Tbox = QLineEdit('', self.Photo)
-            Tbox.setDragEnabled(True)
-            Tbox.resize(20, 20)
-            Tbox.move(int(x2), int(y2))
-            Tbox.show()
-
+            # Lineeditbox
+            s = "s" + str(ind_rod)
+            s = QLineEdit(self.Photo)
+            s.setDragEnabled(True)
+            s.resize(20, 20)
+            s.move(int(x2), int(y2))
+            s.show()
+            s.setObjectName("s" + str(ind_rod))
+            self.edits.append(s)
         painter.end()
         self.Photo.setPixmap(pixmap)
         self.Photo.setScaledContents(True)
@@ -283,6 +289,8 @@ class Ui_MainWindow(object):
         self.updateActions()
 
     def clear_screen(self):
+        for s in self.edits:
+            s.deleteLater()
         self.Photo.setPixmap(QtGui.QPixmap.fromImage(self.image))
         self.Photo.setScaledContents(True)
         self.scrollArea.setVisible(True)
