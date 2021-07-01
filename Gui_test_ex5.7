@@ -14,29 +14,23 @@ from PyQt5.QtGui import QPainter, QImage, QDrag
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import numpy as np
 
-
-# to do immediately
-# Textbox, when edited, or dropped, then clear
-# delete the qline edits
-# end position textbox move it
-# save things in a new csv
-
-
-
 class Ui_MainWindow(object):
     def __init__(self):
+        # super is needed to track mouse movements
         super().__init__()
+        # This is a bit tricky, AcceptDrops is a required function for
+        # drag and drop of QLineEdit textbox contents into another textbox
+        # but i set this function below to pass, because the function was not found
         self.setAcceptDrops(True)
         # Initialize
         self.CentralWidget = QtWidgets.QWidget(MainWindow)
-        # CSV FILE STUFF
-        self.df_new = pd.DataFrame(columns=['start_x', 'start_y', 'end_x', 'end_y', 'rod number'])
+        # start position set to none, did not check if the code works without this statement
         self.startPos = None
+        # scale factor for image
         self.scaleFactor = 0.0
-        self.fileList = []
+        # very important variable that keeps track of the current image that's displayed
         self.CurrentFileIndex = 0
-        self.new_position = []
-        # inits are supposed to be here for some reason
+        # initializations for widgets
         self.RodNumber = QtWidgets.QPushButton('Rod Number', self.CentralWidget)
         self.ClearSave = QtWidgets.QPushButton('Clear/Save', self.CentralWidget)
         self.overlay = QtWidgets.QPushButton(self.CentralWidget)
@@ -58,7 +52,7 @@ class Ui_MainWindow(object):
         self.Photo.setGeometry(QtCore.QRect(50, 0, 1180, 890))
         self.Photo.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.Photo.setObjectName("Photo")
-        # New label
+        # New label is a small transparent box above the image that says your current actions
         self.label.setGeometry(QtCore.QRect(600, 0, 1180, 30))
         self.label.setText('Open image in folder')
         MainWindow.setCentralWidget(self.CentralWidget)
@@ -139,6 +133,9 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         # Information about actions in menu
+        # we dont need o set shortcuts for any reason,
+        # basically i have no idea what this thing does
+        # delete if not useful
         self.menufile.setTitle(_translate("MainWindow", "File"))
         self.menuEdit.setTitle(_translate("MainWindow", "Edit"))
         self.menuView.setTitle(_translate("MainWindow", "View"))
@@ -173,7 +170,8 @@ class Ui_MainWindow(object):
         fileName, _ = QFileDialog.getOpenFileName(None, 'QFileDialog.getOpenFileName()', '',
                                                   'Images (*.png *.jpeg *.jpg)', options=options)
         file_name = os.path.split(fileName)[-1]
-        file_name = os.path.splitext(file_name)[0]  # File name without extension
+        # File name without extension
+        file_name = os.path.splitext(file_name)[0]
         print('File name:', file_name)
         if fileName:
             # open file as image
@@ -185,6 +183,10 @@ class Ui_MainWindow(object):
             dirpath = os.path.dirname(fileName)
             print('Dir_name:', dirpath)
             self.fileList = []
+            # this loop is kinda tricky
+            # it loop through all the images
+            # checks for some condition
+            # and appends it to a file List
             for idx, f in enumerate(os.listdir(dirpath)):
                 f_compare = os.path.splitext(f)[0]
                 indx_f = f_compare == file_name
@@ -199,8 +201,7 @@ class Ui_MainWindow(object):
             # Sort according to name / ascending order
             self.fileList.sort()
             print('Num of items in list:', len(self.fileList))
-
-            # Use this to not show rods
+            # then the image is displayed in this function NoRods
             self.show_pixmap_NoRods()
             print('Open_file {}:'.format(self.CurrentFileIndex), file_name)
             self.label.setText('File opened: {}'.format(file_name))
@@ -218,8 +219,9 @@ class Ui_MainWindow(object):
         self.updateActions()
 
     def show_overlay(self):
+        # when overlay button is clicked, it asked for color and
+        # overlays the image rods with the csv rods of specified color
         items = ("black", "blue", "green", "purple", "red", "yellow")
-
         item, ok = QInputDialog.getItem(self.CentralWidget, "select input dialog",
                                         "list of colors", items, 0, False)
         filename = (self.fileList[self.CurrentFileIndex])  # Chooses next image with specified extension
@@ -228,26 +230,28 @@ class Ui_MainWindow(object):
 
         col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3", "y2_gp3"]
         if ok and item:
-            color = item
-            self.label.setText('Overlay with color: {}'.format(item))
-            df_part = pd.read_csv('mark_rods/in_csv/rods_df_{:s}.csv'.format(color), usecols=col_list)
+            self.color = item
+            df_part = pd.read_csv('mark_rods/in_csv/rods_df_{:s}.csv'.format(self.color), usecols=col_list)
             df_part2 = df_part[df_part["frame"] == int(file_name[1:4])].reset_index()
             image = QImage(filename)
             self.show_pixmap(image, df_part2)
 
     def show_pixmap(self, image, df_part2):
+        # show_pixmap is called to draw the rods over the image
         self.rod_pixmap = QPixmap(image)
         painter = QPainter(self.rod_pixmap)
         pen = QPen(Qt.cyan, 3)
         painter.setPen(pen)
         # insert for loop
         for ind_rod, value in enumerate(df_part2['particle']):
+            # theres some problem with the dimension scaling
+            # So Dimtry asked us to multiple the rod values by 10
             x1 = df_part2['x1_gp3'][ind_rod] * 10.0
             x2 = df_part2['x2_gp3'][ind_rod] * 10.0
             y1 = df_part2['y1_gp3'][ind_rod] * 10.0
             y2 = df_part2['y2_gp3'][ind_rod] * 10.0
             painter.drawLine(int(x1), int(y1), int(x2), int(y2))
-            painter.drawText(int(x1), int(y1), 20, 20, Qt.TextSingleLine, str(value))
+            painter.drawText(int(x1) + 5, int(y1) + 5, 20, 20, Qt.TextSingleLine, str(value))
         painter.end()
         self.Photo.setPixmap(self.rod_pixmap)
         self.Photo.setScaledContents(True)
@@ -258,7 +262,27 @@ class Ui_MainWindow(object):
         self.Photo.mousePressEvent = self.getPixel
         self.Photo.mouseReleaseEvent = self.drawthat
 
+    def choose_rod(self):
+        # button click on number overlay calls choose rod
+        # it shows rods the same way but also adds a text box at the end of every rod
+        filename = (self.fileList[self.CurrentFileIndex])
+        file_name = os.path.split(filename)[-1]
+        image = QImage(filename)
+        items = ("black", "blue", "green", "purple", "red", "yellow")
+        item, ok = QInputDialog.getItem(self.CentralWidget, "select input dialog",
+                                        "list of colors", items, 0, False)
+        # file_name = os.path.splitext(file_name)[0]
+        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3", "y2_gp3"]
+        if ok and item:
+            self.color = item
+        else:
+            self.color = 'blue'
+        df_part = pd.read_csv('mark_rods/in_csv/rods_df_{:s}.csv'.format(self.color), usecols=col_list)
+        df_part2 = df_part[df_part["frame"] == int(file_name[1:4])].reset_index()
+        self.show_rods(image, df_part2)
+
     def show_rods(self, image, df_part2):
+        # this is a sub function of choose_rod below
         pixmap = QPixmap(image)
         painter = QPainter(pixmap)
         pen = QPen(Qt.cyan, 3)
@@ -271,12 +295,12 @@ class Ui_MainWindow(object):
             y2 = df_part2['y2_gp3'][ind_rod] * 10.0
             painter.drawLine(int(x1), int(y1), int(x2), int(y2))
             painter.drawText(int(x1), int(y1), 20, 20, Qt.TextSingleLine, str(value))
-            # Lineeditbox
+            # Line edit box
             s = "s" + str(ind_rod)
             s = QLineEdit(self.Photo)
             s.setDragEnabled(True)
             s.resize(20, 20)
-            s.move(int(x2), int(y2))
+            s.move(int(x2) + 5, int(y2) + 5)
             s.show()
             s.setObjectName("s" + str(ind_rod))
             self.edits.append(s)
@@ -289,6 +313,8 @@ class Ui_MainWindow(object):
         self.updateActions()
 
     def clear_screen(self):
+
+        # if self.edits exists or if its empty
         for s in self.edits:
             s.deleteLater()
         self.Photo.setPixmap(QtGui.QPixmap.fromImage(self.image))
@@ -298,23 +324,7 @@ class Ui_MainWindow(object):
         self.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
-    def choose_rod(self):
-        filename = (self.fileList[self.CurrentFileIndex])
-        file_name = os.path.split(filename)[-1]
-        image = QImage(filename)
-        items = ("black", "blue", "green", "purple", "red", "yellow")
-        item, ok = QInputDialog.getItem(self.CentralWidget, "select input dialog",
-                                        "list of colors", items, 0, False)
-        # file_name = os.path.splitext(file_name)[0]
-        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3", "y2_gp3"]
-        if ok and item:
-            color = item
-            self.label.setText('Rod Number change with color: {}'.format(item))
-        else:
-            color = 'blue'
-        df_part = pd.read_csv('mark_rods/in_csv/rods_df_{:s}.csv'.format(color), usecols=col_list)
-        df_part2 = df_part[df_part["frame"] == int(file_name[1:4])].reset_index()
-        self.show_rods(image, df_part2)
+    # drag enter and drop event are event actions for text box content drag and drop
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasFormat("text/plain"):
@@ -325,6 +335,9 @@ class Ui_MainWindow(object):
     def dropEvent(self, event):
         event.accept()
         # self.Tbox.setText(event.mimeData().text())
+
+    # get pixel = mouse press event
+    # and draw that = mouse release event for rod drawing
 
     def getPixel(self, event):
         self.startPos = self.Photo.mapFromParent(event.pos())
@@ -347,6 +360,21 @@ class Ui_MainWindow(object):
         self.Photo.resize(self.image.width(), self.image.height())
         self.fitToWindowAct.setEnabled(True)
         self.updateActions()
+        # saving
+        num, ok = QInputDialog.getInt(self.Photo, 'Choose a rod to replace', 'Rod number')
+        filename = (self.fileList[self.CurrentFileIndex])
+        file_name = os.path.split(filename)[-1]
+        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3", "y2_gp3"]
+        df_part = pd.read_csv('mark_rods/in_csv/rods_df_{:s}.csv'.format(self.color))
+        df_part2 = df_part[df_part["frame"] == int(file_name[1:4])].reset_index()
+        if ok:
+            # num is the number of the rod
+            df_part2['x1_gp3'][df_part2["particle"] == num] = int(start.x())
+            df_part2['x2_gp3'][df_part2["particle"] == num] = int(start.y())
+            df_part2['y1_gp3'][df_part2["particle"] == num] = int(end.x())
+            df_part2['y2_gp3'][df_part2["particle"] == num] = int(end.y())
+            df_part[df_part["frame"] == int(file_name[1:4])] = df_part2
+            df_part.to_csv('mark_rods/in_csv/rods_df_{:s}.csv'.format(self.color))
 
     def show_next(self):
         if self.fileList:
@@ -374,7 +402,7 @@ class Ui_MainWindow(object):
                     self.updateActions()
                     print('Next_file {}:'.format(self.CurrentFileIndex), file_name)
                     # Label stuff
-                    # self.label.setText('File: {}'.format(file_name))
+                    self.label.setText('File: {}'.format(file_name))
                     # self.update()
             except:
                 # the iterator has finished, restart it
@@ -407,7 +435,7 @@ class Ui_MainWindow(object):
                     self.fitToWindowAct.setEnabled(True)
                     self.updateActions()
                     print('Prev_file {}:'.format(self.CurrentFileIndex), file_name)
-                    # self.label.setText('File: {}'.format(file_name))
+                    self.label.setText('File: {}'.format(file_name))
 
             except:
                 # the iterator has finished, restart it
