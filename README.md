@@ -4,8 +4,11 @@
 files(GUI):
 - testingQT.py - Path to pictures should be provided in code, shift to images by pressing keyboard
 
-- Gui_test_ex5.4.py - Creates a Gui that can open image files & move between images using buttons or shortcut keys. 
+- Gui_test_ex5.7.py - Creates a Gui that can open image files & move between images using buttons or shortcut keys. 
 - Additional functionalities such as zoom-in, zoom-out & fit to screen can be executed with keyboard shortcuts such as (ctrl-), (ctrl+) & (ctrl+f). 
+- Overlay tracked rod coordinates over the image using 'overlay' button.
+- Overwrite or change rod coordinates by choosing the correct rod using mouse click.
+- Change rod number using 'Rod Number' button and save changes using 'Clear/Save' button. 
 
 # Rod tracking using MATLAB
 files(MATLAB):
