@@ -20,16 +20,25 @@ class Ui_MainWindow(object):
         super().__init__()
         # This is a bit tricky, AcceptDrops is a required function for
         # drag and drop of QLineEdit textbox contents into another textbox
-        # but i set this function below to pass, because the function was not found
+        # but i set this function below to pass, because the function was not
+        # found
         self.setAcceptDrops(True)
         # Initialize
         self.CentralWidget = QtWidgets.QWidget(MainWindow)
-        # start position set to none, did not check if the code works without this statement
+        # start position set to none, did not check if the code works without
+        # this statement
         self.startPos = None
         # scale factor for image
         self.scaleFactor = 0.0
-        # very important variable that keeps track of the current image that's displayed
+        # very important variable that keeps track of the current image that's
+        # displayed
         self.CurrentFileIndex = 0
+        # self.data_files = '../SampleData/csv/'
+        self.data_files = None
+        self.data_file_name = 'rods_df_{:s}.csv'
+        self.color = "black"
+        self.image = None
+        self.rod_pixmap = None
         # initializations for widgets
         self.RodNumber = QtWidgets.QPushButton('Rod Number', self.CentralWidget)
         self.ClearSave = QtWidgets.QPushButton('Clear/Save', self.CentralWidget)
@@ -52,7 +61,8 @@ class Ui_MainWindow(object):
         self.Photo.setGeometry(QtCore.QRect(50, 0, 1180, 890))
         self.Photo.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.Photo.setObjectName("Photo")
-        # New label is a small transparent box above the image that says your current actions
+        # New label is a small transparent box above the image that says your
+        # current actions
         self.label.setGeometry(QtCore.QRect(600, 0, 1180, 30))
         self.label.setText('Open image in folder')
         MainWindow.setCentralWidget(self.CentralWidget)
@@ -63,16 +73,28 @@ class Ui_MainWindow(object):
         self.scrollArea.setVisible(False)
         MainWindow.setCentralWidget(self.CentralWidget)
         # Button properties
-        self.pushprevious.setGeometry(QtCore.QRect(140, 980, 111, 41))
+        self.pushprevious.setGeometry(QtCore.QRect(140, 950, 111, 41))
         self.pushprevious.setObjectName("pushprevious")
-        self.pushnext.setGeometry(QtCore.QRect(340, 980, 131, 41))
+        self.pushnext.setGeometry(QtCore.QRect(340, 950, 131, 41))
         self.pushnext.setObjectName("pushnext")
-        self.overlay.setGeometry(QtCore.QRect(540, 980, 121, 41))
+        self.overlay.setGeometry(QtCore.QRect(540, 950, 121, 41))
         self.overlay.setObjectName("overlay")
-        self.RodNumber.setGeometry(QtCore.QRect(740, 980, 141, 41))
+        self.RodNumber.setGeometry(QtCore.QRect(740, 950, 141, 41))
         self.RodNumber.setObjectName("NumberChange")
-        self.ClearSave.setGeometry(QtCore.QRect(940, 980, 141, 41))
+        self.ClearSave.setGeometry(QtCore.QRect(940, 950, 141, 41))
         self.ClearSave.setObjectName("Clear/Save")
+
+        # Buttons were placed outside the displays dimension
+        # self.pushprevious.setGeometry(QtCore.QRect(140, 980, 111, 41))
+        # self.pushprevious.setObjectName("pushprevious")
+        # self.pushnext.setGeometry(QtCore.QRect(340, 980, 131, 41))
+        # self.pushnext.setObjectName("pushnext")
+        # self.overlay.setGeometry(QtCore.QRect(540, 980, 121, 41))
+        # self.overlay.setObjectName("overlay")
+        # self.RodNumber.setGeometry(QtCore.QRect(740, 980, 141, 41))
+        # self.RodNumber.setObjectName("NumberChange")
+        # self.ClearSave.setGeometry(QtCore.QRect(940, 980, 141, 41))
+        # self.ClearSave.setObjectName("Clear/Save")
 
         MainWindow.setCentralWidget(self.CentralWidget)
         # Menu properties
@@ -120,7 +142,8 @@ class Ui_MainWindow(object):
         self.pushprevious.clicked.connect(self.show_prev)
         self.pushnext.clicked.connect(self.show_next)
         self.overlay.clicked.connect(self.show_overlay)
-        self.RodNumber.clicked.connect(self.choose_rod)
+        self.RodNumber.clicked.connect(lambda:self.show_overlay(
+            with_number=True))
         self.ClearSave.clicked.connect(self.clear_screen)
         self.actionzoom_in.triggered.connect(self.zoomIn)
         self.actionzoom_out.triggered.connect(self.zoomOut)
@@ -146,7 +169,8 @@ class Ui_MainWindow(object):
         self.overlay.setText(_translate("MainWindow", "overlay"))
         self.overlay.setShortcut(_translate("MainWindow", "space"))
         self.actionopen.setText(_translate("MainWindow", "open"))
-        self.actionopen.setStatusTip(_translate("MainWindow", "opens new file "))
+        self.actionopen.setStatusTip(_translate("MainWindow",
+                                                "opens new file "))
         self.actionopen.setShortcut(_translate("MainWindow", "Ctrl+O"))
         self.actionsave.setText(_translate("MainWindow", "save"))
         self.actionsave.setStatusTip(_translate("MainWindow", "save a file "))
@@ -155,20 +179,23 @@ class Ui_MainWindow(object):
         self.actionzoom_in.setStatusTip(_translate("MainWindow", "zooming in"))
         self.actionzoom_in.setShortcut(_translate("MainWindow", "Ctrl+="))
         self.actionzoom_out.setText(_translate("MainWindow", "zoom-out"))
-        self.actionzoom_out.setStatusTip(_translate("MainWindow", "zooming out"))
+        self.actionzoom_out.setStatusTip(_translate("MainWindow",
+                                                    "zooming out"))
         self.actionzoom_out.setShortcut(_translate("MainWindow", "Ctrl+-"))
-        self.normalSizeAct.setStatusTip(_translate("MainWindow", "Original size"))
+        self.normalSizeAct.setStatusTip(_translate("MainWindow",
+                                                   "Original size"))
         self.normalSizeAct.setShortcut(_translate("MainWindow", "Ctrl+R"))
         self.normalSizeAct.setText(_translate("MainWindow", "Original Size"))
-        self.fitToWindowAct.setStatusTip(_translate("MainWindow", "Fit to Window"))
+        self.fitToWindowAct.setStatusTip(_translate("MainWindow",
+                                                    "Fit to Window"))
         self.fitToWindowAct.setShortcut(_translate("MainWindow", "Ctrl+F"))
         self.fitToWindowAct.setText(_translate("MainWindow", "Fit to Window"))
 
     def file_open(self):
         # opens directory to select image
-        options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getOpenFileName(None, 'QFileDialog.getOpenFileName()', '',
-                                                  'Images (*.png *.jpeg *.jpg)', options=options)
+        fileName, _ = QFileDialog.getOpenFileName(None, 'Open an image', '',
+                                                  'Images (*.png *.jpeg '
+                                                  '*.jpg)')
         file_name = os.path.split(fileName)[-1]
         # File name without extension
         file_name = os.path.splitext(file_name)[0]
@@ -177,7 +204,8 @@ class Ui_MainWindow(object):
             # open file as image
             self.image = QImage(fileName)
             if self.image.isNull():
-                QMessageBox.information(self, "Image Viewer", "Cannot load %s." % fileName)
+                QMessageBox.information(self, "Image Viewer",
+                                        "Cannot load %s." % fileName)
                 return
             # Directory
             dirpath = os.path.dirname(fileName)
@@ -195,7 +223,8 @@ class Ui_MainWindow(object):
                     self.CurrentFileIndex = idx
                 fpath = os.path.join(dirpath, f)
                 # print('fpath name:', fpath)
-                if os.path.isfile(fpath) and f.endswith(('.png', '.jpg', '.jpeg')):
+                if os.path.isfile(fpath) and f.endswith(('.png', '.jpg',
+                                                         '.jpeg')):
                     # Add all image files to a list
                     self.fileList.append(fpath)
             # Sort according to name / ascending order
@@ -218,23 +247,69 @@ class Ui_MainWindow(object):
         # 1180, 890
         self.updateActions()
 
-    def show_overlay(self):
-        # when overlay button is clicked, it asked for color and
-        # overlays the image rods with the csv rods of specified color
+    def show_overlay(self, with_number=False):
         items = ("black", "blue", "green", "purple", "red", "yellow")
-        item, ok = QInputDialog.getItem(self.CentralWidget, "select input dialog",
-                                        "list of colors", items, 0, False)
-        filename = (self.fileList[self.CurrentFileIndex])  # Chooses next image with specified extension
-        file_name = os.path.split(filename)[-1]
-        # file_name = os.path.splitext(file_name)[0]
-
-        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3", "y2_gp3"]
-        if ok and item:
-            self.color = item
-            df_part = pd.read_csv('SampleData/csv/rods_df_{:s}.csv'.format(self.color), usecols=col_list)
-            df_part2 = df_part[df_part["frame"] == int(file_name[1:4])].reset_index()
-            image = QImage(filename)
-            self.show_pixmap(image, df_part2)
+        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3",
+                    "y2_gp3"]
+        while True:
+            if self.data_files is not None:
+                item, ok = QInputDialog.getItem(self.CentralWidget,
+                                                "select input dialog",
+                                                "list of colors", items, 0,
+                                                False)
+                if not ok:
+                    return
+                else:
+                    self.color = item
+                    file_found = os.path.exists(self.data_files +
+                        self.data_file_name.format(item))
+                    if file_found:
+                        # Overlay rod position data from the file
+                        filename = (self.fileList[self.CurrentFileIndex])
+                        file_name = os.path.split(filename)[-1]
+                        df_part = pd.read_csv(self.data_files +
+                                              self.data_file_name.format(
+                                                  self.color),
+                                              usecols=col_list)
+                        df_part2 = df_part[df_part["frame"] ==
+                                           int(file_name[1:4])].reset_index()
+                        image = QImage(filename)
+                        if with_number:
+                            # Overlay with colored bars and
+                            self.show_rods(image, df_part2)
+                            pass
+                        else:
+                            # Overlay only with colored bars
+                            self.show_pixmap(image, df_part2)
+                        return
+                    else:
+                        # If a folder was selected previously, but no
+                        # matching file was found
+                        msg = QMessageBox()
+                        msg.setIcon(QMessageBox.Warning)
+                        msg.setText(
+                            f"There was no file for '{item}' found in: "
+                            f"'{self.data_files}'")
+                        msg.setStandardButtons(
+                            QMessageBox.Retry | QMessageBox.Cancel)
+                        btn_select = msg.addButton("Select Folder",
+                                                   QMessageBox.ActionRole)
+                        user_decision = msg.exec()
+                        if user_decision == QMessageBox.Cancel:
+                            # Stop overlaying
+                            return
+                        elif msg.clickedButton() == btn_select:
+                            # Switch to folder selection
+                            self.data_files = None
+                            continue
+                        else:
+                            # Retry color selection
+                            continue
+            else:
+                self.data_files = QFileDialog.getExistingDirectory(
+                    None, 'Choose Folder with position data', '') + '/'
+                if self.data_files == '/':
+                    return
 
     def show_pixmap(self, image, df_part2):
         # show_pixmap is called to draw the rods over the image
@@ -251,7 +326,8 @@ class Ui_MainWindow(object):
             y1 = df_part2['y1_gp3'][ind_rod] * 10.0
             y2 = df_part2['y2_gp3'][ind_rod] * 10.0
             painter.drawLine(int(x1), int(y1), int(x2), int(y2))
-            painter.drawText(int(x1) + 5, int(y1) + 5, 20, 20, Qt.TextSingleLine, str(value))
+            painter.drawText(int(x1) + 5, int(y1) + 5, 20, 20,
+                             Qt.TextSingleLine, str(value))
         painter.end()
         self.Photo.setPixmap(self.rod_pixmap)
         self.Photo.setScaledContents(True)
@@ -262,27 +338,8 @@ class Ui_MainWindow(object):
         self.Photo.mousePressEvent = self.getPixel
         self.Photo.mouseReleaseEvent = self.drawthat
 
-    def choose_rod(self):
-        # button click on number overlay calls choose rod
-        # it shows rods the same way but also adds a text box at the end of every rod
-        filename = (self.fileList[self.CurrentFileIndex])
-        file_name = os.path.split(filename)[-1]
-        image = QImage(filename)
-        items = ("black", "blue", "green", "purple", "red", "yellow")
-        item, ok = QInputDialog.getItem(self.CentralWidget, "select input dialog",
-                                        "list of colors", items, 0, False)
-        # file_name = os.path.splitext(file_name)[0]
-        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3", "y2_gp3"]
-        if ok and item:
-            self.color = item
-        else:
-            self.color = 'blue'
-        df_part = pd.read_csv('SampleData/csv/rods_df_{:s}.csv'.format(self.color), usecols=col_list)
-        df_part2 = df_part[df_part["frame"] == int(file_name[1:4])].reset_index()
-        self.show_rods(image, df_part2)
-
     def show_rods(self, image, df_part2):
-        # this is a sub function of choose_rod below
+        # this is a helper function for show_overlay
         pixmap = QPixmap(image)
         painter = QPainter(pixmap)
         pen = QPen(Qt.cyan, 3)
@@ -324,8 +381,8 @@ class Ui_MainWindow(object):
         self.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
-    # drag enter and drop event are event actions for text box content drag and drop
-
+    # drag enter and drop event are event actions for text box content drag
+    # and drop
     def dragEnterEvent(self, event):
         if event.mimeData().hasFormat("text/plain"):
             event.accept()
@@ -338,7 +395,6 @@ class Ui_MainWindow(object):
 
     # get pixel = mouse press event
     # and draw that = mouse release event for rod drawing
-
     def getPixel(self, event):
         self.startPos = self.Photo.mapFromParent(event.pos())
 
@@ -365,7 +421,9 @@ class Ui_MainWindow(object):
         filename = (self.fileList[self.CurrentFileIndex])
         file_name = os.path.split(filename)[-1]
         col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3", "y2_gp3"]
-        df_part = pd.read_csv('SampleData/csv/rods_df_{:s}.csv'.format(self.color))
+        # FIXME: hard coded path without error handling
+        df_part = pd.read_csv('../SampleData/csv/rods_df_{:s}.csv'.format(
+            self.color))
         df_part2 = df_part[df_part["frame"] == int(file_name[1:4])].reset_index()
         if ok:
             # num is the number of the rod
@@ -374,13 +432,16 @@ class Ui_MainWindow(object):
             df_part2['y1_gp3'][df_part2["particle"] == num] = int(end.x())
             df_part2['y2_gp3'][df_part2["particle"] == num] = int(end.y())
             df_part[df_part["frame"] == int(file_name[1:4])] = df_part2
-            df_part.to_csv('SampleData/csv/rods_df_{:s}.csv'.format(self.color))
+            # FIXME: hard coded path without error handling
+            df_part.to_csv('../SampleData/csv/rods_df_{:s}.csv'.format(
+                self.color))
 
     def show_next(self):
         if self.fileList:
             try:
                 self.CurrentFileIndex += 1  # Increments file index
-                filename = (self.fileList[self.CurrentFileIndex])  # Chooses next image with specified extension
+                # Chooses next image with specified extension
+                filename = (self.fileList[self.CurrentFileIndex])
                 file_name = os.path.split(filename)[-1]
                 file_name = os.path.splitext(file_name)[0]
                 # Create Pixmap operator to display image
@@ -400,10 +461,12 @@ class Ui_MainWindow(object):
                     self.scrollArea.setVisible(True)
                     self.fitToWindowAct.setEnabled(True)
                     self.updateActions()
-                    print('Next_file {}:'.format(self.CurrentFileIndex), file_name)
+                    print('Next_file {}:'.format(self.CurrentFileIndex),
+                          file_name)
                     # Label stuff
                     self.label.setText('File: {}'.format(file_name))
                     # self.update()
+            # TODO: specify targeted Exception
             except:
                 # the iterator has finished, restart it
                 self.CurrentFileIndex = -1
@@ -416,7 +479,8 @@ class Ui_MainWindow(object):
         if self.fileList:
             try:
                 self.CurrentFileIndex -= 1  # Decrements file index
-                filename = (self.fileList[self.CurrentFileIndex])  # Chooses previous image with specified extension
+                # Chooses previous image with specified extension
+                filename = (self.fileList[self.CurrentFileIndex])
                 file_name = os.path.split(filename)[-1]
                 file_name = os.path.splitext(file_name)[0]
                 # Create Pixmap operator to display image
@@ -436,7 +500,7 @@ class Ui_MainWindow(object):
                     self.updateActions()
                     print('Prev_file {}:'.format(self.CurrentFileIndex), file_name)
                     self.label.setText('File: {}'.format(file_name))
-
+            # TODO: specify targeted Exception
             except:
                 # the iterator has finished, restart it
                 self.CurrentFileIndex = -1
@@ -477,7 +541,8 @@ class Ui_MainWindow(object):
         self.actionzoom_out.setEnabled(self.scaleFactor > 0.333)
 
     def adjustScrollBar(self, scrollBar, factor):
-        scrollBar.setValue(int(factor * scrollBar.value() + ((factor - 1) * scrollBar.pageStep() / 2)))
+        scrollBar.setValue(int(factor * scrollBar.value() +
+                               ((factor - 1) * scrollBar.pageStep() / 2)))
 
     def setAcceptDrops(self, param):
         pass
