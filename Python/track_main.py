@@ -13,18 +13,21 @@ from PyQt5.QtCore import QRect, Qt, QMimeData
 from PyQt5.QtGui import QPainter, QImage, QDrag
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import numpy as np
+from track_ui import Ui_MainWindow
 
-class Ui_MainWindow(object):
-    def __init__(self):
-        # super is needed to track mouse movements
-        super().__init__()
+class RodTrack_Window(QtWidgets.QMainWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+
         # This is a bit tricky, AcceptDrops is a required function for
         # drag and drop of QLineEdit textbox contents into another textbox
         # but i set this function below to pass, because the function was not
         # found
         self.setAcceptDrops(True)
         # Initialize
-        self.CentralWidget = QtWidgets.QWidget(MainWindow)
+        # self.CentralWidget = QtWidgets.QWidget(MainWindow)
         # start position set to none, did not check if the code works without
         # this statement
         self.startPos = None
@@ -39,157 +42,62 @@ class Ui_MainWindow(object):
         self.color = "black"
         self.image = None
         self.rod_pixmap = None
-        # initializations for widgets
-        self.RodNumber = QtWidgets.QPushButton('Rod Number', self.CentralWidget)
-        self.ClearSave = QtWidgets.QPushButton('Clear/Save', self.CentralWidget)
-        self.overlay = QtWidgets.QPushButton(self.CentralWidget)
-        self.pushnext = QtWidgets.QPushButton(self.CentralWidget)
-        self.pushprevious = QtWidgets.QPushButton(self.CentralWidget)
-        self.scrollArea = QScrollArea(self.CentralWidget)
-        self.label = QLabel(self.CentralWidget)
-        self.Photo = QtWidgets.QLabel(self.CentralWidget)
+        self.fileList = None
 
-    def setup_ui(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.setWindowState(QtCore.Qt.WindowMaximized)
-        # MainWindow.resize(1280, 1100)
-        MainWindow.setFocus()
-        # Label to display content
-        self.CentralWidget.setObjectName("centralized")
-        self.CentralWidget.setFocus()
-        self.Photo.setBackgroundRole(QPalette.Base)
-        self.Photo.setGeometry(QtCore.QRect(50, 0, 1180, 890))
-        self.Photo.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        self.Photo.setObjectName("Photo")
-        # New label is a small transparent box above the image that says your
-        # current actions
-        self.label.setGeometry(QtCore.QRect(600, 0, 1180, 30))
-        self.label.setText('Open image in folder')
-        MainWindow.setCentralWidget(self.CentralWidget)
-        # Scroll area properties
-        self.scrollArea.setBackgroundRole(QPalette.Dark)
-        self.scrollArea.setGeometry(QtCore.QRect(50, 50, 1180, 890))
-        self.scrollArea.setWidget(self.Photo)
-        self.scrollArea.setVisible(False)
-        MainWindow.setCentralWidget(self.CentralWidget)
-        # Button properties
-        self.pushprevious.setGeometry(QtCore.QRect(140, 950, 111, 41))
-        self.pushprevious.setObjectName("pushprevious")
-        self.pushnext.setGeometry(QtCore.QRect(340, 950, 131, 41))
-        self.pushnext.setObjectName("pushnext")
-        self.overlay.setGeometry(QtCore.QRect(540, 950, 121, 41))
-        self.overlay.setObjectName("overlay")
-        self.RodNumber.setGeometry(QtCore.QRect(740, 950, 141, 41))
-        self.RodNumber.setObjectName("NumberChange")
-        self.ClearSave.setGeometry(QtCore.QRect(940, 950, 141, 41))
-        self.ClearSave.setObjectName("Clear/Save")
-
-        # Buttons were placed outside the displays dimension
-        # self.pushprevious.setGeometry(QtCore.QRect(140, 980, 111, 41))
-        # self.pushprevious.setObjectName("pushprevious")
-        # self.pushnext.setGeometry(QtCore.QRect(340, 980, 131, 41))
-        # self.pushnext.setObjectName("pushnext")
-        # self.overlay.setGeometry(QtCore.QRect(540, 980, 121, 41))
-        # self.overlay.setObjectName("overlay")
-        # self.RodNumber.setGeometry(QtCore.QRect(740, 980, 141, 41))
-        # self.RodNumber.setObjectName("NumberChange")
-        # self.ClearSave.setGeometry(QtCore.QRect(940, 980, 141, 41))
-        # self.ClearSave.setObjectName("Clear/Save")
-
-        MainWindow.setCentralWidget(self.CentralWidget)
-        # Menu properties
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
-        self.menubar.setObjectName("menubar")
-        self.menufile = QtWidgets.QMenu(self.menubar)
-        self.menufile.setObjectName("menufile")
-        self.menuEdit = QtWidgets.QMenu(self.menubar)
-        self.menuEdit.setObjectName("menuEdit")
-        self.menuView = QtWidgets.QMenu(self.menubar)
-        self.menuView.setObjectName("menuView")
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
-        # Action properties
-        self.openFile = QtWidgets.QAction(MainWindow)
-        self.actionopen = QtWidgets.QAction(MainWindow)
-        self.actionopen.setObjectName("actionopen")
-        self.actionsave = QtWidgets.QAction(MainWindow)
-        self.actionsave.setObjectName("actionsave")
-        self.actionzoom_in = QtWidgets.QAction(MainWindow)
-        self.actionzoom_in.setObjectName("actionzoom_in")
-        self.actionzoom_out = QtWidgets.QAction(MainWindow)
-        self.actionzoom_out.setObjectName("actionzoom_out")
-        self.normalSizeAct = QtWidgets.QAction(MainWindow)
-        self.normalSizeAct.setObjectName("Normal Size")
-        self.fitToWindowAct = QtWidgets.QAction(MainWindow)
-        self.fitToWindowAct.setObjectName("Fit to Window")
-        # Add actions to menu
-        self.menufile.addAction(self.actionopen)
-        self.menufile.addAction(self.actionsave)
-        self.menuView.addAction(self.actionzoom_in)
-        self.menuView.addAction(self.actionzoom_out)
-        self.menuView.addAction(self.normalSizeAct)
-        self.menuView.addAction(self.fitToWindowAct)
-        self.menubar.addAction(self.menufile.menuAction())
-        self.menubar.addAction(self.menuEdit.menuAction())
-        self.menubar.addAction(self.menuView.menuAction())
-
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
         # Signal to activate actions
-        self.pushprevious.clicked.connect(self.show_prev)
-        self.pushnext.clicked.connect(self.show_next)
-        self.overlay.clicked.connect(self.show_overlay)
-        self.RodNumber.clicked.connect(lambda:self.show_overlay(
+        self.ui.pushprevious.clicked.connect(self.show_prev)
+        self.ui.pushnext.clicked.connect(self.show_next)
+        self.ui.overlay.clicked.connect(self.show_overlay)
+        self.ui.RodNumber.clicked.connect(lambda: self.show_overlay(
             with_number=True))
-        self.ClearSave.clicked.connect(self.clear_screen)
-        self.actionzoom_in.triggered.connect(self.zoomIn)
-        self.actionzoom_out.triggered.connect(self.zoomOut)
-        self.actionopen.triggered.connect(self.file_open)
-        self.normalSizeAct.triggered.connect(self.normalSize)
-        self.fitToWindowAct.triggered.connect(self.fitToWindow)
-        self.Photo.mousePressEvent = self.getPixel
+        self.ui.ClearSave.clicked.connect(self.clear_screen)
+        self.ui.actionzoom_in.triggered.connect(self.zoomIn)
+        self.ui.actionzoom_out.triggered.connect(self.zoomOut)
+        self.ui.actionopen.triggered.connect(self.file_open)
+        self.ui.normalSizeAct.triggered.connect(self.normalSize)
+        self.ui.fitToWindowAct.triggered.connect(self.fitToWindow)
+        self.ui.Photo.mousePressEvent = self.getPixel
 
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        # Information about actions in menu
-        # we dont need o set shortcuts for any reason,
-        # basically i have no idea what this thing does
-        # delete if not useful
-        self.menufile.setTitle(_translate("MainWindow", "File"))
-        self.menuEdit.setTitle(_translate("MainWindow", "Edit"))
-        self.menuView.setTitle(_translate("MainWindow", "View"))
-        self.pushprevious.setText(_translate("MainWindow", "previous"))
-        self.pushprevious.setShortcut(_translate("MainWindow", "Left"))
-        self.pushnext.setText(_translate("MainWindow", "next"))
-        self.pushnext.setShortcut(_translate("MainWindow", "Right"))
-        self.overlay.setText(_translate("MainWindow", "overlay"))
-        self.overlay.setShortcut(_translate("MainWindow", "space"))
-        self.actionopen.setText(_translate("MainWindow", "open"))
-        self.actionopen.setStatusTip(_translate("MainWindow",
-                                                "opens new file "))
-        self.actionopen.setShortcut(_translate("MainWindow", "Ctrl+O"))
-        self.actionsave.setText(_translate("MainWindow", "save"))
-        self.actionsave.setStatusTip(_translate("MainWindow", "save a file "))
-        self.actionsave.setShortcut(_translate("MainWindow", "Ctrl+S"))
-        self.actionzoom_in.setText(_translate("MainWindow", "zoom-in"))
-        self.actionzoom_in.setStatusTip(_translate("MainWindow", "zooming in"))
-        self.actionzoom_in.setShortcut(_translate("MainWindow", "Ctrl+="))
-        self.actionzoom_out.setText(_translate("MainWindow", "zoom-out"))
-        self.actionzoom_out.setStatusTip(_translate("MainWindow",
-                                                    "zooming out"))
-        self.actionzoom_out.setShortcut(_translate("MainWindow", "Ctrl+-"))
-        self.normalSizeAct.setStatusTip(_translate("MainWindow",
-                                                   "Original size"))
-        self.normalSizeAct.setShortcut(_translate("MainWindow", "Ctrl+R"))
-        self.normalSizeAct.setText(_translate("MainWindow", "Original Size"))
-        self.fitToWindowAct.setStatusTip(_translate("MainWindow",
-                                                    "Fit to Window"))
-        self.fitToWindowAct.setShortcut(_translate("MainWindow", "Ctrl+F"))
-        self.fitToWindowAct.setText(_translate("MainWindow", "Fit to Window"))
+#         # This is a bit tricky, AcceptDrops is a required function for
+#         # drag and drop of QLineEdit textbox contents into another textbox
+#         # but i set this function below to pass, because the function was not
+#         # found
+#         self.setAcceptDrops(True)
+#
+#     def setup_ui(self, MainWindow):
+#         MainWindow.setObjectName("MainWindow")
+#         MainWindow.setWindowState(QtCore.Qt.WindowMaximized)
+#         MainWindow.setFocus()
+
+#         # Scroll area properties
+#         self.scrollArea.setBackgroundRole(QPalette.Dark)
+#         self.scrollArea.setGeometry(QtCore.QRect(50, 50, 1180, 890))
+#         self.scrollArea.setWidget(self.Photo)
+#         self.scrollArea.setVisible(False)
+
+#         MainWindow.setCentralWidget(self.CentralWidget)
+#         # Menu properties
+#         self.menubar = QtWidgets.QMenuBar(MainWindow)
+#         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
+#         self.menubar.setObjectName("menubar")
+#         self.menufile = QtWidgets.QMenu(self.menubar)
+#         self.menufile.setObjectName("menufile")
+#         self.menuEdit = QtWidgets.QMenu(self.menubar)
+#         self.menuEdit.setObjectName("menuEdit")
+#         self.menuView = QtWidgets.QMenu(self.menubar)
+#         self.menuView.setObjectName("menuView")
+#         MainWindow.setMenuBar(self.menubar)
+#         self.statusbar = QtWidgets.QStatusBar(MainWindow)
+#         self.statusbar.setObjectName("statusbar")
+#         MainWindow.setStatusBar(self.statusbar)
+#
+#         self.retranslateUi(MainWindow)
+#         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+#
+#     def retranslateUi(self, MainWindow):
+#         _translate = QtCore.QCoreApplication.translate
+#         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
 
     def file_open(self):
         # opens directory to select image
@@ -233,17 +141,21 @@ class Ui_MainWindow(object):
             # then the image is displayed in this function NoRods
             self.show_pixmap_NoRods()
             print('Open_file {}:'.format(self.CurrentFileIndex), file_name)
-            self.label.setText('File opened: {}'.format(file_name))
+            self.ui.label.setText('File opened: {}'.format(file_name))
 
     def show_pixmap_NoRods(self):
+        # TODO: apply image/label size constraints
+        max_width = self.image.width()
+        max_height = self.image.height()
+        self.ui.label.setMaximumSize(max_width, max_height)
         pixmap = QtGui.QPixmap.fromImage(self.image)
-        self.Photo.setPixmap(pixmap)
-        self.Photo.setScaledContents(True)
-        self.scrollArea.setVisible(True)
-        self.Photo.resize(pixmap.width(), pixmap.height())
+        self.ui.Photo.setPixmap(pixmap)
+        self.ui.Photo.setScaledContents(True)
+        # self.scrollArea.setVisible(True)
+        self.ui.Photo.resize(pixmap.width(), pixmap.height())
         # Resize window to image size
         # self.scaleFactor = 1.0
-        self.fitToWindowAct.setEnabled(True)
+        self.ui.fitToWindowAct.setEnabled(True)
         # 1180, 890
         self.updateActions()
 
@@ -253,7 +165,11 @@ class Ui_MainWindow(object):
                     "y2_gp3"]
         while True:
             if self.data_files is not None:
-                item, ok = QInputDialog.getItem(self.CentralWidget,
+                # item, ok = QInputDialog.getItem(self.CentralWidget,
+                #                                 "select input dialog",
+                #                                 "list of colors", items, 0,
+                #                                 False)
+                item, ok = QInputDialog.getItem(None,
                                                 "select input dialog",
                                                 "list of colors", items, 0,
                                                 False)
@@ -329,14 +245,14 @@ class Ui_MainWindow(object):
             painter.drawText(int(x1) + 5, int(y1) + 5, 20, 20,
                              Qt.TextSingleLine, str(value))
         painter.end()
-        self.Photo.setPixmap(self.rod_pixmap)
-        self.Photo.setScaledContents(True)
-        self.scrollArea.setVisible(True)
-        self.Photo.resize(self.rod_pixmap.width(), self.rod_pixmap.height())
-        self.fitToWindowAct.setEnabled(True)
+        self.ui.Photo.setPixmap(self.rod_pixmap)
+        self.ui.Photo.setScaledContents(True)
+        self.ui.scrollArea.setVisible(True)
+        self.ui.Photo.resize(self.rod_pixmap.width(), self.rod_pixmap.height())
+        self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
-        self.Photo.mousePressEvent = self.getPixel
-        self.Photo.mouseReleaseEvent = self.drawthat
+        self.ui.Photo.mousePressEvent = self.getPixel
+        self.ui.Photo.mouseReleaseEvent = self.drawthat
 
     def show_rods(self, image, df_part2):
         # this is a helper function for show_overlay
@@ -354,7 +270,7 @@ class Ui_MainWindow(object):
             painter.drawText(int(x1), int(y1), 20, 20, Qt.TextSingleLine, str(value))
             # Line edit box
             s = "s" + str(ind_rod)
-            s = QLineEdit(self.Photo)
+            s = QLineEdit(self.ui.Photo)
             s.setDragEnabled(True)
             s.resize(20, 20)
             s.move(int(x2) + 5, int(y2) + 5)
@@ -362,11 +278,11 @@ class Ui_MainWindow(object):
             s.setObjectName("s" + str(ind_rod))
             self.edits.append(s)
         painter.end()
-        self.Photo.setPixmap(pixmap)
-        self.Photo.setScaledContents(True)
-        self.scrollArea.setVisible(True)
-        self.Photo.resize(pixmap.width(), pixmap.height())
-        self.fitToWindowAct.setEnabled(True)
+        self.ui.Photo.setPixmap(pixmap)
+        self.ui.Photo.setScaledContents(True)
+        self.ui.scrollArea.setVisible(True)
+        self.ui.Photo.resize(pixmap.width(), pixmap.height())
+        self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
     def clear_screen(self):
@@ -374,11 +290,11 @@ class Ui_MainWindow(object):
         # if self.edits exists or if its empty
         for s in self.edits:
             s.deleteLater()
-        self.Photo.setPixmap(QtGui.QPixmap.fromImage(self.image))
-        self.Photo.setScaledContents(True)
-        self.scrollArea.setVisible(True)
-        self.Photo.resize(self.image.width(), self.image.height())
-        self.fitToWindowAct.setEnabled(True)
+        self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(self.image))
+        self.ui.Photo.setScaledContents(True)
+        self.ui.scrollArea.setVisible(True)
+        self.ui.Photo.resize(self.image.width(), self.image.height())
+        self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
     # drag enter and drop event are event actions for text box content drag
@@ -396,7 +312,7 @@ class Ui_MainWindow(object):
     # get pixel = mouse press event
     # and draw that = mouse release event for rod drawing
     def getPixel(self, event):
-        self.startPos = self.Photo.mapFromParent(event.pos())
+        self.startPos = self.ui.Photo.mapFromParent(event.pos())
 
     def drawthat(self, event):
         start = self.startPos
@@ -410,14 +326,15 @@ class Ui_MainWindow(object):
         qp.drawLine(start, end)
         # qp.drawPixmap(start, pixmap, overlay)
         qp.end()
-        self.Photo.setPixmap(pixmap)
-        self.Photo.setScaledContents(True)
-        self.scrollArea.setVisible(True)
-        self.Photo.resize(self.image.width(), self.image.height())
-        self.fitToWindowAct.setEnabled(True)
+        self.ui.Photo.setPixmap(pixmap)
+        self.ui.Photo.setScaledContents(True)
+        self.ui.scrollArea.setVisible(True)
+        self.ui.Photo.resize(self.image.width(), self.image.height())
+        self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
         # saving
-        num, ok = QInputDialog.getInt(self.Photo, 'Choose a rod to replace', 'Rod number')
+        num, ok = QInputDialog.getInt(self.ui.Photo, 'Choose a rod to '
+                                                   'replace', 'Rod number')
         filename = (self.fileList[self.CurrentFileIndex])
         file_name = os.path.split(filename)[-1]
         col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3", "y2_gp3"]
@@ -455,16 +372,18 @@ class Ui_MainWindow(object):
                     # Set the image into Label with Pixmap
                     # insert you function here
                     # self.Photo.setPixmap(image2)
-                    self.Photo.setPixmap(QtGui.QPixmap.fromImage(image_next))
-                    self.Photo.setScaledContents(True)
+                    # TODO: apply image/label size constraints
+                    self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(
+                        image_next))
+                    self.ui.Photo.setScaledContents(True)
                     # self.scaleFactor = 1.0
-                    self.scrollArea.setVisible(True)
-                    self.fitToWindowAct.setEnabled(True)
+                    self.ui.scrollArea.setVisible(True)
+                    self.ui.fitToWindowAct.setEnabled(True)
                     self.updateActions()
                     print('Next_file {}:'.format(self.CurrentFileIndex),
                           file_name)
                     # Label stuff
-                    self.label.setText('File: {}'.format(file_name))
+                    self.ui.label.setText('File: {}'.format(file_name))
                     # self.update()
             # TODO: specify targeted Exception
             except:
@@ -477,6 +396,8 @@ class Ui_MainWindow(object):
 
     def show_prev(self):
         if self.fileList:
+            # FIXME: Index not jumping to the last entry in the list when
+            #  the previous button is pressed on the first element
             try:
                 self.CurrentFileIndex -= 1  # Decrements file index
                 # Chooses previous image with specified extension
@@ -491,17 +412,19 @@ class Ui_MainWindow(object):
                     self.fileList.remove(filename)
                     self.show_prev()
                 else:
+                    # TODO: apply image/label size constraints
                     # Set the image into Label with Pixmap
-                    self.Photo.setPixmap(QtGui.QPixmap.fromImage(image_prev))
-                    self.Photo.setScaledContents(True)
+                    self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(
+                        image_prev))
+                    self.ui.Photo.setScaledContents(True)
                     # self.scaleFactor = 1.0
-                    self.scrollArea.setVisible(True)
-                    self.fitToWindowAct.setEnabled(True)
+                    self.ui.scrollArea.setVisible(True)
+                    self.ui.fitToWindowAct.setEnabled(True)
                     self.updateActions()
                     print('Prev_file {}:'.format(self.CurrentFileIndex), file_name)
-                    self.label.setText('File: {}'.format(file_name))
+                    self.ui.label.setText('File: {}'.format(file_name))
             # TODO: specify targeted Exception
-            except:
+            except Exception as e:
                 # the iterator has finished, restart it
                 self.CurrentFileIndex = -1
                 self.show_prev()
@@ -516,29 +439,31 @@ class Ui_MainWindow(object):
         self.scaleImage(0.8)
 
     def normalSize(self):
-        self.Photo.adjustSize()
+        self.ui.Photo.adjustSize()
         self.scaleFactor = 1.0
 
     def fitToWindow(self):
-        fitToWindow = self.fitToWindowAct.isChecked()
-        self.scrollArea.setWidgetResizable(fitToWindow)
+        fitToWindow = self.ui.fitToWindowAct.isChecked()
+        self.ui.scrollArea.setWidgetResizable(fitToWindow)
         if not fitToWindow:
             self.normalSize()
-
         self.updateActions()
 
     def updateActions(self):
-        self.actionzoom_in.setEnabled(not self.fitToWindowAct.isChecked())
-        self.actionzoom_in.setEnabled(not self.fitToWindowAct.isChecked())
-        self.normalSizeAct.setEnabled(not self.fitToWindowAct.isChecked())
+        self.ui.actionzoom_in.setEnabled(not
+                                         self.ui.fitToWindowAct.isChecked())
+        self.ui.actionzoom_in.setEnabled(not
+                                         self.ui.fitToWindowAct.isChecked())
+        self.ui.normalSizeAct.setEnabled(not
+                                         self.ui.fitToWindowAct.isChecked())
 
     def scaleImage(self, factor):
         self.scaleFactor *= factor
-        self.Photo.resize(self.scaleFactor * self.Photo.pixmap().size())
-        self.adjustScrollBar(self.scrollArea.horizontalScrollBar(), factor)
-        self.adjustScrollBar(self.scrollArea.verticalScrollBar(), factor)
-        self.actionzoom_in.setEnabled(self.scaleFactor < 3.0)
-        self.actionzoom_out.setEnabled(self.scaleFactor > 0.333)
+        self.ui.Photo.resize(self.scaleFactor * self.ui.Photo.pixmap().size())
+        self.adjustScrollBar(self.ui.scrollArea.horizontalScrollBar(), factor)
+        self.adjustScrollBar(self.ui.scrollArea.verticalScrollBar(), factor)
+        self.ui.actionzoom_in.setEnabled(self.scaleFactor < 3.0)
+        self.ui.actionzoom_out.setEnabled(self.scaleFactor > 0.333)
 
     def adjustScrollBar(self, scrollBar, factor):
         scrollBar.setValue(int(factor * scrollBar.value() +
@@ -549,11 +474,13 @@ class Ui_MainWindow(object):
 
 
 if __name__ == "__main__":
-    import sys
-
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setup_ui(MainWindow)
-    MainWindow.show()
+    main_window = RodTrack_Window()
+    main_window.show()
     sys.exit(app.exec_())
+    # app = QtWidgets.QApplication(sys.argv)
+    # MainWindow = QtWidgets.QMainWindow()
+    # ui = Ui_MainWindow()
+    # ui.setup_ui(MainWindow)
+    # MainWindow.show()
+    # sys.exit(app.exec_())
