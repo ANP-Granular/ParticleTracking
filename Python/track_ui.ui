@@ -159,8 +159,8 @@
              <height>475</height>
             </rect>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_2">
-            <item>
+           <layout class="QGridLayout" name="gridLayout_2">
+            <item row="0" column="0">
              <widget class="QLabel" name="Photo">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
@@ -178,7 +178,7 @@
                <enum>QFrame::Plain</enum>
               </property>
               <property name="text">
-               <string>Image containing label</string>
+               <string>Please open an image file</string>
               </property>
              </widget>
             </item>
