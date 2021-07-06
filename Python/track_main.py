@@ -9,7 +9,7 @@ from PyQt5.QtCore import *
 import pandas as pd
 from PyQt5.QtGui import QMouseEvent
 from PyQt5 import QtGui
-from PyQt5.QtCore import QRect, Qt, QMimeData
+from PyQt5.QtCore import QRect, Qt, QMimeData, QPointF
 from PyQt5.QtGui import QPainter, QImage, QDrag
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import numpy as np
@@ -43,6 +43,7 @@ class RodTrack_Window(QtWidgets.QMainWindow):
         self.image = None
         self.rod_pixmap = None
         self.fileList = None
+        self.track = True
 
         # Signal to activate actions
         self.ui.pushprevious.clicked.connect(self.show_prev)
@@ -56,7 +57,8 @@ class RodTrack_Window(QtWidgets.QMainWindow):
         self.ui.actionopen.triggered.connect(self.file_open)
         self.ui.normalSizeAct.triggered.connect(self.normalSize)
         self.ui.fitToWindowAct.triggered.connect(self.fitToWindow)
-        self.ui.Photo.mousePressEvent = self.getPixel
+        # self.ui.Photo.mousePressEvent = self.getPixel
+        self.ui.Photo.mouseMoveEvent = self.move_mouse
 
 #         # This is a bit tricky, AcceptDrops is a required function for
 #         # drag and drop of QLineEdit textbox contents into another textbox
@@ -252,7 +254,6 @@ class RodTrack_Window(QtWidgets.QMainWindow):
         self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
         self.ui.Photo.mousePressEvent = self.getPixel
-        self.ui.Photo.mouseReleaseEvent = self.drawthat
 
     def show_rods(self, image, df_part2):
         # this is a helper function for show_overlay
@@ -309,39 +310,55 @@ class RodTrack_Window(QtWidgets.QMainWindow):
         event.accept()
         # self.Tbox.setText(event.mimeData().text())
 
-    # get pixel = mouse press event
-    # and draw that = mouse release event for rod drawing
-    def getPixel(self, event):
-        self.startPos = self.ui.Photo.mapFromParent(event.pos())
+    def move_mouse(self, mouse_event):
+        if self.startPos is not None:
+            end = mouse_event.pos()
+            pixmap = QPixmap(self.rod_pixmap)
+            qp = QPainter(pixmap)
+            pen = QPen(Qt.white, 5)
+            qp.setPen(pen)
+            qp.drawLine(self.startPos, end)
+            qp.end()
+            self.ui.Photo.setPixmap(pixmap)
+            self.ui.Photo.setScaledContents(True)
+            self.ui.scrollArea.setVisible(True)
+            self.ui.Photo.resize(self.image.width(), self.image.height())
+            self.ui.fitToWindowAct.setEnabled(True)
+            self.updateActions()
 
-    def drawthat(self, event):
-        start = self.startPos
-        end = event.pos()
-        # Magic happens here
-        pixmap = QPixmap(self.rod_pixmap)
-        qp = QPainter(pixmap)
-        pen = QPen(Qt.white, 5)
-        qp.setPen(pen)
-        # qp.drawText(start.x(), start.y(), str(self.CurrentFileIndex))
-        qp.drawLine(start, end)
-        # qp.drawPixmap(start, pixmap, overlay)
-        qp.end()
-        self.ui.Photo.setPixmap(pixmap)
-        self.ui.Photo.setScaledContents(True)
-        self.ui.scrollArea.setVisible(True)
-        self.ui.Photo.resize(self.image.width(), self.image.height())
-        self.ui.fitToWindowAct.setEnabled(True)
-        self.updateActions()
+    # Note: getPixel gets connected to MousePressed event in show_pixmap
+    def getPixel(self, event):
+        if self.startPos is None:
+            self.startPos = event.pos()
+        else:
+            if event.button() == QtCore.Qt.RightButton:
+                # Abort current line drawing
+                self.startPos = None
+                pixmap = QPixmap(self.rod_pixmap)
+                self.ui.Photo.setPixmap(pixmap)
+                self.ui.Photo.setScaledContents(True)
+                self.ui.scrollArea.setVisible(True)
+                self.ui.Photo.resize(self.image.width(), self.image.height())
+                self.ui.fitToWindowAct.setEnabled(True)
+                self.updateActions()
+            else:
+                # Finish line and save it
+                self.save_line(self.startPos, event.pos())
+                self.startPos = None
+
+    def save_line(self, start, end):
         # saving
         num, ok = QInputDialog.getInt(self.ui.Photo, 'Choose a rod to '
-                                                   'replace', 'Rod number')
+                                                     'replace', 'Rod number')
         filename = (self.fileList[self.CurrentFileIndex])
         file_name = os.path.split(filename)[-1]
-        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3", "y2_gp3"]
+        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3",
+                    "y2_gp3"]
         # FIXME: hard coded path without error handling
         df_part = pd.read_csv('../SampleData/csv/rods_df_{:s}.csv'.format(
             self.color))
-        df_part2 = df_part[df_part["frame"] == int(file_name[1:4])].reset_index()
+        df_part2 = df_part[
+            df_part["frame"] == int(file_name[1:4])].reset_index()
         if ok:
             # num is the number of the rod
             df_part2['x1_gp3'][df_part2["particle"] == num] = int(start.x())
@@ -478,9 +495,3 @@ if __name__ == "__main__":
     main_window = RodTrack_Window()
     main_window.show()
     sys.exit(app.exec_())
-    # app = QtWidgets.QApplication(sys.argv)
-    # MainWindow = QtWidgets.QMainWindow()
-    # ui = Ui_MainWindow()
-    # ui.setup_ui(MainWindow)
-    # MainWindow.show()
-    # sys.exit(app.exec_())

@@ -78,6 +78,7 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.Photo.sizePolicy().hasHeightForWidth())
         self.Photo.setSizePolicy(sizePolicy)
+        self.Photo.setMouseTracking(True)
         self.Photo.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.Photo.setFrameShadow(QtWidgets.QFrame.Plain)
         self.Photo.setObjectName("Photo")
