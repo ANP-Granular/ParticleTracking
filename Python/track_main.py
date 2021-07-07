@@ -1,48 +1,41 @@
 import os
 import sys
-import glob
-from PyQt5 import QtCore, QtGui, QtWidgets, Qt
-from PyQt5.QtGui import QPalette, QImage, QPainter, QPixmap, QPen
+from PyQt5 import QtCore, QtWidgets, Qt
+from PyQt5.QtGui import QPixmap, QPen
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from PyQt5.QtCore import *
 import pandas as pd
-from PyQt5.QtGui import QMouseEvent
 from PyQt5 import QtGui
-from PyQt5.QtCore import QRect, Qt, QMimeData
-from PyQt5.QtGui import QPainter, QImage, QDrag
-from PyQt5.QtWidgets import QApplication, QMainWindow
-import numpy as np
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter, QImage
 from track_ui import Ui_MainWindow
 
-class RodTrack_Window(QtWidgets.QMainWindow):
+
+class RodTrackWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
+        self.setWindowState(QtCore.Qt.WindowMaximized)
+        self.setFocus()
         # This is a bit tricky, AcceptDrops is a required function for
         # drag and drop of QLineEdit textbox contents into another textbox
         # but i set this function below to pass, because the function was not
         # found
         self.setAcceptDrops(True)
         # Initialize
-        # self.CentralWidget = QtWidgets.QWidget(MainWindow)
-        # start position set to none, did not check if the code works without
-        # this statement
         self.startPos = None
         # scale factor for image
-        self.scaleFactor = 0.0
-        # very important variable that keeps track of the current image that's
-        # displayed
+        self.scaleFactor = 1.0
+        # tracker of the current image that's displayed
         self.CurrentFileIndex = 0
-        # self.data_files = '../SampleData/csv/'
         self.data_files = None
         self.data_file_name = 'rods_df_{:s}.csv'
         self.color = "black"
         self.image = None
         self.rod_pixmap = None
         self.fileList = None
+        self.track = True
 
         # Signal to activate actions
         self.ui.pushprevious.clicked.connect(self.show_prev)
@@ -56,48 +49,7 @@ class RodTrack_Window(QtWidgets.QMainWindow):
         self.ui.actionopen.triggered.connect(self.file_open)
         self.ui.normalSizeAct.triggered.connect(self.normalSize)
         self.ui.fitToWindowAct.triggered.connect(self.fitToWindow)
-        self.ui.Photo.mousePressEvent = self.getPixel
-
-#         # This is a bit tricky, AcceptDrops is a required function for
-#         # drag and drop of QLineEdit textbox contents into another textbox
-#         # but i set this function below to pass, because the function was not
-#         # found
-#         self.setAcceptDrops(True)
-#
-#     def setup_ui(self, MainWindow):
-#         MainWindow.setObjectName("MainWindow")
-#         MainWindow.setWindowState(QtCore.Qt.WindowMaximized)
-#         MainWindow.setFocus()
-
-#         # Scroll area properties
-#         self.scrollArea.setBackgroundRole(QPalette.Dark)
-#         self.scrollArea.setGeometry(QtCore.QRect(50, 50, 1180, 890))
-#         self.scrollArea.setWidget(self.Photo)
-#         self.scrollArea.setVisible(False)
-
-#         MainWindow.setCentralWidget(self.CentralWidget)
-#         # Menu properties
-#         self.menubar = QtWidgets.QMenuBar(MainWindow)
-#         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
-#         self.menubar.setObjectName("menubar")
-#         self.menufile = QtWidgets.QMenu(self.menubar)
-#         self.menufile.setObjectName("menufile")
-#         self.menuEdit = QtWidgets.QMenu(self.menubar)
-#         self.menuEdit.setObjectName("menuEdit")
-#         self.menuView = QtWidgets.QMenu(self.menubar)
-#         self.menuView.setObjectName("menuView")
-#         MainWindow.setMenuBar(self.menubar)
-#         self.statusbar = QtWidgets.QStatusBar(MainWindow)
-#         self.statusbar.setObjectName("statusbar")
-#         MainWindow.setStatusBar(self.statusbar)
-#
-#         self.retranslateUi(MainWindow)
-#         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-#
-#     def retranslateUi(self, MainWindow):
-#         _translate = QtCore.QCoreApplication.translate
-#         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.ui.Photo.mouseMoveEvent = self.move_mouse
 
     def file_open(self):
         # opens directory to select image
@@ -144,7 +96,7 @@ class RodTrack_Window(QtWidgets.QMainWindow):
             self.ui.label.setText('File opened: {}'.format(file_name))
 
     def show_pixmap_NoRods(self):
-        # TODO: apply image/label size constraints
+        # TODO: apply image/label size or aspect ratio constraints
         max_width = self.image.width()
         max_height = self.image.height()
         self.ui.label.setMaximumSize(max_width, max_height)
@@ -156,7 +108,6 @@ class RodTrack_Window(QtWidgets.QMainWindow):
         # Resize window to image size
         # self.scaleFactor = 1.0
         self.ui.fitToWindowAct.setEnabled(True)
-        # 1180, 890
         self.updateActions()
 
     def show_overlay(self, with_number=False):
@@ -165,10 +116,6 @@ class RodTrack_Window(QtWidgets.QMainWindow):
                     "y2_gp3"]
         while True:
             if self.data_files is not None:
-                # item, ok = QInputDialog.getItem(self.CentralWidget,
-                #                                 "select input dialog",
-                #                                 "list of colors", items, 0,
-                #                                 False)
                 item, ok = QInputDialog.getItem(None,
                                                 "select input dialog",
                                                 "list of colors", items, 0,
@@ -225,6 +172,7 @@ class RodTrack_Window(QtWidgets.QMainWindow):
                 self.data_files = QFileDialog.getExistingDirectory(
                     None, 'Choose Folder with position data', '') + '/'
                 if self.data_files == '/':
+                    self.data_files = None
                     return
 
     def show_pixmap(self, image, df_part2):
@@ -252,7 +200,6 @@ class RodTrack_Window(QtWidgets.QMainWindow):
         self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
         self.ui.Photo.mousePressEvent = self.getPixel
-        self.ui.Photo.mouseReleaseEvent = self.drawthat
 
     def show_rods(self, image, df_part2):
         # this is a helper function for show_overlay
@@ -309,49 +256,62 @@ class RodTrack_Window(QtWidgets.QMainWindow):
         event.accept()
         # self.Tbox.setText(event.mimeData().text())
 
-    # get pixel = mouse press event
-    # and draw that = mouse release event for rod drawing
-    def getPixel(self, event):
-        self.startPos = self.ui.Photo.mapFromParent(event.pos())
+    def move_mouse(self, mouse_event):
+        if self.startPos is not None:
+            end = mouse_event.pos()
+            pixmap = QPixmap(self.rod_pixmap)
+            qp = QPainter(pixmap)
+            pen = QPen(Qt.white, 5)
+            qp.setPen(pen)
+            qp.drawLine(self.startPos, end)
+            qp.end()
+            self.ui.Photo.setPixmap(pixmap)
+            self.ui.Photo.setScaledContents(True)
+            self.ui.scrollArea.setVisible(True)
+            self.ui.Photo.resize(self.image.width(), self.image.height())
+            self.ui.fitToWindowAct.setEnabled(True)
+            self.updateActions()
 
-    def drawthat(self, event):
-        start = self.startPos
-        end = event.pos()
-        # Magic happens here
-        pixmap = QPixmap(self.rod_pixmap)
-        qp = QPainter(pixmap)
-        pen = QPen(Qt.white, 5)
-        qp.setPen(pen)
-        # qp.drawText(start.x(), start.y(), str(self.CurrentFileIndex))
-        qp.drawLine(start, end)
-        # qp.drawPixmap(start, pixmap, overlay)
-        qp.end()
-        self.ui.Photo.setPixmap(pixmap)
-        self.ui.Photo.setScaledContents(True)
-        self.ui.scrollArea.setVisible(True)
-        self.ui.Photo.resize(self.image.width(), self.image.height())
-        self.ui.fitToWindowAct.setEnabled(True)
-        self.updateActions()
-        # saving
+    # Note: getPixel gets connected to MousePressed event in show_pixmap
+    def getPixel(self, event):
+        if self.startPos is None:
+            self.startPos = event.pos()
+        else:
+            if event.button() == QtCore.Qt.RightButton:
+                # Abort current line drawing
+                self.startPos = None
+                pixmap = QPixmap(self.rod_pixmap)
+                self.ui.Photo.setPixmap(pixmap)
+                self.ui.Photo.setScaledContents(True)
+                self.ui.scrollArea.setVisible(True)
+                self.ui.Photo.resize(self.image.width(), self.image.height())
+                self.ui.fitToWindowAct.setEnabled(True)
+                self.updateActions()
+            else:
+                # Finish line and save it
+                self.save_line(self.startPos, event.pos())
+                self.startPos = None
+
+    def save_line(self, start, end):
+        # Get intended rod number from user
         num, ok = QInputDialog.getInt(self.ui.Photo, 'Choose a rod to '
-                                                   'replace', 'Rod number')
+                                                     'replace', 'Rod number')
         filename = (self.fileList[self.CurrentFileIndex])
         file_name = os.path.split(filename)[-1]
-        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3", "y2_gp3"]
-        # FIXME: hard coded path without error handling
-        df_part = pd.read_csv('../SampleData/csv/rods_df_{:s}.csv'.format(
-            self.color))
-        df_part2 = df_part[df_part["frame"] == int(file_name[1:4])].reset_index()
+        df_part = pd.read_csv(self.data_files + self.data_file_name.format(
+            self.color), index_col=0)
         if ok:
             # num is the number of the rod
-            df_part2['x1_gp3'][df_part2["particle"] == num] = int(start.x())
-            df_part2['x2_gp3'][df_part2["particle"] == num] = int(start.y())
-            df_part2['y1_gp3'][df_part2["particle"] == num] = int(end.x())
-            df_part2['y2_gp3'][df_part2["particle"] == num] = int(end.y())
-            df_part[df_part["frame"] == int(file_name[1:4])] = df_part2
-            # FIXME: hard coded path without error handling
-            df_part.to_csv('../SampleData/csv/rods_df_{:s}.csv'.format(
-                self.color))
+            df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                        (df_part.particle == num), "x1_gp3"] = start.x()/10.0
+            df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                        (df_part.particle == num), "x2_gp3"] = end.x()/10.0
+            df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                        (df_part.particle == num), "y1_gp3"] = start.y()/10.0
+            df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                        (df_part.particle == num), "y2_gp3"] = end.y()/10.0
+            df_part.to_csv(self.data_files + self.data_file_name.format(
+                self.color), index_label="")
 
     def show_next(self):
         if self.fileList:
@@ -385,8 +345,7 @@ class RodTrack_Window(QtWidgets.QMainWindow):
                     # Label stuff
                     self.ui.label.setText('File: {}'.format(file_name))
                     # self.update()
-            # TODO: specify targeted Exception
-            except:
+            except IndexError:
                 # the iterator has finished, restart it
                 self.CurrentFileIndex = -1
                 self.show_next()
@@ -396,8 +355,6 @@ class RodTrack_Window(QtWidgets.QMainWindow):
 
     def show_prev(self):
         if self.fileList:
-            # FIXME: Index not jumping to the last entry in the list when
-            #  the previous button is pressed on the first element
             try:
                 self.CurrentFileIndex -= 1  # Decrements file index
                 # Chooses previous image with specified extension
@@ -412,7 +369,7 @@ class RodTrack_Window(QtWidgets.QMainWindow):
                     self.fileList.remove(filename)
                     self.show_prev()
                 else:
-                    # TODO: apply image/label size constraints
+                    # TODO: apply image/label size or aspect ratio constraints
                     # Set the image into Label with Pixmap
                     self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(
                         image_prev))
@@ -423,13 +380,12 @@ class RodTrack_Window(QtWidgets.QMainWindow):
                     self.updateActions()
                     print('Prev_file {}:'.format(self.CurrentFileIndex), file_name)
                     self.ui.label.setText('File: {}'.format(file_name))
-            # TODO: specify targeted Exception
-            except Exception as e:
+            except IndexError:
                 # the iterator has finished, restart it
-                self.CurrentFileIndex = -1
+                self.CurrentFileIndex = 0
                 self.show_prev()
         else:
-            # no file list found, load an image
+            # no file list found, select an image file
             self.file_open()
 
     def zoomIn(self):
@@ -475,12 +431,6 @@ class RodTrack_Window(QtWidgets.QMainWindow):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    main_window = RodTrack_Window()
+    main_window = RodTrackWindow()
     main_window.show()
     sys.exit(app.exec_())
-    # app = QtWidgets.QApplication(sys.argv)
-    # MainWindow = QtWidgets.QMainWindow()
-    # ui = Ui_MainWindow()
-    # ui.setup_ui(MainWindow)
-    # MainWindow.show()
-    # sys.exit(app.exec_())
