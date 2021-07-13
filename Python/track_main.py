@@ -44,8 +44,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.RodNumber.clicked.connect(lambda: self.show_overlay(
             with_number=True))
         self.ui.ClearSave.clicked.connect(self.clear_screen)
-        self.ui.actionzoom_in.triggered.connect(self.zoomIn)
-        self.ui.actionzoom_out.triggered.connect(self.zoomOut)
+        self.ui.actionzoom_in.triggered.connect(lambda: self.scaleImage(
+            factor=1.25))
+        self.ui.actionzoom_out.triggered.connect(lambda: self.scaleImage(
+            factor=0.8))
         self.ui.actionopen.triggered.connect(self.file_open)
         self.ui.normalSizeAct.triggered.connect(self.normalSize)
         self.ui.fitToWindowAct.triggered.connect(self.fitToWindow)
@@ -102,8 +104,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.label.setMaximumSize(max_width, max_height)
         pixmap = QtGui.QPixmap.fromImage(self.image)
         self.ui.Photo.setPixmap(pixmap)
-        self.ui.Photo.setScaledContents(True)
-        # self.scrollArea.setVisible(True)
         self.ui.Photo.resize(pixmap.width(), pixmap.height())
         # Resize window to image size
         # self.scaleFactor = 1.0
@@ -194,8 +194,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                              Qt.TextSingleLine, str(value))
         painter.end()
         self.ui.Photo.setPixmap(self.rod_pixmap)
-        self.ui.Photo.setScaledContents(True)
-        self.ui.scrollArea.setVisible(True)
         self.ui.Photo.resize(self.rod_pixmap.width(), self.rod_pixmap.height())
         self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
@@ -226,20 +224,16 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.edits.append(s)
         painter.end()
         self.ui.Photo.setPixmap(pixmap)
-        self.ui.Photo.setScaledContents(True)
-        self.ui.scrollArea.setVisible(True)
         self.ui.Photo.resize(pixmap.width(), pixmap.height())
         self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
     def clear_screen(self):
-
         # if self.edits exists or if its empty
         for s in self.edits:
             s.deleteLater()
         self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(self.image))
-        self.ui.Photo.setScaledContents(True)
-        self.ui.scrollArea.setVisible(True)
+        # TODO: Check whether this line is needed
         self.ui.Photo.resize(self.image.width(), self.image.height())
         self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
@@ -266,8 +260,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             qp.drawLine(self.startPos, end)
             qp.end()
             self.ui.Photo.setPixmap(pixmap)
-            self.ui.Photo.setScaledContents(True)
-            self.ui.scrollArea.setVisible(True)
+            # TODO: Check whether this line is needed
             self.ui.Photo.resize(self.image.width(), self.image.height())
             self.ui.fitToWindowAct.setEnabled(True)
             self.updateActions()
@@ -282,8 +275,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.startPos = None
                 pixmap = QPixmap(self.rod_pixmap)
                 self.ui.Photo.setPixmap(pixmap)
-                self.ui.Photo.setScaledContents(True)
-                self.ui.scrollArea.setVisible(True)
+                # TODO: Check whether this line is needed
                 self.ui.Photo.resize(self.image.width(), self.image.height())
                 self.ui.fitToWindowAct.setEnabled(True)
                 self.updateActions()
@@ -329,15 +321,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.fileList.remove(filename)
                     self.show_next()
                 else:
-                    # Set the image into Label with Pixmap
-                    # insert you function here
-                    # self.Photo.setPixmap(image2)
                     # TODO: apply image/label size constraints
                     self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(
                         image_next))
-                    self.ui.Photo.setScaledContents(True)
-                    # self.scaleFactor = 1.0
-                    self.ui.scrollArea.setVisible(True)
+                    self.scaleFactor = 1.0
                     self.ui.fitToWindowAct.setEnabled(True)
                     self.updateActions()
                     print('Next_file {}:'.format(self.CurrentFileIndex),
@@ -373,9 +360,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Set the image into Label with Pixmap
                     self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(
                         image_prev))
-                    self.ui.Photo.setScaledContents(True)
-                    # self.scaleFactor = 1.0
-                    self.ui.scrollArea.setVisible(True)
+                    self.scaleFactor = 1.0
                     self.ui.fitToWindowAct.setEnabled(True)
                     self.updateActions()
                     print('Prev_file {}:'.format(self.CurrentFileIndex), file_name)
@@ -387,12 +372,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         else:
             # no file list found, select an image file
             self.file_open()
-
-    def zoomIn(self):
-        self.scaleImage(1.25)
-
-    def zoomOut(self):
-        self.scaleImage(0.8)
 
     def normalSize(self):
         self.ui.Photo.adjustSize()
