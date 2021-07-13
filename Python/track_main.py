@@ -6,9 +6,17 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import pandas as pd
 from PyQt5 import QtGui
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPainter, QImage
 from track_ui import Ui_MainWindow
+from rodnumberwidget import RodNumberWidget
+
+GENERAL_STYLE = "background-color: transparent;" \
+                    "color: cyan;"
+SELECTED_STYLE = "background-color: transparent;" \
+                    "color: white;"
+CONFLICT_STYLE = "background-color: transparent;" \
+                    "color: red;"
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
@@ -36,6 +44,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.rod_pixmap = None
         self.fileList = None
         self.track = True
+        self.edits = None
 
         # Signal to activate actions
         self.ui.pushprevious.clicked.connect(self.show_prev)
@@ -180,16 +189,25 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         pen = QPen(Qt.cyan, 3)
         painter.setPen(pen)
         # insert for loop
+        if self.edits is not None:
+            for rn in self.edits:
+                rn.deleteLater()
+        self.edits = []
         for ind_rod, value in enumerate(df_part2['particle']):
-            # theres some problem with the dimension scaling
-            # So Dimtry asked us to multiple the rod values by 10
+            # saved rod values must be scaled to fit the image shown
             x1 = df_part2['x1_gp3'][ind_rod] * 10.0 * self.scaleFactor
             x2 = df_part2['x2_gp3'][ind_rod] * 10.0 * self.scaleFactor
             y1 = df_part2['y1_gp3'][ind_rod] * 10.0 * self.scaleFactor
             y2 = df_part2['y2_gp3'][ind_rod] * 10.0 * self.scaleFactor
             painter.drawLine(int(x1), int(y1), int(x2), int(y2))
-            painter.drawText(int(x1) + 5, int(y1) + 5, 20, 20,
-                             Qt.TextSingleLine, str(value))
+
+            # Add rod numbers to screen
+            ident = RodNumberWidget(self.ui.Photo, str(value), QPoint(int(
+                x1), int(y1)))
+            ident.setStyleSheet(GENERAL_STYLE)
+            ident.setObjectName(f"rn_{ind_rod}")
+            ident.show()
+            self.edits.append(ident)
         painter.end()
         self.ui.Photo.setPixmap(self.rod_pixmap)
         self.ui.fitToWindowAct.setEnabled(True)
@@ -229,12 +247,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.updateActions()
 
     def clear_screen(self):
-        # if self.edits exists or if its empty
-        for s in self.edits:
-            s.deleteLater()
-        self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(self.image))
-        self.ui.fitToWindowAct.setEnabled(True)
-        self.updateActions()
+        if self.edits is not None:
+            for s in self.edits:
+                s.deleteLater()
+            self.edits = None
+            self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(self.image))
+            self.ui.fitToWindowAct.setEnabled(True)
+            self.updateActions()
 
     # drag enter and drop event are event actions for text box content drag
     # and drop
@@ -393,6 +412,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             int(old_pixmap.height() * self.scaleFactor),
             QtCore.Qt.SmoothTransformation)
         self.ui.Photo.setPixmap(new_pixmap)
+
+        # Update rod number positions
+        if self.edits is not None:
+            for rn in self.edits:
+                rn.move(QPoint(int(rn.x()*factor), int(rn.y()*factor)))
+
+        if self.rod_pixmap is not None:
+            self.rod_pixmap = new_pixmap
+        # Disable zoom, if zoomed too much
         self.ui.actionzoom_in.setEnabled(self.scaleFactor < 9.0)
         self.ui.actionzoom_out.setEnabled(self.scaleFactor > 0.11)
 
