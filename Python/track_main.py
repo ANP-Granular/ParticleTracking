@@ -98,15 +98,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.label.setText('File opened: {}'.format(file_name))
 
     def show_pixmap_NoRods(self):
-        # TODO: apply image/label size or aspect ratio constraints
-        max_width = self.image.width()
-        max_height = self.image.height()
-        self.ui.label.setMaximumSize(max_width, max_height)
         pixmap = QtGui.QPixmap.fromImage(self.image)
         self.ui.Photo.setPixmap(pixmap)
-        self.ui.Photo.resize(pixmap.width(), pixmap.height())
-        # Resize window to image size
-        # self.scaleFactor = 1.0
+        self.scaleFactor = 1.0
         self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
@@ -117,7 +111,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         while True:
             if self.data_files is not None:
                 item, ok = QInputDialog.getItem(None,
-                                                "select input dialog",
+                                                "Select a color to display",
                                                 "list of colors", items, 0,
                                                 False)
                 if not ok:
@@ -178,6 +172,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def show_pixmap(self, image, df_part2):
         # show_pixmap is called to draw the rods over the image
         self.rod_pixmap = QPixmap(image)
+        self.rod_pixmap = self.rod_pixmap.scaledToHeight(
+            int(self.rod_pixmap.height() * self.scaleFactor),
+            QtCore.Qt.SmoothTransformation)
+
         painter = QPainter(self.rod_pixmap)
         pen = QPen(Qt.cyan, 3)
         painter.setPen(pen)
@@ -185,16 +183,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         for ind_rod, value in enumerate(df_part2['particle']):
             # theres some problem with the dimension scaling
             # So Dimtry asked us to multiple the rod values by 10
-            x1 = df_part2['x1_gp3'][ind_rod] * 10.0
-            x2 = df_part2['x2_gp3'][ind_rod] * 10.0
-            y1 = df_part2['y1_gp3'][ind_rod] * 10.0
-            y2 = df_part2['y2_gp3'][ind_rod] * 10.0
+            x1 = df_part2['x1_gp3'][ind_rod] * 10.0 * self.scaleFactor
+            x2 = df_part2['x2_gp3'][ind_rod] * 10.0 * self.scaleFactor
+            y1 = df_part2['y1_gp3'][ind_rod] * 10.0 * self.scaleFactor
+            y2 = df_part2['y2_gp3'][ind_rod] * 10.0 * self.scaleFactor
             painter.drawLine(int(x1), int(y1), int(x2), int(y2))
             painter.drawText(int(x1) + 5, int(y1) + 5, 20, 20,
                              Qt.TextSingleLine, str(value))
         painter.end()
         self.ui.Photo.setPixmap(self.rod_pixmap)
-        self.ui.Photo.resize(self.rod_pixmap.width(), self.rod_pixmap.height())
         self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
         self.ui.Photo.mousePressEvent = self.getPixel
@@ -202,17 +199,20 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def show_rods(self, image, df_part2):
         # this is a helper function for show_overlay
         pixmap = QPixmap(image)
+        pixmap = pixmap.scaledToHeight(int(pixmap.height() * self.scaleFactor),
+                                       QtCore.Qt.SmoothTransformation)
         painter = QPainter(pixmap)
         pen = QPen(Qt.cyan, 3)
         painter.setPen(pen)
         self.edits = []
         for ind_rod, value in enumerate(df_part2['particle']):
-            x1 = df_part2['x1_gp3'][ind_rod] * 10.0
-            x2 = df_part2['x2_gp3'][ind_rod] * 10.0
-            y1 = df_part2['y1_gp3'][ind_rod] * 10.0
-            y2 = df_part2['y2_gp3'][ind_rod] * 10.0
+            x1 = df_part2['x1_gp3'][ind_rod] * 10.0 * self.scaleFactor
+            x2 = df_part2['x2_gp3'][ind_rod] * 10.0 * self.scaleFactor
+            y1 = df_part2['y1_gp3'][ind_rod] * 10.0 * self.scaleFactor
+            y2 = df_part2['y2_gp3'][ind_rod] * 10.0 * self.scaleFactor
             painter.drawLine(int(x1), int(y1), int(x2), int(y2))
-            painter.drawText(int(x1), int(y1), 20, 20, Qt.TextSingleLine, str(value))
+            painter.drawText(int(x1), int(y1), 20, 20, Qt.TextSingleLine,
+                             str(value))
             # Line edit box
             s = "s" + str(ind_rod)
             s = QLineEdit(self.ui.Photo)
@@ -224,7 +224,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.edits.append(s)
         painter.end()
         self.ui.Photo.setPixmap(pixmap)
-        self.ui.Photo.resize(pixmap.width(), pixmap.height())
+        # self.ui.Photo.resize(pixmap.width(), pixmap.height())
         self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
@@ -233,8 +233,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         for s in self.edits:
             s.deleteLater()
         self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(self.image))
-        # TODO: Check whether this line is needed
-        self.ui.Photo.resize(self.image.width(), self.image.height())
         self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
@@ -260,10 +258,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             qp.drawLine(self.startPos, end)
             qp.end()
             self.ui.Photo.setPixmap(pixmap)
-            # TODO: Check whether this line is needed
-            self.ui.Photo.resize(self.image.width(), self.image.height())
-            self.ui.fitToWindowAct.setEnabled(True)
-            self.updateActions()
 
     # Note: getPixel gets connected to MousePressed event in show_pixmap
     def getPixel(self, event):
@@ -275,10 +269,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.startPos = None
                 pixmap = QPixmap(self.rod_pixmap)
                 self.ui.Photo.setPixmap(pixmap)
-                # TODO: Check whether this line is needed
-                self.ui.Photo.resize(self.image.width(), self.image.height())
-                self.ui.fitToWindowAct.setEnabled(True)
-                self.updateActions()
             else:
                 # Finish line and save it
                 self.save_line(self.startPos, event.pos())
@@ -295,13 +285,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if ok:
             # num is the number of the rod
             df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                        (df_part.particle == num), "x1_gp3"] = start.x()/10.0
+                        (df_part.particle == num), "x1_gp3"] = \
+                start.x()/10.0/self.scaleFactor
             df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                        (df_part.particle == num), "x2_gp3"] = end.x()/10.0
+                        (df_part.particle == num), "x2_gp3"] = \
+                end.x()/10.0/self.scaleFactor
             df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                        (df_part.particle == num), "y1_gp3"] = start.y()/10.0
+                        (df_part.particle == num), "y1_gp3"] = \
+                start.y()/10.0/self.scaleFactor
             df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                        (df_part.particle == num), "y2_gp3"] = end.y()/10.0
+                        (df_part.particle == num), "y2_gp3"] = \
+                end.y()/10.0/self.scaleFactor
             df_part.to_csv(self.data_files + self.data_file_name.format(
                 self.color), index_label="")
 
@@ -321,7 +315,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.fileList.remove(filename)
                     self.show_next()
                 else:
-                    # TODO: apply image/label size constraints
                     self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(
                         image_next))
                     self.scaleFactor = 1.0
@@ -356,7 +349,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.fileList.remove(filename)
                     self.show_prev()
                 else:
-                    # TODO: apply image/label size or aspect ratio constraints
                     # Set the image into Label with Pixmap
                     self.ui.Photo.setPixmap(QtGui.QPixmap.fromImage(
                         image_prev))
@@ -401,13 +393,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             int(old_pixmap.height() * self.scaleFactor),
             QtCore.Qt.SmoothTransformation)
         self.ui.Photo.setPixmap(new_pixmap)
-
-        # self.adjustScrollBar(self.ui.scrollArea_3.horizontalScrollBar(),
-        # factor)
-        # self.adjustScrollBar(self.ui.scrollArea_3.verticalScrollBar(),
-        # factor)
-        self.ui.actionzoom_in.setEnabled(self.scaleFactor < 3.0)
-        self.ui.actionzoom_out.setEnabled(self.scaleFactor > 0.333)
+        self.ui.actionzoom_in.setEnabled(self.scaleFactor < 9.0)
+        self.ui.actionzoom_out.setEnabled(self.scaleFactor > 0.11)
 
     def adjustScrollBar(self, scrollBar, factor):
         scrollBar.setValue(int(factor * scrollBar.value() +
