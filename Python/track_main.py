@@ -393,10 +393,19 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                          self.ui.fitToWindowAct.isChecked())
 
     def scaleImage(self, factor):
-        self.scaleFactor *= factor
-        self.ui.Photo.resize(self.scaleFactor * self.ui.Photo.pixmap().size())
-        self.adjustScrollBar(self.ui.scrollArea.horizontalScrollBar(), factor)
-        self.adjustScrollBar(self.ui.scrollArea.verticalScrollBar(), factor)
+        if self.image is None:
+            return
+        self.scaleFactor = self.scaleFactor * factor
+        old_pixmap = QtGui.QPixmap.fromImage(self.image)
+        new_pixmap = old_pixmap.scaledToHeight(
+            int(old_pixmap.height() * self.scaleFactor),
+            QtCore.Qt.SmoothTransformation)
+        self.ui.Photo.setPixmap(new_pixmap)
+
+        # self.adjustScrollBar(self.ui.scrollArea_3.horizontalScrollBar(),
+        # factor)
+        # self.adjustScrollBar(self.ui.scrollArea_3.verticalScrollBar(),
+        # factor)
         self.ui.actionzoom_in.setEnabled(self.scaleFactor < 3.0)
         self.ui.actionzoom_out.setEnabled(self.scaleFactor > 0.333)
 
