@@ -45,6 +45,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.fileList = None
         self.track = True
         self.edits = None
+        # TODO: Associate lines with self.edits (e.g. dict(rod_id: [
+        #  positions]))
+        # TODO: Redraw overlay everytime a rod_id/rod is changed, activated,
+        #  deactivated or has conflicts
+        # TODO: Update the saving mechanism (include rod_id)
+        # TODO: Update the saving mechanism (button required, changes not
+        #  directly saved to disc)
 
         # Signal to activate actions
         self.ui.pushprevious.clicked.connect(self.show_prev)
@@ -205,6 +212,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             ident = RodNumberWidget(self.ui.Photo, str(value), QPoint(int(
                 x1), int(y1)))
             ident.setStyleSheet(GENERAL_STYLE)
+            ident.rod_id = ind_rod
+            ident.activated.connect(self.rod_activated)
             ident.setObjectName(f"rn_{ind_rod}")
             ident.show()
             self.edits.append(ident)
@@ -281,7 +290,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     # Note: getPixel gets connected to MousePressed event in show_pixmap
     def getPixel(self, event):
         if self.startPos is None:
-            self.startPos = event.pos()
+            if event.button() == QtCore.Qt.RightButton and \
+                    self.edits is not None:
+                # Deactivate any active rods
+                self.rod_activated(-1)
+            elif event.button() == QtCore.Qt.LeftButton:
+                self.startPos = event.pos()
         else:
             if event.button() == QtCore.Qt.RightButton:
                 # Abort current line drawing
@@ -429,6 +443,21 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                ((factor - 1) * scrollBar.pageStep() / 2)))
 
     def setAcceptDrops(self, param):
+        pass
+
+    def rod_activated(self, rod_id):
+        # A new rod was activated for position editing. Deactivate all others.
+        for rod in self.edits:
+            if rod.rod_id != rod_id:
+                rod.deactivate_rod()
+
+    def check_rod_conflicts(self, rod_id):
+        # TODO: mark numbering conflicts in CONFLICT_STYLE
+        pass
+
+    def check_exchange(self, drop_position):
+        # TODO: check where rod number was dropped and whether an exchange
+        #  is needed.
         pass
 
 
