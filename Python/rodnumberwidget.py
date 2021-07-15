@@ -9,6 +9,14 @@ SELECTED_STYLE = "background-color: transparent;" \
                     "color: white;"
 CONFLICT_STYLE = "background-color: transparent;" \
                     "color: red;"
+CHANGED_STYLE = "background-color: transparent;" \
+                "color: green;"
+STATE_NORMAL = 0
+STATE_SELECTED = 1
+STATE_EDITING = 2
+STATE_CHANGED = 3
+STATE_CONFLICT = 4
+
 
 
 class RodNumberWidget(QLineEdit):
@@ -31,6 +39,8 @@ class RodNumberWidget(QLineEdit):
         self.initial_pos = pos
         self.move(pos)
         self.rod_id = None
+        self.rod_state = STATE_NORMAL
+        self.rod_points = [0, 0, 0, 0]
 
         # Set initial visual appearance & function
         self.setInputMask("99")
@@ -38,6 +48,7 @@ class RodNumberWidget(QLineEdit):
         self.setFrame(False)
         self.setReadOnly(True)
         self.setStyleSheet(GENERAL_STYLE)
+        self.setGeometry(QtCore.QRect(0, 0, 15, 10))
 
     # Controlling "editing" behaviour
     def mouseDoubleClickEvent(self, e: QtGui.QMouseEvent) -> None:
@@ -96,9 +107,27 @@ class RodNumberWidget(QLineEdit):
                 event.ignore()
                 return
             self.dropped.emit(event.globalPos())
+        return
 
     # Actions triggered on other rods
     def deactivate_rod(self):
         if self.styleSheet() != CONFLICT_STYLE:
             self.setStyleSheet(GENERAL_STYLE)
+            self.rod_state = STATE_NORMAL
         self.setReadOnly(True)
+
+    def set_state(self, new_state):
+        self.rod_state = new_state
+        if new_state == STATE_NORMAL:
+            self.deactivate_rod()
+        elif new_state == STATE_SELECTED:
+            self.setStyleSheet(SELECTED_STYLE)
+        elif new_state == STATE_EDITING:
+            self.setStyleSheet(SELECTED_STYLE)
+        elif new_state == STATE_CHANGED:
+            self.setStyleSheet(CHANGED_STYLE)
+        elif new_state == STATE_CONFLICT:
+            self.setStyleSheet(CONFLICT_STYLE)
+        else:
+            # Error handling needed?
+            return
