@@ -40,16 +40,16 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.pushprevious.clicked.connect(self.show_prev)
         self.ui.pushnext.clicked.connect(self.show_next)
         self.ui.overlay.clicked.connect(self.show_overlay)
-        self.ui.RodNumber.clicked.connect(lambda: self.show_overlay(
-            with_number=True))
-        self.ui.ClearSave.clicked.connect(self.clear_screen)
+        # self.ui.RodNumber.clicked.connect(lambda: self.show_overlay(
+        #     with_number=True))
+        # self.ui.ClearSave.clicked.connect(self.clear_screen)
         self.ui.actionzoom_in.triggered.connect(lambda: self.scaleImage(
             factor=1.25))
         self.ui.actionzoom_out.triggered.connect(lambda: self.scaleImage(
             factor=0.8))
         self.ui.actionopen.triggered.connect(self.file_open)
-        self.ui.normalSizeAct.triggered.connect(self.normalSize)
-        self.ui.fitToWindowAct.triggered.connect(self.fitToWindow)
+        self.ui.normalSizeAct.triggered.connect(self.original_size)
+        # self.ui.fitToWindowAct.triggered.connect(self.fitToWindow)
         self.ui.Photo.mouseMoveEvent = self.move_mouse
         self.ui.Photo.mousePressEvent = self.getPixel
 
@@ -101,7 +101,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.base_pixmap = QtGui.QPixmap.fromImage(self.image)
         self.ui.Photo.setPixmap(self.base_pixmap)
         self.scaleFactor = 1.0
-        self.ui.fitToWindowAct.setEnabled(True)
+        # self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
     def show_overlay(self, with_number=False):
@@ -250,7 +250,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         painter.end()
         self.ui.Photo.setPixmap(self.rod_pixmap)
-        self.ui.fitToWindowAct.setEnabled(True)
+        # self.ui.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
     def clear_screen(self):
@@ -259,7 +259,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 s.deleteLater()
             self.edits = None
             self.ui.Photo.setPixmap(self.base_pixmap)
-            self.ui.fitToWindowAct.setEnabled(True)
+            # self.ui.fitToWindowAct.setEnabled(True)
             self.updateActions()
 
     def move_mouse(self, mouse_event):
@@ -429,7 +429,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.image = image_next
                     self.ui.Photo.setPixmap(new_pixmap)
                     self.scaleFactor = 1.0
-                    self.ui.fitToWindowAct.setEnabled(True)
+                    # self.ui.fitToWindowAct.setEnabled(True)
                     self.updateActions()
                     print('Next_file {}:'.format(self.CurrentFileIndex),
                           file_name)
@@ -473,7 +473,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.image = image_prev
                     self.ui.Photo.setPixmap(new_pixmap)
                     self.scaleFactor = 1.0
-                    self.ui.fitToWindowAct.setEnabled(True)
+                    # self.ui.fitToWindowAct.setEnabled(True)
                     self.updateActions()
                     print('Prev_file {}:'.format(self.CurrentFileIndex),
                           file_name)
@@ -486,15 +486,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # no file list found, select an image file
             self.file_open()
 
-    def normalSize(self):
-        self.ui.Photo.adjustSize()
+    def original_size(self):
         self.scaleFactor = 1.0
+        self.scaleImage(1.0)
 
     def fitToWindow(self):
         fitToWindow = self.ui.fitToWindowAct.isChecked()
         self.ui.scrollArea.setWidgetResizable(fitToWindow)
         if not fitToWindow:
-            self.normalSize()
+            self.original_size()
         self.updateActions()
 
     def updateActions(self):
