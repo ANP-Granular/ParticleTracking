@@ -10,22 +10,7 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPainter, QImage
 from track_ui import Ui_MainWindow
-from rodnumberwidget import RodNumberWidget
-
-GENERAL_STYLE = "background-color: transparent;" \
-                    "color: cyan;"
-SELECTED_STYLE = "background-color: transparent;" \
-                    "color: white;"
-CONFLICT_STYLE = "background-color: transparent;" \
-                    "color: red;"
-CHANGED_STYLE = "background-color: transparent;" \
-                "color: green;"
-
-STATE_NORMAL = 0
-STATE_SELECTED = 1
-STATE_EDITING = 2
-STATE_CHANGED = 3
-STATE_CONFLICT = 4
+from rodnumberwidget import RodNumberWidget, RodState, RodStyle
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
@@ -124,6 +109,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3",
                     "y2_gp3"]
         while True:
+            # TODO: Check whether image file is loaded
             if self.data_files is not None:
                 item, ok = QInputDialog.getItem(None,
                                                 "Select a color to display",
@@ -137,7 +123,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         self.data_file_name.format(item))
                     if file_found:
                         # Overlay rod position data from the file
-                        # TODO: This if-clause needs a rework
+                        # TODO: This if-clause needs a rework/can be removed
                         if with_number:
                             # Overlay with colored bars and rod numbers
                             self.load_rods()
@@ -201,7 +187,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             y2 = df_part2['y2_gp3'][ind_rod]
             # Add rods
             ident = RodNumberWidget(self.ui.Photo, str(value), QPoint(0, 0))
-            ident.setStyleSheet(GENERAL_STYLE)
+            ident.setStyleSheet(RodStyle.GENERAL)
             ident.rod_id = value
             ident.rod_points = [x1, y1, x2, y2]
             # Connect signals emitted by the rods
@@ -238,22 +224,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             rod.move(QPoint(pos_x, pos_y))
 
             # Set the line style depending on the rod number widget state
-            if rod.rod_state == 0:
+            if rod.rod_state == RodState.NORMAL:
                 pen_color = Qt.cyan
-            elif rod.rod_state == 1:
+            elif rod.rod_state == RodState.SELECTED:
                 pen_color = Qt.white
-            elif rod.rod_state == 2:
+            elif rod.rod_state == RodState.EDITING:
                 # Skip this rod as a new one is currently drawn
                 continue
-            elif rod.rod_state == 3:
+            elif rod.rod_state == RodState.CHANGED:
                 pen_color = Qt.green
-            elif rod.rod_state == 4:
+            elif rod.rod_state == RodState.CONFLICT:
                 pen_color = Qt.red
             else:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Warning)
                 msg.setWindowTitle("RodTracking")
-                msg.setText("A with unknown state was encountered!")
+                msg.setText("A rod with unknown state was encountered!")
                 msg.setStandardButtons(QMessageBox.Ok)
                 msg.exec()
                 continue
@@ -291,6 +277,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def getPixel(self, event):
         if self.edits is not None:
             if self.startPos is None:
+                # Check rod states for number editing mode
+                for rod in self.edits:
+                    if not rod.isReadOnly():
+                        # Rod is in number editing mode
+                        if event.button() == QtCore.Qt.LeftButton:
+                            # Confirm changes and check for conflicts
+                            last_id = rod.rod_id
+                            rod.rod_id = int(rod.text())
+                            self.check_rod_conflicts(rod, last_id)
+                        elif event.button() == QtCore.Qt.RightButton:
+                            # Abort editing and restore previous number
+                            rod.setText(str(rod.rod_id))
+                            rod.deactivate_rod()
+                            self.draw_rods()
+                        return
+
                 if event.button() == QtCore.Qt.RightButton and \
                         self.edits is not None:
                     # Deactivate any active rods
@@ -299,16 +301,16 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Start rod correction
                     self.startPos = event.pos()
                     for rod in self.edits:
-                        if rod.rod_state == STATE_SELECTED:
-                            rod.set_state(STATE_EDITING)
+                        if rod.rod_state == RodState.SELECTED:
+                            rod.set_state(RodState.EDITING)
                     self.draw_rods()
             else:
                 if event.button() == QtCore.Qt.RightButton:
                     # Abort current line drawing
                     self.startPos = None
                     for rod in self.edits:
-                        if rod.rod_state == STATE_EDITING:
-                            rod.set_state(STATE_SELECTED)
+                        if rod.rod_state == RodState.EDITING:
+                            rod.set_state(RodState.SELECTED)
                     self.draw_rods()
                 else:
                     # Finish line and save it
@@ -316,17 +318,19 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.startPos = None
                     self.draw_rods()
 
-    def save_line(self, start, end):
-        selected_rod = None
-        for rod in self.edits:
-            if rod.rod_state == STATE_EDITING:
-                selected_rod = rod.rod_id
-                new_position = [start.x(), start.y(), end.x(), end.y()]
-                new_position = [coord/10/self.scaleFactor for coord in
-                                new_position]
-                rod.rod_points = new_position
-                rod.set_state(STATE_SELECTED)
-                break
+    # TODO: Overload save_line to either accept (QPoint, QPoint) or
+    #  (RodNumberWidget)
+    def save_line(self, start, end, selected_rod=None):
+        if selected_rod is None:
+            for rod in self.edits:
+                if rod.rod_state == RodState.EDITING:
+                    selected_rod = rod.rod_id
+                    new_position = [start.x(), start.y(), end.x(), end.y()]
+                    new_position = [coord/10/self.scaleFactor for coord in
+                                    new_position]
+                    rod.rod_points = new_position
+                    rod.set_state(RodState.SELECTED)
+                    break
         if selected_rod is None:
             # Get intended rod number from user
             selected_rod, ok = QInputDialog.getInt(self.ui.Photo,
@@ -345,7 +349,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     new_position = [coord / 10 / self.scaleFactor for coord in
                                     new_position]
                     rod.rod_points = new_position
-                    rod.set_state(STATE_SELECTED)
+                    rod.set_state(RodState.SELECTED)
                     break
             if not rod_exists:
                 msg = QMessageBox()
@@ -362,8 +366,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 # # Rod didn't exists -> create new RodNumber
                 # new_rod = RodNumberWidget(self.ui.Photo, str(selected_rod),
                 #                           QPoint(start.x(), start.y()))
-                # new_rod.setStyleSheet(GENERAL_STYLE)
-                # new_rod.rod_id = selected_rod
+                # new_rod.setStyleSheet(RodStyle.GENERAL)
+                # new_rod.last_id = selected_rod
                 # # Connect signals emitted by the rods
                 # new_rod.activated.connect(self.rod_activated)
                 # new_rod.id_changed.connect(self.check_rod_conflicts)
@@ -374,7 +378,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 # new_position = [coord / 10 / self.scaleFactor for coord in
                 #                 new_position]
                 # new_rod.rod_points = new_position
-                # new_rod.set_state(STATE_SELECTED)
+                # new_rod.set_state(RodState.SELECTED)
 
         # Save changes to disk immediately
         filename = (self.fileList[self.CurrentFileIndex])
@@ -412,8 +416,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.fileList.remove(filename)
                     self.show_next()
                 else:
-                    # TODO: use dedicated image display method instead of
-                    #  reimplementing it
+                    # TODO: use a dedicated image display/update method
+                    #  instead of reimplementing it in multiple methods
                     # Clean up current rods
                     if self.edits is not None:
                         for rod in self.edits:
@@ -422,6 +426,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Display next image
                     new_pixmap = QtGui.QPixmap.fromImage(image_next)
                     self.base_pixmap = new_pixmap
+                    self.image = image_next
                     self.ui.Photo.setPixmap(new_pixmap)
                     self.scaleFactor = 1.0
                     self.ui.fitToWindowAct.setEnabled(True)
@@ -455,8 +460,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.fileList.remove(filename)
                     self.show_prev()
                 else:
-                    # TODO: use dedicated image display method instead of
-                    #  reimplementing it
+                    # TODO: use a dedicated image display/update method
+                    #  instead of reimplementing it in multiple methods
                     # Clean up current rods
                     if self.edits is not None:
                         for rod in self.edits:
@@ -465,6 +470,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Display next image
                     new_pixmap = QtGui.QPixmap.fromImage(image_prev)
                     self.base_pixmap = new_pixmap
+                    self.image = image_prev
                     self.ui.Photo.setPixmap(new_pixmap)
                     self.scaleFactor = 1.0
                     self.ui.fitToWindowAct.setEnabled(True)
@@ -525,19 +531,79 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             if rod.rod_id != rod_id:
                 rod.deactivate_rod()
             if rod.rod_id == rod_id:
-                rod.set_state(1)
+                rod.set_state(RodState.SELECTED)
         self.draw_rods()
 
-    def check_rod_conflicts(self, rod_id):
-        # Marks any rods that have the same number in CONFLICT_STYLE
+    def check_rod_conflicts(self, set_rod, last_id):
+        # Marks any rods that have the same number in RodStyle.CONFLICT
         conflicting = []
         for rod in self.edits:
-            if rod.rod_id == rod_id:
+            if rod.rod_id == set_rod.rod_id:
                 conflicting.append(rod)
         if len(conflicting) > 1:
             for rod in conflicting:
-                rod.set_state(STATE_CONFLICT)
+                rod.set_state(RodState.CONFLICT)
         self.draw_rods()
+        if len(conflicting) > 1:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText(
+                f"A conflict was encountered with setting Rod"
+                f"#{set_rod.rod_id} (previously Rod#{last_id}). \nHow shall "
+                f"this conflict be resolved?")
+            btn_switch = msg.addButton("Switch numbers",
+                                       QMessageBox.ActionRole)
+            btn_return = msg.addButton("Return state", QMessageBox.ActionRole)
+            btn_disc_old = msg.addButton("Discard old rod",
+                                         QMessageBox.ActionRole)
+            btn_keep_both = msg.addButton("Resolve manual",
+                                          QMessageBox.ActionRole)
+            msg.exec()
+            if msg.clickedButton() == btn_switch:
+                # Switch the rod numbers
+                for rod in conflicting:
+                    rod.set_state(RodState.CHANGED)
+                    if rod is not set_rod:
+                        rod.setText(str(last_id))
+                        rod.rod_id = last_id
+                    new_line = [int(coord * 10 * self.scaleFactor) for coord in
+                                rod.rod_points]
+                    self.save_line(QPoint(*new_line[0:2]),
+                                   QPoint(*new_line[2:]),
+                                   rod.rod_id)
+            elif msg.clickedButton() == btn_return:
+                # Return to previous state
+                if last_id == -1:
+                    set_rod.deleteLater()
+                    self.edits.remove(set_rod)
+                else:
+                    set_rod.setText(str(last_id))
+                    set_rod.rod_id = last_id
+                for rod in conflicting:
+                    rod.set_state(RodState.CHANGED)
+            elif msg.clickedButton() == btn_disc_old:
+                for rod in conflicting:
+                    if rod is not set_rod:
+                        rod.deleteLater()
+                        self.edits.remove(rod)
+                        continue
+                    rod.set_state(RodState.CHANGED)
+                # Delete old and save new
+                new_line = [int(coord*10*self.scaleFactor) for coord in
+                            set_rod.rod_points]
+                self.save_line(QPoint(*new_line[0:2]), QPoint(*new_line[2:]),
+                               set_rod.rod_id)
+                self.save_line(QPoint(0, 0), QPoint(0, 0), last_id)
+            else:
+                # Save new rod, delete old position, keep old displayed
+                # (user resolves the rest)
+                set_rod.set_state(RodState.CHANGED)
+                new_line = [int(coord * 10 * self.scaleFactor) for coord in
+                            set_rod.rod_points]
+                self.save_line(QPoint(*new_line[0:2]), QPoint(*new_line[2:]),
+                               set_rod.rod_id)
+                self.save_line(QPoint(0, 0), QPoint(0, 0), last_id)
+            self.draw_rods()
 
     def check_exchange(self, drop_position):
         # TODO: check where rod number was dropped and whether an exchange
