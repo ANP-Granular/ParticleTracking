@@ -1,6 +1,7 @@
 import math
 import os
 import sys
+import platform
 from PyQt5 import QtCore, QtWidgets, Qt
 from PyQt5.QtGui import QPixmap, QPen
 from PyQt5.QtWidgets import *
@@ -18,6 +19,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         super().__init__(*args, **kwargs)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        # Adapt menu action shortcuts for Mac
+        if platform.system() == "Darwin":
+            self.ui.actionzoom_in.setShortcut("Ctrl+=")
+            self.ui.actionzoom_out.setShortcut("Ctrl+-")
+
         self.setWindowState(QtCore.Qt.WindowMaximized)
         self.setFocus()
         # Initialize
