@@ -123,8 +123,13 @@ class Ui_MainWindow(object):
         self.fitToWindowAct = QtWidgets.QAction(MainWindow)
         self.fitToWindowAct.setEnabled(False)
         self.fitToWindowAct.setObjectName("fitToWindowAct")
+        self.action_persistent_view = QtWidgets.QAction(MainWindow)
+        self.action_persistent_view.setCheckable(True)
+        self.action_persistent_view.setChecked(True)
+        self.action_persistent_view.setObjectName("action_persistent_view")
         self.menuFile.addAction(self.actionopen)
         self.menuFile.addAction(self.actionsave)
+        self.menuView.addAction(self.action_persistent_view)
         self.menuView.addAction(self.actionzoom_in)
         self.menuView.addAction(self.actionzoom_out)
         self.menuView.addAction(self.normalSizeAct)
@@ -164,6 +169,7 @@ class Ui_MainWindow(object):
         self.normalSizeAct.setText(_translate("MainWindow", "Original Size"))
         self.normalSizeAct.setShortcut(_translate("MainWindow", "Ctrl+R"))
         self.fitToWindowAct.setText(_translate("MainWindow", "Fit to Window"))
+        self.action_persistent_view.setText(_translate("MainWindow", "Persistent View"))
 
 
 if __name__ == "__main__":
