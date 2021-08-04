@@ -37,15 +37,16 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.data_file_name = 'rods_df_{:s}.csv'
         self.color = "black"
         self.image = None
-        self.rod_pixmap = None
-        self.base_pixmap = None
+        self.rod_pixmap = None      # image that is painted on
+        self.base_pixmap = None     # "clean" image in correct scaling
         self.fileList = None
         self.track = True
         self.edits = None
 
         # Signal to activate actions
-        self.ui.pushprevious.clicked.connect(self.show_prev)
-        self.ui.pushnext.clicked.connect(self.show_next)
+        self.ui.pushprevious.clicked.connect(
+            lambda: self.show_next(direction=-1))
+        self.ui.pushnext.clicked.connect(lambda: self.show_next(direction=1))
         self.ui.overlay.clicked.connect(self.show_overlay)
         # self.ui.RodNumber.clicked.connect(lambda: self.show_overlay(
         #     with_number=True))
@@ -80,10 +81,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             dirpath = os.path.dirname(fileName)
             print('Dir_name:', dirpath)
             self.fileList = []
-            # this loop is kinda tricky
-            # it loop through all the images
-            # checks for some condition
-            # and appends it to a file List
+
+            # checks all files for naming convention according to the
+            # selected file and append them to a file List
             for idx, f in enumerate(os.listdir(dirpath)):
                 f_compare = os.path.splitext(f)[0]
                 indx_f = f_compare == file_name
@@ -98,18 +98,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.fileList.append(fpath)
             # Sort according to name / ascending order
             self.fileList.sort()
+            self.disp_image(self.image)
+            # Logging
             print('Num of items in list:', len(self.fileList))
-            # then the image is displayed in this function NoRods
-            self.show_pixmap_NoRods()
             print('Open_file {}:'.format(self.CurrentFileIndex), file_name)
             self.ui.label.setText('File opened: {}'.format(file_name))
-
-    def show_pixmap_NoRods(self):
-        self.base_pixmap = QtGui.QPixmap.fromImage(self.image)
-        self.ui.Photo.setPixmap(self.base_pixmap)
-        self.scaleFactor = 1.0
-        # self.ui.fitToWindowAct.setEnabled(True)
-        self.updateActions()
 
     def show_overlay(self, with_number=False):
         items = ("black", "blue", "green", "purple", "red", "yellow")
@@ -266,7 +259,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 s.deleteLater()
             self.edits = None
             self.ui.Photo.setPixmap(self.base_pixmap)
-            # self.ui.fitToWindowAct.setEnabled(True)
             self.updateActions()
 
     def move_mouse(self, mouse_event):
@@ -407,10 +399,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         df_part.to_csv(self.data_files + self.data_file_name.format(
             self.color), index_label="")
 
-    def show_next(self):
+    def show_next(self, direction: int):
         if self.fileList:
             try:
-                self.CurrentFileIndex += 1
+                self.CurrentFileIndex += direction
                 # Chooses next image with specified extension
                 filename = (self.fileList[self.CurrentFileIndex])
                 file_name = os.path.split(filename)[-1]
@@ -423,21 +415,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.fileList.remove(filename)
                     self.show_next()
                 else:
-                    # TODO: use a dedicated image display/update method
-                    #  instead of reimplementing it in multiple methods
-                    # Clean up current rods
-                    if self.edits is not None:
-                        for rod in self.edits:
-                            rod.deleteLater()
-                        self.edits = None
-                    # Display next image
-                    new_pixmap = QtGui.QPixmap.fromImage(image_next)
-                    self.base_pixmap = new_pixmap
-                    self.image = image_next
-                    self.ui.Photo.setPixmap(new_pixmap)
-                    self.scaleFactor = 1.0
-                    # self.ui.fitToWindowAct.setEnabled(True)
-                    self.updateActions()
+                    self.disp_image(image_next)
                     print('Next_file {}:'.format(self.CurrentFileIndex),
                           file_name)
                     # Update information on last action
@@ -445,52 +423,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
             except IndexError:
                 # the iterator has finished, restart it
-                self.CurrentFileIndex = -1
-                self.show_next()
+                if direction > 0:
+                    self.CurrentFileIndex = -1
+                else:
+                    self.CurrentFileIndex = 0
+                self.show_next(direction)
         else:
             # no file list found, load an image
-            self.file_open()
-
-    def show_prev(self):
-        if self.fileList:
-            try:
-                self.CurrentFileIndex -= 1
-                # Chooses previous image with specified extension
-                filename = (self.fileList[self.CurrentFileIndex])
-                file_name = os.path.split(filename)[-1]
-                file_name = os.path.splitext(file_name)[0]
-                # Create Pixmap operator to display image
-                image_prev = QImage(filename)
-                if image_prev.isNull():
-                    # the file is not a valid image, remove it from the list
-                    # and try to load the next one
-                    self.fileList.remove(filename)
-                    self.show_prev()
-                else:
-                    # TODO: use a dedicated image display/update method
-                    #  instead of reimplementing it in multiple methods
-                    # Clean up current rods
-                    if self.edits is not None:
-                        for rod in self.edits:
-                            rod.deleteLater()
-                        self.edits = None
-                    # Display next image
-                    new_pixmap = QtGui.QPixmap.fromImage(image_prev)
-                    self.base_pixmap = new_pixmap
-                    self.image = image_prev
-                    self.ui.Photo.setPixmap(new_pixmap)
-                    self.scaleFactor = 1.0
-                    # self.ui.fitToWindowAct.setEnabled(True)
-                    self.updateActions()
-                    print('Prev_file {}:'.format(self.CurrentFileIndex),
-                          file_name)
-                    self.ui.label.setText('File: {}'.format(file_name))
-            except IndexError:
-                # the iterator has finished, restart it
-                self.CurrentFileIndex = 0
-                self.show_prev()
-        else:
-            # no file list found, select an image file
             self.file_open()
 
     def original_size(self):
@@ -512,6 +451,25 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.normalSizeAct.setEnabled(not
                                          self.ui.fitToWindowAct.isChecked())
 
+    # TODO: exchange rods_loaded when a checkbox was implemented for
+    #  "Overlay"
+    def disp_image(self, image: QImage):
+        # Clean up & preparation
+        rods_loaded = False
+        if self.edits is not None:
+            rods_loaded = True
+            for rod in self.edits:
+                rod.deleteLater()
+            self.edits = None
+        self.image = image
+        # Reset display (no rods, no zoom)
+        if not self.ui.action_persistent_view.isChecked():
+            self.scaleFactor = 1.0
+        # Keep all display settings
+        elif rods_loaded:
+            self.load_rods()
+        self.scaleImage(1)
+
     def scaleImage(self, factor):
         if self.image is None:
             return
@@ -521,9 +479,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             int(old_pixmap.height() * self.scaleFactor),
             QtCore.Qt.SmoothTransformation)
         self.ui.Photo.setPixmap(new_pixmap)
-
-        if self.base_pixmap is not None:
-            self.base_pixmap = new_pixmap
+        self.base_pixmap = new_pixmap
 
         # Update rod and number display
         self.draw_rods()
@@ -616,6 +572,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # TODO: check where rod number was dropped and whether an exchange
         #  is needed.
         pass
+
+    # TODO: setter method for self.image -> set self.base_pixmap as well
+    # TODO: setter method for self.scaleFactor -> enable/disable zooming
 
 
 if __name__ == "__main__":
