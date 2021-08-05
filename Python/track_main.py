@@ -51,34 +51,34 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # self.ui.RodNumber.clicked.connect(lambda: self.show_overlay(
         #     with_number=True))
         # self.ui.ClearSave.clicked.connect(self.clear_screen)
-        self.ui.actionzoom_in.triggered.connect(lambda: self.scaleImage(
+        self.ui.actionzoom_in.triggered.connect(lambda: self.scale_image(
             factor=1.25))
-        self.ui.actionzoom_out.triggered.connect(lambda: self.scaleImage(
+        self.ui.actionzoom_out.triggered.connect(lambda: self.scale_image(
             factor=0.8))
         self.ui.actionopen.triggered.connect(self.file_open)
         self.ui.normalSizeAct.triggered.connect(self.original_size)
-        # self.ui.fitToWindowAct.triggered.connect(self.fitToWindow)
+        # self.ui.fitToWindowAct.triggered.connect(self.fit_to_window)
         self.ui.Photo.mouseMoveEvent = self.move_mouse
-        self.ui.Photo.mousePressEvent = self.getPixel
+        self.ui.Photo.mousePressEvent = self.get_pixel
 
     def file_open(self):
         # opens directory to select image
-        fileName, _ = QFileDialog.getOpenFileName(None, 'Open an image', '',
-                                                  'Images (*.png *.jpeg '
-                                                  '*.jpg)')
-        file_name = os.path.split(fileName)[-1]
+        chosen_file, _ = QFileDialog.getOpenFileName(self, 'Open an image', '',
+                                                     'Images (*.png *.jpeg '
+                                                     '*.jpg)')
+        file_name = os.path.split(chosen_file)[-1]
         # File name without extension
         file_name = os.path.splitext(file_name)[0]
         print('File name:', file_name)
-        if fileName:
+        if chosen_file:
             # open file as image
-            self.image = QImage(fileName)
+            self.image = QImage(chosen_file)
             if self.image.isNull():
                 QMessageBox.information(self, "Image Viewer",
-                                        "Cannot load %s." % fileName)
+                                        "Cannot load %s." % chosen_file)
                 return
             # Directory
-            dirpath = os.path.dirname(fileName)
+            dirpath = os.path.dirname(chosen_file)
             print('Dir_name:', dirpath)
             self.fileList = []
 
@@ -106,12 +106,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def show_overlay(self, with_number=False):
         items = ("black", "blue", "green", "purple", "red", "yellow")
-        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3",
-                    "y2_gp3"]
+        # col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3",
+        #             "y2_gp3"]
         while True:
             # TODO: Check whether image file is loaded
             if self.data_files is not None:
-                item, ok = QInputDialog.getItem(None,
+                item, ok = QInputDialog.getItem(self,
                                                 "Select a color to display",
                                                 "list of colors", items, 0,
                                                 False)
@@ -119,8 +119,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     return
                 else:
                     self.color = item
-                    file_found = os.path.exists(self.data_files +
-                        self.data_file_name.format(item))
+                    file_found = os.path.exists(
+                        self.data_files + self.data_file_name.format(item))
                     if file_found:
                         # Overlay rod position data from the file
                         # TODO: This if-clause needs a rework/can be removed
@@ -164,7 +164,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def load_rods(self):
         # Load rod position data
-        items = ("black", "blue", "green", "purple", "red", "yellow")
+        # items = ("black", "blue", "green", "purple", "red", "yellow")
         col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3",
                     "y2_gp3"]
         filename = (self.fileList[self.CurrentFileIndex])
@@ -251,7 +251,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         painter.end()
         self.ui.Photo.setPixmap(self.rod_pixmap)
         # self.ui.fitToWindowAct.setEnabled(True)
-        self.updateActions()
+        self.update_actions()
 
     def clear_screen(self):
         if self.edits is not None:
@@ -259,7 +259,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 s.deleteLater()
             self.edits = None
             self.ui.Photo.setPixmap(self.base_pixmap)
-            self.updateActions()
+            self.update_actions()
 
     def move_mouse(self, mouse_event):
         # Draw intermediate rod position between clicks
@@ -273,7 +273,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             qp.end()
             self.ui.Photo.setPixmap(pixmap)
 
-    def getPixel(self, event):
+    def get_pixel(self, event):
         if self.edits is not None:
             if self.startPos is None:
                 # Check rod states for number editing mode
@@ -413,7 +413,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # the file is not a valid image, remove it from the list
                     # and try to load the next one
                     self.fileList.remove(filename)
-                    self.show_next()
+                    self.show_next(direction)
                 else:
                     self.disp_image(image_next)
                     print('Next_file {}:'.format(self.CurrentFileIndex),
@@ -433,17 +433,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.file_open()
 
     def original_size(self):
-        self.scaleFactor = 1.0
-        self.scaleImage(1.0)
+        self.scaleFactor = 1.
+        self.scale_image(1)
 
-    def fitToWindow(self):
-        fitToWindow = self.ui.fitToWindowAct.isChecked()
-        self.ui.scrollArea.setWidgetResizable(fitToWindow)
-        if not fitToWindow:
+    def fit_to_window(self):
+        fit = self.ui.fitToWindowAct.isChecked()
+        self.ui.scrollArea.setWidgetResizable(fit)
+        if not fit:
             self.original_size()
-        self.updateActions()
+        self.update_actions()
 
-    def updateActions(self):
+    def update_actions(self):
         self.ui.actionzoom_in.setEnabled(not
                                          self.ui.fitToWindowAct.isChecked())
         self.ui.actionzoom_in.setEnabled(not
@@ -468,9 +468,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Keep all display settings
         elif rods_loaded:
             self.load_rods()
-        self.scaleImage(1)
+        self.scale_image(1)
 
-    def scaleImage(self, factor):
+    def scale_image(self, factor):
         if self.image is None:
             return
         self.scaleFactor = self.scaleFactor * factor
@@ -519,8 +519,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             btn_return = msg.addButton("Return state", QMessageBox.ActionRole)
             btn_disc_old = msg.addButton("Discard old rod",
                                          QMessageBox.ActionRole)
-            btn_keep_both = msg.addButton("Resolve manual",
-                                          QMessageBox.ActionRole)
+            msg.addButton("Resolve manual", QMessageBox.ActionRole)
             msg.exec()
             if msg.clickedButton() == btn_switch:
                 # Switch the rod numbers
@@ -573,8 +572,18 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         #  is needed.
         pass
 
+    @property
+    def scale_factor(self):
+        return self.scaleFactor
+
+    @scale_factor.setter
+    def scale_factor(self, factor: float):
+        if factor <= 0:
+            raise ValueError('factor must be >0')
+        self.scaleFactor = factor
+        # TODO: setter method for self.scaleFactor -> enable/disable zooming
+
     # TODO: setter method for self.image -> set self.base_pixmap as well
-    # TODO: setter method for self.scaleFactor -> enable/disable zooming
 
 
 if __name__ == "__main__":
