@@ -71,7 +71,7 @@ class Ui_MainWindow(object):
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout_2.setObjectName("gridLayout_2")
-        self.Photo = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        self.Photo = RodImageWidget(self.scrollAreaWidgetContents)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -170,6 +170,7 @@ class Ui_MainWindow(object):
         self.normalSizeAct.setShortcut(_translate("MainWindow", "Ctrl+R"))
         self.fitToWindowAct.setText(_translate("MainWindow", "Fit to Window"))
         self.action_persistent_view.setText(_translate("MainWindow", "Persistent View"))
+from rodimagewidget import RodImageWidget
 
 
 if __name__ == "__main__":

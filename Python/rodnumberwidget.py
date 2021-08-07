@@ -1,5 +1,5 @@
 from PyQt5 import QtGui
-from PyQt5.QtCore import pyqtSignal, QPoint
+from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QLineEdit
 from PyQt5 import QtCore
 from enum import Enum
@@ -36,14 +36,15 @@ class RodStateError(ValueError):
 
 
 class RodNumberWidget(QLineEdit):
-    __pyqtSignals__ = ("gotActivated(int)",)
+    __pyqtSignals__ = ("gotActivated(int)", "droppedRodNumber(QPoint)",
+                       "changedRodNumber(QLineEdit, int)")
     # Create custom signals
-    activated = pyqtSignal(int, name="gotActivated")
-    dropped = pyqtSignal(QPoint, name="droppedRodNumber")
-    id_changed = pyqtSignal(QLineEdit, int, name="changedRodNumber")
+    activated = QtCore.pyqtSignal(int, name="gotActivated")
+    dropped = QtCore.pyqtSignal(QPoint, name="droppedRodNumber")
+    id_changed = QtCore.pyqtSignal(QLineEdit, int, name="changedRodNumber")
     rod_state: RodState
 
-    def __init__(self, parent, text, pos):
+    def __init__(self, parent=None, text="", pos=QPoint(0, 0)):
         # General setup
         super().__init__()
         self.__mousePressPos = None
