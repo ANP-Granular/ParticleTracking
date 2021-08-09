@@ -245,7 +245,7 @@
     <addaction name="actionzoom_in"/>
     <addaction name="actionzoom_out"/>
     <addaction name="normalSizeAct"/>
-    <addaction name="fitToWindowAct"/>
+    <addaction name="action_fit_to_window"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -295,9 +295,9 @@
     <string>Ctrl+R</string>
    </property>
   </action>
-  <action name="fitToWindowAct">
+  <action name="action_fit_to_window">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Fit to Window</string>

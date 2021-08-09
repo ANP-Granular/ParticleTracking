@@ -46,7 +46,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             factor=0.8))
         self.ui.actionopen.triggered.connect(self.file_open)
         self.ui.normalSizeAct.triggered.connect(self.original_size)
-        # self.ui.fitToWindowAct.triggered.connect(self.fit_to_window)
+        self.ui.action_fit_to_window.triggered.connect(self.fit_to_window)
         self.ui.Photo.line_to_save[RodNumberWidget].connect(self.save_line)
         self.ui.Photo.line_to_save[RodNumberWidget, bool].connect(
             self.save_line)
@@ -89,6 +89,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # Sort according to name / ascending order
             self.fileList.sort()
             self.ui.Photo.image = loaded_image
+            self.fit_to_window()
+
             # Logging
             print('Num of items in list:', len(self.fileList))
             print('Open_file {}:'.format(self.CurrentFileIndex), file_name)
@@ -256,19 +258,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.actionzoom_out.setEnabled(True)
 
     def fit_to_window(self):
-        fit = self.ui.fitToWindowAct.isChecked()
-        self.ui.scrollArea.setWidgetResizable(fit)
-        if not fit:
-            self.original_size()
-        self.update_actions()
+        to_size = self.ui.scrollArea_3.size()
+        to_size = QtCore.QSize(to_size.width()-20, to_size.height()-20)
+        self.ui.Photo.scale_to_size(to_size)
 
     def update_actions(self):
-        self.ui.actionzoom_in.setEnabled(not
-                                         self.ui.fitToWindowAct.isChecked())
-        self.ui.actionzoom_in.setEnabled(not
-                                         self.ui.fitToWindowAct.isChecked())
-        self.ui.normalSizeAct.setEnabled(not
-                                         self.ui.fitToWindowAct.isChecked())
+        self.ui.actionzoom_in.setEnabled(
+            not self.ui.action_fit_to_window.isChecked())
+        self.ui.actionzoom_in.setEnabled(
+            not self.ui.action_fit_to_window.isChecked())
+        self.ui.normalSizeAct.setEnabled(
+            not self.ui.action_fit_to_window.isChecked())
 
     def scale_image(self, factor):
         new_zoom = self.ui.Photo.scale_factor * factor

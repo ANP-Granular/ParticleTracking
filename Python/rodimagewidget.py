@@ -145,6 +145,21 @@ class RodImageWidget(QLabel):
         del self.edits
         self._scale_image()
 
+    def scale_to_size(self, new_size: QtCore.QSize):
+        if self._image is None:
+            return
+        old_pixmap = QtGui.QPixmap.fromImage(self._image)
+        height_ratio = new_size.height()/old_pixmap.height()
+        width_ratio = new_size.width()/old_pixmap.width()
+        if height_ratio > width_ratio:
+            # use width
+            self.scale_factor = width_ratio
+            return
+        else:
+            # use height
+            self.scale_factor = height_ratio
+            return
+
     # Interaction callbacks ===================================================
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         if self._edits is not None:
