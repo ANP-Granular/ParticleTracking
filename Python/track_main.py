@@ -18,8 +18,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         # Adapt menu action shortcuts for Mac
         if platform.system() == "Darwin":
-            self.ui.actionzoom_in.setShortcut("Ctrl+=")
-            self.ui.actionzoom_out.setShortcut("Ctrl+-")
+            self.ui.action_zoom_in.setShortcut("Ctrl+=")
+            self.ui.action_zoom_out.setShortcut("Ctrl+-")
 
         self.setWindowState(QtCore.Qt.WindowMaximized)
         self.setFocus()
@@ -32,24 +32,26 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.fileList = None
         # self.track = True
 
-        # Signal to activate actions
-        self.ui.pushprevious.clicked.connect(
-            lambda: self.show_next(direction=-1))
-        self.ui.pushnext.clicked.connect(lambda: self.show_next(direction=1))
-        self.ui.overlay.clicked.connect(self.show_overlay)
-        # self.ui.RodNumber.clicked.connect(lambda: self.show_overlay(
-        #     with_number=True))
-        # self.ui.ClearSave.clicked.connect(self.clear_screen)
-        self.ui.actionzoom_in.triggered.connect(lambda: self.scale_image(
+        # Connect signals
+        # Viewing actions
+        self.ui.action_zoom_in.triggered.connect(lambda: self.scale_image(
             factor=1.25))
-        self.ui.actionzoom_out.triggered.connect(lambda: self.scale_image(
+        self.ui.action_zoom_out.triggered.connect(lambda: self.scale_image(
             factor=0.8))
-        self.ui.actionopen.triggered.connect(self.file_open)
-        self.ui.normalSizeAct.triggered.connect(self.original_size)
+        self.ui.action_original_size.triggered.connect(self.original_size)
         self.ui.action_fit_to_window.triggered.connect(self.fit_to_window)
-        self.ui.Photo.line_to_save[RodNumberWidget].connect(self.save_line)
-        self.ui.Photo.line_to_save[RodNumberWidget, bool].connect(
+        # File actions
+        self.ui.pb_load_images.clicked.connect(self.file_open)
+        self.ui.action_open.triggered.connect(self.file_open)
+        self.ui.pb_load_rods.clicked.connect(self.show_overlay)
+        self.ui.pb_previous.clicked.connect(
+            lambda: self.show_next(direction=-1))
+        self.ui.pb_next.clicked.connect(lambda: self.show_next(direction=1))
+        # Internal/Rod signals & actions
+        self.ui.photo.line_to_save[RodNumberWidget].connect(self.save_line)
+        self.ui.photo.line_to_save[RodNumberWidget, bool].connect(
             self.save_line)
+        # self.ui.pb_clear.clicked.connect(self.clear_screen)
 
     def file_open(self):
         # opens directory to select image
@@ -88,13 +90,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.fileList.append(fpath)
             # Sort according to name / ascending order
             self.fileList.sort()
-            self.ui.Photo.image = loaded_image
+            self.ui.photo.image = loaded_image
             self.fit_to_window()
 
             # Logging
             print('Num of items in list:', len(self.fileList))
             print('Open_file {}:'.format(self.CurrentFileIndex), file_name)
-            self.ui.label.setText('File opened: {}'.format(file_name))
+            # self.ui.label.setText('File opened: {}'.format(file_name))
 
     def show_overlay(self, with_number=False):
         items = ("black", "blue", "green", "purple", "red", "yellow")
@@ -177,15 +179,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             y1 = df_part2['y1_gp3'][ind_rod]
             y2 = df_part2['y2_gp3'][ind_rod]
             # Add rods
-            ident = RodNumberWidget(self.ui.Photo, str(value), QPoint(0, 0))
+            ident = RodNumberWidget(self.ui.photo, str(value), QPoint(0, 0))
             ident.rod_id = value
             ident.rod_points = [x1, y1, x2, y2]
             ident.setObjectName(f"rn_{ind_rod}")
             new_rods.append(ident)
-        self.ui.Photo.edits = new_rods
+        self.ui.photo.edits = new_rods
 
     def clear_screen(self):
-        self.ui.Photo.clear_screen()
+        self.ui.photo.clear_screen()
         self.update_actions()
 
     @QtCore.pyqtSlot(RodNumberWidget)
@@ -229,17 +231,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.fileList.remove(filename)
                     self.show_next(direction)
                 else:
-                    self.ui.Photo.image = image_next
+                    self.ui.photo.image = image_next
                     if self.ui.action_persistent_view.isChecked():
                         self.load_rods()
                     else:
-                        del self.ui.Photo.edits
-                        self.ui.Photo.scale_factor = 1
+                        del self.ui.photo.edits
+                        self.ui.photo.scale_factor = 1
 
                     print('Next_file {}:'.format(self.CurrentFileIndex),
                           file_name)
                     # Update information on last action
-                    self.ui.label.setText('File: {}'.format(file_name))
+                    # self.ui.label.setText('File: {}'.format(file_name))
 
             except IndexError:
                 # the iterator has finished, restart it
@@ -253,29 +255,30 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.file_open()
 
     def original_size(self):
-        self.ui.Photo.scale_factor = 1
-        self.ui.actionzoom_in.setEnabled(True)
-        self.ui.actionzoom_out.setEnabled(True)
+        self.ui.photo.scale_factor = 1
+        self.ui.action_zoom_in.setEnabled(True)
+        self.ui.action_zoom_out.setEnabled(True)
 
     def fit_to_window(self):
-        to_size = self.ui.scrollArea_3.size()
+        to_size = self.ui.sa_photo.size()
         to_size = QtCore.QSize(to_size.width()-20, to_size.height()-20)
-        self.ui.Photo.scale_to_size(to_size)
+        self.ui.photo.scale_to_size(to_size)
 
     def update_actions(self):
-        self.ui.actionzoom_in.setEnabled(
+        # TODO: evaluate whether this method is still needed
+        self.ui.action_zoom_in.setEnabled(
             not self.ui.action_fit_to_window.isChecked())
-        self.ui.actionzoom_in.setEnabled(
+        self.ui.action_zoom_in.setEnabled(
             not self.ui.action_fit_to_window.isChecked())
-        self.ui.normalSizeAct.setEnabled(
+        self.ui.action_original_size.setEnabled(
             not self.ui.action_fit_to_window.isChecked())
 
     def scale_image(self, factor):
-        new_zoom = self.ui.Photo.scale_factor * factor
-        self.ui.Photo.scale_factor = new_zoom
+        new_zoom = self.ui.photo.scale_factor * factor
+        self.ui.photo.scale_factor = new_zoom
         # Disable zoom, if zoomed too much
-        self.ui.actionzoom_in.setEnabled(new_zoom < 9.0)
-        self.ui.actionzoom_out.setEnabled(new_zoom > 0.11)
+        self.ui.action_zoom_in.setEnabled(new_zoom < 9.0)
+        self.ui.action_zoom_out.setEnabled(new_zoom > 0.11)
 
 
 if __name__ == "__main__":
