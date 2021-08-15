@@ -7,15 +7,14 @@ from enum import Enum
 
 class RodStyle(str, Enum):
     """Styles for rod numbers."""
-    # GENERAL = """QLineEdit{background-color: 'transparent';color: 'cyan';}"""
-    GENERAL = "background-color: transparent;color: cyan;"
-
+    GENERAL = "background-color: transparent;" \
+              "color: black; font-weight: bold;"
     SELECTED = "background-color: transparent;" \
-               "color: white;"
+               "color: white; font-weight: bold;"
     CONFLICT = "background-color: transparent;" \
-               "color: red;"
+               "color: red; font-weight: bold;"
     CHANGED = "background-color: transparent;" \
-              "color: green;"
+              "color: green; font-weight: bold;"
 
 
 class RodState(Enum):

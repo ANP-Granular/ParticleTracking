@@ -100,12 +100,20 @@ class RodImageWidget(QLabel):
             # Update rod number positions
             x = rod_pos[2] - rod_pos[0]
             y = rod_pos[3] - rod_pos[1]
-            x_orth = -y
-            y_orth = x
-            len_vec = math.sqrt(x_orth**2 + y_orth**2)
+            x_orthogonal = -y
+            y_orthogonal = x
+            if x_orthogonal < 0:
+                # change vector to always point to the right
+                x_orthogonal = -x_orthogonal
+                y_orthogonal = -y_orthogonal
+            len_vec = math.sqrt(x_orthogonal**2 + y_orthogonal**2)
             try:
-                pos_x = rod_pos[0] + int(x_orth/len_vec*15) + int(x/2)
-                pos_y = rod_pos[1] + int(y_orth/len_vec*15) + int(y/2)
+                pos_x = rod_pos[0] + int(x_orthogonal/len_vec*15) + int(x/2)
+                pos_y = rod_pos[1] + int(y_orthogonal/len_vec*15) + int(y/2)
+                # Account for the widget's dimensions
+                pos_x -= rod.size().width()/2
+                pos_y -= rod.size().height()/2
+
             except ZeroDivisionError:
                 # Rod has length of 0
                 pos_x = rod_pos[0] + 17
