@@ -4,6 +4,8 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QLabel, QMessageBox, QInputDialog
 
 from rodnumberwidget import RodNumberWidget, RodState
+from actionlogger import ActionLogger, DeleteRodAction, \
+    ChangeRodPositionAction, Action, ChangedRodNumberAction
 
 
 class RodImageWidget(QLabel):
@@ -11,6 +13,7 @@ class RodImageWidget(QLabel):
     line_to_save = QtCore.pyqtSignal([RodNumberWidget],
                                      [RodNumberWidget, bool],
                                      name="line_to_save")
+    _logger: ActionLogger = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -72,6 +75,17 @@ class RodImageWidget(QLabel):
         self._image = new_image
         self.base_pixmap = QtGui.QPixmap.fromImage(new_image)
         self._scale_image()
+
+    @property
+    def logger(self):
+        return self._logger
+
+    @logger.setter
+    def logger(self, new_logger):
+        if self._logger:
+            self._logger.undo_action.disconnect()
+        self._logger = new_logger
+        self._logger.undo_action.connect(self.undo_action)
 
     # Display manipulation ====================================================
     def _scale_image(self):
@@ -236,6 +250,9 @@ class RodImageWidget(QLabel):
                 new_position = [coord / 10 / self._scale_factor for coord
                                 in
                                 new_position]
+                this_action = ChangeRodPositionAction(rod.copy_rod(),
+                                                      new_position)
+                self._logger.add_action(this_action)
                 rod.rod_points = new_position
                 rod.set_state(RodState.SELECTED)
                 send_rod = rod
@@ -258,9 +275,11 @@ class RodImageWidget(QLabel):
                     new_position = [coord / 10 / self._scale_factor for coord
                                     in
                                     new_position]
+                    this_action = ChangeRodPositionAction(rod.copy_rod(),
+                                                          new_position)
+                    self._logger.add_action(this_action)
                     rod.rod_points = new_position
                     rod.set_state(RodState.SELECTED)
-                    send_rod = rod
                     break
             if not rod_exists:
                 msg = QMessageBox()
@@ -291,9 +310,6 @@ class RodImageWidget(QLabel):
                 #                 new_position]
                 # new_rod.rod_points = new_position
                 # new_rod.set_state(RodState.SELECTED)
-
-        # Send signal for saving to disk
-        self.line_to_save[RodNumberWidget].emit(send_rod)
 
     # Rod Handling ============================================================
     def rod_activated(self, rod_id):
@@ -327,16 +343,29 @@ class RodImageWidget(QLabel):
             btn_return = msg.addButton("Return state", QMessageBox.ActionRole)
             btn_disc_old = msg.addButton("Discard old rod",
                                          QMessageBox.ActionRole)
-            msg.addButton("Resolve manual", QMessageBox.ActionRole)
+            btn_manual = msg.addButton("Resolve manual",
+                                       QMessageBox.ActionRole)
+            btn_manual.setEnabled(False)
             msg.exec()
             if msg.clickedButton() == btn_switch:
                 # Switch the rod numbers
+                first_change = None
+                second_change = None
                 for rod in conflicting:
                     rod.set_state(RodState.CHANGED)
                     if rod is not set_rod:
+                        id_to_log = rod.rod_id
                         rod.setText(str(last_id))
                         rod.rod_id = last_id
-                    self.line_to_save[RodNumberWidget].emit(rod)
+                        first_change = self._logger.catch_rodnumber_change(
+                            rod, id_to_log)
+                    else:
+                        second_change = self._logger.catch_rodnumber_change(
+                            rod, last_id)
+                    # self.line_to_save[RodNumberWidget].emit(rod)
+                first_change.coupled_action = second_change
+                second_change.coupled_action = first_change
+
             elif msg.clickedButton() == btn_return:
                 # Return to previous state
                 if last_id == -1:
@@ -348,30 +377,81 @@ class RodImageWidget(QLabel):
                 for rod in conflicting:
                     rod.set_state(RodState.CHANGED)
             elif msg.clickedButton() == btn_disc_old:
+                delete_action = None
+                change_action = None
                 for rod in conflicting:
                     if rod is not set_rod:
-                        rod.deleteLater()
-                        self._edits.remove(rod)
                         # Delete old by saving an "empty" rod (0,0)->(0,0)
-                        empty_rod = RodNumberWidget()
-                        empty_rod.rod_id = last_id
-                        self.line_to_save[RodNumberWidget, bool].emit(
-                            empty_rod, True)
+                        rod.rod_id = last_id
+                        rod.setText(str(last_id))
+                        delete_action = DeleteRodAction(rod.copy_rod())
+                        rod.rod_points = [0, 0, 0, 0]
+                        rod.set_state(RodState.CHANGED)
+
+                        # rod.deleteLater()
+                        # self._edits.remove(rod)
+                        # Delete old by saving an "empty" rod (0,0)->(0,0)
+                        # empty_rod = RodNumberWidget()
+                        # empty_rod.rod_id = last_id
+                        # self.line_to_save[RodNumberWidget, bool].emit(
+                        #     empty_rod, True)
                         continue
                     rod.set_state(RodState.CHANGED)
-                    self.line_to_save[RodNumberWidget].emit(rod)
-            else:
-                # Save new rod, delete old position, keep old displayed
-                # (user resolves the rest)
-                set_rod.set_state(RodState.CHANGED)
-                self.line_to_save[RodNumberWidget].emit(set_rod)
-                empty_rod = RodNumberWidget()
-                empty_rod.rod_id = last_id
-                self.line_to_save[RodNumberWidget, bool].emit(
-                    empty_rod, True)
+                    change_action = self._logger.catch_rodnumber_change(
+                        rod, last_id)
+                    # self.line_to_save[RodNumberWidget].emit(rod)
+                delete_action.coupled_action = change_action
+                self._logger.add_action(delete_action)
+            # else:
+            #     # Save new rod, delete old position, keep old displayed
+            #     # (user resolves the rest)
+            #     set_rod.set_state(RodState.CHANGED)
+            #     change_action = self._logger.catch_rodnumber_change(set_rod,
+            #                                                         last_id)
+            #     # self.line_to_save[RodNumberWidget].emit(set_rod)
+            #     empty_rod = RodNumberWidget()
+            #     empty_rod.rod_id = last_id
+            #     # self.line_to_save[RodNumberWidget, bool].emit(
+            #     #     empty_rod, True)
             self.draw_rods()
+        else:
+            # No conflicts, inform logger
+            if self._logger is None:
+                raise Exception("Logger not set.")
+            self._logger.catch_rodnumber_change(set_rod, last_id)
 
     def check_exchange(self, drop_position):
         # TODO: check where rod number was dropped and whether an exchange
         #  is needed.
         pass
+
+    @QtCore.pyqtSlot(Action)
+    def undo_action(self, action: Action):
+        if type(action) == ChangeRodPositionAction:
+            new_rods = action.undo(rods=self._edits)
+            self._edits = new_rods
+            self.draw_rods()
+        elif type(action) == DeleteRodAction:
+            if action.coupled_action is not None:
+                self._logger.takeItem(self._logger.indexFromItem(
+                    action.coupled_action).row())
+                self._logger.unsaved_changes.remove(action.coupled_action)
+            new_rods = self._edits
+            new_rods = [rod for rod in new_rods if rod.rod_id !=
+                        action.rod.rod_id]
+            new_rods = action.coupled_action.undo(rods=new_rods)
+            new_rods.append(action.undo(None))
+            self._edits = new_rods
+            self.draw_rods()
+
+        elif type(action) == ChangedRodNumberAction:
+            if action.coupled_action is not None:
+                self._logger.takeItem(self._logger.indexFromItem(
+                    action.coupled_action).row())
+                self._logger.unsaved_changes.remove(action.coupled_action)
+            new_rods = action.undo(rods=self._edits)
+            self._edits = new_rods
+            self.draw_rods()
+        else:
+            # Cannot handle this action
+            return

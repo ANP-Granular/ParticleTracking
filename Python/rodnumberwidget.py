@@ -150,3 +150,11 @@ class RodNumberWidget(QLineEdit):
             self.setStyleSheet(RodStyle.CONFLICT)
         else:
             raise(RodStateError())
+
+    def copy_rod(self):
+        copied = RodNumberWidget(self.parent(), self.text(), self.pos())
+        copied.rod_state = self.rod_state
+        copied.rod_points = self.rod_points
+        copied.rod_id = self.rod_id
+        copied.setVisible(False)
+        return copied

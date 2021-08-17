@@ -203,7 +203,7 @@ class Ui_MainWindow(object):
         self.sa_photo.setWidgetResizable(True)
         self.sa_photo.setObjectName("sa_photo")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 358, 224))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 355, 224))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_5.setObjectName("verticalLayout_5")
@@ -227,15 +227,15 @@ class Ui_MainWindow(object):
         self.verticalLayout_4.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_4.setObjectName("verticalLayout_4")
-        self.uv_actions_list = QtWidgets.QUndoView(self.verticalLayoutWidget)
+        self.lv_actions_list = ActionLogger(self.verticalLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.uv_actions_list.sizePolicy().hasHeightForWidth())
-        self.uv_actions_list.setSizePolicy(sizePolicy)
-        self.uv_actions_list.setMaximumSize(QtCore.QSize(400, 16777215))
-        self.uv_actions_list.setObjectName("uv_actions_list")
-        self.verticalLayout_4.addWidget(self.uv_actions_list)
+        sizePolicy.setHeightForWidth(self.lv_actions_list.sizePolicy().hasHeightForWidth())
+        self.lv_actions_list.setSizePolicy(sizePolicy)
+        self.lv_actions_list.setMaximumSize(QtCore.QSize(400, 16777215))
+        self.lv_actions_list.setObjectName("lv_actions_list")
+        self.verticalLayout_4.addWidget(self.lv_actions_list)
         self.pb_undo = QtWidgets.QPushButton(self.verticalLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -343,6 +343,7 @@ class Ui_MainWindow(object):
         self.action_persistent_view.setText(_translate("MainWindow", "Persistent View"))
         self.action_revert.setText(_translate("MainWindow", "Undo"))
         self.action_revert.setShortcut(_translate("MainWindow", "Ctrl+Z"))
+from actionlogger import ActionLogger
 from rodimagewidget import RodImageWidget
 
 

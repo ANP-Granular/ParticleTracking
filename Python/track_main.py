@@ -1,11 +1,15 @@
 import os
 import sys
 import platform
+import tempfile
+
 import pandas as pd
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QImage
+
+from actionlogger import FileAction, TEMP_DIR, FileActions
 from track_ui import Ui_MainWindow
 from rodnumberwidget import RodNumberWidget
 
@@ -24,6 +28,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.setWindowState(QtCore.Qt.WindowMaximized)
         self.setFocus()
         # Initialize
+        self.ui.photo.logger = self.ui.lv_actions_list
         # tracker of the current image that's displayed
         self.CurrentFileIndex = 0
         self.data_files = None
@@ -53,11 +58,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.pb_previous.clicked.connect(
             lambda: self.show_next(direction=-1))
         self.ui.pb_next.clicked.connect(lambda: self.show_next(direction=1))
+        self.ui.pb_save_rods.clicked.connect(self.save_changes)
 
         # Internal/Rod signals & actions
         self.ui.photo.line_to_save[RodNumberWidget].connect(self.save_line)
         self.ui.photo.line_to_save[RodNumberWidget, bool].connect(
             self.save_line)
+
+        # Undo
+        self.ui.pb_undo.clicked.connect(self.ui.lv_actions_list.undo_last)
 
     def open_image_folder(self):
         # check for a directory
@@ -106,9 +115,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.show_overlay()
 
             # Logging
-            print('Num of items in list:', len(self.fileList))
-            print('Open_file {}:'.format(self.CurrentFileIndex), file_name)
-            # self.ui.label.setText('File opened: {}'.format(file_name))
+            first_action = FileAction(dirpath, FileActions.LOAD_IMAGES,
+                                      len(self.fileList))
+            self.ui.lv_actions_list.add_action(first_action)
+            second_action = FileAction(file_name, FileActions.OPEN_IMAGE)
+            self.ui.lv_actions_list.add_action(second_action)
 
     def open_rod_folder(self):
         # check for a directory
@@ -140,6 +151,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.ui.le_rod_dir.setText(self.data_files[:-1])
                     self.ui.le_save_dir.setText(self.data_files[:-1] +
                                                 "_corrected")
+                    this_action = FileAction(self.data_files[:-1],
+                                             FileActions.LOAD_RODS)
+                    self.ui.lv_actions_list.add_action(this_action)
                     self.show_overlay()
                     return
                 else:
@@ -223,6 +237,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def cb_changed(self, state):
         if state == 0:
             # deactivated
+            if not self.ui.lv_actions_list.unsaved_changes == []:
+                if self.warning_unsaved():
+                    self.ui.lv_actions_list.discard_changes()
+                else:
+                    # TODO: a new cb_changed event is emitted, that causes
+                    #  this function to run again and activate show_overlay().
+                    #  That currently deletes the changes made. The issue
+                    #  will be resolved in the next iteration (using
+                    #  temporary files for reloading while changes are present)
+                    self.ui.cb_overlay.setCheckState(2)
+                    return
             self.clear_screen()
         elif state == 2:
             # activated
@@ -255,6 +280,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def show_next(self, direction: int):
         if self.fileList:
+            # Unsaved changes handling
+            if not self.ui.lv_actions_list.unsaved_changes == []:
+                if self.warning_unsaved():
+                    self.ui.lv_actions_list.discard_changes()
+                else:
+                    return
+            # Switch images
             try:
                 self.CurrentFileIndex += direction
                 # Chooses next image with specified extension
@@ -276,10 +308,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         del self.ui.photo.edits
                         self.ui.photo.scale_factor = 1
 
-                    print('Next_file {}:'.format(self.CurrentFileIndex),
-                          file_name)
                     # Update information on last action
-                    # self.ui.label.setText('File: {}'.format(file_name))
+                    this_action = FileAction(file_name, FileActions.OPEN_IMAGE)
+                    self.ui.lv_actions_list.add_action(this_action)
 
             except IndexError:
                 # the iterator has finished, restart it
@@ -318,8 +349,74 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if state:
             self.show_overlay()
 
+    def save_changes(self):
+        save_dir = self.ui.le_save_dir.text()
+
+        if save_dir == self.ui.le_rod_dir.text():
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setWindowTitle("Rod Tracking")
+            msg.setText("The saving path points to the original data!"
+                        "Do you want to overwrite it?")
+            msg.addButton("Overwrite", QMessageBox.ActionRole)
+            btn_cancel = msg.addButton("Cancel",
+                                       QMessageBox.ActionRole)
+            msg.exec()
+            if msg.clickedButton() == btn_cancel:
+                return
+
+        # Save rods to disk
+        filename = (self.fileList[self.CurrentFileIndex])
+        file_name = os.path.split(filename)[-1]
+        df_part = pd.read_csv(self.data_files + self.data_file_name.format(
+            self.get_selected_color()), index_col=0)
+        for rod in self.ui.photo.edits:
+            df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                        (df_part.particle == rod.rod_id), "x1_gp3"] = \
+                rod.rod_points[0]
+            df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                        (df_part.particle == rod.rod_id), "x2_gp3"] = \
+                rod.rod_points[2]
+            df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                        (df_part.particle == rod.rod_id), "y1_gp3"] = \
+                rod.rod_points[1]
+            df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                        (df_part.particle == rod.rod_id), "y2_gp3"] = \
+                rod.rod_points[3]
+
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
+        save_file = save_dir + "/" + self.data_file_name.format(
+            self.get_selected_color())
+        df_part.to_csv(save_file, index_label="")
+        this_action = FileAction(save_file, FileActions.SAVE)
+        self.ui.lv_actions_list.add_action(this_action)
+
+    @staticmethod
+    def warning_unsaved() -> bool:
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("Rod Tracking")
+        msg.setText("There are unsaved changes!")
+        btn_discard = msg.addButton("Discard changes",
+                                    QMessageBox.ActionRole)
+        btn_cancel = msg.addButton("Cancel",
+                                   QMessageBox.ActionRole)
+        msg.setDefaultButton(btn_cancel)
+        msg.exec()
+        if msg.clickedButton() == btn_discard:
+            return True
+        elif msg.clickedButton() == btn_cancel:
+            return False
+        else:
+            return False
+
 
 if __name__ == "__main__":
+    temp_dir = TEMP_DIR
+    if not os.path.exists(tempfile.gettempdir() + "/RodTrack"):
+        os.mkdir(temp_dir)
+
     app = QtWidgets.QApplication(sys.argv)
     main_window = RodTrackWindow()
     main_window.show()

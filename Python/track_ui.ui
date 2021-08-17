@@ -476,7 +476,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>358</width>
+                 <width>355</width>
                  <height>224</height>
                 </rect>
                </property>
@@ -518,7 +518,7 @@
                 <enum>QLayout::SetMaximumSize</enum>
                </property>
                <item>
-                <widget class="QUndoView" name="uv_actions_list">
+                <widget class="ActionLogger" name="lv_actions_list">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -694,6 +694,11 @@
    <class>RodImageWidget</class>
    <extends>QLabel</extends>
    <header>rodimagewidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ActionLogger</class>
+   <extends>QListWidget</extends>
+   <header>actionlogger.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
