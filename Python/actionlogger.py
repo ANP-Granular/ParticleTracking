@@ -8,7 +8,7 @@ from PyQt5 import QtCore
 
 from rodnumberwidget import RodNumberWidget, RodState
 
-TEMP_DIR = tempfile.gettempdir() + "/RodTrack"
+TEMP_DIR = tempfile.gettempdir() + "/RodTracker"
 
 
 class FileActions(Enum):
@@ -42,10 +42,8 @@ class FileAction(Action):
         if action is FileActions.LOAD_IMAGES:
             self.file_num = file_num
         elif action is FileActions.LOAD_RODS:
-            # TODO: copy old file to temp_folder (as working copy)
             pass
         elif action is FileActions.MODIFY:
-            # TODO: copy old file to temp_folder
             pass
         super().__init__(str(self), *args, **kwargs)
 
@@ -152,9 +150,6 @@ class ActionLogger(QListWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.unsaved_changes = []
-        # TODO: setup temp folder (first just for session data, gets deleted
-        #  on close)
-        # TODO: copy initial rod file(s) to temp, use those for display
         self.temp_manager = tempfile.TemporaryDirectory(
             prefix="Session_", dir=TEMP_DIR)
 

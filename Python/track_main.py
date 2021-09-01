@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import platform
 import tempfile
@@ -31,9 +32,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.photo.logger = self.ui.lv_actions_list
         # tracker of the current image that's displayed
         self.CurrentFileIndex = 0
-        self.data_files = None
+        self.original_data = None   # Holds the original data directory
+        self.data_files = self.ui.lv_actions_list.temp_manager.name
         self.data_file_name = 'rods_df_{:s}.csv'
         self.fileList = None
+        self.last_color = None
+        for rb in self.ui.group_rod_color.findChildren(QRadioButton):
+            if rb.isChecked():
+                self.last_color = rb.objectName()[3:]
 
         # Connect signals
 
@@ -46,8 +52,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_fit_to_window.triggered.connect(self.fit_to_window)
         self.ui.cb_overlay.stateChanged.connect(self.cb_changed)
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
-            rb.toggled.connect(lambda state: self.show_overlay() if state
-                               else None)
+            # rb.toggled.connect(lambda state: self.show_overlay() if state
+            #                    else None)
+            rb.toggled.connect(self.color_change)
 
         # File actions
         self.ui.pb_load_images.clicked.connect(self.open_image_folder)
@@ -60,13 +67,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.pb_next.clicked.connect(lambda: self.show_next(direction=1))
         self.ui.pb_save_rods.clicked.connect(self.save_changes)
 
-        # Internal/Rod signals & actions
-        self.ui.photo.line_to_save[RodNumberWidget].connect(self.save_line)
-        self.ui.photo.line_to_save[RodNumberWidget, bool].connect(
-            self.save_line)
-
         # Undo
         self.ui.pb_undo.clicked.connect(self.ui.lv_actions_list.undo_last)
+        self.ui.photo.request_color_change.connect(self.change_color)
 
     def open_image_folder(self):
         # check for a directory
@@ -111,7 +114,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.photo.image = loaded_image
             self.fit_to_window()
             self.ui.le_image_dir.setText(dirpath)
-            if self.data_files is not None:
+            if self.original_data is not None:
                 self.show_overlay()
 
             # Logging
@@ -125,14 +128,18 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # check for a directory
         ui_dir = self.ui.le_rod_dir.text()
         while True:
-            self.data_files = QFileDialog.getExistingDirectory(
+            self.original_data = QFileDialog.getExistingDirectory(
                 self, 'Choose Folder with position data', ui_dir) + '/'
-            if self.data_files == '/':
-                self.data_files = None
+            if self.original_data == '/':
+                self.original_data = None
                 return
 
-            if self.data_files is not None:
-                # check for eligable files and de-/activate radio buttons
+            if self.original_data is not None:
+                # delete old stored files
+                for file in os.listdir(self.data_files):
+                    os.remove(self.data_files + "/" + file)
+
+                # check for eligible files and de-/activate radio buttons
                 eligible_files = False
                 rb_colors = [child for child
                              in self.ui.group_rod_color.children() if
@@ -141,17 +148,23 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     rb.setEnabled(False)
                     next_color = rb.text().lower()
                     file_found = os.path.exists(
-                        self.data_files + self.data_file_name.format(
+                        self.original_data + self.data_file_name.format(
                             next_color))
                     if file_found:
                         eligible_files = True
                         rb.setEnabled(True)
+                        # copy file to temporary storage
+                        src_file = self.original_data + \
+                            self.data_file_name.format(next_color)
+                        dst_file = self.data_files\
+                            + "/" + self.data_file_name.format(next_color)
+                        shutil.copy2(src=src_file, dst=dst_file)
 
                 if eligible_files:
-                    self.ui.le_rod_dir.setText(self.data_files[:-1])
-                    self.ui.le_save_dir.setText(self.data_files[:-1] +
+                    self.ui.le_rod_dir.setText(self.original_data[:-1])
+                    self.ui.le_save_dir.setText(self.original_data[:-1] +
                                                 "_corrected")
-                    this_action = FileAction(self.data_files[:-1],
+                    this_action = FileAction(self.original_data[:-1],
                                              FileActions.LOAD_RODS)
                     self.ui.lv_actions_list.add_action(this_action)
                     self.show_overlay()
@@ -162,11 +175,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     msg.setIcon(QMessageBox.Warning)
                     msg.setWindowTitle("Rod Tracking")
                     msg.setText(f"There were no useful files found in: "
-                                f"'{self.data_files}'")
+                                f"'{self.original_data}'")
                     msg.setStandardButtons(
                         QMessageBox.Retry | QMessageBox.Cancel)
                     user_decision = msg.exec()
-                    self.data_files = None
+                    self.original_data = None
                     if user_decision == QMessageBox.Cancel:
                         # Stop overlaying
                         return
@@ -177,7 +190,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def show_overlay(self):
         if not self.ui.cb_overlay.isChecked():
             return
-        if self.data_files is not None:
+        if self.original_data is not None:
             # Check whether image file is loaded
             if self.fileList is None:
                 msg = QMessageBox()
@@ -204,13 +217,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def load_rods(self):
         # Load rod position data
         # items = ("black", "blue", "green", "purple", "red", "yellow")
-        if self.data_files is None:
+        if self.original_data is None:
             return
         col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3",
                     "y2_gp3"]
         filename = (self.fileList[self.CurrentFileIndex])
         file_name = os.path.split(filename)[-1]
-        df_part = pd.read_csv(self.data_files +
+        df_part = pd.read_csv(self.data_files + "/" +
                               self.data_file_name.format(
                                   self.get_selected_color()),
                               usecols=col_list)
@@ -224,7 +237,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             y1 = df_part2['y1_gp3'][ind_rod]
             y2 = df_part2['y2_gp3'][ind_rod]
             # Add rods
-            ident = RodNumberWidget(self.ui.photo, str(value), QPoint(0, 0))
+            ident = RodNumberWidget(self.last_color, self.ui.photo,
+                                    str(value), QPoint(0, 0))
             ident.rod_id = value
             ident.rod_points = [x1, y1, x2, y2]
             ident.setObjectName(f"rn_{ind_rod}")
@@ -237,46 +251,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def cb_changed(self, state):
         if state == 0:
             # deactivated
-            if not self.ui.lv_actions_list.unsaved_changes == []:
-                if self.warning_unsaved():
-                    self.ui.lv_actions_list.discard_changes()
-                else:
-                    # TODO: a new cb_changed event is emitted, that causes
-                    #  this function to run again and activate show_overlay().
-                    #  That currently deletes the changes made. The issue
-                    #  will be resolved in the next iteration (using
-                    #  temporary files for reloading while changes are present)
-                    self.ui.cb_overlay.setCheckState(2)
-                    return
+            self.save_changes(temp_only=True)
             self.clear_screen()
         elif state == 2:
             # activated
             self.show_overlay()
-
-    @QtCore.pyqtSlot(RodNumberWidget)
-    @QtCore.pyqtSlot(RodNumberWidget, bool)
-    def save_line(self, rod: RodNumberWidget, delete_after=False):
-        # Save rod to disk
-        filename = (self.fileList[self.CurrentFileIndex])
-        file_name = os.path.split(filename)[-1]
-        df_part = pd.read_csv(self.data_files + self.data_file_name.format(
-            self.get_selected_color()), index_col=0)
-        df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                    (df_part.particle == rod.rod_id), "x1_gp3"] = \
-            rod.rod_points[0]
-        df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                    (df_part.particle == rod.rod_id), "x2_gp3"] = \
-            rod.rod_points[2]
-        df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                    (df_part.particle == rod.rod_id), "y1_gp3"] = \
-            rod.rod_points[1]
-        df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                    (df_part.particle == rod.rod_id), "y2_gp3"] = \
-            rod.rod_points[3]
-        df_part.to_csv(self.data_files + self.data_file_name.format(
-            self.get_selected_color()), index_label="")
-        if delete_after:
-            rod.deleteLater()
 
     def show_next(self, direction: int):
         if self.fileList:
@@ -347,29 +326,19 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def color_change(self, state):
         if state:
+            if self.ui.lv_actions_list.unsaved_changes is not []:
+                self.save_changes(temp_only=True)
+            self.last_color = self.get_selected_color()
             self.show_overlay()
 
-    def save_changes(self):
-        save_dir = self.ui.le_save_dir.text()
-
-        if save_dir == self.ui.le_rod_dir.text():
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Warning)
-            msg.setWindowTitle("Rod Tracking")
-            msg.setText("The saving path points to the original data!"
-                        "Do you want to overwrite it?")
-            msg.addButton("Overwrite", QMessageBox.ActionRole)
-            btn_cancel = msg.addButton("Cancel",
-                                       QMessageBox.ActionRole)
-            msg.exec()
-            if msg.clickedButton() == btn_cancel:
-                return
-
+    def save_changes(self, temp_only=False):
+        # TODO: move saving to different Thread (takes too long)
         # Save rods to disk
         filename = (self.fileList[self.CurrentFileIndex])
         file_name = os.path.split(filename)[-1]
-        df_part = pd.read_csv(self.data_files + self.data_file_name.format(
-            self.get_selected_color()), index_col=0)
+        tmp_file = self.data_files + "/" + self.data_file_name.format(
+            self.last_color)
+        df_part = pd.read_csv(tmp_file, index_col=0)
         for rod in self.ui.photo.edits:
             df_part.loc[(df_part.frame == int(file_name[1:4])) &
                         (df_part.particle == rod.rod_id), "x1_gp3"] = \
@@ -384,13 +353,33 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         (df_part.particle == rod.rod_id), "y2_gp3"] = \
                 rod.rod_points[3]
 
+        df_part.to_csv(tmp_file, index_label="")
+        if temp_only:
+            # skip permanent saving
+            return
+
+        save_dir = self.ui.le_save_dir.text()
+        if save_dir == self.ui.le_rod_dir.text():
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setWindowTitle("Rod Tracking")
+            msg.setText("The saving path points to the original data!"
+                        "Do you want to overwrite it?")
+            msg.addButton("Overwrite", QMessageBox.ActionRole)
+            btn_cancel = msg.addButton("Cancel",
+                                       QMessageBox.ActionRole)
+            msg.exec()
+            if msg.clickedButton() == btn_cancel:
+                return
+
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
-        save_file = save_dir + "/" + self.data_file_name.format(
-            self.get_selected_color())
-        df_part.to_csv(save_file, index_label="")
-        this_action = FileAction(save_file, FileActions.SAVE)
-        self.ui.lv_actions_list.add_action(this_action)
+        # TODO: only save the files from the "unsaved" changes
+        for file in os.listdir(self.data_files):
+            shutil.copy2(self.data_files + "/" + file, save_dir + "/" + file)
+            save_file = save_dir + "/" + file
+            this_action = FileAction(save_file, FileActions.SAVE)
+            self.ui.lv_actions_list.add_action(this_action)
 
     @staticmethod
     def warning_unsaved() -> bool:
@@ -410,6 +399,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             return False
         else:
             return False
+
+    @QtCore.pyqtSlot(str)
+    def change_color(self, to_color: str):
+        for rb in self.ui.group_rod_color.findChildren(QRadioButton):
+            if rb.objectName()[3:] == to_color:
+                # activate the last color
+                rb.toggle()
 
 
 if __name__ == "__main__":

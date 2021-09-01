@@ -10,9 +10,7 @@ from actionlogger import ActionLogger, DeleteRodAction, \
 
 class RodImageWidget(QLabel):
     edits: List[RodNumberWidget]
-    line_to_save = QtCore.pyqtSignal([RodNumberWidget],
-                                     [RodNumberWidget, bool],
-                                     name="line_to_save")
+    request_color_change = QtCore.pyqtSignal(str, name="request_color_change")
     _logger: ActionLogger = None
 
     def __init__(self, *args, **kwargs):
@@ -362,7 +360,6 @@ class RodImageWidget(QLabel):
                     else:
                         second_change = self._logger.catch_rodnumber_change(
                             rod, last_id)
-                    # self.line_to_save[RodNumberWidget].emit(rod)
                 first_change.coupled_action = second_change
                 second_change.coupled_action = first_change
 
@@ -387,32 +384,12 @@ class RodImageWidget(QLabel):
                         delete_action = DeleteRodAction(rod.copy_rod())
                         rod.rod_points = [0, 0, 0, 0]
                         rod.set_state(RodState.CHANGED)
-
-                        # rod.deleteLater()
-                        # self._edits.remove(rod)
-                        # Delete old by saving an "empty" rod (0,0)->(0,0)
-                        # empty_rod = RodNumberWidget()
-                        # empty_rod.rod_id = last_id
-                        # self.line_to_save[RodNumberWidget, bool].emit(
-                        #     empty_rod, True)
                         continue
                     rod.set_state(RodState.CHANGED)
                     change_action = self._logger.catch_rodnumber_change(
                         rod, last_id)
-                    # self.line_to_save[RodNumberWidget].emit(rod)
                 delete_action.coupled_action = change_action
                 self._logger.add_action(delete_action)
-            # else:
-            #     # Save new rod, delete old position, keep old displayed
-            #     # (user resolves the rest)
-            #     set_rod.set_state(RodState.CHANGED)
-            #     change_action = self._logger.catch_rodnumber_change(set_rod,
-            #                                                         last_id)
-            #     # self.line_to_save[RodNumberWidget].emit(set_rod)
-            #     empty_rod = RodNumberWidget()
-            #     empty_rod.rod_id = last_id
-            #     # self.line_to_save[RodNumberWidget, bool].emit(
-            #     #     empty_rod, True)
             self.draw_rods()
         else:
             # No conflicts, inform logger
@@ -427,6 +404,14 @@ class RodImageWidget(QLabel):
 
     @QtCore.pyqtSlot(Action)
     def undo_action(self, action: Action):
+        try:
+            action_color = action.rod.color
+            if action_color != self._edits[0].color:
+                self.request_color_change.emit(action_color)
+        except AttributeError:
+            # given action does not require a color to be handled
+            pass
+
         if type(action) == ChangeRodPositionAction:
             new_rods = action.undo(rods=self._edits)
             self._edits = new_rods

@@ -43,7 +43,7 @@ class RodNumberWidget(QLineEdit):
     id_changed = QtCore.pyqtSignal(QLineEdit, int, name="changedRodNumber")
     rod_state: RodState
 
-    def __init__(self, parent=None, text="", pos=QPoint(0, 0)):
+    def __init__(self, color, parent=None, text="", pos=QPoint(0, 0)):
         # General setup
         super().__init__()
         self.__mousePressPos = None
@@ -58,6 +58,7 @@ class RodNumberWidget(QLineEdit):
         self.rod_id = None
         self.rod_state = RodState.NORMAL
         self.rod_points = [0, 0, 0, 0]
+        self.color = color
 
         # Set initial visual appearance & function
         self.setInputMask("99")
@@ -152,7 +153,8 @@ class RodNumberWidget(QLineEdit):
             raise(RodStateError())
 
     def copy_rod(self):
-        copied = RodNumberWidget(self.parent(), self.text(), self.pos())
+        copied = RodNumberWidget(self.color, self.parent(), self.text(),
+                                 self.pos())
         copied.rod_state = self.rod_state
         copied.rod_points = self.rod_points
         copied.rod_id = self.rod_id
