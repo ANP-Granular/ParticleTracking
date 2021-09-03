@@ -7,6 +7,7 @@ from rodnumberwidget import RodNumberWidget, RodState
 from actionlogger import ActionLogger, DeleteRodAction, \
     ChangeRodPositionAction, Action, ChangedRodNumberAction
 
+ICON_PATH = "./resources/icon_main.ico"
 
 class RodImageWidget(QLabel):
     edits: List[RodNumberWidget]
@@ -25,6 +26,7 @@ class RodImageWidget(QLabel):
         self.base_pixmap = None
         self._edits = None
         self._scale_factor = 1.0
+        self._offset = [0, 0]
 
     # Access to properties ====================================================
     @property
@@ -95,6 +97,14 @@ class RodImageWidget(QLabel):
             QtCore.Qt.SmoothTransformation)
         self.setPixmap(new_pixmap)
         self.base_pixmap = new_pixmap
+
+        # Handle the pixmap's shift to the center of the widget, in cases
+        # the surrounding scrollArea is larger than the pixmap
+        x_off = (self.width() - self.base_pixmap.width())//2
+        y_off = (self.height() - self.base_pixmap.height())//2
+        self._offset = [x_off if x_off > 0 else 0,
+                        y_off if y_off > 0 else 0]
+
         # Update rod and number display
         self.draw_rods()
 
@@ -105,32 +115,7 @@ class RodImageWidget(QLabel):
         rod_pixmap = QtGui.QPixmap(self.base_pixmap)
         painter = QtGui.QPainter(rod_pixmap)
         for rod in self._edits:
-            rod_pos = rod.rod_points
-            rod_pos = [int(10 * self._scale_factor * coord)
-                       for coord in rod_pos]
-
-            # Update rod number positions
-            x = rod_pos[2] - rod_pos[0]
-            y = rod_pos[3] - rod_pos[1]
-            x_orthogonal = -y
-            y_orthogonal = x
-            if x_orthogonal < 0:
-                # change vector to always point to the right
-                x_orthogonal = -x_orthogonal
-                y_orthogonal = -y_orthogonal
-            len_vec = math.sqrt(x_orthogonal**2 + y_orthogonal**2)
-            try:
-                pos_x = rod_pos[0] + int(x_orthogonal/len_vec*15) + int(x/2)
-                pos_y = rod_pos[1] + int(y_orthogonal/len_vec*15) + int(y/2)
-                # Account for the widget's dimensions
-                pos_x -= rod.size().width()/2
-                pos_y -= rod.size().height()/2
-
-            except ZeroDivisionError:
-                # Rod has length of 0
-                pos_x = rod_pos[0] + 17
-                pos_y = rod_pos[1] + 17
-            rod.move(QtCore.QPoint(pos_x, pos_y))
+            rod_pos = self.adjust_rod_position(rod)
 
             # Set the line style depending on the rod number widget state
             if rod.rod_state == RodState.NORMAL:
@@ -146,8 +131,9 @@ class RodImageWidget(QLabel):
                 pen_color = QtCore.Qt.red
             else:
                 msg = QMessageBox()
+                msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
                 msg.setIcon(QMessageBox.Warning)
-                msg.setWindowTitle("RodTracking")
+                msg.setWindowTitle("Rod Tracker")
                 msg.setText("A rod with unknown state was encountered!")
                 msg.setStandardButtons(QMessageBox.Ok)
                 msg.exec()
@@ -207,7 +193,8 @@ class RodImageWidget(QLabel):
                     self.rod_activated(-1)
                 elif event.button() == QtCore.Qt.LeftButton:
                     # Start rod correction
-                    self.startPos = event.pos()
+                    self.startPos = self.subtract_offset(event.pos(),
+                                                         self._offset)
                     for rod in self._edits:
                         if rod.rod_state == RodState.SELECTED:
                             rod.set_state(RodState.EDITING)
@@ -223,7 +210,8 @@ class RodImageWidget(QLabel):
                     self.rod_pixmap = None
                 else:
                     # Finish line and save it
-                    self.save_line(self.startPos, event.pos())
+                    self.save_line(self.startPos, self.subtract_offset(
+                        event.pos(), self._offset))
                     self.startPos = None
                     self.draw_rods()
                     self.rod_pixmap = None
@@ -231,7 +219,7 @@ class RodImageWidget(QLabel):
     def mouseMoveEvent(self, mouse_event: QtGui.QMouseEvent) -> None:
         # Draw intermediate rod position between clicks
         if self.startPos is not None:
-            end = mouse_event.pos()
+            end = self.subtract_offset(mouse_event.pos(), self._offset)
             pixmap = QtGui.QPixmap(self.rod_pixmap)
             qp = QtGui.QPainter(pixmap)
             pen = QtGui.QPen(QtCore.Qt.white, 3)
@@ -281,7 +269,9 @@ class RodImageWidget(QLabel):
                     break
             if not rod_exists:
                 msg = QMessageBox()
+                msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
                 msg.setIcon(QMessageBox.Warning)
+                msg.setWindowTitle("Rod Tracker")
                 msg.setText(f"There was no rod found with #{selected_rod}")
                 msg.setStandardButtons(
                     QMessageBox.Retry | QMessageBox.Cancel)
@@ -331,7 +321,9 @@ class RodImageWidget(QLabel):
         self.draw_rods()
         if len(conflicting) > 1:
             msg = QMessageBox()
+            msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
             msg.setIcon(QMessageBox.Warning)
+            msg.setWindowTitle("Rod Tracker")
             msg.setText(
                 f"A conflict was encountered with setting Rod"
                 f"#{set_rod.rod_id} (previously Rod#{last_id}). \nHow shall "
@@ -440,3 +432,60 @@ class RodImageWidget(QLabel):
         else:
             # Cannot handle this action
             return
+
+    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(a0)
+        # Adjust rod positions after resizing of the widget happened,
+        # e.g. the slider was acuated or the image was scaled
+        if self._edits is not None:
+            # Calculate offset
+            x_off = (a0.size().width() - self.base_pixmap.width()) // 2
+            y_off = (a0.size().height() - self.base_pixmap.height()) // 2
+            x_off = x_off if x_off > 0 else 0
+            y_off = y_off if y_off > 0 else 0
+            self._offset = [x_off, y_off]
+
+            # Complete version
+            for rod in self._edits:
+                self.adjust_rod_position(rod)
+
+    @staticmethod
+    def subtract_offset(point: QtCore.QPoint, offset: [int]) -> QtCore.QPoint:
+        new_x = point.x() - offset[0]
+        new_y = point.y() - offset[1]
+        return QtCore.QPoint(new_x, new_y)
+
+    def adjust_rod_position(self, rod: RodNumberWidget):
+        rod_pos = rod.rod_points
+        rod_pos = [int(10 * self._scale_factor * coord)
+                   for coord in rod_pos]
+
+        # Update rod number positions
+        x = rod_pos[2] - rod_pos[0]
+        y = rod_pos[3] - rod_pos[1]
+        x_orthogonal = -y
+        y_orthogonal = x
+        if x_orthogonal < 0:
+            # change vector to always point to the right
+            x_orthogonal = -x_orthogonal
+            y_orthogonal = -y_orthogonal
+        len_vec = math.sqrt(x_orthogonal ** 2 + y_orthogonal ** 2)
+        try:
+            pos_x = rod_pos[0] + int(
+                x_orthogonal / len_vec * 15) + int(x / 2)
+            pos_y = rod_pos[1] + int(
+                y_orthogonal / len_vec * 15) + int(y / 2)
+            # Account for the widget's dimensions
+            pos_x -= rod.size().width() / 2
+            pos_y -= rod.size().height() / 2
+
+        except ZeroDivisionError:
+            # Rod has length of 0
+            pos_x = rod_pos[0] + 17
+            pos_y = rod_pos[1] + 17
+
+        pos_x += self._offset[0]
+        pos_y += self._offset[1]
+
+        rod.move(QtCore.QPoint(pos_x, pos_y))
+        return rod_pos

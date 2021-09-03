@@ -2,10 +2,9 @@ import os
 import shutil
 import sys
 import platform
-import tempfile
 
 import pandas as pd
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QImage
@@ -13,6 +12,16 @@ from PyQt5.QtGui import QImage
 from actionlogger import FileAction, TEMP_DIR, FileActions
 from track_ui import Ui_MainWindow
 from rodnumberwidget import RodNumberWidget
+
+ICON_PATH = "./resources/icon_main.ico"
+
+HAS_SPLASH = False
+try:
+    import pyi_splash
+    HAS_SPLASH = True
+except ModuleNotFoundError:
+    # Application not bundled
+    HAS_SPLASH = False
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
@@ -172,8 +181,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 else:
                     # no matching file was found
                     msg = QMessageBox()
+                    msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
                     msg.setIcon(QMessageBox.Warning)
-                    msg.setWindowTitle("Rod Tracking")
+                    msg.setWindowTitle("Rod Tracker")
                     msg.setText(f"There were no useful files found in: "
                                 f"'{self.original_data}'")
                     msg.setStandardButtons(
@@ -194,8 +204,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # Check whether image file is loaded
             if self.fileList is None:
                 msg = QMessageBox()
+                msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
                 msg.setIcon(QMessageBox.Warning)
-                msg.setWindowTitle("Rod Tracking")
+                msg.setWindowTitle("Rod Tracker")
                 msg.setText(f"There is no image loaded yet. "
                             f"Please select an image before rods can be "
                             f"displayed.")
@@ -206,8 +217,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.load_rods()
         else:
             msg = QMessageBox()
+            msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
             msg.setIcon(QMessageBox.Warning)
-            msg.setWindowTitle("Rod Tracking")
+            msg.setWindowTitle("Rod Tracker")
             msg.setText(f"There are no rod position files selected yet. "
                         f"Please select files!")
             msg.setStandardButtons(QMessageBox.Ok)
@@ -361,8 +373,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         save_dir = self.ui.le_save_dir.text()
         if save_dir == self.ui.le_rod_dir.text():
             msg = QMessageBox()
+            msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
             msg.setIcon(QMessageBox.Warning)
-            msg.setWindowTitle("Rod Tracking")
+            msg.setWindowTitle("Rod Tracker")
             msg.setText("The saving path points to the original data!"
                         "Do you want to overwrite it?")
             msg.addButton("Overwrite", QMessageBox.ActionRole)
@@ -384,8 +397,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     @staticmethod
     def warning_unsaved() -> bool:
         msg = QMessageBox()
+        msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
         msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("Rod Tracking")
+        msg.setWindowTitle("Rod Tracker")
         msg.setText("There are unsaved changes!")
         btn_discard = msg.addButton("Discard changes",
                                     QMessageBox.ActionRole)
@@ -409,11 +423,21 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
-    temp_dir = TEMP_DIR
-    if not os.path.exists(tempfile.gettempdir() + "/RodTrack"):
-        os.mkdir(temp_dir)
+    if HAS_SPLASH:
+        pyi_splash.update_text("Updating environment...")
+
+    if not os.path.exists(TEMP_DIR):
+        os.mkdir(TEMP_DIR)
+
+    if HAS_SPLASH:
+        pyi_splash.update_text("Loading UI...")
 
     app = QtWidgets.QApplication(sys.argv)
     main_window = RodTrackWindow()
+
+    if HAS_SPLASH:
+        # Close the splash screen.
+        pyi_splash.close()
+
     main_window.show()
     sys.exit(app.exec_())

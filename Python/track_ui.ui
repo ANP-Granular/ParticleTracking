@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Rod Tracking</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>resources/icon_main.ico</normaloff>resources/icon_main.ico</iconset>
+  </property>
   <widget class="QWidget" name="centralized">
    <layout class="QGridLayout" name="gridLayout">
     <property name="spacing">
@@ -476,8 +480,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>355</width>
-                 <height>224</height>
+                 <width>522</width>
+                 <height>274</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -499,13 +503,16 @@
                    <enum>QFrame::Plain</enum>
                   </property>
                   <property name="text">
-                   <string>Please open an image file</string>
+                   <string/>
+                  </property>
+                  <property name="pixmap">
+                   <pixmap>resources/icon_main.ico</pixmap>
                   </property>
                   <property name="scaledContents">
                    <bool>false</bool>
                   </property>
                   <property name="alignment">
-                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                   <set>Qt::AlignCenter</set>
                   </property>
                  </widget>
                 </item>
@@ -558,7 +565,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>../../icons8-left-arrow-96.png</normaloff>../../icons8-left-arrow-96.png</iconset>
+                   <normaloff>resources/left-arrow-96.png</normaloff>resources/left-arrow-96.png</iconset>
                  </property>
                  <property name="shortcut">
                   <string>Ctrl+Z</string>
