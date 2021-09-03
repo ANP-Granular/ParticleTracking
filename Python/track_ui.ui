@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Rod Tracking</string>
+   <string>Rod Tracker</string>
   </property>
   <property name="windowIcon">
    <iconset>
@@ -566,9 +566,6 @@
                  <property name="icon">
                   <iconset>
                    <normaloff>resources/left-arrow-96.png</normaloff>resources/left-arrow-96.png</iconset>
-                 </property>
-                 <property name="shortcut">
-                  <string>Ctrl+Z</string>
                  </property>
                 </widget>
                </item>

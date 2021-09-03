@@ -77,6 +77,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.pb_save_rods.clicked.connect(self.save_changes)
 
         # Undo
+        self.ui.action_revert.triggered.connect(
+            self.ui.lv_actions_list.undo_last)
         self.ui.pb_undo.clicked.connect(self.ui.lv_actions_list.undo_last)
         self.ui.photo.request_color_change.connect(self.change_color)
 
@@ -344,28 +346,25 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.show_overlay()
 
     def save_changes(self, temp_only=False):
-        # TODO: move saving to different Thread (takes too long)
+        # TODO: move saving to different Thread(, if it still takes too long)
+        # Skip, if there are no changes
+        if not self.ui.lv_actions_list.unsaved_changes:
+            return
         # Save rods to disk
         filename = (self.fileList[self.CurrentFileIndex])
         file_name = os.path.split(filename)[-1]
         tmp_file = self.data_files + "/" + self.data_file_name.format(
             self.last_color)
         df_part = pd.read_csv(tmp_file, index_col=0)
-        for rod in self.ui.photo.edits:
-            df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                        (df_part.particle == rod.rod_id), "x1_gp3"] = \
-                rod.rod_points[0]
-            df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                        (df_part.particle == rod.rod_id), "x2_gp3"] = \
-                rod.rod_points[2]
-            df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                        (df_part.particle == rod.rod_id), "y1_gp3"] = \
-                rod.rod_points[1]
-            df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                        (df_part.particle == rod.rod_id), "y2_gp3"] = \
-                rod.rod_points[3]
+        if self.ui.photo.edits is not None:
+            # Skips this, if no rods are displayed
+            for rod in self.ui.photo.edits:
+                df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                            (df_part.particle == rod.rod_id),
+                            ["x1_gp3", "y1_gp3", "x2_gp3", "y2_gp3"]] = \
+                    rod.rod_points
 
-        df_part.to_csv(tmp_file, index_label="")
+            df_part.to_csv(tmp_file, index_label="")
         if temp_only:
             # skip permanent saving
             return

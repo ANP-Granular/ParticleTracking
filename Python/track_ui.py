@@ -310,7 +310,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Rod Tracking"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Rod Tracker"))
         self.pb_load_rods.setText(_translate("MainWindow", "Load Rods"))
         self.pb_load_images.setText(_translate("MainWindow", "Load Images"))
         self.group_rod_color.setTitle(_translate("MainWindow", "Rod Color"))
@@ -329,7 +329,6 @@ class Ui_MainWindow(object):
         self.pb_next.setShortcut(_translate("MainWindow", "Right"))
         self.pb_save_rods.setText(_translate("MainWindow", "Save"))
         self.pb_undo.setText(_translate("MainWindow", "Undo"))
-        self.pb_undo.setShortcut(_translate("MainWindow", "Ctrl+Z"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.menuEdit.setTitle(_translate("MainWindow", "Edit"))
         self.menuView.setTitle(_translate("MainWindow", "View"))
