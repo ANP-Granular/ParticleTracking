@@ -9,6 +9,7 @@ from actionlogger import ActionLogger, DeleteRodAction, \
 
 ICON_PATH = "./resources/icon_main.ico"
 
+
 class RodImageWidget(QLabel):
     edits: List[RodNumberWidget]
     request_color_change = QtCore.pyqtSignal(str, name="request_color_change")

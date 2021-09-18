@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import platform
+import re
 
 import pandas as pd
 from PyQt5 import QtCore, QtWidgets, QtGui
@@ -30,6 +31,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        # Adaptations of the UI
         # Adapt menu action shortcuts for Mac
         if platform.system() == "Darwin":
             self.ui.action_zoom_in.setShortcut("Ctrl+=")
@@ -37,6 +39,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         self.setWindowState(QtCore.Qt.WindowMaximized)
         self.setFocus()
+        self.ui.group_rod_color.setEnabled(False)
+
         # Initialize
         self.ui.photo.logger = self.ui.lv_actions_list
         # tracker of the current image that's displayed
@@ -155,23 +159,51 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 rb_colors = [child for child
                              in self.ui.group_rod_color.children() if
                              type(child) is QRadioButton]
-                for rb in rb_colors:
-                    rb.setEnabled(False)
-                    next_color = rb.text().lower()
-                    file_found = os.path.exists(
-                        self.original_data + self.data_file_name.format(
-                            next_color))
-                    if file_found:
+                rb_color_texts = [btn.text().lower() for btn in rb_colors]
+                data_regex = re.compile('rods_df_\w+\.csv')
+                group_layout = self.ui.group_rod_color.layout()
+                max_col = group_layout.columnCount()-1
+                max_row = 1
+                if group_layout.itemAtPosition(1, max_col) is not None:
+                    # 'Add' a new column as current layout is full
+                    max_col += 1
+                    max_row = 0
+
+                found_colors = []
+                for file in os.listdir(self.original_data):
+                    whole_path = os.path.join(self.original_data, file)
+                    if not os.path.isfile(whole_path):
+                        continue
+                    if re.fullmatch(data_regex, file) is not None:
                         eligible_files = True
-                        rb.setEnabled(True)
+                        found_color = os.path.splitext(file)[0].split("_")[-1]
+                        found_colors.append(found_color)
                         # copy file to temporary storage
-                        src_file = self.original_data + \
-                            self.data_file_name.format(next_color)
-                        dst_file = self.data_files\
-                            + "/" + self.data_file_name.format(next_color)
+                        src_file = os.path.join(self.original_data, file)
+                        dst_file = os.path.join(self.data_files, file)
                         shutil.copy2(src=src_file, dst=dst_file)
+                        if found_color not in rb_color_texts:
+                            # create new radiobutton for this color
+                            new_btn = QRadioButton(
+                                text=found_color.capitalize())
+                            new_btn.setObjectName(found_color)
+                            new_btn.toggled.connect(self.color_change)
+                            # retain only 2 rows
+                            group_layout.addWidget(new_btn, max_row, max_col)
+                            if max_row == 1:
+                                max_row = 0
+                                max_col += 1
+                            else:
+                                max_row += 1
+
+                for btn in rb_colors:
+                    if btn.text().lower() not in found_colors:
+                        group_layout.removeWidget(btn)
+                        btn.hide()
+                        btn.deleteLater()
 
                 if eligible_files:
+                    self.ui.group_rod_color.setEnabled(True)
                     self.ui.le_rod_dir.setText(self.original_data[:-1])
                     self.ui.le_save_dir.setText(self.original_data[:-1] +
                                                 "_corrected")
@@ -200,7 +232,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         continue
 
     def show_overlay(self):
-        if not self.ui.cb_overlay.isChecked():
+        if not self.ui.cb_overlay.isChecked() or \
+                not self.ui.group_rod_color.isEnabled():
             return
         if self.original_data is not None:
             # Check whether image file is loaded
@@ -231,7 +264,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def load_rods(self):
         # Load rod position data
         # items = ("black", "blue", "green", "purple", "red", "yellow")
-        if self.original_data is None:
+        if self.original_data is None or not self.ui.cb_overlay.isChecked():
             return
         col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3",
                     "y2_gp3"]
