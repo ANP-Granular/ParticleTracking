@@ -42,7 +42,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.group_rod_color.setEnabled(False)
 
         # Initialize
-        self.ui.photo.logger = self.ui.lv_actions_list
+        self.ui.camera_0.logger = self.ui.lv_actions_list
         # tracker of the current image that's displayed
         self.CurrentFileIndex = 0
         self.original_data = None   # Holds the original data directory
@@ -65,8 +65,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_fit_to_window.triggered.connect(self.fit_to_window)
         self.ui.cb_overlay.stateChanged.connect(self.cb_changed)
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
-            # rb.toggled.connect(lambda state: self.show_overlay() if state
-            #                    else None)
             rb.toggled.connect(self.color_change)
 
         # File actions
@@ -79,12 +77,21 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             lambda: self.show_next(direction=-1))
         self.ui.pb_next.clicked.connect(lambda: self.show_next(direction=1))
         self.ui.pb_save_rods.clicked.connect(self.save_changes)
+        self.ui.action_save.triggered.connect(self.save_changes)
 
         # Undo
         self.ui.action_revert.triggered.connect(
             self.ui.lv_actions_list.undo_last)
         self.ui.pb_undo.clicked.connect(self.ui.lv_actions_list.undo_last)
-        self.ui.photo.request_color_change.connect(self.change_color)
+        self.ui.camera_0.request_color_change.connect(self.change_color)
+
+        # View controls
+        self.switch_left = QtWidgets.QShortcut(QtGui.QKeySequence(
+            "Ctrl+left"), self)
+        self.switch_right = QtWidgets.QShortcut(QtGui.QKeySequence(
+            "Ctrl+right"), self)
+        self.switch_left.activated.connect(lambda: self.change_view(-1))
+        self.switch_right.activated.connect(lambda: self.change_view(1))
 
     def open_image_folder(self):
         # check for a directory
@@ -95,9 +102,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                                      'Images (*.png *.jpeg '
                                                      '*.jpg)')
         file_name = os.path.split(chosen_file)[-1]
-        # File name without extension
         file_name = os.path.splitext(file_name)[0]
-        print('File name:', file_name)
         if chosen_file:
             # open file as image
             loaded_image = QImage(chosen_file)
@@ -107,7 +112,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 return
             # Directory
             dirpath = os.path.dirname(chosen_file)
-            print('Dir_name:', dirpath)
             self.fileList = []
 
             # checks all files for naming convention according to the
@@ -119,14 +123,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Set file index
                     self.CurrentFileIndex = idx
                 fpath = os.path.join(dirpath, f)
-                # print('fpath name:', fpath)
                 if os.path.isfile(fpath) and f.endswith(('.png', '.jpg',
                                                          '.jpeg')):
                     # Add all image files to a list
                     self.fileList.append(fpath)
             # Sort according to name / ascending order
             self.fileList.sort()
-            self.ui.photo.image = loaded_image
+            self.ui.camera_0.image = loaded_image
             self.fit_to_window()
             self.ui.le_image_dir.setText(dirpath)
             if self.original_data is not None:
@@ -284,16 +287,19 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             y1 = df_part2['y1_gp3'][ind_rod]
             y2 = df_part2['y2_gp3'][ind_rod]
             # Add rods
-            ident = RodNumberWidget(self.last_color, self.ui.photo,
+            ident = RodNumberWidget(self.last_color, self.ui.camera_0,
                                     str(value), QPoint(0, 0))
             ident.rod_id = value
             ident.rod_points = [x1, y1, x2, y2]
             ident.setObjectName(f"rn_{ind_rod}")
             new_rods.append(ident)
-        self.ui.photo.edits = new_rods
+        self.ui.camera_0.edits = new_rods
+        if not new_rods:
+            self.statusBar().showMessage("No rod data available for this "
+                                         "image.", 5000)
 
     def clear_screen(self):
-        self.ui.photo.clear_screen()
+        self.ui.camera_0.clear_screen()
 
     def cb_changed(self, state):
         if state == 0:
@@ -327,12 +333,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.fileList.remove(filename)
                     self.show_next(direction)
                 else:
-                    self.ui.photo.image = image_next
+                    self.ui.camera_0.image = image_next
                     if self.ui.action_persistent_view.isChecked():
                         self.load_rods()
                     else:
-                        del self.ui.photo.edits
-                        self.ui.photo.scale_factor = 1
+                        del self.ui.camera_0.edits
+                        self.ui.camera_0.scale_factor = 1
 
                     # Update information on last action
                     this_action = FileAction(file_name, FileActions.OPEN_IMAGE)
@@ -350,18 +356,18 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.open_image_folder()
 
     def original_size(self):
-        self.ui.photo.scale_factor = 1
+        self.ui.camera_0.scale_factor = 1
         self.ui.action_zoom_in.setEnabled(True)
         self.ui.action_zoom_out.setEnabled(True)
 
     def fit_to_window(self):
-        to_size = self.ui.sa_photo.size()
+        to_size = self.ui.sa_camera_0.size()
         to_size = QtCore.QSize(to_size.width()-20, to_size.height()-20)
-        self.ui.photo.scale_to_size(to_size)
+        self.ui.camera_0.scale_to_size(to_size)
 
     def scale_image(self, factor):
-        new_zoom = self.ui.photo.scale_factor * factor
-        self.ui.photo.scale_factor = new_zoom
+        new_zoom = self.ui.camera_0.scale_factor * factor
+        self.ui.camera_0.scale_factor = new_zoom
         # Disable zoom, if zoomed too much
         self.ui.action_zoom_in.setEnabled(new_zoom < 9.0)
         self.ui.action_zoom_out.setEnabled(new_zoom > 0.11)
@@ -389,9 +395,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         tmp_file = self.data_files + "/" + self.data_file_name.format(
             self.last_color)
         df_part = pd.read_csv(tmp_file, index_col=0)
-        if self.ui.photo.edits is not None:
+        if self.ui.camera_0.edits is not None:
             # Skips this, if no rods are displayed
-            for rod in self.ui.photo.edits:
+            for rod in self.ui.camera_0.edits:
                 df_part.loc[(df_part.frame == int(file_name[1:4])) &
                             (df_part.particle == rod.rod_id),
                             ["x1_gp3", "y1_gp3", "x2_gp3", "y2_gp3"]] = \
@@ -452,6 +458,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             if rb.objectName()[3:] == to_color:
                 # activate the last color
                 rb.toggle()
+
+    def change_view(self, direction):
+        new_idx = self.ui.camera_tabs.currentIndex() + direction
+        if new_idx > 1:
+            new_idx = 0
+        elif new_idx < 0:
+            new_idx = 1
+        self.ui.camera_tabs.setCurrentIndex(new_idx)
 
 
 if __name__ == "__main__":

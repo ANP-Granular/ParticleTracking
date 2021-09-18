@@ -50,16 +50,10 @@
          <layout class="QHBoxLayout" name="hl_controlbar">
           <item>
            <layout class="QGridLayout" name="grid_loads">
-            <item row="2" column="0">
-             <widget class="QPushButton" name="pb_load_rods">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Load Rods</string>
+            <item row="1" column="0" colspan="2">
+             <widget class="Line" name="line_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
               </property>
              </widget>
             </item>
@@ -82,17 +76,23 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0" colspan="2">
-             <widget class="Line" name="line_2">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+            <item row="2" column="0">
+             <widget class="QPushButton" name="pb_load_rods">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Load Rods</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
-             <widget class="QLineEdit" name="le_rod_dir">
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="le_image_dir">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -111,10 +111,10 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
-             <widget class="QLineEdit" name="le_image_dir">
+            <item row="2" column="1">
+             <widget class="QLineEdit" name="le_rod_dir">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -252,6 +252,12 @@
           </item>
           <item>
            <widget class="QCheckBox" name="cb_overlay">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="maximumSize">
              <size>
               <width>100</width>
@@ -452,7 +458,7 @@
           <property name="frameShadow">
            <enum>QFrame::Raised</enum>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_6">
+          <layout class="QVBoxLayout" name="verticalLayout_19">
            <item>
             <widget class="Line" name="line">
              <property name="orientation">
@@ -468,59 +474,133 @@
              <property name="childrenCollapsible">
               <bool>false</bool>
              </property>
-             <widget class="QScrollArea" name="sa_photo">
-              <property name="frameShape">
-               <enum>QFrame::NoFrame</enum>
+             <widget class="QTabWidget" name="camera_tabs">
+              <property name="currentIndex">
+               <number>0</number>
               </property>
-              <property name="widgetResizable">
-               <bool>true</bool>
-              </property>
-              <widget class="QWidget" name="scrollAreaWidgetContents">
-               <property name="geometry">
-                <rect>
-                 <x>0</x>
-                 <y>0</y>
-                 <width>522</width>
-                 <height>274</height>
-                </rect>
-               </property>
-               <layout class="QVBoxLayout" name="verticalLayout_5">
+              <widget class="QWidget" name="tab_0">
+               <attribute name="title">
+                <string>Front View (FV)</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayout_15">
                 <item>
-                 <widget class="RodImageWidget" name="photo">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="mouseTracking">
-                   <bool>true</bool>
-                  </property>
+                 <widget class="QScrollArea" name="sa_camera_0">
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
                   </property>
-                  <property name="frameShadow">
-                   <enum>QFrame::Plain</enum>
+                  <property name="widgetResizable">
+                   <bool>true</bool>
                   </property>
-                  <property name="text">
-                   <string/>
+                  <widget class="QWidget" name="scrollAreaWidgetContents_0">
+                   <property name="geometry">
+                    <rect>
+                     <x>0</x>
+                     <y>0</y>
+                     <width>519</width>
+                     <height>275</height>
+                    </rect>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_16">
+                    <item>
+                     <widget class="RodImageWidget" name="camera_0">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="mouseTracking">
+                       <bool>true</bool>
+                      </property>
+                      <property name="frameShape">
+                       <enum>QFrame::NoFrame</enum>
+                      </property>
+                      <property name="frameShadow">
+                       <enum>QFrame::Plain</enum>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="pixmap">
+                       <pixmap>resources/icon_main.ico</pixmap>
+                      </property>
+                      <property name="scaledContents">
+                       <bool>false</bool>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="tab_1">
+               <attribute name="title">
+                <string>Top View (TV)</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayout_17">
+                <item>
+                 <widget class="QScrollArea" name="sa_camera_1">
+                  <property name="frameShape">
+                   <enum>QFrame::NoFrame</enum>
                   </property>
-                  <property name="pixmap">
-                   <pixmap>resources/icon_main.ico</pixmap>
+                  <property name="widgetResizable">
+                   <bool>true</bool>
                   </property>
-                  <property name="scaledContents">
-                   <bool>false</bool>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
+                  <widget class="QWidget" name="scrollAreaWidgetContents_8">
+                   <property name="geometry">
+                    <rect>
+                     <x>0</x>
+                     <y>0</y>
+                     <width>519</width>
+                     <height>275</height>
+                    </rect>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_18">
+                    <item>
+                     <widget class="RodImageWidget" name="camera_1">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="mouseTracking">
+                       <bool>true</bool>
+                      </property>
+                      <property name="frameShape">
+                       <enum>QFrame::NoFrame</enum>
+                      </property>
+                      <property name="frameShadow">
+                       <enum>QFrame::Plain</enum>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="pixmap">
+                       <pixmap>resources/icon_main.ico</pixmap>
+                      </property>
+                      <property name="scaledContents">
+                       <bool>false</bool>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
                  </widget>
                 </item>
                </layout>
               </widget>
              </widget>
              <widget class="QWidget" name="verticalLayoutWidget">
-              <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0">
+              <layout class="QVBoxLayout" name="undo_layout" stretch="0,0">
                <property name="sizeConstraint">
                 <enum>QLayout::SetMaximumSize</enum>
                </property>
