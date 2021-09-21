@@ -28,6 +28,7 @@ class RodImageWidget(QLabel):
         self._edits = None
         self._scale_factor = 1.0
         self._offset = [0, 0]
+        self._cam_id = "gp3"
 
     # Access to properties ====================================================
     @property
@@ -87,6 +88,16 @@ class RodImageWidget(QLabel):
             self._logger.undo_action.disconnect()
         self._logger = new_logger
         self._logger.undo_action.connect(self.undo_action)
+
+    @property
+    def cam_id(self):
+        return self._cam_id
+
+    @cam_id.setter
+    def cam_id(self, cam_id):
+        if cam_id not in ["gp3", "gp4"]:
+            cam_id = "gp3"
+        self._cam_id = cam_id
 
     # Display manipulation ====================================================
     def _scale_image(self):

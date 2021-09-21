@@ -3,10 +3,11 @@ import shutil
 import sys
 import platform
 import re
+from typing import List
 
 import pandas as pd
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton
+from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, QScrollArea
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QImage
 
@@ -26,6 +27,8 @@ except ModuleNotFoundError:
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
+    fileList: List[str] = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ui = Ui_MainWindow()
@@ -43,19 +46,24 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         # Initialize
         self.ui.camera_0.logger = self.ui.lv_actions_list
+        self.ui.camera_1.logger = self.ui.lv_actions_list
+        self.cameras = [self.ui.camera_0, self.ui.camera_1]
+        self.current_camera = self.cameras[self.ui.camera_tabs.currentIndex()]
+        self.view_filelists = [[], []]
+        self.file_ids = [[], []]
+        self.file_indexes = [0, 0]
+        self.current_file_ids = []
         # tracker of the current image that's displayed
         self.CurrentFileIndex = 0
         self.original_data = None   # Holds the original data directory
         self.data_files = self.ui.lv_actions_list.temp_manager.name
         self.data_file_name = 'rods_df_{:s}.csv'
-        self.fileList = None
         self.last_color = None
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             if rb.isChecked():
                 self.last_color = rb.objectName()[3:]
 
         # Connect signals
-
         # Viewing actions
         self.ui.action_zoom_in.triggered.connect(lambda: self.scale_image(
             factor=1.25))
@@ -84,6 +92,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.lv_actions_list.undo_last)
         self.ui.pb_undo.clicked.connect(self.ui.lv_actions_list.undo_last)
         self.ui.camera_0.request_color_change.connect(self.change_color)
+        self.ui.camera_1.request_color_change.connect(self.change_color)
 
         # View controls
         self.switch_left = QtWidgets.QShortcut(QtGui.QKeySequence(
@@ -92,6 +101,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             "Ctrl+right"), self)
         self.switch_left.activated.connect(lambda: self.change_view(-1))
         self.switch_right.activated.connect(lambda: self.change_view(1))
+        self.ui.camera_tabs.currentChanged.connect(self.view_changed)
 
     def open_image_folder(self):
         # check for a directory
@@ -113,6 +123,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # Directory
             dirpath = os.path.dirname(chosen_file)
             self.fileList = []
+            self.current_file_ids = []
 
             # checks all files for naming convention according to the
             # selected file and append them to a file List
@@ -127,13 +138,27 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                                          '.jpeg')):
                     # Add all image files to a list
                     self.fileList.append(fpath)
+                    self.current_file_ids.append(int(f_compare))
+
             # Sort according to name / ascending order
             self.fileList.sort()
-            self.ui.camera_0.image = loaded_image
+            self.current_file_ids.sort()
+            self.cameras[self.ui.camera_tabs.currentIndex()].image = \
+                loaded_image
+
+            # Get camera id for data display
+            self.current_camera.cam_id = chosen_file.split("/")[-2]
+
             self.fit_to_window()
             self.ui.le_image_dir.setText(dirpath)
             if self.original_data is not None:
                 self.show_overlay()
+
+            # Update persistent file lists
+            self.view_filelists[self.ui.camera_tabs.currentIndex()] = \
+                self.fileList
+            self.file_ids[self.ui.camera_tabs.currentIndex()] = \
+                self.current_file_ids
 
             # Logging
             first_action = FileAction(dirpath, FileActions.LOAD_IMAGES,
@@ -189,7 +214,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                             # create new radiobutton for this color
                             new_btn = QRadioButton(
                                 text=found_color.capitalize())
-                            new_btn.setObjectName(found_color)
+                            new_btn.setObjectName(f"rb_{found_color}")
                             new_btn.toggled.connect(self.color_change)
                             # retain only 2 rows
                             group_layout.addWidget(new_btn, max_row, max_col)
@@ -266,11 +291,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def load_rods(self):
         # Load rod position data
-        # items = ("black", "blue", "green", "purple", "red", "yellow")
         if self.original_data is None or not self.ui.cb_overlay.isChecked():
             return
-        col_list = ["particle", "frame", "x1_gp3", "x2_gp3", "y1_gp3",
-                    "y2_gp3"]
+        if self.current_camera.image is None:
+            return
+        cam_id = self.current_camera.cam_id
+        col_list = ["particle", "frame", f"x1_{cam_id}",
+                    f"x2_{cam_id}", f"y1_{cam_id}",
+                    f"y2_{cam_id}"]
+
         filename = (self.fileList[self.CurrentFileIndex])
         file_name = os.path.split(filename)[-1]
         df_part = pd.read_csv(self.data_files + "/" +
@@ -282,24 +311,25 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         new_rods = []
         for ind_rod, value in enumerate(df_part2['particle']):
-            x1 = df_part2['x1_gp3'][ind_rod]
-            x2 = df_part2['x2_gp3'][ind_rod]
-            y1 = df_part2['y1_gp3'][ind_rod]
-            y2 = df_part2['y2_gp3'][ind_rod]
+            x1 = df_part2[f'x1_{cam_id}'][ind_rod]
+            x2 = df_part2[f'x2_{cam_id}'][ind_rod]
+            y1 = df_part2[f'y1_{cam_id}'][ind_rod]
+            y2 = df_part2[f'y2_{cam_id}'][ind_rod]
             # Add rods
-            ident = RodNumberWidget(self.last_color, self.ui.camera_0,
+            ident = RodNumberWidget(self.last_color, self.current_camera,
                                     str(value), QPoint(0, 0))
             ident.rod_id = value
             ident.rod_points = [x1, y1, x2, y2]
             ident.setObjectName(f"rn_{ind_rod}")
             new_rods.append(ident)
-        self.ui.camera_0.edits = new_rods
+        self.current_camera.edits = new_rods
         if not new_rods:
             self.statusBar().showMessage("No rod data available for this "
                                          "image.", 5000)
 
     def clear_screen(self):
-        self.ui.camera_0.clear_screen()
+        # TODO: might need extension to also clear the 2nd camera
+        self.cameras[self.ui.camera_tabs.currentIndex()].clear_screen()
 
     def cb_changed(self, state):
         if state == 0:
@@ -311,6 +341,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.show_overlay()
 
     def show_next(self, direction: int):
+        if direction == 0:
+            # No change necessary
+            return
         if self.fileList:
             # Unsaved changes handling
             if not self.ui.lv_actions_list.unsaved_changes == []:
@@ -330,16 +363,20 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 if image_next.isNull():
                     # the file is not a valid image, remove it from the list
                     # and try to load the next one
+                    self.ui.statusbar.showMessage(f"The image {file_name} is "
+                                                  f"corrupted and therefore "
+                                                  f"excluded.", 4000)
                     self.fileList.remove(filename)
                     self.show_next(direction)
                 else:
-                    self.ui.camera_0.image = image_next
+                    self.current_camera.image = image_next
                     if self.ui.action_persistent_view.isChecked():
                         self.load_rods()
                     else:
-                        del self.ui.camera_0.edits
-                        self.ui.camera_0.scale_factor = 1
-
+                        del self.current_camera.edits
+                        self.current_camera.scale_factor = 1
+                    self.file_indexes[self.ui.camera_tabs.currentIndex()] = \
+                        self.CurrentFileIndex
                     # Update information on last action
                     this_action = FileAction(file_name, FileActions.OPEN_IMAGE)
                     self.ui.lv_actions_list.add_action(this_action)
@@ -356,18 +393,21 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.open_image_folder()
 
     def original_size(self):
-        self.ui.camera_0.scale_factor = 1
+        self.current_camera.scale_factor = 1
         self.ui.action_zoom_in.setEnabled(True)
         self.ui.action_zoom_out.setEnabled(True)
 
     def fit_to_window(self):
-        to_size = self.ui.sa_camera_0.size()
+        current_sa = self.findChild(QScrollArea,
+                                    f"sa_camera_"
+                                    f"{self.ui.camera_tabs.currentIndex()}")
+        to_size = current_sa.size()
         to_size = QtCore.QSize(to_size.width()-20, to_size.height()-20)
-        self.ui.camera_0.scale_to_size(to_size)
+        self.current_camera.scale_to_size(to_size)
 
     def scale_image(self, factor):
-        new_zoom = self.ui.camera_0.scale_factor * factor
-        self.ui.camera_0.scale_factor = new_zoom
+        new_zoom = self.current_camera.scale_factor * factor
+        self.current_camera.scale_factor = new_zoom
         # Disable zoom, if zoomed too much
         self.ui.action_zoom_in.setEnabled(new_zoom < 9.0)
         self.ui.action_zoom_out.setEnabled(new_zoom > 0.11)
@@ -395,12 +435,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         tmp_file = self.data_files + "/" + self.data_file_name.format(
             self.last_color)
         df_part = pd.read_csv(tmp_file, index_col=0)
-        if self.ui.camera_0.edits is not None:
+        if self.current_camera.edits is not None:
             # Skips this, if no rods are displayed
-            for rod in self.ui.camera_0.edits:
+            cam_id = self.current_camera.cam_id
+            for rod in self.current_camera.edits:
                 df_part.loc[(df_part.frame == int(file_name[1:4])) &
                             (df_part.particle == rod.rod_id),
-                            ["x1_gp3", "y1_gp3", "x2_gp3", "y2_gp3"]] = \
+                            [f"x1_{cam_id}", f"y1_{cam_id}",
+                             f"x2_{cam_id}", f"y2_{cam_id}"]] = \
                     rod.rod_points
 
             df_part.to_csv(tmp_file, index_label="")
@@ -460,12 +502,80 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 rb.toggle()
 
     def change_view(self, direction):
-        new_idx = self.ui.camera_tabs.currentIndex() + direction
+        old_idx = self.ui.camera_tabs.currentIndex()
+        new_idx = old_idx + direction
         if new_idx > 1:
             new_idx = 0
         elif new_idx < 0:
             new_idx = 1
         self.ui.camera_tabs.setCurrentIndex(new_idx)
+
+    @QtCore.pyqtSlot(int)
+    def view_changed(self, new_idx):
+        # Ensure the image/frame number is consistent over views
+        index_diff = 0
+        if self.ui.action_persistent_view.isChecked():
+            if self.current_file_ids:
+                current_id = self.current_file_ids[self.CurrentFileIndex]
+                try:
+                    # Find the new camera's image corresponding to the old
+                    # camera's image
+                    new_id_idx = self.file_ids[new_idx].index(current_id)
+                    index_diff = new_id_idx - self.file_indexes[new_idx]
+                except ValueError:
+                    # Image not found
+                    self.cameras[new_idx].setPixmap(QtGui.QPixmap(ICON_PATH))
+                    self.ui.statusbar.showMessage(f"No image with ID"
+                                                  f":{current_id} found for "
+                                                  f"this view.", 4000)
+
+        self.CurrentFileIndex = self.file_indexes[new_idx]
+        self.fileList = self.view_filelists[new_idx]
+        self.current_file_ids = self.file_ids[new_idx]
+        self.current_camera = self.cameras[new_idx]
+        # Loads a new image, if necessary
+        self.show_next(index_diff)
+        try:
+            new_path = os.path.split(self.fileList[0])[0]
+        except IndexError:
+            new_path = ""
+        self.ui.le_image_dir.setText(new_path)
+
+        if self.ui.cb_overlay.isChecked():
+            # ensure that rods are loaded
+            self.load_rods()
+
+    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(a0)
+        # get the screen's resolution the application is displayed on
+        # self.screen().size()
+        # adapt margins to screen resolution
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        # Unsaved changes handling
+        if not self.ui.lv_actions_list.unsaved_changes == []:
+            msg = QMessageBox()
+            msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+            msg.setIcon(QMessageBox.Warning)
+            msg.setWindowTitle("Rod Tracker")
+            msg.setText("There are unsaved changes!")
+            btn_save = msg.addButton("Save", QMessageBox.ActionRole)
+            msg.addButton("Discard", QMessageBox.ActionRole)
+            btn_cancel = msg.addButton("Cancel",
+                                       QMessageBox.ActionRole)
+            msg.setDefaultButton(btn_save)
+            msg.exec()
+            if msg.clickedButton() == btn_save:
+                # TODO: save changes
+                a0.accept()
+                pass
+            elif msg.clickedButton() == btn_cancel:
+                a0.ignore()
+            else:
+                # discards changes and proceeds with closing
+                a0.accept()
+        else:
+            a0.accept()
 
 
 if __name__ == "__main__":
