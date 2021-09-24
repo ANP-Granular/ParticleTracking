@@ -556,8 +556,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>519</width>
-                     <height>275</height>
+                     <width>274</width>
+                     <height>274</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -605,7 +605,7 @@
                 <enum>QLayout::SetMaximumSize</enum>
                </property>
                <item>
-                <widget class="ActionLogger" name="lv_actions_list">
+                <widget class="ActionLoggerWidget" name="lv_actions_list">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -780,7 +780,7 @@
    <header>rodimagewidget.h</header>
   </customwidget>
   <customwidget>
-   <class>ActionLogger</class>
+   <class>ActionLoggerWidget</class>
    <extends>QListWidget</extends>
    <header>actionlogger.h</header>
   </customwidget>

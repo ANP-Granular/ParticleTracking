@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, QScrollArea
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QImage
 
-from actionlogger import FileAction, TEMP_DIR, FileActions
+from actionlogger import FileAction, TEMP_DIR, FileActions, ActionLogger
 from track_ui import Ui_MainWindow
 from rodnumberwidget import RodNumberWidget
 
@@ -28,6 +28,9 @@ except ModuleNotFoundError:
 
 class RodTrackWindow(QtWidgets.QMainWindow):
     fileList: List[str] = None
+    logger_id: str = "main"
+    logger: ActionLogger
+    request_undo = QtCore.pyqtSignal(str, name="request_undo")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -42,17 +45,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         self.setWindowState(QtCore.Qt.WindowMaximized)
         self.setFocus()
-        self.ui.group_rod_color.setEnabled(False)
 
         # Initialize
-        self.ui.camera_0.logger = self.ui.lv_actions_list
-        self.ui.camera_1.logger = self.ui.lv_actions_list
         self.cameras = [self.ui.camera_0, self.ui.camera_1]
         self.current_camera = self.cameras[self.ui.camera_tabs.currentIndex()]
         self.view_filelists = [[], []]
         self.file_ids = [[], []]
         self.file_indexes = [0, 0]
         self.current_file_ids = []
+
+        for cam in self.cameras:
+            cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
+            cam.request_color_change.connect(self.change_color)
+            self.request_undo.connect(cam.logger.undo_last)
+            cam.logger.notify_unsaved.connect(self.tab_has_changes)
+            cam.logger.request_saving.connect(self.save_changes)
+
         # tracker of the current image that's displayed
         self.CurrentFileIndex = 0
         self.original_data = None   # Holds the original data directory
@@ -62,6 +70,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             if rb.isChecked():
                 self.last_color = rb.objectName()[3:]
+        self.logger = self.ui.lv_actions_list.get_new_logger(self.logger_id)
+        self.logger.notify_unsaved.connect(self.tab_has_changes)
 
         # Connect signals
         # Viewing actions
@@ -88,11 +98,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_save.triggered.connect(self.save_changes)
 
         # Undo
-        self.ui.action_revert.triggered.connect(
-            self.ui.lv_actions_list.undo_last)
-        self.ui.pb_undo.clicked.connect(self.ui.lv_actions_list.undo_last)
-        self.ui.camera_0.request_color_change.connect(self.change_color)
-        self.ui.camera_1.request_color_change.connect(self.change_color)
+        self.ui.action_revert.triggered.connect(self.requesting_undo)
+        self.ui.pb_undo.clicked.connect(self.requesting_undo)
 
         # View controls
         self.switch_left = QtWidgets.QShortcut(QtGui.QKeySequence(
@@ -148,6 +155,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
             # Get camera id for data display
             self.current_camera.cam_id = chosen_file.split("/")[-2]
+            curr_idx = self.ui.camera_tabs.currentIndex()
+            tab_text = self.ui.camera_tabs.tabText(curr_idx)
+            front_text = tab_text.split("(")[0]
+            end_text = tab_text.split(")")[-1]
+            new_text = front_text + "(" + self.current_camera.cam_id + ")" +\
+                end_text
+            self.ui.camera_tabs.setTabText(curr_idx, new_text)
 
             self.fit_to_window()
             self.ui.le_image_dir.setText(dirpath)
@@ -162,10 +176,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
             # Logging
             first_action = FileAction(dirpath, FileActions.LOAD_IMAGES,
-                                      len(self.fileList))
-            self.ui.lv_actions_list.add_action(first_action)
-            second_action = FileAction(file_name, FileActions.OPEN_IMAGE)
-            self.ui.lv_actions_list.add_action(second_action)
+                                      len(self.fileList),
+                                      cam_id=self.current_camera.cam_id,
+                                      parent_id="test")
+            first_action.parent_id = self.logger_id
+            second_action = FileAction(file_name, FileActions.OPEN_IMAGE,
+                                       cam_id=self.current_camera.cam_id)
+            second_action.parent_id = self.logger_id
+            self.logger.add_action(first_action)
+            self.logger.add_action(second_action)
 
     def open_rod_folder(self):
         # check for a directory
@@ -231,12 +250,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         btn.deleteLater()
 
                 if eligible_files:
-                    self.ui.group_rod_color.setEnabled(True)
                     self.ui.le_rod_dir.setText(self.original_data[:-1])
                     self.ui.le_save_dir.setText(self.original_data[:-1] +
                                                 "_corrected")
                     this_action = FileAction(self.original_data[:-1],
                                              FileActions.LOAD_RODS)
+                    this_action.parent_id = self.logger_id
                     self.ui.lv_actions_list.add_action(this_action)
                     self.show_overlay()
                     return
@@ -260,8 +279,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         continue
 
     def show_overlay(self):
-        if not self.ui.cb_overlay.isChecked() or \
-                not self.ui.group_rod_color.isEnabled():
+        if not self.ui.cb_overlay.isChecked():
             return
         if self.original_data is not None:
             # Check whether image file is loaded
@@ -328,7 +346,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                          "image.", 5000)
 
     def clear_screen(self):
-        # TODO: might need extension to also clear the 2nd camera
         self.cameras[self.ui.camera_tabs.currentIndex()].clear_screen()
 
     def cb_changed(self, state):
@@ -346,9 +363,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             return
         if self.fileList:
             # Unsaved changes handling
-            if not self.ui.lv_actions_list.unsaved_changes == []:
+            if not self.current_camera.logger.unsaved_changes == []:
                 if self.warning_unsaved():
-                    self.ui.lv_actions_list.discard_changes()
+                    self.current_camera.logger.discard_changes()
                 else:
                     return
             # Switch images
@@ -361,7 +378,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 # Create Pixmap operator to display image
                 image_next = QImage(filename)
                 if image_next.isNull():
-                    # the file is not a valid image, remove it from the list
+                    # The file is not a valid image, remove it from the list
                     # and try to load the next one
                     self.ui.statusbar.showMessage(f"The image {file_name} is "
                                                   f"corrupted and therefore "
@@ -378,7 +395,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.file_indexes[self.ui.camera_tabs.currentIndex()] = \
                         self.CurrentFileIndex
                     # Update information on last action
-                    this_action = FileAction(file_name, FileActions.OPEN_IMAGE)
+                    this_action = FileAction(file_name,
+                                             FileActions.OPEN_IMAGE,
+                                             cam_id=self.current_camera.cam_id)
+                    this_action.parent_id = self.logger_id
                     self.ui.lv_actions_list.add_action(this_action)
 
             except IndexError:
@@ -424,28 +444,38 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.last_color = self.get_selected_color()
             self.show_overlay()
 
-    def save_changes(self, temp_only=False):
+    def save_changes(self, temp_only=False, current_only=False):
+        # TODO: extend saving to include all frames that were changed in the
+        #  temp_only=False condition
         # TODO: move saving to different Thread(, if it still takes too long)
+
         # Skip, if there are no changes
         if not self.ui.lv_actions_list.unsaved_changes:
             return
         # Save rods to disk
-        filename = (self.fileList[self.CurrentFileIndex])
-        file_name = os.path.split(filename)[-1]
-        tmp_file = self.data_files + "/" + self.data_file_name.format(
-            self.last_color)
-        df_part = pd.read_csv(tmp_file, index_col=0)
-        if self.current_camera.edits is not None:
-            # Skips this, if no rods are displayed
-            cam_id = self.current_camera.cam_id
-            for rod in self.current_camera.edits:
-                df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                            (df_part.particle == rod.rod_id),
-                            [f"x1_{cam_id}", f"y1_{cam_id}",
-                             f"x2_{cam_id}", f"y2_{cam_id}"]] = \
-                    rod.rod_points
+        for cam_idx in range(len(self.cameras)):
+            try:
+                filename = self.view_filelists[cam_idx][
+                    self.file_indexes[cam_idx]]
+            except IndexError:
+                # No images loaded for this camera yet.
+                continue
+            file_name = os.path.split(filename)[-1]
+            tmp_file = self.data_files + "/" + self.data_file_name.format(
+                self.last_color)
+            df_part = pd.read_csv(tmp_file, index_col=0)
+            cam = self.cameras[cam_idx]
+            if cam.edits is not None:
+                # Skips this, if no rods are displayed
+                cam_id = cam.cam_id
+                for rod in cam.edits:
+                    df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                                (df_part.particle == rod.rod_id),
+                                [f"x1_{cam_id}", f"y1_{cam_id}",
+                                 f"x2_{cam_id}", f"y2_{cam_id}"]] = \
+                        rod.rod_points
+                df_part.to_csv(tmp_file, index_label="")
 
-            df_part.to_csv(tmp_file, index_label="")
         if temp_only:
             # skip permanent saving
             return
@@ -472,7 +502,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             shutil.copy2(self.data_files + "/" + file, save_dir + "/" + file)
             save_file = save_dir + "/" + file
             this_action = FileAction(save_file, FileActions.SAVE)
+            this_action.parent_id = self.logger_id
             self.ui.lv_actions_list.add_action(this_action)
+
+        # notify loggers that everything was saved
+        for cam in self.cameras:
+            cam.logger.actions_saved()
 
     @staticmethod
     def warning_unsaved() -> bool:
@@ -512,6 +547,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def view_changed(self, new_idx):
+        self.save_changes(temp_only=True)
         # Ensure the image/frame number is consistent over views
         index_diff = 0
         if self.ui.action_persistent_view.isChecked():
@@ -545,6 +581,18 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # ensure that rods are loaded
             self.load_rods()
 
+    def requesting_undo(self):
+        self.request_undo.emit(self.current_camera.cam_id)
+
+    @QtCore.pyqtSlot(bool)
+    def tab_has_changes(self, has_changes: bool) -> None:
+        tab_idx = self.ui.camera_tabs.currentIndex()
+        if has_changes:
+            new_text = self.ui.camera_tabs.tabText(tab_idx) + "*"
+        else:
+            new_text = self.ui.camera_tabs.tabText(tab_idx)[0:-1]
+        self.ui.camera_tabs.setTabText(tab_idx, new_text)
+
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         super().resizeEvent(a0)
         # get the screen's resolution the application is displayed on
@@ -566,7 +614,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             msg.setDefaultButton(btn_save)
             msg.exec()
             if msg.clickedButton() == btn_save:
-                # TODO: save changes
+                self.save_changes(temp_only=False)
                 a0.accept()
                 pass
             elif msg.clickedButton() == btn_cancel:

@@ -1,7 +1,7 @@
 import tempfile
 from abc import abstractmethod
 from enum import Enum
-from typing import Optional, Iterable
+from typing import Optional, Iterable, Union, List
 
 from PyQt5.QtWidgets import QListWidgetItem, QListWidget
 from PyQt5 import QtCore
@@ -20,7 +20,18 @@ class FileActions(Enum):
 
 
 class Action(QListWidgetItem):
+    # TODO: include frame(number) OR see TODO in ActionLogger as alternative
     action: str
+    _parent_id: str = None
+
+    @property
+    def parent_id(self):
+        return self._parent_id
+
+    @parent_id.setter
+    def parent_id(self, new_id: str):
+        self._parent_id = new_id
+        self.setText(str(self))
 
     @abstractmethod
     def __str__(self):
@@ -28,17 +39,20 @@ class Action(QListWidgetItem):
 
     @abstractmethod
     def undo(self, rods: Optional[Iterable[RodNumberWidget]]):
-        """Triggers events to undo this action."""
+        """Triggers events to revert this action."""
 
 
 class FileAction(Action):
     action: FileActions
 
     def __init__(self, path: str, action: FileActions, file_num=None,
-                 *args, **kwargs):
+                 cam_id=None, parent_id: str = None, *args, **kwargs):
+
+        self._parent_id = parent_id
         self.file = path
         self.action = action
         self.file_num = None
+        self.cam_id = cam_id
         if action is FileActions.LOAD_IMAGES:
             self.file_num = file_num
         elif action is FileActions.LOAD_RODS:
@@ -51,7 +65,20 @@ class FileAction(Action):
         to_str = f"{self.action.value}: {self.file}"
         if self.file_num is not None:
             to_str = str(self.file_num) + " " + to_str
+        if self.cam_id is not None:
+            to_str = f"({self.cam_id}) " + to_str
+        elif self._parent_id is not None:
+            to_str = f"({self._parent_id}) " + to_str
         return to_str
+
+    @property
+    def parent_id(self):
+        return self._parent_id
+
+    @parent_id.setter
+    def parent_id(self, new_id: str):
+        self._parent_id = new_id
+        self.setText(str(self))
 
     def undo(self, rods=None):
         if self.action is FileActions.MODIFY:
@@ -60,25 +87,6 @@ class FileAction(Action):
         else:
             # This action cannot be undone
             return
-
-
-class DeleteRodAction(Action):
-    def __init__(self, old_rod: RodNumberWidget, coupled_action: Action = None,
-                 *args, **kwargs):
-        self.rod = old_rod
-        self.action = "Deleted rod"
-        self.coupled_action = coupled_action
-        super().__init__(str(self), *args, **kwargs)
-
-    def __str__(self):
-        return f"{self.action} #{self.rod.rod_id}"
-
-    def undo(self, rods: [RodNumberWidget] = None):
-        self.rod.rod_id = self.coupled_action.new_id
-        self.rod.setText(str(self.rod.rod_id))
-        self.rod.rod_state = RodState.NORMAL
-        self.rod.setVisible(True)
-        return self.rod
 
 
 class ChangedRodNumberAction(Action):
@@ -92,7 +100,10 @@ class ChangedRodNumberAction(Action):
         super().__init__(str(self), *args, **kwargs)
 
     def __str__(self):
-        return f"{self.action} #{self.rod.rod_id} ---> #{self.new_id}"
+        to_str = f"{self.action} #{self.rod.rod_id} ---> #{self.new_id}"
+        if self._parent_id is not None:
+            to_str = f"({self._parent_id}) " + to_str
+        return to_str
 
     def undo(self, rods: [RodNumberWidget]) -> [RodNumberWidget]:
         if rods is None:
@@ -106,6 +117,29 @@ class ChangedRodNumberAction(Action):
                 rod.rod_id = self.new_id
                 rod.setText(str(rod.rod_id))
         return rods
+
+
+class DeleteRodAction(Action):
+    def __init__(self, old_rod: RodNumberWidget, coupled_action: Union[
+        Action, ChangedRodNumberAction] = None,
+                 *args, **kwargs):
+        self.rod = old_rod
+        self.action = "Deleted rod"
+        self.coupled_action = coupled_action
+        super().__init__(str(self), *args, **kwargs)
+
+    def __str__(self):
+        to_str = f"{self.action} #{self.rod.rod_id}"
+        if self._parent_id is not None:
+            to_str = f"({self._parent_id}) " + to_str
+        return to_str
+
+    def undo(self, rods: [RodNumberWidget] = None):
+        self.rod.rod_id = self.coupled_action.new_id
+        self.rod.setText(str(self.rod.rod_id))
+        self.rod.rod_state = RodState.NORMAL
+        self.rod.setVisible(True)
+        return self.rod
 
 
 class ChangeRodPositionAction(Action):
@@ -130,8 +164,12 @@ class ChangeRodPositionAction(Action):
                 end_pos += "), ("
         initial_pos += ")]"
         end_pos += ")]"
-        return f"#{self.rod.rod_id} {self.action}: {initial_pos} ---" \
-               f"> {end_pos}"
+
+        to_str = f"#{self.rod.rod_id} {self.action}: {initial_pos} ---" \
+                 f"> {end_pos}"
+        if self._parent_id is not None:
+            to_str = f"({self._parent_id}) " + to_str
+        return to_str
 
     def undo(self, rods: [RodNumberWidget] = None) -> [RodNumberWidget]:
         if rods is None:
@@ -142,54 +180,158 @@ class ChangeRodPositionAction(Action):
                 return rods
 
 
-class ActionLogger(QListWidget):
+class ActionLogger(QtCore.QObject):
     __pyqtSignals__ = ("undoAction(Action)",)
     # Create custom signals
     undo_action = QtCore.pyqtSignal(Action, name="undoAction")
+    undone_action = QtCore.pyqtSignal(Action, name="undone_action")
+    added_action = QtCore.pyqtSignal(Action, name="added_action")
+    notify_unsaved = QtCore.pyqtSignal(bool, name="notify_unsaved")
+    request_saving = QtCore.pyqtSignal(bool, name="request_saving")
+    unsaved_changes: List[Action]
+    parent_id: str
+
+    def __init__(self, parent_id, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.parent_id = parent_id
+        self.logged_actions = []
+        # TODO: make unsaved_changes a dict {frame_no: [Action]}  OR  see
+        #  TODO in Action as an alternative
+        self.unsaved_changes = []
+
+    def add_action(self, last_action: Action) -> None:
+        """Registers the actions performed by its parent and propagates them
+        for visual display in the GUI."""
+        last_action.parent_id = self.parent_id
+        self.logged_actions.append(last_action)
+        if type(last_action) is not FileAction:
+            if not self.unsaved_changes:
+                self.notify_unsaved.emit(True)
+            self.unsaved_changes.append(last_action)
+        elif type(last_action) is FileAction:
+            if last_action.action == FileActions.SAVE:
+                self.unsaved_changes = []
+                self.notify_unsaved.emit(False)
+        self.added_action.emit(last_action)
+
+    @QtCore.pyqtSlot(str)
+    def undo_last(self, parent_id: str) -> None:
+        """De-registers the last unsaved action recorded and triggers its
+        undo process."""
+        if parent_id != self.parent_id:
+            return
+        if not self.logged_actions:
+            # Nothing logged yet
+            return
+        undo_item = self.logged_actions.pop()
+        if undo_item not in self.unsaved_changes:
+            # Last action is not revertible, no further action required
+            self.logged_actions.append(undo_item)
+            return
+        # Remove & Delete action
+        self.unsaved_changes.pop()
+        if not self.unsaved_changes:
+            # No more unsaved changes present
+            self.notify_unsaved.emit(False)
+        self.undo_action.emit(undo_item)
+        del undo_item
+
+    def register_undone(self, undone_action: Action):
+        """Lets the logger know that an action was undone without using its
+        undo method(s)."""
+        if undone_action in self.unsaved_changes:
+            self.unsaved_changes.remove(undone_action)
+            self.logged_actions.remove(undone_action)
+            self.undone_action.emit(undone_action)
+            if not self.unsaved_changes:
+                # No more unsaved changes present
+                self.notify_unsaved.emit(False)
+
+    def discard_changes(self):
+        """Discards all unsaved changes made. Currently only deletes the
+        Actions, but does NOT revert the changes."""
+        for item in self.unsaved_changes:
+            self.undo_action.emit(item)
+            self.logged_actions.remove(item)
+            self.undone_action.emit(item)
+            del item
+        # Save changes only in the temp location
+        self.request_saving.emit(True)
+        self.unsaved_changes = []
+        self.notify_unsaved.emit(False)
+
+    @QtCore.pyqtSlot()
+    def actions_saved(self):
+        """All unsaved actions were saved"""
+        if self.unsaved_changes:
+            self.unsaved_changes = []
+            self.notify_unsaved.emit(False)
+
+
+class ActionLoggerWidget(QListWidget):
+    temp_manager: tempfile.TemporaryDirectory
+    _loggers: List[ActionLogger] = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.unsaved_changes = []
         self.temp_manager = tempfile.TemporaryDirectory(
             prefix="Session_", dir=TEMP_DIR)
 
-    def add_action(self, last_action: Action):
-        self.insertItem(self.count(), last_action)
-        if type(last_action) != FileAction:
-            self.unsaved_changes.append(last_action)
-        elif type(last_action) == FileAction:
-            if last_action.action == FileActions.SAVE:
-                # Clear unsaved changes
-                self.unsaved_changes = []
-        self.item(self.count()-1).setSelected(True)
+    @property
+    def unsaved_changes(self) -> List[Action]:
+        """Collects the unsaved changes from all loggers and returns them
+        collectively.
+
+        Returns
+        -------
+        List[Action]"""
+        all_unsaved = [item for changes in self._loggers for item in
+                       changes.unsaved_changes]
+        return all_unsaved
+
+    def get_new_logger(self, parent_id: str) -> ActionLogger:
+        """
+        Creates a new ActionLogger, registers its signals for displaying the
+        actions logged by it and returns it.
+
+        Parameters
+        ----------
+        parent_id : str
+            A unique name that indicates the object from which actions will
+            be logged in the ActionLogger.
+
+        Returns
+        -------
+        ActionLogger
+        """
+        new_logger = ActionLogger(parent_id)
+        new_logger.added_action.connect(self.add_action)
+        new_logger.undo_action.connect(self.remove_action)
+        new_logger.undone_action.connect(self.remove_action)
+        self._loggers.append(new_logger)
+        return new_logger
+
+    @QtCore.pyqtSlot(Action)
+    def add_action(self, new_action: Action) -> None:
+        """Adds a new action to the list being displayed in the GUI."""
+        if not self._loggers:
+            # No loggers exist yet/anymore
+            return
+        self.insertItem(self.count(), new_action)
         self.scrollToBottom()
 
-    def catch_rodnumber_change(self, new_rod: RodNumberWidget, last_id: int)\
-            -> ChangedRodNumberAction:
-        old_rod = new_rod.copy_rod()
-        old_rod.setEnabled(False)
-        old_rod.setVisible(False)
-        old_rod.rod_id = last_id
-        new_id = new_rod.rod_id
-        this_action = ChangedRodNumberAction(old_rod, new_id)
-        self.add_action(this_action)
-        return this_action
-
-    def undo_last(self):
-        undo_item = self.takeItem(self.count()-1)
-        if undo_item in self.unsaved_changes:
-            self.undo_action.emit(undo_item)
-            self.unsaved_changes.remove(undo_item)
-            del undo_item
-            self.scrollToBottom()
-        else:
-            self.insertItem(self.count(), undo_item)
+    @QtCore.pyqtSlot(Action)
+    def remove_action(self, undo_action: Action) -> None:
+        """Removes an Action from the displayed list and deletes it."""
+        item_pos = self.row(undo_action)
+        undo_item = self.takeItem(item_pos)
+        del undo_item
+        self.scrollToBottom()
 
     def discard_changes(self):
-        # TODO: also undo changes in the temp file (later)
-        all_items = [self.item(idx) for idx in range(self.count())]
-        for item in all_items:
-            if item in self.unsaved_changes:
-                self.takeItem(self.indexFromItem(item).row())
-                self.unsaved_changes.remove(item)
-                del item
+        # FIXME: It might be a bad idea to discard the changes from all the
+        #  loggers here. The question is whether this should be used only in
+        #  the application close operation or whether its used when new data
+        #  is loaded or when stuff is done on only one of the cameras?
+        for logger in self._loggers:
+            logger.discard_changes()

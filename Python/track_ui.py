@@ -248,7 +248,7 @@ class Ui_MainWindow(object):
         self.sa_camera_1.setWidgetResizable(True)
         self.sa_camera_1.setObjectName("sa_camera_1")
         self.scrollAreaWidgetContents_8 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 519, 275))
+        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 274, 274))
         self.scrollAreaWidgetContents_8.setObjectName("scrollAreaWidgetContents_8")
         self.verticalLayout_18 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_8)
         self.verticalLayout_18.setObjectName("verticalLayout_18")
@@ -276,7 +276,7 @@ class Ui_MainWindow(object):
         self.undo_layout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         self.undo_layout.setContentsMargins(0, 0, 0, 0)
         self.undo_layout.setObjectName("undo_layout")
-        self.lv_actions_list = ActionLogger(self.verticalLayoutWidget)
+        self.lv_actions_list = ActionLoggerWidget(self.verticalLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -393,7 +393,7 @@ class Ui_MainWindow(object):
         self.action_persistent_view.setText(_translate("MainWindow", "Persistent View"))
         self.action_revert.setText(_translate("MainWindow", "Undo"))
         self.action_revert.setShortcut(_translate("MainWindow", "Ctrl+Z"))
-from actionlogger import ActionLogger
+from actionlogger import ActionLoggerWidget
 from rodimagewidget import RodImageWidget
 
 
