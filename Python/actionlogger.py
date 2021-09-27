@@ -12,6 +12,8 @@ TEMP_DIR = tempfile.gettempdir() + "/RodTracker"
 
 
 class FileActions(Enum):
+    """Helper class holding all valid kinds of FileActions."""
+
     SAVE = "Saved changes"
     LOAD_IMAGES = "image file(s) loaded from"
     OPEN_IMAGE = "Opened image"
@@ -20,12 +22,16 @@ class FileActions(Enum):
 
 
 class Action(QListWidgetItem):
+    """Base class for all Actions that are loggable by an `ActionLogger`."""
+
     # TODO: include frame(number) OR see TODO in ActionLogger as alternative
     action: str
     _parent_id: str = None
 
     @property
-    def parent_id(self):
+    def parent_id(self) -> str:
+        """The ID of the object that is responsible for (reverting) this
+        action."""
         return self._parent_id
 
     @parent_id.setter
@@ -43,6 +49,29 @@ class Action(QListWidgetItem):
 
 
 class FileAction(Action):
+    """Class to represent a loggable action that was performed on a file.
+
+    Parameters
+    ----------
+    path : str
+        Path to the file that this action describes.
+    action : FileActions
+    file_num : int, optional
+        Number of the image file that was loaded. It will be displayed to
+        the user, if it was set. (Default is None)
+    cam_id : str, optional
+        The objects ID on which behalf this action was done. This is
+        necessary for displaying it to the user. (Default is None)
+    parent_id : str, optional
+        The ID of the object that is responsible for (reverting) this
+        action. (Default is None)
+    *args : iterable
+        Positional arguments for the `QListWidgetItem` superclass.
+    **kwargs : dict
+        Keyword arguments for the `QListWidgetItem` superclass.
+
+    """
+
     action: FileActions
 
     def __init__(self, path: str, action: FileActions, file_num=None,
@@ -90,6 +119,24 @@ class FileAction(Action):
 
 
 class ChangedRodNumberAction(Action):
+    """Class to represent a change of the rod number as a loggable action.
+
+    Parameters
+    ----------
+    rod : RodNumberWidget
+        A copy of the rod whose number is changed.
+    new_id : int
+        The new rod number of the changed rod.
+    coupled_action : Action, optional
+        The instance of an `Action` that is performed at the same time with
+        this and must be reverted as well, if this `Action` is reverted. For
+        example when the numbers of two rods are exchanged. (Default is None)
+    *args : iterable
+        Positional arguments for the `QListWidgetItem` superclass.
+    **kwargs : dict
+        Keyword arguments for the `QListWidgetItem` superclass.
+    """
+
     def __init__(self, old_rod: RodNumberWidget, new_id: int,
                  coupled_action: Action = None, *args,
                  **kwargs):
@@ -106,6 +153,18 @@ class ChangedRodNumberAction(Action):
         return to_str
 
     def undo(self, rods: [RodNumberWidget]) -> [RodNumberWidget]:
+        """Triggers events to revert this action.
+
+        Parameters
+        ----------
+        rods : [RodNumberWidget]
+            A list of `RodNumberWidget`s in which should be the originally
+            changed rod(s).
+
+        Returns
+        -------
+        [RodNumberWidget]
+        """
         if rods is None:
             raise Exception("Unable to undo action. No rods supplied.")
         for rod in rods:
@@ -120,6 +179,21 @@ class ChangedRodNumberAction(Action):
 
 
 class DeleteRodAction(Action):
+    """Class to represent the deletion of a rod as a loggable action.
+
+    Parameters
+    ----------
+    old_rod : RodNumberWidget
+        A copy of the rod that is deleted.
+    coupled_action : Union[Action, ChangedRodNumberAction], optional
+        The instance of an `Action` that is performed at the same time with
+        this and must be reverted as well, if this `Action` is reverted.
+        (Default is None)
+    *args : iterable
+        Positional arguments for the `QListWidgetItem` superclass.
+    **kwargs : dict
+        Keyword arguments for the `QListWidgetItem` superclass.
+    """
     def __init__(self, old_rod: RodNumberWidget, coupled_action: Union[
         Action, ChangedRodNumberAction] = None,
                  *args, **kwargs):
@@ -135,6 +209,18 @@ class DeleteRodAction(Action):
         return to_str
 
     def undo(self, rods: [RodNumberWidget] = None):
+        """Triggers events to revert this action.
+
+        Parameters
+        ----------
+        rods : [RodNumberWidget]
+            A list of `RodNumberWidget`s in which should be the originally
+            changed rod(s).
+
+        Returns
+        -------
+        [RodNumberWidget]
+        """
         self.rod.rod_id = self.coupled_action.new_id
         self.rod.setText(str(self.rod.rod_id))
         self.rod.rod_state = RodState.NORMAL
@@ -143,6 +229,30 @@ class DeleteRodAction(Action):
 
 
 class ChangeRodPositionAction(Action):
+    """Class to represent the change of a rod's position as a loggable action.
+
+    Parameters
+    ----------
+    old_rod : RodNumberWidget
+        A copy of the rod whose position was changed, prior to the change.
+    new_postion : [int]
+        The newly set starting and ending points of the rod, i.e. [x1, y1,
+        x2, y2].
+    *args : iterable
+        Positional arguments for the `QListWidgetItem` superclass.
+    **kwargs : dict
+        Keyword arguments for the `QListWidgetItem` superclass.
+
+    Attributes
+    ----------
+    rod : RodNumberWidget
+        A copy of the rod whose position was changed, prior to the change.
+    new_pos : [int]
+        The newly set starting and ending points of the rod.
+    action : str
+        Default is "Rod position updated".
+    """
+
     def __init__(self, old_rod: RodNumberWidget, new_position: [int], *args,
                  **kwargs):
         self.rod = old_rod
@@ -172,6 +282,22 @@ class ChangeRodPositionAction(Action):
         return to_str
 
     def undo(self, rods: [RodNumberWidget] = None) -> [RodNumberWidget]:
+        """Triggers events to revert this action.
+
+        Parameters
+        ----------
+        rods : [RodNumberWidget]
+            A list of `RodNumberWidget`s in which should be the originally
+            changed rod(s).
+
+        Returns
+        -------
+        [RodNumberWidget]
+
+        Raises
+        ------
+        Exception
+        """
         if rods is None:
             raise Exception("Unable to undo action. No rods supplied.")
         for rod in rods:
