@@ -35,6 +35,35 @@ class RodStateError(ValueError):
 
 
 class RodNumberWidget(QLineEdit):
+    """A custom QLineEdit to display rod numbers and have associated rods.
+
+    Parameters
+    ----------
+    color : str
+        The color of the rod that this widget represents.
+    parent : QWidget, optional
+        The widgets parent widget. Default is None.
+    text : str, optional
+        The text displayed by the widget. Default is "".
+    pos : QPoint, optional
+        The position of the widget (relative to its parent widget). Default
+        is QPoint(0, 0)
+
+    Attributes
+    ----------
+    initial_text : str
+    initial_pos : QPoint
+    rod_id : str
+        The number of the rod.
+    rod_state : RodState
+    rod_points : List[int]
+        The starting and ending points of the rod in UNSCALED form.
+        [x1, y1, x2, y2]
+    color : str
+        The color of the rod being represented.
+
+    """
+
     __pyqtSignals__ = ("gotActivated(int)", "droppedRodNumber(QPoint)",
                        "changedRodNumber(QLineEdit, int)")
     # Create custom signals
@@ -72,10 +101,35 @@ class RodNumberWidget(QLineEdit):
 
     # Controlling "editing" behaviour
     def mouseDoubleClickEvent(self, e: QtGui.QMouseEvent) -> None:
+        """ Reimplements QLineEdit.mouseDoubleClickEvent(e).
+
+        Handles the selection of a rod number for editing.
+
+        Parameters
+        ----------
+        e : QMouseEvent
+
+        Returns
+        -------
+        None
+        """
         self.setReadOnly(False)
         self.selectAll()
 
     def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
+        """ Reimplements QLineEdit.keyPressEvent(e).
+
+        Handles the confirmation and exiting during rod number editing using
+        keyboard keys.
+
+        Parameters
+        ----------
+        e : QMouseEvent
+
+        Returns
+        -------
+        None
+        """
         if e.key() == QtCore.Qt.Key_Return or e.key() == QtCore.Qt.Key_Enter:
             # Confirm & end editing (keep changes)
             self.end(False)
@@ -96,6 +150,19 @@ class RodNumberWidget(QLineEdit):
 
     # Controlling "movement" behaviour
     def mouseMoveEvent(self, e: QtGui.QMouseEvent) -> None:
+        """ Reimplements QLineEdit.mouseMoveEvent(e).
+
+        Handles the position updating during drag&drop of this widget by the
+        user.
+
+        Parameters
+        ----------
+        e : QMouseEvent
+
+        Returns
+        -------
+        None
+        """
         if self.isReadOnly():
             curr_pos = self.mapToGlobal(self.pos())
             global_pos = e.globalPos()
@@ -107,6 +174,20 @@ class RodNumberWidget(QLineEdit):
             return
 
     def mousePressEvent(self, event):
+        """ Reimplements QLineEdit.mousePressEvent(event).
+
+        Handles the selection of a rod for corrections and drag&drop of this
+        widget by the user.
+
+        Parameters
+        ----------
+        event : QMouseEvent
+
+        Returns
+        -------
+        None
+        """
+
         # Propagate regular event (otherwise blocks functions relying
         # on it)
         QLineEdit.mousePressEvent(self, event)
@@ -121,6 +202,18 @@ class RodNumberWidget(QLineEdit):
                 self.activated.emit(self.rod_id)
 
     def mouseReleaseEvent(self, event) -> None:
+        """ Reimplements QLineEdit.mouseReleaseEvent(event).
+
+        Handles ending of drag&drop of this widget by the user.
+
+        Parameters
+        ----------
+        event : QMouseEvent
+
+        Returns
+        -------
+        None
+        """
         if self.__mousePressPos is not None:
             moved = event.globalPos() - self.__mousePressPos
             if moved.manhattanLength() > 3:
@@ -132,12 +225,28 @@ class RodNumberWidget(QLineEdit):
 
     # Actions triggered on other rods
     def deactivate_rod(self) -> None:
+        """Handles the deactivation of this rod.
+
+        Returns
+        -------
+        None
+        """
         if self.styleSheet() != RodStyle.CONFLICT:
             self.setStyleSheet(RodStyle.GENERAL)
             self.rod_state = RodState.NORMAL
         self.setReadOnly(True)
 
     def set_state(self, new_state: RodState) -> None:
+        """Handles state changes of this rod.
+
+        Parameters
+        ----------
+        new_state : RodState
+
+        Returns
+        -------
+        None
+        """
         self.rod_state = new_state
         if new_state == RodState.NORMAL:
             self.deactivate_rod()
@@ -153,6 +262,12 @@ class RodNumberWidget(QLineEdit):
             raise(RodStateError())
 
     def copy_rod(self):
+        """Copies this instance of a RodNumberWidget.
+
+        Returns
+        -------
+        RodNumberWidget
+        """
         copied = RodNumberWidget(self.color, self.parent(), self.text(),
                                  self.pos())
         copied.rod_state = self.rod_state
