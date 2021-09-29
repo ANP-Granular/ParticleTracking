@@ -27,6 +27,79 @@ except ModuleNotFoundError:
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
+    """The main window for the Rod Tracker application.
+
+    This class handles most of the interaction between the user and the GUI
+    elements of the Rod Tracker application. Especially most interactions
+    that trigger file access are located here. Also most custom interactions
+    between visual elements are setup or managed here.
+
+    Parameters
+    ----------
+    *args : iterable
+        Positional arguments for the QMainWindow superclass.
+    **kwargs : dict
+        Keyword arguments for the QMainWindow superclass.
+
+    Attributes
+    ----------
+    ui : Ui_MainWindow
+        The GUI main window object, that contains all other visual objects.
+    cameras : List[RodImageWidget]
+        A copy of all image display objects (views) from the GUI main window.
+    current_camera : RodImageWidget
+        The currently selected/displayed image display object. This is
+        automatically updated when the user switches between the different
+        tabs.
+    view_filelists : List[List[str]]
+        A list of all selected image files for all camera views.
+    fileList : List[str]
+        A list of all selected image files for the `current_camera` view.
+    file_ids : List[List[int]]
+        A list of all selected image/frame numbers for all camera views.
+    current_file_ids : List[str]
+        A list of all selected image/frame numbers for the `current_camera`
+        view.
+    file_indexes : List[int]
+        The index of the currently loaded image file for all camera views.
+    CurrentFileIndex : int
+        The index of the currently loaded image file for the
+        `current_camera` view.
+    original_data : str
+        The full path to folder containing the rod position data files.
+    data_files : str
+        The full path to the temporary folder containing the working copies
+        of the files in the `original_data` directory. These files are only
+        available during runtime of the program and all changes are stored
+        there before final saving by the user.
+    data_file_name : str
+        The template string to match file names of data file candidates in a
+        user-selected folder.
+    last_color : str
+        The color that is currently selected in the GUI and therefore used
+        for data display.
+    logger : ActionLogger
+        A logger object keeping track of users' actions performed on the
+        main window, i.e. data and image loading and saving.
+    logger_id : str
+        The ID provided to the logger for accountability of the actions in
+        the GUI.
+
+    Signals
+    -------
+    request_undo(str)
+        Is emitted when the user wants to revert an action. The payload is
+        the ID of the widget on which the last action shall be reverted.
+
+    Slots
+    -----
+    cb_changed(int)
+    color_change(bool)
+    change_color(str)
+    view_changed(int)
+    tab_has_changes(bool)
+
+    """
     fileList: List[str] = None
     logger_id: str = "main"
     logger: ActionLogger
@@ -111,6 +184,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.camera_tabs.currentChanged.connect(self.view_changed)
 
     def open_image_folder(self):
+        """Lets the user select an image folder to show images from.
+
+        Lets the user select an image from folder out of which all images
+        are marked for later display. The selected image is opened
+        immediately. It tries to extract a camera id from
+        the selected folder and logs the opening action.
+
+        Returns
+        -------
+        None
+        """
         # check for a directory
         ui_dir = self.ui.le_image_dir.text()
         # opens directory to select image
@@ -187,6 +271,19 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.logger.add_action(second_action)
 
     def open_rod_folder(self):
+        """Lets the user select a folder with rod position data.
+
+        Lets the user select a folder with rod position data. It is
+        evaluated which files in the folder are valid data files and what
+        colors they describe. The GUI is updated accordingly to the found
+        files. The original files are copied to a temporary location for
+        storage of temporary changes. The data is opened immediately,
+        if applicable by the GUI state. The data discovery/loading is logged.
+
+        Returns
+        -------
+        None
+        """
         # check for a directory
         ui_dir = self.ui.le_rod_dir.text()
         while True:
@@ -279,6 +376,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         continue
 
     def show_overlay(self):
+        """Tries to load rods and hints the user if that is not possible.
+
+        Tries to load rods and hints the user if that is not possible. It
+        displays warnings, if
+            a) no images are loaded (yet)
+            b) no rod position data is loaded (yet).
+
+        Returns
+        -------
+        None
+        """
         if not self.ui.cb_overlay.isChecked():
             return
         if self.original_data is not None:
@@ -308,6 +416,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.open_rod_folder()
 
     def load_rods(self):
+        """Loads rod data for one color and creates the `RodNumberWidget`s.
+
+        Loads the rod position data for the selected color in the GUI. It
+        creates the `RodNumberWidget` that is associated with each rod. A
+        message is displayed in the main window's statusbar, if there is no
+        data available for this frame in the loaded files.
+
+        Returns
+        -------
+        None
+        """
         # Load rod position data
         if self.original_data is None or not self.ui.cb_overlay.isChecked():
             return
@@ -346,9 +465,27 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                          "image.", 5000)
 
     def clear_screen(self):
+        """Clears the screen from any displayed rods.
+
+        Returns
+        -------
+        None
+        """
         self.cameras[self.ui.camera_tabs.currentIndex()].clear_screen()
 
+    @QtCore.pyqtSlot(int)
     def cb_changed(self, state):
+        """Catches a QCheckBox state change and overlays or clears the rods.
+
+        Parameters
+        ----------
+        state : int
+            The new state of the QCheckbox {0, 2}
+
+        Returns
+        -------
+        None
+        """
         if state == 0:
             # deactivated
             self.save_changes(temp_only=True)
@@ -358,6 +495,24 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.show_overlay()
 
     def show_next(self, direction: int):
+        """Tries to open the next image.
+
+        It tries to open the next image in the direction provided relative
+        to the currently opened image.
+
+        Parameters
+        ----------
+        direction : int
+            Direction of the image to open next. Its the index relative to
+            the currently opened image.
+            a) direction = 3    ->  opens the image three positions further
+            b) direction = -1   ->  opens the previous image
+            c) direction = 0    ->  keeps the current image open
+
+        Returns
+        -------
+        None
+        """
         if direction == 0:
             # No change necessary
             return
@@ -413,11 +568,26 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.open_image_folder()
 
     def original_size(self):
+        """Displays the currently loaded image in its native size.
+
+        Returns
+        -------
+        None
+        """
         self.current_camera.scale_factor = 1
         self.ui.action_zoom_in.setEnabled(True)
         self.ui.action_zoom_out.setEnabled(True)
 
     def fit_to_window(self):
+        """Fits the image to the space available in the GUI.
+
+        Fits the image to the space available for the image in the GUI and
+        keeps the aspect ratio as in the original.
+
+        Returns
+        -------
+        None
+        """
         current_sa = self.findChild(QScrollArea,
                                     f"sa_camera_"
                                     f"{self.ui.camera_tabs.currentIndex()}")
@@ -426,6 +596,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.current_camera.scale_to_size(to_size)
 
     def scale_image(self, factor):
+        """Sets a new relative scaling for the current image.
+
+        Sets a new scaling to the currently displayed image by
+        `current_camera`. The scaling factor given thereby acts relative to
+        the already applied scaling.
+
+        Parameters
+        ----------
+        factor : float
+            The relative scaling factor. Example:
+            factor=1.1, current scaling=2.0     ->  new scaling=2.2
+
+        Returns
+        -------
+        None
+        """
         new_zoom = self.current_camera.scale_factor * factor
         self.current_camera.scale_factor = new_zoom
         # Disable zoom, if zoomed too much
@@ -433,11 +619,30 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_zoom_out.setEnabled(new_zoom > 0.11)
 
     def get_selected_color(self):
+        """Gets the currently selected color in the GUI.
+
+        Returns
+        -------
+        str
+            The color that is currently selected in the GUI.
+        """
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             if rb.isChecked():
                 return rb.objectName()[3:]
 
+    @QtCore.pyqtSlot(bool)
     def color_change(self, state):
+        """Handles changes of the QRadioButtons for color selection.
+
+        Parameters
+        ----------
+        state : bool
+
+        Returns
+        -------
+        None
+        """
+
         if state:
             if self.ui.lv_actions_list.unsaved_changes is not []:
                 self.save_changes(temp_only=True)
@@ -445,6 +650,27 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.show_overlay()
 
     def save_changes(self, temp_only=False, current_only=False):
+        """Saves unsaved changes to disk temporarily or permanently.
+
+        Saves the changes made in all views to disk. Depending on the flags
+        it will be only to the temporary files or also to the (user-)chosen
+        permanent saving directory. A warning is issued, if the user tries
+        to overwrite the original data files.
+
+        Parameters
+        ----------
+        temp_only : bool
+            Flag to either save to the temporary files only or permanently
+            to the (user-)chosen location.
+            (Default is False)
+        current_only : bool
+            Not used yet.
+            (Default is False)
+
+        Returns
+        -------
+        None
+        """
         # TODO: extend saving to include all frames that were changed in the
         #  temp_only=False condition
         # TODO: move saving to different Thread(, if it still takes too long)
@@ -511,6 +737,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @staticmethod
     def warning_unsaved() -> bool:
+        """Warns that there are unsaved changes that might get lost.
+
+        Issues a warning popup to the user to either discard any unsaved
+        changes or stay in the current state to prevent changes get lost.
+
+        Returns
+        -------
+        bool
+            True, if changes shall be discarded.
+            False, if the user aborted.
+        """
         msg = QMessageBox()
         msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
         msg.setIcon(QMessageBox.Warning)
@@ -531,12 +768,33 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(str)
     def change_color(self, to_color: str):
+        """Activates the given color QRadioButton in the GUI.
+
+        Parameters
+        ----------
+        to_color : str
+            The color that is activated.
+
+        Returns
+        -------
+        None
+        """
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             if rb.objectName()[3:] == to_color:
                 # activate the last color
                 rb.toggle()
 
     def change_view(self, direction):
+        """Helper method for programmatic changes of the camera tabs.
+
+        Parameters
+        ----------
+        direction : int
+
+        Returns
+        -------
+        None
+        """
         old_idx = self.ui.camera_tabs.currentIndex()
         new_idx = old_idx + direction
         if new_idx > 1:
@@ -547,6 +805,23 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def view_changed(self, new_idx):
+        """Handles switches between the camera tabs.
+
+        Handles the switches between the camera tabs and depending on the
+        GUI state tries to load the same frame for the newly displayed tab
+        as in the old one. If no frame is available in the new tab it
+        displays a dummy graphic and shows a message in the main window's
+        statusbar.
+
+        Parameters
+        ----------
+        new_idx : int
+            The index of the tab that is shown next.
+
+        Returns
+        -------
+        None
+        """
         self.save_changes(temp_only=True)
         # Ensure the image/frame number is consistent over views
         index_diff = 0
@@ -582,10 +857,26 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.load_rods()
 
     def requesting_undo(self):
+        """Helper method to emit a request for reverting the last action.
+
+        Returns
+        -------
+        None
+        """
         self.request_undo.emit(self.current_camera.cam_id)
 
     @QtCore.pyqtSlot(bool)
     def tab_has_changes(self, has_changes: bool) -> None:
+        """Changes the current tabs text to indicate it has (no) changes.
+
+        Parameters
+        ----------
+        has_changes : bool
+
+        Returns
+        -------
+        None
+        """
         tab_idx = self.ui.camera_tabs.currentIndex()
         if has_changes:
             new_text = self.ui.camera_tabs.tabText(tab_idx) + "*"
@@ -594,12 +885,38 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.camera_tabs.setTabText(tab_idx, new_text)
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        """Reimplements QMainWindow.resizeEvent(a0).
+
+        Currently not used.
+
+        Parameters
+        ----------
+        a0 : QResizeEvent.
+
+        Returns
+        -------
+        None
+        """
         super().resizeEvent(a0)
         # get the screen's resolution the application is displayed on
         # self.screen().size()
         # adapt margins to screen resolution
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        """Reimplements QMainWindow.closeEvent(a0).
+
+        In case of unsaved changes, the user is asked to save or discard
+        these before closing the application. The closing can be aborted
+        with this dialog.
+
+        Parameters
+        ----------
+        a0 : QCloseEvent
+
+        Returns
+        -------
+        None
+        """
         # Unsaved changes handling
         if not self.ui.lv_actions_list.unsaved_changes == []:
             msg = QMessageBox()

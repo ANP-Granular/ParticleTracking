@@ -16,9 +16,9 @@ class RodImageWidget(QLabel):
 
     Parameters
     ----------
-    *args :
+    *args : iterable
         Positional arguments for the QLabel superclass.
-    **kwargs :
+    **kwargs : dict
         Keyword arguments for the QLabel superclass.
 
     Attributes
@@ -35,6 +35,22 @@ class RodImageWidget(QLabel):
     image : QImage
     logger : ActionLogger
     cam_id : str
+        ID of the GUI object. It must be human readable as it is used for
+        labelling the performed actions displayed in the GUI.
+
+    Signals
+    -------
+    request_color_change(str)
+        Request to change the displayed colors. Currently this is used to
+        revert actions performed on a color other than the displayed one.
+    notify_undone(Action)
+        Notifies objects, that the `Action` in the payload has been reverted.
+
+    Slots
+    -----
+    undo_action(Union[Action, ChangeRodPositionAction, ChangedRodNumberAction,
+                      DeleteRodAction])
+
     """
 
     edits: List[RodNumberWidget]

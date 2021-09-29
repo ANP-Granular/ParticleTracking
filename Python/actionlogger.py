@@ -70,6 +70,19 @@ class FileAction(Action):
     **kwargs : dict
         Keyword arguments for the `QListWidgetItem` superclass.
 
+    Attributes
+    ----------
+    action : FileActions
+        Description of what kind of action was performed.
+    file : str
+        Path to the file that this action describes.
+    file_num : Union[int, None]
+        Number of the image file that was loaded. It will be displayed to
+        the user, if it was set.
+    cam_id : str
+        The objects ID on which behalf this action was done. This is
+        necessary for displaying it to the user.
+
     """
 
     action: FileActions
@@ -135,6 +148,19 @@ class ChangedRodNumberAction(Action):
         Positional arguments for the `QListWidgetItem` superclass.
     **kwargs : dict
         Keyword arguments for the `QListWidgetItem` superclass.
+
+    Attributes
+    ----------
+    rod : RodNumberWidget
+        A copy of the rod whose number is changed.
+    new_id : int
+        The new rod number of the changed rod.
+    action : str
+        Description of what kind of action was performed.
+        (Default is "Changed rod")
+    coupled_action : Union[Action, None]
+        The instance of an `Action` that is performed at the same time with
+        this and must be reverted as well, if this `Action` is reverted.
     """
 
     def __init__(self, old_rod: RodNumberWidget, new_id: int,
@@ -193,6 +219,18 @@ class DeleteRodAction(Action):
         Positional arguments for the `QListWidgetItem` superclass.
     **kwargs : dict
         Keyword arguments for the `QListWidgetItem` superclass.
+
+    Attributes
+    ----------
+    rod : RodNumberWidget
+        A copy of the rod whose position was changed, prior to the change.
+    action : str
+        Description of what kind of action was performed.
+        (Default is "Deleted rod")
+    coupled_action : Union[Action, ChangeRodNumberAction, None]
+        The instance of an `Action` that is performed at the same time with
+        this and must be reverted as well, if this `Action` is reverted.
+
     """
     def __init__(self, old_rod: RodNumberWidget, coupled_action: Union[
         Action, ChangedRodNumberAction] = None,
@@ -307,6 +345,58 @@ class ChangeRodPositionAction(Action):
 
 
 class ActionLogger(QtCore.QObject):
+    """Logs actions performed on its associated GUI object.
+
+    Keeps track of actions performed on/by a GUI object that is associated
+    with it. It provides a list of the performed actions to a
+    `ActionLoggerWidget` for display in the GUI. It is also used to trigger
+    reverting of these actions. Do NOT create instances of this class
+    directly but let an instance of the `ActionLoggerWidget` class do that,
+    if the logged actions shall be displayed in the GUI.
+
+    Parameters
+    ----------
+    *args :
+        Positional arguments for the QObject superclass.
+    **kwargs :
+        Keyword arguments for the QObject superclass.
+
+    Attributes
+    ----------
+    parent_id : str
+        ID of the GUI object from which actions are logged. It must be human
+        readable as it is used for labelling the actions displayed in the GUI.
+    logged_actions : List[Action]
+        A list of all actions performed/logged with this instance
+        (saved and unsaved).
+    unsaved_changes : List[Action]
+        A list of all actions performed/logged with this instance that are
+        savable but currently unsaved.
+
+    Signals
+    -------
+    undo_action(Action)
+        Requests the reverting of the `Action` that is given as the payload.
+    undone_action(Action)
+        Notifies that the `Action` in the payload has been reverted.
+    added_action(Action)
+        Notifies that this object logged the `Action` from the payload.
+    notify_unsaved(bool)
+        Notifies, if this objects attribute `unsaved_changes` changes from
+        empty to being filled with one or more items (True) or from filled to
+        being empty (False).
+    request_saving(bool)
+        Requests the saving of any unsaved changes.
+        True    ->  permanent saving
+        False   ->  temporary saving
+
+
+    Slots
+    -----
+    undo_last(str)
+    actions_saved()
+
+    """
     __pyqtSignals__ = ("undoAction(Action)",)
     # Create custom signals
     undo_action = QtCore.pyqtSignal(Action, name="undoAction")
@@ -395,6 +485,38 @@ class ActionLogger(QtCore.QObject):
 
 
 class ActionLoggerWidget(QListWidget):
+    """A custom Widget to maintain loggers and display Actions in the GUI.
+
+    This class maintains the `ActionLogger` objects that are used in the
+    program. It also manages the location for any temporary files that are
+    program session specific. This widget displays the logged actions in the
+    GUI. Use an instance of this class to create new loggers for other
+    objects of the GUI that perform actions that can be logged or reverted.
+
+    Parameters
+    ----------
+    *args : iterable
+        Positional arguments for the QListWidget superclass.
+    **kwargs : dict
+        Keyword arguments for the QListWidget superclass.
+
+    Attributes
+    ----------
+    temp_manager : TemporaryDirectory
+    unsaved_changes : List[Action]
+        An ordered list of all actions that were logged by the
+        `ActionLogger` objects maintained by this `ActionLoggerWidget`
+        instance. Do NOT try to insert performed actions in here directly.
+        This property only derives its contents from the `ActionLogger`
+        objects.
+
+    Slots
+    -----
+    add_action(Action)
+    remove_action(Action)
+
+    """
+
     temp_manager: tempfile.TemporaryDirectory
     _loggers: List[ActionLogger] = []
 
@@ -410,7 +532,8 @@ class ActionLoggerWidget(QListWidget):
 
         Returns
         -------
-        List[Action]"""
+        List[Action]
+        """
         all_unsaved = [item for changes in self._loggers for item in
                        changes.unsaved_changes]
         return all_unsaved

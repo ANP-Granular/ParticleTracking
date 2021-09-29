@@ -62,6 +62,11 @@ class RodNumberWidget(QLineEdit):
     color : str
         The color of the rod being represented.
 
+    Signals
+    -------
+    gotActivated(int)
+    droppedRodNumber(QPoint)
+
     """
 
     __pyqtSignals__ = ("gotActivated(int)", "droppedRodNumber(QPoint)",
