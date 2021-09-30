@@ -116,6 +116,20 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.action_zoom_in.setShortcut("Ctrl+=")
             self.ui.action_zoom_out.setShortcut("Ctrl+-")
 
+        # Set maximum button/checkbox sizes to avoid text clipping
+        pb_load_txt = self.ui.pb_load_images.text()
+        pb_load_size = self.ui.pb_load_images.fontMetrics().width(
+            pb_load_txt)
+        pb_rod_txt = self.ui.pb_load_rods.text()
+        pb_rod_size = self.ui.pb_load_rods.fontMetrics().width(
+            pb_rod_txt)
+        max_width = pb_rod_size if pb_rod_size > pb_load_size else pb_load_size
+        self.ui.pb_load_images.setMaximumWidth(int(2*max_width))
+        self.ui.pb_load_rods.setMaximumWidth(int(2*max_width))
+        cb_ov_txt = self.ui.cb_overlay.text()
+        cb_ov_size = self.ui.cb_overlay.fontMetrics().width(cb_ov_txt)
+        self.ui.cb_overlay.setMaximumWidth(int(2*cb_ov_size))
+
         self.setWindowState(QtCore.Qt.WindowMaximized)
         self.setFocus()
 
