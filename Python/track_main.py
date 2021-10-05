@@ -9,7 +9,7 @@ import pandas as pd
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, QScrollArea
 from PyQt5.QtCore import QPoint
-from PyQt5.QtGui import QImage
+from PyQt5.QtGui import QImage, QWheelEvent
 
 from actionlogger import FileAction, TEMP_DIR, FileActions, ActionLogger
 from track_ui import Ui_MainWindow
@@ -162,6 +162,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         # Connect signals
         # Viewing actions
+        self.ui.sa_camera_0.verticalScrollBar().installEventFilter(self)
+        self.ui.sa_camera_1.verticalScrollBar().installEventFilter(self)
         self.ui.action_zoom_in.triggered.connect(lambda: self.scale_image(
             factor=1.25))
         self.ui.action_zoom_out.triggered.connect(lambda: self.scale_image(
@@ -190,9 +192,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         # View controls
         self.switch_left = QtWidgets.QShortcut(QtGui.QKeySequence(
-            "Ctrl+left"), self)
+            "Ctrl+tab"), self)
         self.switch_right = QtWidgets.QShortcut(QtGui.QKeySequence(
-            "Ctrl+right"), self)
+            "tab"), self)
         self.switch_left.activated.connect(lambda: self.change_view(-1))
         self.switch_right.activated.connect(lambda: self.change_view(1))
         self.ui.camera_tabs.currentChanged.connect(self.view_changed)
@@ -897,6 +899,29 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         else:
             new_text = self.ui.camera_tabs.tabText(tab_idx)[0:-1]
         self.ui.camera_tabs.setTabText(tab_idx, new_text)
+
+    def eventFilter(self, source: QtCore.QObject, event: QtCore.QEvent) -> bool:
+        """Intercepts events, here modified scroll events for zooming
+
+        Parameters
+        ----------
+        source : QObject
+        event : QEvent
+        """
+        if source not in [self.ui.sa_camera_0.verticalScrollBar(),
+                          self.ui.sa_camera_1.verticalScrollBar()]:
+            return False
+        if type(event) != QtGui.QWheelEvent:
+            return False
+
+        event = QWheelEvent(event)
+        if not event.modifiers() == QtCore.Qt.ControlModifier:
+            return False
+        if event.angleDelta().y() < 0:
+            self.scale_image(factor=0.8)
+        elif event.angleDelta().y() > 0:
+            self.scale_image(factor=1.25)
+        return True
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         """Reimplements QMainWindow.resizeEvent(a0).
