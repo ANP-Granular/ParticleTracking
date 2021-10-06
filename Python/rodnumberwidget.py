@@ -120,6 +120,17 @@ class RodNumberWidget(QLineEdit):
         self._rod_id = new_id
         self.initial_text = str(new_id)
 
+    @property
+    def rod_id(self):
+        return self._rod_id
+
+    @rod_id.setter
+    def rod_id(self, new_id: int):
+        if new_id > 99:
+            raise ValueError("Only values <100 allowed.")
+        self._rod_id = new_id
+        self.setText(str(new_id))
+
     # Controlling "editing" behaviour
     def mouseDoubleClickEvent(self, e: QtGui.QMouseEvent) -> None:
         """ Reimplements QLineEdit.mouseDoubleClickEvent(e).
@@ -290,7 +301,7 @@ class RodNumberWidget(QLineEdit):
         else:
             raise(RodStateError())
 
-    def copy_rod(self):
+    def copy(self):
         """Copies this instance of a RodNumberWidget.
 
         Returns
