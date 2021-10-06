@@ -344,6 +344,65 @@ class ChangeRodPositionAction(Action):
                 return rods
 
 
+class CreateRodAction(Action):
+    """Class to represent the creation of a new rod as a loggable action.
+
+    Parameters
+    ----------
+    new_rod : RodNumberWidget
+        A copy of the rod which was created.
+    *args : iterable
+        Positional arguments for the `QListWidgetItem` superclass.
+    **kwargs : dict
+        Keyword arguments for the `QListWidgetItem` superclass.
+
+    Attributes
+    ----------
+    rod : RodNumberWidget
+        A copy of the rod which was created.
+    action : str
+        Default is "Created new rod".
+    """
+
+    def __init__(self, new_rod: RodNumberWidget, *args,
+                 **kwargs):
+        self.rod = new_rod
+        self.action = "Created new rod"
+        super().__init__(str(self), *args, **kwargs)
+
+    def __str__(self):
+        to_str = self.action + f" #{self.rod.rod_id}"
+        if self._parent_id is not None:
+            to_str = f"({self._parent_id}) " + to_str
+        return to_str
+
+    def undo(self, rods: List[RodNumberWidget] = None) -> \
+            List[RodNumberWidget]:
+        """Triggers events to revert this action.
+
+        Parameters
+        ----------
+        rods : List[RodNumberWidget]
+            A list of `RodNumberWidget`s in which should be the created rod.
+
+        Returns
+        -------
+        List[RodNumberWidget]
+
+        Raises
+        ------
+        Exception
+        """
+        if rods is None:
+            raise Exception("Unable to revert this action. No rods supplied.")
+        for rod in rods:
+            if rod.rod_id == self.rod.rod_id:
+                rods.remove(rod)
+                rod.deleteLater()
+                return rods
+        return rods
+
+
 class ActionLogger(QtCore.QObject):
     """Logs actions performed on its associated GUI object.
 

@@ -6,14 +6,16 @@ import re
 from typing import List
 
 import pandas as pd
+import numpy as np
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, QScrollArea
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QImage, QWheelEvent
 
-from actionlogger import FileAction, TEMP_DIR, FileActions, ActionLogger
+from actionlogger import FileAction, TEMP_DIR, FileActions, ActionLogger, \
+    CreateRodAction
 from track_ui import Ui_MainWindow
-from rodnumberwidget import RodNumberWidget
+from rodnumberwidget import RodNumberWidget, RodState
 
 ICON_PATH = "./resources/icon_main.ico"
 
@@ -147,6 +149,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.request_undo.connect(cam.logger.undo_last)
             cam.logger.notify_unsaved.connect(self.tab_has_changes)
             cam.logger.request_saving.connect(self.save_changes)
+            cam.request_new_rod.connect(self.create_new_rod)
 
         # tracker of the current image that's displayed
         self.CurrentFileIndex = 0
@@ -460,7 +463,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                   self.get_selected_color()),
                               usecols=col_list)
         df_part2 = df_part[df_part["frame"] ==
-                           int(file_name[1:4])].reset_index()
+                           int(file_name[1:4])].reset_index().fillna(0)
 
         new_rods = []
         for ind_rod, value in enumerate(df_part2['particle']):
@@ -665,6 +668,33 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.last_color = self.get_selected_color()
             self.show_overlay()
 
+    @QtCore.pyqtSlot(int, list)
+    def create_new_rod(self, number: int, new_position: list) -> None:
+        """
+
+        Parameters
+        ----------
+        number
+        new_position
+
+        Returns
+        -------
+
+        """
+        new_rod = RodNumberWidget(self.last_color, self.current_camera,
+                                  str(number))
+        new_rod.rod_id = number
+        new_rod.setObjectName(f"rn_{number}")
+        new_rod.rod_points = new_position
+        new_rod.set_state(RodState.SELECTED)
+        new_rods = []
+        for rod in self.current_camera.edits:
+            new_rods.append(rod.copy())
+        new_rods.append(new_rod)
+        self.current_camera.edits = new_rods
+        last_action = CreateRodAction(new_rod)
+        self.current_camera.logger.add_action(last_action)
+
     def save_changes(self, temp_only=False, current_only=False):
         """Saves unsaved changes to disk temporarily or permanently.
 
@@ -711,11 +741,31 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 # Skips this, if no rods are displayed
                 cam_id = cam.cam_id
                 for rod in cam.edits:
-                    df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                    data_unavailable = df_part.loc[(df_part.frame == int(
+                        file_name[1:4])) &
                                 (df_part.particle == rod.rod_id),
                                 [f"x1_{cam_id}", f"y1_{cam_id}",
-                                 f"x2_{cam_id}", f"y2_{cam_id}"]] = \
-                        rod.rod_points
+                                 f"x2_{cam_id}", f"y2_{cam_id}"]].empty
+                    if data_unavailable:
+                        # This rod was not tracked yet, creating a new entry
+                        # in the *.csv
+                        df_part.loc[len(df_part.index)] = \
+                            len(df_part.columns)*[np.nan]
+                        df_part.loc[len(df_part.index)-1,
+                                    [f"x1_{cam_id}", f"y1_{cam_id}",
+                                     f"x2_{cam_id}", f"y2_{cam_id}",
+                                     "frame", "seen", "particle"]] \
+                            = [*rod.rod_points, int(file_name[1:4]), 1,
+                               rod.rod_id]
+                    else:
+                        df_part.loc[(df_part.frame == int(file_name[1:4])) &
+                                    (df_part.particle == rod.rod_id),
+                                    [f"x1_{cam_id}", f"y1_{cam_id}",
+                                    f"x2_{cam_id}", f"y2_{cam_id}"]] = \
+                            rod.rod_points
+
+                df_part = df_part.astype({"frame": 'int', "seen": 'int',
+                                          "particle": 'int'})
                 df_part.to_csv(tmp_file, index_label="")
 
         if temp_only:
@@ -736,7 +786,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             msg.exec()
             if msg.clickedButton() == btn_cancel:
                 return
-
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
         # TODO: only save the files from the "unsaved" changes
@@ -746,7 +795,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             this_action = FileAction(save_file, FileActions.SAVE)
             this_action.parent_id = self.logger_id
             self.ui.lv_actions_list.add_action(this_action)
-
         # notify loggers that everything was saved
         for cam in self.cameras:
             cam.logger.actions_saved()
@@ -900,13 +948,21 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             new_text = self.ui.camera_tabs.tabText(tab_idx)[0:-1]
         self.ui.camera_tabs.setTabText(tab_idx, new_text)
 
-    def eventFilter(self, source: QtCore.QObject, event: QtCore.QEvent) -> bool:
-        """Intercepts events, here modified scroll events for zooming
+    def eventFilter(self, source: QtCore.QObject, event: QtCore.QEvent)\
+            -> bool:
+        """Intercepts events, here modified scroll events for zooming.
 
         Parameters
         ----------
         source : QObject
         event : QEvent
+
+        Returns
+        -------
+        bool
+            True, if the event shall not be propagated further.
+            False, if the event shall be passed to the next object to be
+            handled.
         """
         if source not in [self.ui.sa_camera_0.verticalScrollBar(),
                           self.ui.sa_camera_1.verticalScrollBar()]:
