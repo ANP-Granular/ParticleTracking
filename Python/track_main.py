@@ -358,23 +358,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                             else:
                                 max_row += 1
 
-                for btn in rb_colors:
-                    if btn.text().lower() not in found_colors:
-                        group_layout.removeWidget(btn)
-                        btn.hide()
-                        btn.deleteLater()
-
-                if eligible_files:
-                    self.ui.le_rod_dir.setText(self.original_data[:-1])
-                    self.ui.le_save_dir.setText(self.original_data[:-1] +
-                                                "_corrected")
-                    this_action = FileAction(self.original_data[:-1],
-                                             FileActions.LOAD_RODS)
-                    this_action.parent_id = self.logger_id
-                    self.ui.lv_actions_list.add_action(this_action)
-                    self.show_overlay()
-                    return
-                else:
+                if not eligible_files:
                     # no matching file was found
                     msg = QMessageBox()
                     msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
@@ -388,10 +372,29 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.original_data = None
                     if user_decision == QMessageBox.Cancel:
                         # Stop overlaying
+                        self.ui.le_rod_dir.setText("")
+                        self.clear_screen()
                         return
                     else:
                         # Retry folder selection
                         continue
+
+                else:
+                    # Rod position data was selected correctly
+                    self.ui.le_rod_dir.setText(self.original_data[:-1])
+                    self.ui.le_save_dir.setText(self.original_data[:-1] +
+                                                "_corrected")
+                    this_action = FileAction(self.original_data[:-1],
+                                             FileActions.LOAD_RODS)
+                    this_action.parent_id = self.logger_id
+                    self.ui.lv_actions_list.add_action(this_action)
+                    self.show_overlay()
+                    for btn in rb_colors:
+                        if btn.text().lower() not in found_colors:
+                            group_layout.removeWidget(btn)
+                            btn.hide()
+                            btn.deleteLater()
+                    return
 
     def show_overlay(self):
         """Tries to load rods and hints the user if that is not possible.
