@@ -248,7 +248,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.current_file_ids.append(int(f_compare))
 
             # Sort according to name / ascending order
+            desired_file = self.fileList[self.CurrentFileIndex]
             self.fileList.sort()
+            self.CurrentFileIndex = self.fileList.index(desired_file)
             self.current_file_ids.sort()
             self.cameras[self.ui.camera_tabs.currentIndex()].image = \
                 loaded_image
