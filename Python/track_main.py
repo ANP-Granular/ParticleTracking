@@ -317,47 +317,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     os.remove(self.data_files + "/" + file)
 
                 # check for eligible files and de-/activate radio buttons
-                eligible_files = False
-                rb_colors = [child for child
-                             in self.ui.group_rod_color.children() if
-                             type(child) is QRadioButton]
-                rb_color_texts = [btn.text().lower() for btn in rb_colors]
+                # eligible_files = False
                 data_regex = re.compile('rods_df_\w+\.csv')
-                group_layout = self.ui.group_rod_color.layout()
-                max_col = group_layout.columnCount()-1
-                max_row = 1
-                if group_layout.itemAtPosition(1, max_col) is not None:
-                    # 'Add' a new column as current layout is full
-                    max_col += 1
-                    max_row = 0
-
-                found_colors = []
-                for file in os.listdir(self.original_data):
-                    whole_path = os.path.join(self.original_data, file)
-                    if not os.path.isfile(whole_path):
-                        continue
-                    if re.fullmatch(data_regex, file) is not None:
-                        eligible_files = True
-                        found_color = os.path.splitext(file)[0].split("_")[-1]
-                        found_colors.append(found_color)
-                        # copy file to temporary storage
-                        src_file = os.path.join(self.original_data, file)
-                        dst_file = os.path.join(self.data_files, file)
-                        shutil.copy2(src=src_file, dst=dst_file)
-                        if found_color not in rb_color_texts:
-                            # create new radiobutton for this color
-                            new_btn = QRadioButton(
-                                text=found_color.capitalize())
-                            new_btn.setObjectName(f"rb_{found_color}")
-                            new_btn.toggled.connect(self.color_change)
-                            # retain only 2 rows
-                            group_layout.addWidget(new_btn, max_row, max_col)
-                            if max_row == 1:
-                                max_row = 0
-                                max_col += 1
-                            else:
-                                max_row += 1
-
+                eligible_files = self._verify_folder(self.original_data,
+                                                     data_regex)
                 if not eligible_files:
                     # no matching file was found
                     msg = QMessageBox()
@@ -380,14 +343,74 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         continue
 
                 else:
+                    # Check whether there is already corrected data
+                    out_folder = self.original_data[:-1] + "_corrected"
+                    corrected_files = self._verify_folder(out_folder,
+                                                          data_regex)
+                    if corrected_files:
+                        msg = QMessageBox()
+                        msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+                        msg.setIcon(QMessageBox.Question)
+                        msg.setWindowTitle("Rod Tracker")
+                        msg.setText(f"There seems to be corrected data "
+                                    f"already. Do you want to use that "
+                                    f"instead of the selected data?")
+                        msg.setStandardButtons(QMessageBox.Yes |
+                                               QMessageBox.No)
+                        user_decision = msg.exec()
+                        if user_decision == QMessageBox.Yes:
+                            self.original_data = out_folder
+
+                    rb_colors = [child for child
+                                 in self.ui.group_rod_color.children() if
+                                 type(child) is QRadioButton]
+                    rb_color_texts = [btn.text().lower() for btn in rb_colors]
+                    group_layout = self.ui.group_rod_color.layout()
+                    max_col = group_layout.columnCount() - 1
+                    max_row = 1
+                    if group_layout.itemAtPosition(1, max_col) is not None:
+                        # 'Add' a new column as current layout is full
+                        max_col += 1
+                        max_row = 0
+
+                    found_colors = []
+                    for file in os.listdir(self.original_data):
+                        whole_path = os.path.join(self.original_data, file)
+                        if not os.path.isfile(whole_path):
+                            continue
+                        if re.fullmatch(data_regex, file) is not None:
+                            found_color = os.path.splitext(file)[0].split("_")[
+                                -1]
+                            found_colors.append(found_color)
+                            # copy file to temporary storage
+                            src_file = os.path.join(self.original_data, file)
+                            dst_file = os.path.join(self.data_files, file)
+                            shutil.copy2(src=src_file, dst=dst_file)
+                            if found_color not in rb_color_texts:
+                                # create new radiobutton for this color
+                                new_btn = QRadioButton(
+                                    text=found_color.capitalize())
+                                new_btn.setObjectName(f"rb_{found_color}")
+                                new_btn.toggled.connect(self.color_change)
+                                # retain only 2 rows
+                                group_layout.addWidget(new_btn, max_row,
+                                                       max_col)
+                                if max_row == 1:
+                                    max_row = 0
+                                    max_col += 1
+                                else:
+                                    max_row += 1
+
                     # Rod position data was selected correctly
                     self.ui.le_rod_dir.setText(self.original_data[:-1])
-                    self.ui.le_save_dir.setText(self.original_data[:-1] +
-                                                "_corrected")
+                    self.ui.le_save_dir.setText(out_folder)
+                    # self.ui.le_save_dir.setText(self.original_data[:-1] +
+                    #                             "_corrected")
                     this_action = FileAction(self.original_data[:-1],
                                              FileActions.LOAD_RODS)
                     this_action.parent_id = self.logger_id
-                    self.ui.lv_actions_list.add_action(this_action)
+                    self.ui.lv_actions_list.add_action(
+                        this_action)
                     self.show_overlay()
                     for btn in rb_colors:
                         if btn.text().lower() not in found_colors:
@@ -395,6 +418,42 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                             btn.hide()
                             btn.deleteLater()
                     return
+
+    @staticmethod
+    def _verify_folder(path, file_regex: re.Pattern) -> bool:
+        """Checks a folder for file(s) that match the given pattern.
+
+        Parameters
+        ----------
+        path : str
+            Folder path that shall be checked for files matching the pattern in
+            `file_regex`.
+        file_regex : Pattern
+            Regular expression describing the file names that are supposed
+            to be found/matched.
+
+        Returns
+        -------
+        bool
+            True, if at least 1 file matching the pattern was found.
+            False, if no file was found or the folder does not exist.
+
+        Raises
+        ------
+        NotADirectoryError
+            Is raised if the given path exists but is not a directory.
+        """
+        if not os.path.exists(path):
+            return False
+        if not os.path.isdir(path):
+            raise NotADirectoryError
+        for file in os.listdir(path):
+            whole_path = os.path.join(path, file)
+            if not os.path.isfile(whole_path):
+                continue
+            if re.fullmatch(file_regex, file) is not None:
+                return True
+        return False
 
     def show_overlay(self):
         """Tries to load rods and hints the user if that is not possible.
