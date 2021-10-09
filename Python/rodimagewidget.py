@@ -781,7 +781,7 @@ class RodImageWidget(QLabel):
         None
         """
         rod.setText(str(rod.rod_id))
-        delete_action = DeleteRodAction(rod.copy_rod())
+        delete_action = DeleteRodAction(rod.copy())
         rod.rod_points = [0, 0, 0, 0]
         rod.set_state(RodState.CHANGED)
         self._logger.add_action(delete_action)
