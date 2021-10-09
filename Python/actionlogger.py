@@ -259,7 +259,8 @@ class DeleteRodAction(Action):
         -------
         [RodNumberWidget]
         """
-        self.rod.rod_id = self.coupled_action.new_id
+        if self.coupled_action:
+            self.rod.rod_id = self.coupled_action.new_id
         self.rod.setText(str(self.rod.rod_id))
         self.rod.rod_state = RodState.NORMAL
         self.rod.setVisible(True)

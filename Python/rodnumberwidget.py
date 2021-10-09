@@ -75,6 +75,7 @@ class RodNumberWidget(QLineEdit):
     activated = QtCore.pyqtSignal(int, name="gotActivated")
     dropped = QtCore.pyqtSignal(QPoint, name="droppedRodNumber")
     id_changed = QtCore.pyqtSignal(QLineEdit, int, name="changedRodNumber")
+    request_delete = QtCore.pyqtSignal(QLineEdit, name="request_delete")
     rod_state: RodState
 
     def __init__(self, color, parent=None, text="", pos=QPoint(0, 0)):
@@ -89,7 +90,7 @@ class RodNumberWidget(QLineEdit):
         self.initial_text = text
         self.initial_pos = pos
         self.move(pos)
-        self.rod_id = None
+        self._rod_id = None
         self.rod_state = RodState.NORMAL
         self.rod_points = [0, 0, 0, 0]
         self.color = color
@@ -103,6 +104,21 @@ class RodNumberWidget(QLineEdit):
         content_size = self.fontMetrics().boundingRect("99")
         content_size.setWidth(content_size.width()+5)
         self.setGeometry(content_size)
+
+    @property
+    def rod_id(self):
+        """Property that represents the rod's ID (number).
+
+        Returns
+        -------
+        int
+        """
+        return self._rod_id
+
+    @rod_id.setter
+    def rod_id(self, new_id: int):
+        self._rod_id = new_id
+        self.initial_text = str(new_id)
 
     # Controlling "editing" behaviour
     def mouseDoubleClickEvent(self, e: QtGui.QMouseEvent) -> None:
@@ -139,6 +155,10 @@ class RodNumberWidget(QLineEdit):
             # Confirm & end editing (keep changes)
             self.end(False)
             self.setReadOnly(True)
+            user_text = self.text()
+            if user_text == "":
+                self.request_delete.emit(self)
+                return
             self.initial_text = self.text()
             previous_id = self.rod_id
             self.rod_id = int(self.text())

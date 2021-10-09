@@ -93,9 +93,7 @@ class RodImageWidget(QLabel):
         # Save and connect new rods
         self._edits = new_edits
         for rod in self._edits:
-            rod.activated.connect(self.rod_activated)
-            rod.id_changed.connect(self.check_rod_conflicts)
-            rod.show()
+            self._connect_rod(rod)
         self._scale_image()
 
     @edits.deleter
@@ -667,11 +665,18 @@ class RodImageWidget(QLabel):
         elif type(action) == DeleteRodAction:
             if action.coupled_action is not None:
                 self._logger.register_undone(action.coupled_action)
-            new_rods = self._edits
-            new_rods = [rod for rod in new_rods if rod.rod_id !=
-                        action.rod.rod_id]
-            new_rods = action.coupled_action.undo(rods=new_rods)
-            new_rods.append(action.undo(None))
+            current_rods = self._edits
+            new_rods = []
+            for rod in current_rods:
+                if rod.rod_id != action.rod.rod_id:
+                    new_rods.append(rod)
+                else:
+                    rod.deleteLater()
+            if action.coupled_action:
+                new_rods = action.coupled_action.undo(rods=new_rods)
+            deleted_rod = action.undo(None)
+            self._connect_rod(deleted_rod)
+            new_rods.append(deleted_rod)
             self._edits = new_rods
             self.draw_rods()
 
@@ -780,3 +785,38 @@ class RodImageWidget(QLabel):
 
         rod.move(QtCore.QPoint(pos_x, pos_y))
         return rod_pos
+
+    @QtCore.pyqtSlot(RodNumberWidget)
+    def delete_rod(self, rod: RodNumberWidget) -> None:
+        """Deletes the given rod, thus sets its position to (0,0).
+
+        Parameters
+        ----------
+        rod : RodNumberWidget
+
+        Returns
+        -------
+        None
+        """
+        rod.setText(str(rod.rod_id))
+        delete_action = DeleteRodAction(rod.copy_rod())
+        rod.rod_points = [0, 0, 0, 0]
+        rod.set_state(RodState.CHANGED)
+        self._logger.add_action(delete_action)
+        self.draw_rods()
+
+    def _connect_rod(self, rod: RodNumberWidget) -> None:
+        """Connects all signals from the given rod with the widget's slots.
+
+        Parameters
+        ----------
+        rod : RodNumberWidget
+
+        Returns
+        -------
+        None
+        """
+        rod.activated.connect(self.rod_activated)
+        rod.id_changed.connect(self.check_rod_conflicts)
+        rod.request_delete.connect(self.delete_rod)
+        rod.show()
