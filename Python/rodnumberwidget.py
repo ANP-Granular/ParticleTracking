@@ -189,6 +189,10 @@ class RodNumberWidget(QLineEdit):
         None
         """
         if self.isReadOnly():
+            if self.__mouseMovePos is None or self.__mousePressPos is None:
+                self.__mouseMovePos = e.globalPos()
+                self.__mousePressPos = e.globalPos()
+                return
             curr_pos = self.mapToGlobal(self.pos())
             global_pos = e.globalPos()
             diff = global_pos - self.__mouseMovePos
