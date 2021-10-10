@@ -55,6 +55,7 @@ class RodImageWidget(QLabel):
 
     edits: List[RodNumberWidget]
     request_color_change = QtCore.pyqtSignal(str, name="request_color_change")
+    request_frame_change = QtCore.pyqtSignal(int, name="request_frame_change")
     notify_undone = QtCore.pyqtSignal(Action, name="notify_undone")
     request_new_rod = QtCore.pyqtSignal(int, list, name="request_new_rod")
     _logger: ActionLogger = None
@@ -634,6 +635,8 @@ class RodImageWidget(QLabel):
         except AttributeError:
             # given action does not require a color to be handled
             pass
+        if action.frame != self.logger.frame:
+            self.request_frame_change.emit(action.frame)
 
         if type(action) == ChangeRodPositionAction:
             new_rods = action.undo(rods=self._edits)

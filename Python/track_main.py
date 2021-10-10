@@ -13,7 +13,7 @@ from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QImage, QWheelEvent
 
 from actionlogger import FileAction, TEMP_DIR, FileActions, ActionLogger, \
-    CreateRodAction
+    CreateRodAction, Action
 from track_ui import Ui_MainWindow
 from rodnumberwidget import RodNumberWidget, RodState
 
@@ -77,6 +77,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     data_file_name : str
         The template string to match file names of data file candidates in a
         user-selected folder.
+    df_data : DataFrame
+        The loaded rod position data.
     last_color : str
         The color that is currently selected in the GUI and therefore used
         for data display.
@@ -146,9 +148,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         for cam in self.cameras:
             cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
             cam.request_color_change.connect(self.change_color)
+            cam.request_frame_change.connect(self.change_frame)
             self.request_undo.connect(cam.logger.undo_last)
             cam.logger.notify_unsaved.connect(self.tab_has_changes)
             cam.logger.request_saving.connect(self.save_changes)
+            cam.logger.data_changed.connect(self.catch_data)
             cam.request_new_rod.connect(self.create_new_rod)
 
         # tracker of the current image that's displayed
@@ -156,12 +160,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.original_data = None   # Holds the original data directory
         self.data_files = self.ui.lv_actions_list.temp_manager.name
         self.data_file_name = 'rods_df_{:s}.csv'
+        self.df_data = None
         self.last_color = None
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             if rb.isChecked():
                 self.last_color = rb.objectName()[3:]
         self.logger = self.ui.lv_actions_list.get_new_logger(self.logger_id)
         self.logger.notify_unsaved.connect(self.tab_has_changes)
+        self.logger.data_changed.connect(self.catch_data)
 
         # Connect signals
         # Viewing actions
@@ -280,10 +286,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.current_file_ids
 
             # Logging
+            new_frame = self.current_file_ids[self.CurrentFileIndex]
+            self.logger.frame = new_frame
+            self.current_camera.logger.frame = new_frame
             first_action = FileAction(dirpath, FileActions.LOAD_IMAGES,
                                       len(self.fileList),
                                       cam_id=self.current_camera.cam_id,
-                                      parent_id="test")
+                                      parent_id="main")
             first_action.parent_id = self.logger_id
             second_action = FileAction(file_name, FileActions.OPEN_IMAGE,
                                        cam_id=self.current_camera.cam_id)
@@ -318,6 +327,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 # delete old stored files
                 for file in os.listdir(self.data_files):
                     os.remove(self.data_files + "/" + file)
+                self.df_data = None
 
                 # check for eligible files and de-/activate radio buttons
                 # eligible_files = False
@@ -389,6 +399,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                             src_file = os.path.join(self.original_data, file)
                             dst_file = os.path.join(self.data_files, file)
                             shutil.copy2(src=src_file, dst=dst_file)
+                            # load data to RAM
+                            data_chunk = pd.read_csv(src_file, index_col=0)
+                            data_chunk["color"] = found_color
+                            if self.df_data is None:
+                                self.df_data = data_chunk.copy()
+                            else:
+                                self.df_data = pd.concat([self.df_data,
+                                                          data_chunk])
+
                             if found_color not in rb_color_texts:
                                 # create new radiobutton for this color
                                 new_btn = QRadioButton(
@@ -522,10 +541,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         filename = (self.fileList[self.CurrentFileIndex])
         file_name = os.path.split(filename)[-1]
-        df_part = pd.read_csv(self.data_files + "/" +
-                              self.data_file_name.format(
-                                  self.get_selected_color()),
-                              usecols=col_list)
+        df_part = self.df_data.loc[self.df_data.color ==
+                                   self.get_selected_color(), col_list]
         df_part2 = df_part[df_part["frame"] ==
                            int(file_name[1:4])].reset_index().fillna(0)
 
@@ -571,7 +588,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """
         if state == 0:
             # deactivated
-            self.save_changes(temp_only=True)
             self.clear_screen()
         elif state == 2:
             # activated
@@ -600,12 +616,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # No change necessary
             return
         if self.fileList:
-            # Unsaved changes handling
-            if not self.current_camera.logger.unsaved_changes == []:
-                if self.warning_unsaved():
-                    self.current_camera.logger.discard_changes()
-                else:
-                    return
             # Switch images
             try:
                 self.CurrentFileIndex += direction
@@ -633,6 +643,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.file_indexes[self.ui.camera_tabs.currentIndex()] = \
                         self.CurrentFileIndex
                     # Update information on last action
+                    new_frame = self.current_file_ids[self.CurrentFileIndex]
+                    self.logger.frame = new_frame
+                    self.current_camera.logger.frame = new_frame
+
                     this_action = FileAction(file_name,
                                              FileActions.OPEN_IMAGE,
                                              cam_id=self.current_camera.cam_id)
@@ -727,8 +741,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """
 
         if state:
-            if self.ui.lv_actions_list.unsaved_changes is not []:
-                self.save_changes(temp_only=True)
             self.last_color = self.get_selected_color()
             self.show_overlay()
 
@@ -759,7 +771,50 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         last_action = CreateRodAction(new_rod)
         self.current_camera.logger.add_action(last_action)
 
-    def save_changes(self, temp_only=False, current_only=False):
+    @QtCore.pyqtSlot(Action)
+    def catch_data(self, change: Action):
+        """Changes the data stored in RAM according to the Action performed.
+
+        Parameters
+        ----------
+        change : Action
+
+        Returns
+        -------
+        None
+        """
+        new_data = change.to_save()
+        if new_data is not None:
+            frame = new_data["frame"]
+            cam_id = new_data["cam_id"]
+            color = new_data["color"]
+            points = new_data["position"]
+            rod_id = new_data["rod_id"]
+
+            data_unavailable = self.df_data.loc[
+                (self.df_data.frame == frame) &
+                (self.df_data.particle == rod_id) &
+                (self.df_data.color == color),
+                [f"x1_{cam_id}", f"y1_{cam_id}", f"x2_{cam_id}",
+                 f"y2_{cam_id}"]].empty
+            if data_unavailable:
+                self.df_data.loc[len(self.df_data.index)] = \
+                    len(self.df_data.columns) * [np.nan]
+                self.df_data.loc[len(self.df_data.index) - 1,
+                                 [f"x1_{cam_id}", f"y1_{cam_id}",
+                                  f"x2_{cam_id}", f"y2_{cam_id}",
+                                  "frame", "seen", "particle", "color"]] \
+                    = [*points, frame, 1, rod_id, color]
+            else:
+                self.df_data.loc[(self.df_data.frame == frame) & (
+                        self.df_data.particle == rod_id) & (
+                        self.df_data.color == color),
+                                 [f"x1_{cam_id}", f"y1_{cam_id}",
+                                  f"x2_{cam_id}", f"y2_{cam_id}"]] = points
+            self.df_data = self.df_data.astype({"frame": 'int', "seen": 'int',
+                                                "particle": 'int'})
+
+    def save_changes(self, temp_only=False):
         """Saves unsaved changes to disk temporarily or permanently.
 
         Saves the changes made in all views to disk. Depending on the flags
@@ -773,64 +828,25 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             Flag to either save to the temporary files only or permanently
             to the (user-)chosen location.
             (Default is False)
-        current_only : bool
-            Not used yet.
-            (Default is False)
 
         Returns
         -------
         None
         """
-        # TODO: extend saving to include all frames that were changed in the
-        #  temp_only=False condition
         # TODO: move saving to different Thread(, if it still takes too long)
-
+        if self.df_data is None:
+            return
         # Skip, if there are no changes
         if not self.ui.lv_actions_list.unsaved_changes:
             return
-        # Save rods to disk
-        for cam_idx in range(len(self.cameras)):
-            try:
-                filename = self.view_filelists[cam_idx][
-                    self.file_indexes[cam_idx]]
-            except IndexError:
-                # No images loaded for this camera yet.
-                continue
-            file_name = os.path.split(filename)[-1]
+        for rb in self.ui.group_rod_color.findChildren(QRadioButton):
+            color = rb.objectName()[3:]
             tmp_file = self.data_files + "/" + self.data_file_name.format(
-                self.last_color)
-            df_part = pd.read_csv(tmp_file, index_col=0)
-            cam = self.cameras[cam_idx]
-            if cam.edits is not None:
-                # Skips this, if no rods are displayed
-                cam_id = cam.cam_id
-                for rod in cam.edits:
-                    data_unavailable = df_part.loc[(df_part.frame == int(
-                        file_name[1:4])) &
-                                (df_part.particle == rod.rod_id),
-                                [f"x1_{cam_id}", f"y1_{cam_id}",
-                                 f"x2_{cam_id}", f"y2_{cam_id}"]].empty
-                    if data_unavailable:
-                        # This rod was not tracked yet, creating a new entry
-                        # in the *.csv
-                        df_part.loc[len(df_part.index)] = \
-                            len(df_part.columns)*[np.nan]
-                        df_part.loc[len(df_part.index)-1,
-                                    [f"x1_{cam_id}", f"y1_{cam_id}",
-                                     f"x2_{cam_id}", f"y2_{cam_id}",
-                                     "frame", "seen", "particle"]] \
-                            = [*rod.rod_points, int(file_name[1:4]), 1,
-                               rod.rod_id]
-                    else:
-                        df_part.loc[(df_part.frame == int(file_name[1:4])) &
-                                    (df_part.particle == rod.rod_id),
-                                    [f"x1_{cam_id}", f"y1_{cam_id}",
-                                    f"x2_{cam_id}", f"y2_{cam_id}"]] = \
-                            rod.rod_points
-
-                df_part = df_part.astype({"frame": 'int', "seen": 'int',
-                                          "particle": 'int'})
-                df_part.to_csv(tmp_file, index_label="")
+                color)
+            df_current = self.df_data.loc[self.df_data.color == color].copy()
+            df_current = df_current.astype({"frame": 'int', "seen": 'int',
+                                            "particle": 'int'})
+            df_current.to_csv(tmp_file, index_label="")
 
         if temp_only:
             # skip permanent saving
@@ -852,7 +868,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 return
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
-        # TODO: only save the files from the "unsaved" changes
+
         for file in os.listdir(self.data_files):
             shutil.copy2(self.data_files + "/" + file, save_dir + "/" + file)
             save_file = save_dir + "/" + file
@@ -912,6 +928,34 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 # activate the last color
                 rb.toggle()
 
+    @QtCore.pyqtSlot(int)
+    def change_frame(self, to_frame: int):
+        """Loads the requested frame for the currently used view/camera.
+
+        Parameters
+        ----------
+        to_frame : int
+            ID of the requested frame.
+
+        Returns
+        -------
+        None
+        """
+        try:
+            new_idx = self.current_file_ids.index(to_frame)
+            idx_diff = new_idx - self.CurrentFileIndex
+        except ValueError:
+            # Image not found
+            self.current_camera.setPixmap(QtGui.QPixmap(ICON_PATH))
+            self.ui.statusbar.showMessage(f"No image with ID"
+                                          f":{to_frame} found.", 4000)
+            return
+        # Loads a new image
+        self.show_next(idx_diff)
+        if self.ui.cb_overlay.isChecked():
+            # Ensure that rods are loaded
+            self.load_rods()
+
     def change_view(self, direction):
         """Helper method for programmatic changes of the camera tabs.
 
@@ -950,7 +994,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        self.save_changes(temp_only=True)
         # Ensure the image/frame number is consistent over views
         index_diff = 0
         if self.ui.action_persistent_view.isChecked():

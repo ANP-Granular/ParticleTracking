@@ -24,9 +24,10 @@ class FileActions(Enum):
 class Action(QListWidgetItem):
     """Base class for all Actions that are loggable by an `ActionLogger`."""
 
-    # TODO: include frame(number) OR see TODO in ActionLogger as alternative
     action: str
     _parent_id: str = None
+    _frame: int = None
+    revert: bool = False
 
     @property
     def parent_id(self) -> str:
@@ -39,6 +40,16 @@ class Action(QListWidgetItem):
         self._parent_id = new_id
         self.setText(str(self))
 
+    @property
+    def frame(self) -> int:
+        """Property holding the frame on which this Action was performed."""
+        return self._frame
+
+    @frame.setter
+    def frame(self, frame_id: int) -> None:
+        self._frame = frame_id
+        self.setText(str(self))
+
     @abstractmethod
     def __str__(self):
         """Returns a string representation of the action."""
@@ -46,6 +57,11 @@ class Action(QListWidgetItem):
     @abstractmethod
     def undo(self, rods: Optional[Iterable[RodNumberWidget]]):
         """Triggers events to revert this action."""
+
+    def to_save(self):
+        """Gives information for saving this action, None, if it's not
+        savable"""
+        return None
 
 
 class FileAction(Action):
@@ -173,9 +189,14 @@ class ChangedRodNumberAction(Action):
         super().__init__(str(self), *args, **kwargs)
 
     def __str__(self):
-        to_str = f"{self.action} #{self.rod.rod_id} ---> #{self.new_id}"
+        to_str = f") {self.action} #{self.rod.rod_id} ---> #{self.new_id}"
+        if self.rod is not None:
+            to_str = f"{self.rod.color}" + to_str
+        if self.frame is not None:
+            to_str = f"{self.frame}, " + to_str
         if self._parent_id is not None:
-            to_str = f"({self._parent_id}) " + to_str
+            to_str = f"{self._parent_id}, " + to_str
+        to_str = "(" + to_str
         return to_str
 
     def undo(self, rods: [RodNumberWidget]) -> [RodNumberWidget]:
@@ -202,6 +223,21 @@ class ChangedRodNumberAction(Action):
                 rod.rod_id = self.new_id
                 rod.setText(str(rod.rod_id))
         return rods
+
+    def to_save(self):
+        out = {
+            "position": self.rod.rod_points,
+            "cam_id": self.parent_id,
+            "frame": self.frame,
+            "color": self.rod.color
+        }
+        if self.revert:
+            # If the action was reverted
+            out["rod_id"] = self.rod.rod_id
+        else:
+            # If the action was performed
+            out["rod_id"] = self.new_id
+        return out
 
 
 class DeleteRodAction(Action):
@@ -241,9 +277,14 @@ class DeleteRodAction(Action):
         super().__init__(str(self), *args, **kwargs)
 
     def __str__(self):
-        to_str = f"{self.action} #{self.rod.rod_id}"
+        to_str = f"){self.action} #{self.rod.rod_id}"
+        if self.rod is not None:
+            to_str = f"{self.rod.color}" + to_str
+        if self.frame is not None:
+            to_str = f"{self.frame}, " + to_str
         if self._parent_id is not None:
-            to_str = f"({self._parent_id}) " + to_str
+            to_str = f"{self._parent_id}, " + to_str
+        to_str = "(" + to_str
         return to_str
 
     def undo(self, rods: [RodNumberWidget] = None):
@@ -265,6 +306,21 @@ class DeleteRodAction(Action):
         self.rod.rod_state = RodState.NORMAL
         self.rod.setVisible(True)
         return self.rod
+
+    def to_save(self):
+        out = {
+            "rod_id": self.rod.rod_id,
+            "cam_id": self.parent_id,
+            "frame": self.frame,
+            "color": self.rod.color
+        }
+        if self.revert:
+            # If the action was reverted
+            out["position"] = self.rod.rod_points
+        else:
+            # If the action was performed
+            out["position"] = [0, 0, 0, 0]
+        return out
 
 
 class ChangeRodPositionAction(Action):
@@ -314,10 +370,15 @@ class ChangeRodPositionAction(Action):
         initial_pos += ")]"
         end_pos += ")]"
 
-        to_str = f"#{self.rod.rod_id} {self.action}: {initial_pos} ---" \
+        to_str = f") #{self.rod.rod_id} {self.action}: {initial_pos} ---" \
                  f"> {end_pos}"
+        if self.rod is not None:
+            to_str = f"{self.rod.color}" + to_str
+        if self.frame is not None:
+            to_str = f"{self.frame}, " + to_str
         if self._parent_id is not None:
-            to_str = f"({self._parent_id}) " + to_str
+            to_str = f"{self._parent_id}, " + to_str
+        to_str = "(" + to_str
         return to_str
 
     def undo(self, rods: [RodNumberWidget] = None) -> [RodNumberWidget]:
@@ -343,6 +404,21 @@ class ChangeRodPositionAction(Action):
             if rod.rod_id == self.rod.rod_id:
                 rod.rod_points = self.rod.rod_points
                 return rods
+
+    def to_save(self):
+        out = {
+            "rod_id": self.rod.rod_id,
+            "cam_id": self.parent_id,
+            "frame": self.frame,
+            "color": self.rod.color
+        }
+        if self.revert:
+            # If the action was reverted
+            out["position"] = self.rod.rod_points
+        else:
+            # If the action was performed
+            out["position"] = self.new_pos
+        return out
 
 
 class CreateRodAction(Action):
@@ -372,9 +448,14 @@ class CreateRodAction(Action):
         super().__init__(str(self), *args, **kwargs)
 
     def __str__(self):
-        to_str = self.action + f" #{self.rod.rod_id}"
+        to_str = ") " + self.action + f" #{self.rod.rod_id}"
+        if self.rod is not None:
+            to_str = f"{self.rod.color}" + to_str
+        if self.frame is not None:
+            to_str = f"{self.frame}, " + to_str
         if self._parent_id is not None:
-            to_str = f"({self._parent_id}) " + to_str
+            to_str = f"{self._parent_id}, " + to_str
+        to_str = "(" + to_str
         return to_str
 
     def undo(self, rods: List[RodNumberWidget] = None) -> \
@@ -402,6 +483,21 @@ class CreateRodAction(Action):
                 rod.deleteLater()
                 return rods
         return rods
+
+    def to_save(self):
+        out = {
+            "rod_id": self.rod.rod_id,
+            "cam_id": self.parent_id,
+            "frame": self.frame,
+            "color": self.rod.color
+        }
+        if self.revert:
+            # If the action was reverted
+            out["position"] = [0, 0, 0, 0]
+        else:
+            # If the action was performed
+            out["position"] = self.rod.rod_points
+        return out
 
 
 class ActionLogger(QtCore.QObject):
@@ -464,21 +560,22 @@ class ActionLogger(QtCore.QObject):
     added_action = QtCore.pyqtSignal(Action, name="added_action")
     notify_unsaved = QtCore.pyqtSignal(bool, name="notify_unsaved")
     request_saving = QtCore.pyqtSignal(bool, name="request_saving")
+    data_changed = QtCore.pyqtSignal(Action, name="data_changed")
     unsaved_changes: List[Action]
     parent_id: str
+    frame: int = None
 
     def __init__(self, parent_id, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.parent_id = parent_id
         self.logged_actions = []
-        # TODO: make unsaved_changes a dict {frame_no: [Action]}  OR  see
-        #  TODO in Action as an alternative
         self.unsaved_changes = []
 
     def add_action(self, last_action: Action) -> None:
         """Registers the actions performed by its parent and propagates them
         for visual display in the GUI."""
         last_action.parent_id = self.parent_id
+        last_action.frame = self.frame
         self.logged_actions.append(last_action)
         if type(last_action) is not FileAction:
             if not self.unsaved_changes:
@@ -489,6 +586,7 @@ class ActionLogger(QtCore.QObject):
                 self.unsaved_changes = []
                 self.notify_unsaved.emit(False)
         self.added_action.emit(last_action)
+        self.data_changed.emit(last_action)
 
     @QtCore.pyqtSlot(str)
     def undo_last(self, parent_id: str) -> None:
@@ -509,6 +607,8 @@ class ActionLogger(QtCore.QObject):
         if not self.unsaved_changes:
             # No more unsaved changes present
             self.notify_unsaved.emit(False)
+        undo_item.revert = True
+        self.data_changed.emit(undo_item)
         self.undo_action.emit(undo_item)
         del undo_item
 
@@ -516,6 +616,8 @@ class ActionLogger(QtCore.QObject):
         """Lets the logger know that an action was undone without using its
         undo method(s)."""
         if undone_action in self.unsaved_changes:
+            undone_action.revert = True
+            self.data_changed.emit(undone_action)
             self.unsaved_changes.remove(undone_action)
             self.logged_actions.remove(undone_action)
             self.undone_action.emit(undone_action)
@@ -527,12 +629,13 @@ class ActionLogger(QtCore.QObject):
         """Discards all unsaved changes made. Currently only deletes the
         Actions, but does NOT revert the changes."""
         for item in self.unsaved_changes:
+            item.revert = True
+            self.data_changed.emit(item)
             self.undo_action.emit(item)
             self.logged_actions.remove(item)
             self.undone_action.emit(item)
             del item
         # Save changes only in the temp location
-        self.request_saving.emit(True)
         self.unsaved_changes = []
         self.notify_unsaved.emit(False)
 
