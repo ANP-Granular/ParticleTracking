@@ -605,6 +605,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             ident.setObjectName(f"rn_{ind_rod}")
             new_rods.append(ident)
         self.current_camera.edits = new_rods
+        self.ui.le_rod_disp.setText(f"Loaded Rods: {len(new_rods)}")
         if not new_rods:
             self.statusBar().showMessage("No rod data available for this "
                                          "image.", 5000)
