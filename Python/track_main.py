@@ -108,6 +108,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     logger_id: str = "main"
     logger: ActionLogger
     request_undo = QtCore.pyqtSignal(str, name="request_undo")
+    _current_file_ids: list = []
+    _CurrentFileIndex: int = 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -143,7 +145,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.view_filelists = [[], []]
         self.file_ids = [[], []]
         self.file_indexes = [0, 0]
-        self.current_file_ids = []
+        # self._current_file_ids = []
+        # self.current_file_ids = []
 
         for cam in self.cameras:
             cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
@@ -156,7 +159,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.request_new_rod.connect(self.create_new_rod)
 
         # tracker of the current image that's displayed
-        self.CurrentFileIndex = 0
+        # self._CurrentFileIndex = 0
         self.original_data = None   # Holds the original data directory
         self.data_files = self.ui.lv_actions_list.temp_manager.name
         self.data_file_name = 'rods_df_{:s}.csv'
@@ -208,6 +211,46 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.switch_right.activated.connect(lambda: self.change_view(1))
         self.ui.camera_tabs.currentChanged.connect(self.view_changed)
 
+        # Slider
+        self.ui.slider_frames.setMinimum(0)
+        self.ui.slider_frames.setMaximum(1)
+        self.ui.slider_frames.sliderMoved.connect(self.slider_moved)
+
+    @property
+    def current_file_index(self):
+        return self._CurrentFileIndex
+
+    @current_file_index.setter
+    def current_file_index(self, new_idx: int):
+        self._CurrentFileIndex = new_idx
+        try:
+            self.ui.le_frame_disp.setText(f"Frame: "
+                                          f"{self._current_file_ids[new_idx]}")
+        except IndexError:
+            self.ui.le_frame_disp.setText("Frame: ???")
+
+    @property
+    def current_file_ids(self):
+        return self._current_file_ids
+
+    @current_file_ids.setter
+    def current_file_ids(self, new_ids):
+        self._current_file_ids = new_ids
+        self.ui.slider_frames.setMaximum(len(new_ids)-1)
+        self.ui.slider_frames.setMinimum(0)
+        try:
+            self.ui.le_frame_disp.setText(
+                f"Frame: {self._current_file_ids[self.current_file_index]}")
+            self.ui.slider_frames.setSliderPosition(self.current_file_index)
+        except IndexError:
+            self.ui.le_frame_disp.setText("Frame: ???")
+
+    def slider_moved(self, _):
+        if self.current_file_ids:
+            new_idx = self.ui.slider_frames.sliderPosition()
+            idx_diff = new_idx - self.current_file_index
+            self.show_next(idx_diff)
+
     def open_image_folder(self):
         """Lets the user select an image folder to show images from.
 
@@ -248,7 +291,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 indx_f = f_compare == file_name
                 if indx_f is True:
                     # Set file index
-                    self.CurrentFileIndex = idx
+                    self.current_file_index = idx
                 fpath = os.path.join(dirpath, f)
                 if os.path.isfile(fpath) and f.endswith(('.png', '.jpg',
                                                          '.jpeg')):
@@ -257,9 +300,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.current_file_ids.append(int(f_compare))
 
             # Sort according to name / ascending order
-            desired_file = self.fileList[self.CurrentFileIndex]
+            desired_file = self.fileList[self.current_file_index]
             self.fileList.sort()
-            self.CurrentFileIndex = self.fileList.index(desired_file)
+            self.current_file_index = self.fileList.index(desired_file)
             self.current_file_ids.sort()
             self.cameras[self.ui.camera_tabs.currentIndex()].image = \
                 loaded_image
@@ -285,8 +328,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.file_ids[self.ui.camera_tabs.currentIndex()] = \
                 self.current_file_ids
 
+            # Update slider
+            self.ui.slider_frames.setMaximum(len(self.fileList)-1)
+            self.ui.slider_frames.setSliderPosition(self.current_file_index)
+            current_id = self.current_file_ids[self.current_file_index]
+            self.ui.le_frame_disp.setText(f"Frame: {current_id}")
+
             # Logging
-            new_frame = self.current_file_ids[self.CurrentFileIndex]
+            new_frame = self.current_file_ids[self.current_file_index]
             self.logger.frame = new_frame
             self.current_camera.logger.frame = new_frame
             first_action = FileAction(dirpath, FileActions.LOAD_IMAGES,
@@ -294,11 +343,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                       cam_id=self.current_camera.cam_id,
                                       parent_id="main")
             first_action.parent_id = self.logger_id
-            second_action = FileAction(file_name, FileActions.OPEN_IMAGE,
-                                       cam_id=self.current_camera.cam_id)
-            second_action.parent_id = self.logger_id
             self.logger.add_action(first_action)
-            self.logger.add_action(second_action)
 
     def open_rod_folder(self):
         """Lets the user select a folder with rod position data.
@@ -539,7 +584,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     f"x2_{cam_id}", f"y1_{cam_id}",
                     f"y2_{cam_id}"]
 
-        filename = (self.fileList[self.CurrentFileIndex])
+        filename = (self.fileList[self.current_file_index])
         file_name = os.path.split(filename)[-1]
         df_part = self.df_data.loc[self.df_data.color ==
                                    self.get_selected_color(), col_list]
@@ -618,9 +663,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if self.fileList:
             # Switch images
             try:
-                self.CurrentFileIndex += direction
+                self.current_file_index += direction
                 # Chooses next image with specified extension
-                filename = (self.fileList[self.CurrentFileIndex])
+                filename = (self.fileList[self.current_file_index])
                 file_name = os.path.split(filename)[-1]
                 file_name = os.path.splitext(file_name)[0]
                 # Create Pixmap operator to display image
@@ -641,24 +686,20 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         del self.current_camera.edits
                         self.current_camera.scale_factor = 1
                     self.file_indexes[self.ui.camera_tabs.currentIndex()] = \
-                        self.CurrentFileIndex
+                        self.current_file_index
                     # Update information on last action
-                    new_frame = self.current_file_ids[self.CurrentFileIndex]
+                    self.ui.slider_frames.setSliderPosition(
+                        self.current_file_index)
+                    new_frame = self.current_file_ids[self.current_file_index]
                     self.logger.frame = new_frame
                     self.current_camera.logger.frame = new_frame
-
-                    this_action = FileAction(file_name,
-                                             FileActions.OPEN_IMAGE,
-                                             cam_id=self.current_camera.cam_id)
-                    this_action.parent_id = self.logger_id
-                    self.ui.lv_actions_list.add_action(this_action)
 
             except IndexError:
                 # the iterator has finished, restart it
                 if direction > 0:
-                    self.CurrentFileIndex = -1
+                    self.current_file_index = -1
                 else:
-                    self.CurrentFileIndex = 0
+                    self.current_file_index = 0
                 self.show_next(direction)
         else:
             # no file list found, load an image
@@ -943,12 +984,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """
         try:
             new_idx = self.current_file_ids.index(to_frame)
-            idx_diff = new_idx - self.CurrentFileIndex
+            idx_diff = new_idx - self.current_file_index
         except ValueError:
             # Image not found
             self.current_camera.setPixmap(QtGui.QPixmap(ICON_PATH))
             self.ui.statusbar.showMessage(f"No image with ID"
                                           f":{to_frame} found.", 4000)
+            # self.ui.le_frame_disp.setText("Frame: ???")
             return
         # Loads a new image
         self.show_next(idx_diff)
@@ -998,7 +1040,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         index_diff = 0
         if self.ui.action_persistent_view.isChecked():
             if self.current_file_ids:
-                current_id = self.current_file_ids[self.CurrentFileIndex]
+                current_id = self.current_file_ids[self.current_file_index]
                 try:
                     # Find the new camera's image corresponding to the old
                     # camera's image
@@ -1010,8 +1052,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.ui.statusbar.showMessage(f"No image with ID"
                                                   f":{current_id} found for "
                                                   f"this view.", 4000)
+                    # self.ui.le_frame_disp.setText("Frame: ???")
 
-        self.CurrentFileIndex = self.file_indexes[new_idx]
+        self.current_file_index = self.file_indexes[new_idx]
         self.fileList = self.view_filelists[new_idx]
         self.current_file_ids = self.file_ids[new_idx]
         self.current_camera = self.cameras[new_idx]
