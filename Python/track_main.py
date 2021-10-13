@@ -366,10 +366,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # check for a directory
         ui_dir = self.ui.le_rod_dir.text()
         while True:
+            old_original_data = self.original_data
             self.original_data = QFileDialog.getExistingDirectory(
                 self, 'Choose Folder with position data', ui_dir) + '/'
             if self.original_data == '/':
-                self.original_data = None
+                if old_original_data is None:
+                    self.original_data = None
+                else:
+                    self.original_data = old_original_data
                 return
 
             if self.original_data is not None:
