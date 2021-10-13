@@ -418,7 +418,8 @@ class RodImageWidget(QLabel):
             # Get intended rod number from user
             selected_rod, ok = QInputDialog.getInt(self,
                                                    'Choose a rod to replace',
-                                                   'Rod number')
+                                                   'Rod number', min=0,
+                                                   max=99)
             if not ok:
                 return
             # Check whether the rod already exists
