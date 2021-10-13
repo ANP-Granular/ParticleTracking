@@ -692,8 +692,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.file_indexes[self.ui.camera_tabs.currentIndex()] = \
                         self.current_file_index
                     # Update information on last action
-                    self.ui.slider_frames.setSliderPosition(
-                        self.current_file_index)
+                    new_idx = self.current_file_index if \
+                        self.current_file_index >= 0 else \
+                        len(self.current_file_ids)+self.current_file_index
+                    self.ui.slider_frames.setSliderPosition(new_idx)
                     new_frame = self.current_file_ids[self.current_file_index]
                     self.logger.frame = new_frame
                     self.current_camera.logger.frame = new_frame
