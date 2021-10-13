@@ -291,7 +291,7 @@ class Ui_MainWindow(object):
         self.sa_camera_1.setWidgetResizable(True)
         self.sa_camera_1.setObjectName("sa_camera_1")
         self.scrollAreaWidgetContents_8 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 519, 275))
+        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 274, 274))
         self.scrollAreaWidgetContents_8.setObjectName("scrollAreaWidgetContents_8")
         self.verticalLayout_18 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_8)
         self.verticalLayout_18.setObjectName("verticalLayout_18")
@@ -380,9 +380,13 @@ class Ui_MainWindow(object):
         self.action_persistent_view.setObjectName("action_persistent_view")
         self.action_revert = QtWidgets.QAction(MainWindow)
         self.action_revert.setObjectName("action_revert")
+        self.action_redo = QtWidgets.QAction(MainWindow)
+        self.action_redo.setEnabled(True)
+        self.action_redo.setObjectName("action_redo")
         self.menuFile.addAction(self.action_open)
         self.menuFile.addAction(self.action_save)
         self.menuEdit.addAction(self.action_revert)
+        self.menuEdit.addAction(self.action_redo)
         self.menuView.addAction(self.action_persistent_view)
         self.menuView.addAction(self.action_zoom_in)
         self.menuView.addAction(self.action_zoom_out)
@@ -438,6 +442,8 @@ class Ui_MainWindow(object):
         self.action_persistent_view.setText(_translate("MainWindow", "Persistent View"))
         self.action_revert.setText(_translate("MainWindow", "Undo"))
         self.action_revert.setShortcut(_translate("MainWindow", "Ctrl+Z"))
+        self.action_redo.setText(_translate("MainWindow", "Redo"))
+        self.action_redo.setShortcut(_translate("MainWindow", "Ctrl+Shift+Z"))
 from actionlogger import ActionLoggerWidget
 from rodimagewidget import RodImageWidget
 

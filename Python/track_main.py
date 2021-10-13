@@ -108,6 +108,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     logger_id: str = "main"
     logger: ActionLogger
     request_undo = QtCore.pyqtSignal(str, name="request_undo")
+    request_redo = QtCore.pyqtSignal(str, name="request_redo")
     _current_file_ids: list = []
     _CurrentFileIndex: int = 0
 
@@ -145,14 +146,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.view_filelists = [[], []]
         self.file_ids = [[], []]
         self.file_indexes = [0, 0]
-        # self._current_file_ids = []
-        # self.current_file_ids = []
 
         for cam in self.cameras:
             cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
             cam.request_color_change.connect(self.change_color)
             cam.request_frame_change.connect(self.change_frame)
             self.request_undo.connect(cam.logger.undo_last)
+            self.request_redo.connect(cam.logger.redo_last)
             cam.logger.notify_unsaved.connect(self.tab_has_changes)
             cam.logger.request_saving.connect(self.save_changes)
             cam.logger.data_changed.connect(self.catch_data)
@@ -201,6 +201,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Undo
         self.ui.action_revert.triggered.connect(self.requesting_undo)
         self.ui.pb_undo.clicked.connect(self.requesting_undo)
+
+        # Redo
+        self.ui.action_redo.triggered.connect(self.requesting_redo)
 
         # View controls
         self.switch_left = QtWidgets.QShortcut(QtGui.QKeySequence(
@@ -1079,6 +1082,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         None
         """
         self.request_undo.emit(self.current_camera.cam_id)
+
+    def requesting_redo(self):
+        """Helper method to emit a request for repeating the last action.
+
+        Returns
+        -------
+        None
+        """
+        self.request_redo.emit(self.current_camera.cam_id)
 
     @QtCore.pyqtSlot(bool)
     def tab_has_changes(self, has_changes: bool) -> None:

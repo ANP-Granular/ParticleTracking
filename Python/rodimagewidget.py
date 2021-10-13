@@ -545,6 +545,7 @@ class RodImageWidget(QLabel):
                 for rod in conflicting:
                     rod.set_state(RodState.CHANGED)
             elif msg.clickedButton() == btn_disc_old:
+                # Discard old rod
                 delete_action = None
                 change_action = None
                 for rod in conflicting:
@@ -669,6 +670,16 @@ class RodImageWidget(QLabel):
 
         elif type(action) == CreateRodAction:
             new_rods = action.undo(rods=self._edits)
+            if action.coupled_action is not None:
+                # This should only get triggered when a
+                # RodNumberChangeAction that incorporates a RodDeletion gets
+                # redone, so a CreateRodAction+RodPositionChange.
+                # If this shall be extended to more combinations the line
+                # below must be uncommented and then the redo mechanism will
+                # break for the above mentioned occasion! So more work is
+                # required then.
+                # self._logger.register_undone(action.coupled_action)
+                new_rods = action.coupled_action.undo(rods=new_rods)
             self._edits = new_rods
             self.draw_rods()
         else:

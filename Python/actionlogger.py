@@ -30,6 +30,12 @@ class Action(QListWidgetItem):
     revert: bool = False
 
     @property
+    def inverted(self):
+        """Returns a 'plain' inverted version of the action without any
+        coupled actions."""
+        return self.invert()
+
+    @property
     def parent_id(self) -> str:
         """The ID of the object that is responsible for (reverting) this
         action."""
@@ -60,7 +66,12 @@ class Action(QListWidgetItem):
 
     def to_save(self):
         """Gives information for saving this action, None, if it's not
-        savable"""
+        savable."""
+        return None
+
+    def invert(self):
+        """Generates an inverted version of the Action (for redoing),
+        None if the Action is not invertible."""
         return None
 
 
@@ -188,6 +199,15 @@ class ChangedRodNumberAction(Action):
         self.coupled_action = coupled_action
         super().__init__(str(self), *args, **kwargs)
 
+    @property
+    def inverted(self):
+        rod = self.rod.copy()
+        rod.rod_id = self.new_id
+        inverted = ChangedRodNumberAction(rod, self.rod.rod_id)
+        inverted.parent_id = self.parent_id
+        inverted.frame = self.frame
+        return inverted
+
     def __str__(self):
         to_str = f") {self.action} #{self.rod.rod_id} ---> #{self.new_id}"
         if self.rod is not None:
@@ -225,6 +245,14 @@ class ChangedRodNumberAction(Action):
         return rods
 
     def to_save(self):
+        """Generates a data representation of this action for saving.
+
+        Returns
+        -------
+        dict
+            Available fields: ("rod_id", "cam_id", "frame", "color",
+            "position")
+        """
         out = {
             "position": self.rod.rod_points,
             "cam_id": self.parent_id,
@@ -238,6 +266,25 @@ class ChangedRodNumberAction(Action):
             # If the action was performed
             out["rod_id"] = self.new_id
         return out
+
+    def invert(self):
+        """Generates an inverted version of the ChangedRodNumberAction (for
+        redoing).
+
+        Returns
+        -------
+        ChangedRodNumberAction
+        """
+        rod = self.rod.copy()
+        rod.rod_id = self.new_id
+        inverted = ChangedRodNumberAction(rod, self.rod.rod_id)
+        inverted.parent_id = self.parent_id
+        inverted.frame = self.frame
+        if self.coupled_action is not None:
+            inverted.coupled_action = self.coupled_action.inverted
+        if inverted.coupled_action is not None:
+            inverted.coupled_action.coupled_action = inverted
+        return inverted
 
 
 class DeleteRodAction(Action):
@@ -276,8 +323,16 @@ class DeleteRodAction(Action):
         self.coupled_action = coupled_action
         super().__init__(str(self), *args, **kwargs)
 
+    @property
+    def inverted(self):
+        rod = self.rod.copy()
+        inverted = CreateRodAction(rod)
+        inverted.parent_id = self.parent_id
+        inverted.frame = self.frame
+        return inverted
+
     def __str__(self):
-        to_str = f"){self.action} #{self.rod.rod_id}"
+        to_str = f") {self.action} #{self.rod.rod_id}"
         if self.rod is not None:
             to_str = f"{self.rod.color}" + to_str
         if self.frame is not None:
@@ -308,6 +363,14 @@ class DeleteRodAction(Action):
         return self.rod
 
     def to_save(self):
+        """Generates a data representation of this action for saving.
+
+        Returns
+        -------
+        dict
+            Available fields: ("rod_id", "cam_id", "frame", "color",
+            "position")
+        """
         out = {
             "rod_id": self.rod.rod_id,
             "cam_id": self.parent_id,
@@ -321,6 +384,23 @@ class DeleteRodAction(Action):
             # If the action was performed
             out["position"] = [0, 0, 0, 0]
         return out
+
+    def invert(self):
+        """Generates an inverted version of the DeleteRodAction (for redoing).
+
+        Returns
+        -------
+        ChangeRodPositionAction
+        """
+        rod = self.rod.copy()
+        inverted = CreateRodAction(rod)
+        inverted.parent_id = self.parent_id
+        inverted.frame = self.frame
+        if self.coupled_action is not None:
+            inverted.coupled_action = self.coupled_action.inverted
+        if inverted.coupled_action is not None:
+            inverted.coupled_action.coupled_action = inverted
+        return inverted
 
 
 class ChangeRodPositionAction(Action):
@@ -406,6 +486,14 @@ class ChangeRodPositionAction(Action):
                 return rods
 
     def to_save(self):
+        """Generates a data representation of this action for saving.
+
+        Returns
+        -------
+        dict
+            Available fields: ("rod_id", "cam_id", "frame", "color",
+            "position")
+        """
         out = {
             "rod_id": self.rod.rod_id,
             "cam_id": self.parent_id,
@@ -419,6 +507,21 @@ class ChangeRodPositionAction(Action):
             # If the action was performed
             out["position"] = self.new_pos
         return out
+
+    def invert(self):
+        """Generates an inverted version of the ChangeRodPositionAction (for
+        redoing).
+
+        Returns
+        -------
+        ChangeRodPositionAction
+        """
+        rod = self.rod.copy()
+        rod.rod_points = self.new_pos
+        inverted = ChangeRodPositionAction(rod, self.rod.rod_points)
+        inverted.parent_id = self.parent_id
+        inverted.frame = self.frame
+        return inverted
 
 
 class CreateRodAction(Action):
@@ -441,11 +544,19 @@ class CreateRodAction(Action):
         Default is "Created new rod".
     """
 
-    def __init__(self, new_rod: RodNumberWidget, *args,
-                 **kwargs):
+    def __init__(self, new_rod: RodNumberWidget, coupled_action: Union[
+        Action, ChangedRodNumberAction] = None, *args, **kwargs):
         self.rod = new_rod
         self.action = "Created new rod"
+        self.coupled_action = coupled_action
         super().__init__(str(self), *args, **kwargs)
+
+    @property
+    def inverted(self):
+        inverted = DeleteRodAction(self.rod.copy())
+        inverted.parent_id = self.parent_id
+        inverted.frame = self.frame
+        return inverted
 
     def __str__(self):
         to_str = ") " + self.action + f" #{self.rod.rod_id}"
@@ -485,6 +596,14 @@ class CreateRodAction(Action):
         return rods
 
     def to_save(self):
+        """Generates a data representation of this action for saving.
+
+        Returns
+        -------
+        dict
+            Available fields: ("rod_id", "cam_id", "frame", "color",
+            "position")
+        """
         out = {
             "rod_id": self.rod.rod_id,
             "cam_id": self.parent_id,
@@ -498,6 +617,22 @@ class CreateRodAction(Action):
             # If the action was performed
             out["position"] = self.rod.rod_points
         return out
+
+    def invert(self):
+        """Generates an inverted version of the CreateRodAction (for redoing).
+
+        Returns
+        -------
+        DeleteRodAction
+        """
+        inverted = DeleteRodAction(self.rod.copy())
+        inverted.parent_id = self.parent_id
+        inverted.frame = self.frame
+        if self.coupled_action is not None:
+            inverted.coupled_action = self.coupled_action.inverted
+        if inverted.coupled_action is not None:
+            inverted.coupled_action.coupled_action = inverted
+        return inverted
 
 
 class ActionLogger(QtCore.QObject):
@@ -528,6 +663,9 @@ class ActionLogger(QtCore.QObject):
     unsaved_changes : List[Action]
         A list of all actions performed/logged with this instance that are
         savable but currently unsaved.
+    repeatable_changes : List[Action]
+        An ordered list of all currently redoable/repeatable actions that were
+        logged with this instance.
 
     Signals
     -------
@@ -545,12 +683,16 @@ class ActionLogger(QtCore.QObject):
         Requests the saving of any unsaved changes.
         True    ->  permanent saving
         False   ->  temporary saving
+    data_changed(Action)
+        Notifies, if this object logged, undid, redid something that changed
+        the displayed data.
 
 
     Slots
     -----
     undo_last(str)
     actions_saved()
+    redo_last(str)
 
     """
     __pyqtSignals__ = ("undoAction(Action)",)
@@ -570,6 +712,7 @@ class ActionLogger(QtCore.QObject):
         self.parent_id = parent_id
         self.logged_actions = []
         self.unsaved_changes = []
+        self.repeatable_changes = []
 
     def add_action(self, last_action: Action) -> None:
         """Registers the actions performed by its parent and propagates them
@@ -577,6 +720,8 @@ class ActionLogger(QtCore.QObject):
         last_action.parent_id = self.parent_id
         last_action.frame = self.frame
         self.logged_actions.append(last_action)
+        if self.repeatable_changes:
+            self.repeatable_changes = []
         if type(last_action) is not FileAction:
             if not self.unsaved_changes:
                 self.notify_unsaved.emit(True)
@@ -598,15 +743,18 @@ class ActionLogger(QtCore.QObject):
             # Nothing logged yet
             return
         undo_item = self.logged_actions.pop()
+        inv_undo_item = undo_item.invert()
+        self.repeatable_changes.append(inv_undo_item)
         if undo_item not in self.unsaved_changes:
-            # Last action is not revertible, no further action required
-            self.logged_actions.append(undo_item)
-            return
-        # Remove & Delete action
-        self.unsaved_changes.pop()
-        if not self.unsaved_changes:
-            # No more unsaved changes present
-            self.notify_unsaved.emit(False)
+            if not self.unsaved_changes:
+                self.notify_unsaved.emit(True)
+            self.unsaved_changes.append(inv_undo_item)
+        else:
+            # Remove & Delete action
+            self.unsaved_changes.pop()
+            if not self.unsaved_changes:
+                # No more unsaved changes present
+                self.notify_unsaved.emit(False)
         undo_item.revert = True
         self.data_changed.emit(undo_item)
         self.undo_action.emit(undo_item)
@@ -615,10 +763,15 @@ class ActionLogger(QtCore.QObject):
     def register_undone(self, undone_action: Action):
         """Lets the logger know that an action was undone without using its
         undo method(s)."""
-        if undone_action in self.unsaved_changes:
+        if undone_action in self.logged_actions:
             undone_action.revert = True
             self.data_changed.emit(undone_action)
-            self.unsaved_changes.remove(undone_action)
+            try:
+                self.unsaved_changes.remove(undone_action)
+            except ValueError:
+                # The unsaved_changes were deleted (is intended when the
+                # changes were changed)
+                pass
             self.logged_actions.remove(undone_action)
             self.undone_action.emit(undone_action)
             if not self.unsaved_changes:
@@ -646,6 +799,51 @@ class ActionLogger(QtCore.QObject):
             self.unsaved_changes = []
             self.notify_unsaved.emit(False)
 
+    @QtCore.pyqtSlot(str)
+    def redo_last(self, parent_id: str) -> None:
+        """De-registers the last undone action recorded and triggers its
+        undo-(actually redo-)process."""
+        if parent_id != self.parent_id:
+            return
+
+        if not self.repeatable_changes:
+            # Nothing repeatable yet
+            return
+        rep_item = self.repeatable_changes.pop()
+        inv_rep_item = rep_item.invert()
+        try:
+            if rep_item is self.unsaved_changes[-1]:
+                self.unsaved_changes.pop()
+                if not self.unsaved_changes:
+                    # No more unsaved changes present
+                    self.notify_unsaved.emit(False)
+        except IndexError:
+            try:
+                if inv_rep_item.coupled_action is not None:
+                    self.unsaved_changes.append(inv_rep_item.coupled_action)
+            except AttributeError:
+                pass
+            self.unsaved_changes.append(inv_rep_item)
+            self.notify_unsaved.emit(True)
+
+        # Insert the coupled action before its parent to keep the correct
+        # order for undoing
+        try:
+            if inv_rep_item.coupled_action is not None:
+                self.logged_actions.append(inv_rep_item.coupled_action)
+                rep_item.coupled_action.revert = True
+                self.data_changed.emit(rep_item.coupled_action)
+                self.added_action.emit(inv_rep_item.coupled_action)
+        except AttributeError:
+            pass
+        self.logged_actions.append(inv_rep_item)
+
+        rep_item.revert = True
+        self.data_changed.emit(rep_item)
+        self.undo_action.emit(rep_item)
+        self.added_action.emit(inv_rep_item)
+        del rep_item
+
 
 class ActionLoggerWidget(QListWidget):
     """A custom Widget to maintain loggers and display Actions in the GUI.
@@ -672,6 +870,12 @@ class ActionLoggerWidget(QListWidget):
         instance. Do NOT try to insert performed actions in here directly.
         This property only derives its contents from the `ActionLogger`
         objects.
+    repeatable_changes : List[Action]
+        An ordered list of all currently redoable/repeatable actions that were
+        logged by the `ActionLogger` objects maintained by this
+        `ActionLoggerWidget` instance. Do NOT try to insert performed actions
+        in here directly. This property only derives its contents from the
+        `ActionLogger` objects.
 
     Slots
     -----
@@ -700,6 +904,19 @@ class ActionLoggerWidget(QListWidget):
         all_unsaved = [item for changes in self._loggers for item in
                        changes.unsaved_changes]
         return all_unsaved
+
+    @property
+    def repeatable_changes(self) -> List[Action]:
+        """Collects the repeatable changes from all loggers and returns them
+        collectively.
+
+        Returns
+        -------
+        List[Action]
+        """
+        all_repeatable = [item for changes in self._loggers for item in
+                          changes.repeatable_changes]
+        return all_repeatable
 
     def get_new_logger(self, parent_id: str) -> ActionLogger:
         """

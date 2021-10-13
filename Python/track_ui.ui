@@ -634,8 +634,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>519</width>
-                     <height>275</height>
+                     <width>274</width>
+                     <height>274</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -764,6 +764,7 @@
      <string>Edit</string>
     </property>
     <addaction name="action_revert"/>
+    <addaction name="action_redo"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -848,6 +849,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Z</string>
+   </property>
+  </action>
+  <action name="action_redo">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Redo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+Z</string>
    </property>
   </action>
  </widget>
