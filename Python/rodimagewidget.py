@@ -515,6 +515,12 @@ class RodImageWidget(QLabel):
             btn_manual = msg.addButton("Resolve manual",
                                        QMessageBox.ActionRole)
             btn_manual.setEnabled(False)
+            # The "Discard old rod" feature is currently disabled, as the
+            # redo of the chained operations don't work correctly and need a
+            # larger process refactoring, that does not appear to be worth
+            # the time, as users report they are not using this feature but
+            # rather accomplish the intended operation in another way.
+            btn_disc_old.setEnabled(False)
             msg.exec()
             if msg.clickedButton() == btn_switch:
                 # Switch the rod numbers
