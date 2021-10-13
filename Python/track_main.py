@@ -111,6 +111,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     request_redo = QtCore.pyqtSignal(str, name="request_redo")
     _current_file_ids: list = []
     _CurrentFileIndex: int = 0
+    _allow_overwrite: bool = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -398,12 +399,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         # Stop overlaying
                         self.ui.le_rod_dir.setText("")
                         self.clear_screen()
+                        self._allow_overwrite = False
                         return
                     else:
                         # Retry folder selection
                         continue
 
                 else:
+                    self._allow_overwrite = False
                     # Check whether there is already corrected data
                     out_folder = self.original_data[:-1] + "_corrected"
                     corrected_files = self._verify_folder(out_folder,
@@ -420,7 +423,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                                QMessageBox.No)
                         user_decision = msg.exec()
                         if user_decision == QMessageBox.Yes:
-                            self.original_data = out_folder
+                            self.original_data = out_folder + "/"
+                            self._allow_overwrite = True
 
                     rb_colors = [child for child
                                  in self.ui.group_rod_color.children() if
@@ -900,7 +904,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             return
 
         save_dir = self.ui.le_save_dir.text()
-        if save_dir == self.ui.le_rod_dir.text():
+        if save_dir == self.ui.le_rod_dir.text() and not self._allow_overwrite:
             msg = QMessageBox()
             msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
             msg.setIcon(QMessageBox.Warning)
