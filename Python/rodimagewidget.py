@@ -847,7 +847,6 @@ class RodImageWidget(QLabel):
             return False
 
         event = QKeyEvent(event)
-        print(type(source))
         if type(source) != RodNumberWidget:
             return False
         if source.isReadOnly():
