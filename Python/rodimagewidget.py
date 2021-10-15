@@ -2,6 +2,7 @@ import math
 import re
 from typing import List, Union
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QLabel, QMessageBox, QInputDialog
 
 from rodnumberwidget import RodNumberWidget, RodState
@@ -822,4 +823,49 @@ class RodImageWidget(QLabel):
         rod.activated.connect(self.rod_activated)
         rod.id_changed.connect(self.check_rod_conflicts)
         rod.request_delete.connect(self.delete_rod)
+        rod.installEventFilter(self)
         rod.show()
+
+    def eventFilter(self, source: QtCore.QObject, event: QtCore.QEvent) -> \
+            bool:
+        """Intercepts events, here QKeyEvents for frame switching and edit
+        aborting.
+
+        Parameters
+        ----------
+        source : QObject
+        event : QEvent
+
+        Returns
+        -------
+        bool
+            True, if the event shall not be propagated further.
+            False, if the event shall be passed to the next object to be
+            handled.
+        """
+        if type(event) != QtGui.QKeyEvent:
+            return False
+
+        event = QKeyEvent(event)
+        print(type(source))
+        if type(source) != RodNumberWidget:
+            return False
+        if source.isReadOnly():
+            if event.key() == QtCore.Qt.Key_Escape:
+                # Abort any editing (not rod number editing)
+                if self._edits is not None:
+                    # Deactivate any active rods
+                    self.rod_activated(-1)
+                    return True
+            elif event.key() == QtCore.Qt.Key_Right:
+                self.request_frame_change.emit(self._logger.frame + 1)
+                return False
+            elif event.key() == QtCore.Qt.Key_Left:
+                self.request_frame_change.emit(self._logger.frame - 1)
+                return False
+            else:
+                # RodNumberWidget is in the process of rod number changing,
+                # let the widget handle that itself
+                return False
+
+        return False
