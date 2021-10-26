@@ -823,7 +823,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             new_rods.append(rod.copy())
         new_rods.append(new_rod)
         self.current_camera.edits = new_rods
-        last_action = CreateRodAction(new_rod)
+        last_action = CreateRodAction(new_rod.copy())
         self.current_camera.logger.add_action(last_action)
 
     @QtCore.pyqtSlot(Action)
