@@ -1,17 +1,19 @@
 # Track_Gui
 ## Python GUI for image tracking task
 
+![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/136808942-21f516b1-13aa-4fbb-9c6b-fbe885c853b6.png "RodTracker - GUI")
 ### Notes for users
 1. Run [track_main.py](./Python/track_main.py)
-2. Open images from disk using the `File` dropdown menu, the 
-   `Previous`/`Next` buttons or the `left`/`right` keys.
+2. Open images from disk using the `File` dropdown menu or the `Load 
+   Images` button.
    - Switch between images in the folder using the `left`/`right` keys or the 
-    `Previous`/`Next` buttons.
+    `Previous`/`Next` buttons or the `Slider` below.
 3. Load and overlay rod coordinates from disc by pressing the`Overlay` button 
    and selecting the folder those `*.csv` coordinate files are stored.
-4. Select a rod color from the list in the pop-up dialog.
-4. Zoom-in (`-`), zoom-out (`+`) or set the image to its Original-Size 
-   (`Ctrl+R`) for better visibility.
+   > Note that the folder of the `*.csv` file must be named like the x,
+   > y-identifier in the `*.csv`, i.e. if the x_**gp4** the location should 
+   > be like `./gp4/*.csv`. If this structure is not given the program will 
+   > default to x_**gp3**.
  
 #### Rod correction features
 - `left click` on a rod number to select this rod for editing
@@ -37,7 +39,8 @@
     **Conflict handling:**
 - rods are marked in `red` when number duplicates occur after numbers were 
   changed   
-- a dialog is displayed where you choose how to handle this conflict
+- a dialog is displayed where you choose how to handle this conflict (the 
+  `Resolve Manual` option is disabled)
 
 |Button | Action performed|
 |:---: | :--- |
@@ -46,19 +49,16 @@
 | `Discard old rod` | The changed rod keeps its changes and the conflicting rod is deleted. <br /> The changed rod is saved to disk.|
 | `Resolve manual` | The changed rod keeps its changes and is saved to disk. <br /> The conflicting rod keeps being displayed during runtime.|
 
-> #### Note for `Resolve manual`:
-> Two rods with different numbers will be displayed at the same position 
-> after reloading the data, if the old number of the changed rod is not 
-> reassigned a new position. For example when `Rod#2` was changed to be 
-> `Rod#11` and `Rod#2` is not reassigned a position it will be displayed at its 
-> previous position with `Rod#11` overlaying it (or vice versa).
-
-
-> #### Disabled Features/Buttons:
-> 
-> - `Fit to window`
-> - `Clear/Save`, `Save` (saves automatically)
-> - `Rod Number` (deprecated, use `Overlay`)
+#### Shortcuts
+| Feature | Shortcut |
+| :---- | :---:|
+| Open images | `Ctrl + O`|
+| Save rod position data| `Ctrl + S` |
+| Switch to next/previous view | `Tab`/ `Ctrl+Tab` |
+| Zoom in/out | `+`/`-` <br /> (MacOS: `Ctrl + H`/`Ctrl + =`) |
+| Show in original size | `Ctrl + R` |
+| Next/previous image | `Right`/`Left` |
+| Undo | `Ctrl + Z`|
 
 ### Notes for developers
 - The UI-layout is modeled in [track_ui.ui](./Python/track_ui.ui) and can be 

@@ -1,18 +1,64 @@
 import math
-from typing import List
+import re
+from typing import List, Union
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QLabel, QMessageBox, QInputDialog
 
 from rodnumberwidget import RodNumberWidget, RodState
 from actionlogger import ActionLogger, DeleteRodAction, \
-    ChangeRodPositionAction, Action, ChangedRodNumberAction
+    ChangeRodPositionAction, Action, ChangedRodNumberAction, CreateRodAction
 
 ICON_PATH = "./resources/icon_main.ico"
 
 
 class RodImageWidget(QLabel):
+    """A custom QLabel that displays an image and can overlay rods.
+
+    Parameters
+    ----------
+    *args : iterable
+        Positional arguments for the QLabel superclass.
+    **kwargs : dict
+        Keyword arguments for the QLabel superclass.
+
+    Attributes
+    ----------
+    startPos : QtCore.QPoint
+        Start position for new rod position.
+    rod_pixmap : QPixmap
+        Image that is temporarily painted on when rod corrections are put in
+        by the user.
+    base_pixmap : QPixmap
+        A "clean" image in the correct scaled size.
+    edits : List[RodNumberWidget]
+    scale_factor : float
+    image : QImage
+    logger : ActionLogger
+    cam_id : str
+        ID of the GUI object. It must be human readable as it is used for
+        labelling the performed actions displayed in the GUI.
+
+    Signals
+    -------
+    request_color_change(str)
+        Request to change the displayed colors. Currently this is used to
+        revert actions performed on a color other than the displayed one.
+    notify_undone(Action)
+        Notifies objects, that the `Action` in the payload has been reverted.
+
+    Slots
+    -----
+    undo_action(Union[Action, ChangeRodPositionAction, ChangedRodNumberAction,
+                      DeleteRodAction])
+
+    """
+
     edits: List[RodNumberWidget]
     request_color_change = QtCore.pyqtSignal(str, name="request_color_change")
+    request_frame_change = QtCore.pyqtSignal(int, name="request_frame_change")
+    notify_undone = QtCore.pyqtSignal(Action, name="notify_undone")
+    request_new_rod = QtCore.pyqtSignal(int, list, name="request_new_rod")
     _logger: ActionLogger = None
 
     def __init__(self, *args, **kwargs):
@@ -28,10 +74,19 @@ class RodImageWidget(QLabel):
         self._edits = None
         self._scale_factor = 1.0
         self._offset = [0, 0]
+        self._cam_id = "gp3"
 
     # Access to properties ====================================================
     @property
-    def edits(self):
+    def edits(self) -> List[RodNumberWidget]:
+        """
+        Property that holds `RodNumberWidget`s representing rods that are
+        displayable on the Widget.
+
+        Returns
+        -------
+        List[RodNumberWidget]
+        """
         return self._edits
 
     @edits.setter
@@ -41,9 +96,7 @@ class RodImageWidget(QLabel):
         # Save and connect new rods
         self._edits = new_edits
         for rod in self._edits:
-            rod.activated.connect(self.rod_activated)
-            rod.id_changed.connect(self.check_rod_conflicts)
-            rod.show()
+            self._connect_rod(rod)
         self._scale_image()
 
     @edits.deleter
@@ -55,7 +108,15 @@ class RodImageWidget(QLabel):
         self._edits = None
 
     @property
-    def scale_factor(self):
+    def scale_factor(self) -> float:
+        """
+        Property that holds the scaling factor by which the original image
+        is scaled when displayed.
+
+        Returns
+        -------
+        float
+        """
         return self._scale_factor
 
     @scale_factor.setter
@@ -66,7 +127,14 @@ class RodImageWidget(QLabel):
         self._scale_image()
 
     @property
-    def image(self):
+    def image(self) -> QtGui.QImage:
+        """
+        Property that holds the image, that is displayed by the Widget.
+
+        Returns
+        -------
+        QImage
+        """
         return self._image
 
     @image.setter
@@ -78,18 +146,50 @@ class RodImageWidget(QLabel):
         self._scale_image()
 
     @property
-    def logger(self):
+    def logger(self) -> ActionLogger:
+        """
+        Property that holds a logger object keeping track of users' actions
+        performed on this widget and its contents.
+
+        Returns
+        -------
+        ActionLogger
+        """
         return self._logger
 
     @logger.setter
-    def logger(self, new_logger):
+    def logger(self, new_logger: ActionLogger):
         if self._logger:
             self._logger.undo_action.disconnect()
         self._logger = new_logger
         self._logger.undo_action.connect(self.undo_action)
 
+    @property
+    def cam_id(self) -> str:
+        """
+        Property that holds a string used as and ID for logging and data
+        selection.
+
+        Returns
+        -------
+        str
+        """
+        return self._cam_id
+
+    @cam_id.setter
+    def cam_id(self, cam_id: str):
+        id_regex = re.compile('gp\d+')
+        if re.fullmatch(id_regex, cam_id) is None:
+            cam_id = "gp3"
+        self._cam_id = cam_id
+        try:
+            self._logger.parent_id = cam_id
+        except AttributeError:
+            raise AttributeError("There is no ActionLogger set for this "
+                                 "Widget yet.")
+
     # Display manipulation ====================================================
-    def _scale_image(self):
+    def _scale_image(self) -> None:
         if self._image is None:
             return
         old_pixmap = QtGui.QPixmap.fromImage(self._image)
@@ -109,7 +209,17 @@ class RodImageWidget(QLabel):
         # Update rod and number display
         self.draw_rods()
 
-    def draw_rods(self):
+    def draw_rods(self) -> Union[QtGui.QPixmap, None]:
+        """Updates the visual display of overlayed rods in the widget.
+
+        Updates the visual appearance of all rods that are overlaying the
+        original image. It specifically handles the different visual states
+        a rod can be assigned.
+
+        Returns
+        -------
+        Union[QPixmap, None]
+        """
         if self._edits is None:
             # No rods available that might need redrawing
             return
@@ -148,11 +258,30 @@ class RodImageWidget(QLabel):
         self.setPixmap(rod_pixmap)
         return rod_pixmap
 
-    def clear_screen(self):
+    def clear_screen(self) -> None:
+        """ Removes the displayed rods and deletes them.
+
+        Returns
+        -------
+        None
+        """
         del self.edits
         self._scale_image()
 
     def scale_to_size(self, new_size: QtCore.QSize):
+        """ Scales the image to a specified size.
+
+        Scales the image to a specified size, while retaining the image's
+        aspect ratio.
+
+        Parameters
+        ----------
+        new_size : QSize
+
+        Returns
+        -------
+        None
+        """
         if self._image is None:
             return
         old_pixmap = QtGui.QPixmap.fromImage(self._image)
@@ -169,6 +298,19 @@ class RodImageWidget(QLabel):
 
     # Interaction callbacks ===================================================
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        """ Reimplements QLabel.mousePressEvent(event).
+
+        Handles the beginning and ending actions for rod corrections by the
+        user.
+
+        Parameters
+        ----------
+        event : QMouseEvent
+
+        Returns
+        -------
+        None
+        """
         if self._edits is not None:
             if self.startPos is None:
                 # Check rod states for number editing mode
@@ -218,6 +360,19 @@ class RodImageWidget(QLabel):
                     self.rod_pixmap = None
 
     def mouseMoveEvent(self, mouse_event: QtGui.QMouseEvent) -> None:
+        """Reimplements QLabel.mouseMoveEvent(event).
+
+        Handles the drawing and updating of a "draft" rod during start and end
+        point selection.
+
+        Parameters
+        ----------
+        mouse_event : QMouseEvent
+
+        Returns
+        -------
+        None
+        """
         # Draw intermediate rod position between clicks
         if self.startPos is not None:
             end = self.subtract_offset(mouse_event.pos(), self._offset)
@@ -229,7 +384,23 @@ class RodImageWidget(QLabel):
             qp.end()
             self.setPixmap(pixmap)
 
-    def save_line(self, start, end):
+    def save_line(self, start: QtCore.QPoint, end: QtCore.QPoint):
+        """Saves a line selected by the user to be a rod with a rod number.
+
+        The user's selected start and end point are saved in a
+        `RodNumberWidget`. Either in one that was activated prior to the
+        point selection, or that is selected by the user post point
+        selection as part of this function.
+
+        Parameters
+        ----------
+        start : QPoint
+        end : QPoint
+
+        Returns
+        -------
+        None
+        """
         send_rod = None
         for rod in self._edits:
             if rod.rod_state == RodState.EDITING:
@@ -237,7 +408,7 @@ class RodImageWidget(QLabel):
                 new_position = [coord / 10 / self._scale_factor for coord
                                 in
                                 new_position]
-                this_action = ChangeRodPositionAction(rod.copy_rod(),
+                this_action = ChangeRodPositionAction(rod.copy(),
                                                       new_position)
                 self._logger.add_action(this_action)
                 rod.rod_points = new_position
@@ -248,7 +419,8 @@ class RodImageWidget(QLabel):
             # Get intended rod number from user
             selected_rod, ok = QInputDialog.getInt(self,
                                                    'Choose a rod to replace',
-                                                   'Rod number')
+                                                   'Rod number', min=0,
+                                                   max=99)
             if not ok:
                 return
             # Check whether the rod already exists
@@ -262,46 +434,36 @@ class RodImageWidget(QLabel):
                     new_position = [coord / 10 / self._scale_factor for coord
                                     in
                                     new_position]
-                    this_action = ChangeRodPositionAction(rod.copy_rod(),
+                    this_action = ChangeRodPositionAction(rod.copy(),
                                                           new_position)
                     self._logger.add_action(this_action)
                     rod.rod_points = new_position
                     rod.set_state(RodState.SELECTED)
                     break
             if not rod_exists:
-                msg = QMessageBox()
-                msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
-                msg.setIcon(QMessageBox.Warning)
-                msg.setWindowTitle("Rod Tracker")
-                msg.setText(f"There was no rod found with #{selected_rod}")
-                msg.setStandardButtons(
-                    QMessageBox.Retry | QMessageBox.Cancel)
-                user_decision = msg.exec()
-                if user_decision == QMessageBox.Cancel:
-                    # Discard line
-                    return
-                else:
-                    # Retry rod number selection
-                    self.save_line(start, end)
-                # # Rod didn't exists -> create new RodNumber
-                # new_rod = RodNumberWidget(self, str(selected_rod),
-                #                           QPoint(start.x(), start.y()))
-                # new_rod.setStyleSheet(RodStyle.GENERAL)
-                # new_rod.last_id = selected_rod
-                # # Connect signals emitted by the rods
-                # new_rod.activated.connect(self.rod_activated)
-                # new_rod.id_changed.connect(self.check_rod_conflicts)
-                # new_rod.setObjectName(f"rn_{selected_rod}")
-                # new_rod.show()
-                # self._edits.append(new_rod)
-                # new_position = [start.x(), start.y(), end.x(), end.y()]
-                # new_position = [coord / 10 / self._scale_factor for coord in
-                #                 new_position]
-                # new_rod.rod_points = new_position
-                # new_rod.set_state(RodState.SELECTED)
+                # Rod didn't exists -> create new RodNumber
+                corrected_pos = [start.x() / 10 / self._scale_factor,
+                                 start.y() / 10 / self._scale_factor,
+                                 end.x() / 10 / self._scale_factor,
+                                 end.y() / 10 / self._scale_factor]
+                self.request_new_rod.emit(selected_rod, corrected_pos)
 
     # Rod Handling ============================================================
-    def rod_activated(self, rod_id):
+    def rod_activated(self, rod_id: int) -> None:
+        """Changes the rod state of the one given to active.
+
+        The rod state of the rod, which id is given to active and
+        deactivates all other rods maintained by this widget.
+
+        Parameters
+        ----------
+        rod_id : int
+            ID of the rod that shall be activated.
+
+        Returns
+        -------
+        None
+        """
         # A new rod was activated for position editing. Deactivate all others.
         for rod in self._edits:
             if rod.rod_id != rod_id:
@@ -310,7 +472,25 @@ class RodImageWidget(QLabel):
                 rod.set_state(RodState.SELECTED)
         self.draw_rods()
 
-    def check_rod_conflicts(self, set_rod, last_id):
+    def check_rod_conflicts(self, set_rod: RodNumberWidget, last_id: int) ->\
+            None:
+        """Checks whether a new/changed rod has a number conflict with others.
+
+        Checks whether a new/changed rod has an ID that conflicts with is
+        already occupied by one/multiple other rods in this widget. The user is
+        displayed multiple options for resolving these conflicts.
+
+        Parameters
+        ----------
+        set_rod : RodNumberWidget
+            The rod in its new (changed) state.
+        last_id : int
+            The rod's previous ID, i.e. directly prior to the change.
+
+        Returns
+        -------
+        None
+        """
         # Marks any rods that have the same number in RodStyle.CONFLICT
         conflicting = []
         for rod in self._edits:
@@ -337,6 +517,12 @@ class RodImageWidget(QLabel):
             btn_manual = msg.addButton("Resolve manual",
                                        QMessageBox.ActionRole)
             btn_manual.setEnabled(False)
+            # The "Discard old rod" feature is currently disabled, as the
+            # redo of the chained operations don't work correctly and need a
+            # larger process refactoring, that does not appear to be worth
+            # the time, as users report they are not using this feature but
+            # rather accomplish the intended operation in another way.
+            btn_disc_old.setEnabled(False)
             msg.exec()
             if msg.clickedButton() == btn_switch:
                 # Switch the rod numbers
@@ -348,10 +534,10 @@ class RodImageWidget(QLabel):
                         id_to_log = rod.rod_id
                         rod.setText(str(last_id))
                         rod.rod_id = last_id
-                        first_change = self._logger.catch_rodnumber_change(
+                        first_change = self.catch_rodnumber_change(
                             rod, id_to_log)
                     else:
-                        second_change = self._logger.catch_rodnumber_change(
+                        second_change = self.catch_rodnumber_change(
                             rod, last_id)
                 first_change.coupled_action = second_change
                 second_change.coupled_action = first_change
@@ -367,6 +553,7 @@ class RodImageWidget(QLabel):
                 for rod in conflicting:
                     rod.set_state(RodState.CHANGED)
             elif msg.clickedButton() == btn_disc_old:
+                # Discard old rod
                 delete_action = None
                 change_action = None
                 for rod in conflicting:
@@ -374,12 +561,12 @@ class RodImageWidget(QLabel):
                         # Delete old by saving an "empty" rod (0,0)->(0,0)
                         rod.rod_id = last_id
                         rod.setText(str(last_id))
-                        delete_action = DeleteRodAction(rod.copy_rod())
+                        delete_action = DeleteRodAction(rod.copy())
                         rod.rod_points = [0, 0, 0, 0]
                         rod.set_state(RodState.CHANGED)
                         continue
                     rod.set_state(RodState.CHANGED)
-                    change_action = self._logger.catch_rodnumber_change(
+                    change_action = self.catch_rodnumber_change(
                         rod, last_id)
                 delete_action.coupled_action = change_action
                 self._logger.add_action(delete_action)
@@ -388,15 +575,68 @@ class RodImageWidget(QLabel):
             # No conflicts, inform logger
             if self._logger is None:
                 raise Exception("Logger not set.")
-            self._logger.catch_rodnumber_change(set_rod, last_id)
+            self.catch_rodnumber_change(set_rod, last_id)
+
+    def catch_rodnumber_change(self, new_rod: RodNumberWidget, last_id: int)\
+            -> ChangedRodNumberAction:
+        """Handles the number/ID change of rods for logging.
+
+        Constructs an Action for a number/ID change of a rod that can be
+        used for logging with an ActionLogger.
+
+        Parameters
+        ----------
+        new_rod : RodNumberWidget
+            The rod in its new (changed) state.
+        last_id : int
+            The rod's previous ID, i.e. directly prior to the change.
+
+        Returns
+        -------
+        ChangedRodNumberAction
+        """
+        old_rod = new_rod.copy()
+        old_rod.setEnabled(False)
+        old_rod.setVisible(False)
+        old_rod.rod_id = last_id
+        new_id = new_rod.rod_id
+        this_action = ChangedRodNumberAction(old_rod, new_id)
+        self._logger.add_action(this_action)
+        return this_action
 
     def check_exchange(self, drop_position):
+        """Evaluates, whether a position is on top of a `RodNumberWidget`.
+
+        Evaluates, whether a position is on top of a `RodNumberWidget`
+        maintained by this object."""
         # TODO: check where rod number was dropped and whether an exchange
         #  is needed.
         pass
 
     @QtCore.pyqtSlot(Action)
-    def undo_action(self, action: Action):
+    def undo_action(self, action: Union[Action, ChangeRodPositionAction,
+                                        ChangedRodNumberAction,
+                                        DeleteRodAction]):
+        """Reverts an `Action` performed on a rod.
+
+        Reverts the `Action` given this function, if it was constructed by
+        the object. It can handle actions performed on a rod. This includes
+        position changes, number changes and deletions. It returns without
+        further actions, if the `Action` was not originally performed on
+        this object or if it has is of an unknown type.
+
+        Parameters
+        ----------
+        action : Union[Action, ChangeRodPositionAction, ChangedRodNumberAction, DeleteRodAction]
+            An `Action` that was logged previously. It will only be
+            reverted, if it associated with this object.
+
+        Returns
+        -------
+        None
+        """
+        if action.parent_id != self._cam_id:
+            return
         try:
             action_color = action.rod.color
             if action_color != self._edits[0].color:
@@ -404,6 +644,8 @@ class RodImageWidget(QLabel):
         except AttributeError:
             # given action does not require a color to be handled
             pass
+        if action.frame != self.logger.frame:
+            self.request_frame_change.emit(action.frame)
 
         if type(action) == ChangeRodPositionAction:
             new_rods = action.undo(rods=self._edits)
@@ -411,23 +653,41 @@ class RodImageWidget(QLabel):
             self.draw_rods()
         elif type(action) == DeleteRodAction:
             if action.coupled_action is not None:
-                self._logger.takeItem(self._logger.indexFromItem(
-                    action.coupled_action).row())
-                self._logger.unsaved_changes.remove(action.coupled_action)
-            new_rods = self._edits
-            new_rods = [rod for rod in new_rods if rod.rod_id !=
-                        action.rod.rod_id]
-            new_rods = action.coupled_action.undo(rods=new_rods)
-            new_rods.append(action.undo(None))
+                self._logger.register_undone(action.coupled_action)
+            current_rods = self._edits
+            new_rods = []
+            for rod in current_rods:
+                if rod.rod_id != action.rod.rod_id:
+                    new_rods.append(rod)
+                else:
+                    rod.deleteLater()
+            if action.coupled_action:
+                new_rods = action.coupled_action.undo(rods=new_rods)
+            deleted_rod = action.undo(None)
+            self._connect_rod(deleted_rod)
+            new_rods.append(deleted_rod)
             self._edits = new_rods
             self.draw_rods()
 
         elif type(action) == ChangedRodNumberAction:
             if action.coupled_action is not None:
-                self._logger.takeItem(self._logger.indexFromItem(
-                    action.coupled_action).row())
-                self._logger.unsaved_changes.remove(action.coupled_action)
+                self._logger.register_undone(action.coupled_action)
             new_rods = action.undo(rods=self._edits)
+            self._edits = new_rods
+            self.draw_rods()
+
+        elif type(action) == CreateRodAction:
+            new_rods = action.undo(rods=self._edits)
+            if action.coupled_action is not None:
+                # This should only get triggered when a
+                # RodNumberChangeAction that incorporates a RodDeletion gets
+                # redone, so a CreateRodAction+RodPositionChange.
+                # If this shall be extended to more combinations the line
+                # below must be uncommented and then the redo mechanism will
+                # break for the above mentioned occasion! So more work is
+                # required then.
+                # self._logger.register_undone(action.coupled_action)
+                new_rods = action.coupled_action.undo(rods=new_rods)
             self._edits = new_rods
             self.draw_rods()
         else:
@@ -435,9 +695,21 @@ class RodImageWidget(QLabel):
             return
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        """
+        Adjust rod positions after resizing of the widget happened,
+        e.g. the slider was actuated or the image was scaled.
+
+        Parameters
+        ----------
+        a0 : QResizeEvent
+
+        Returns
+        -------
+        None
+        """
         super().resizeEvent(a0)
         # Adjust rod positions after resizing of the widget happened,
-        # e.g. the slider was acuated or the image was scaled
+        # e.g. the slider was actuated or the image was scaled
         if self._edits is not None:
             # Calculate offset
             x_off = (a0.size().width() - self.base_pixmap.width()) // 2
@@ -452,11 +724,38 @@ class RodImageWidget(QLabel):
 
     @staticmethod
     def subtract_offset(point: QtCore.QPoint, offset: [int]) -> QtCore.QPoint:
+        """Subtracts a given offset from a point and returns the new point.
+
+        Parameters
+        ----------
+        point : QPoint
+        offset : List[int]
+
+        Returns
+        -------
+        QPoint
+        """
         new_x = point.x() - offset[0]
         new_y = point.y() - offset[1]
         return QtCore.QPoint(new_x, new_y)
 
-    def adjust_rod_position(self, rod: RodNumberWidget):
+    def adjust_rod_position(self, rod: RodNumberWidget) -> List[int]:
+        """Adjusts a rod number position to be on the right side of its rod.
+
+        The position of the `RodNumberWidget` is adjusted, such that it is
+        displayed to the right side and in the middle of its corresponding
+        rod. This adjustment is mainly due to scaling of the image. It also
+        returns the rods position in the image associated with the moved
+        `RodNumberWidget`.
+
+        Parameters
+        ----------
+        rod : RodNumberWidget
+
+        Returns
+        -------
+        List[int]
+        """
         rod_pos = rod.rod_points
         rod_pos = [int(10 * self._scale_factor * coord)
                    for coord in rod_pos]
@@ -490,3 +789,82 @@ class RodImageWidget(QLabel):
 
         rod.move(QtCore.QPoint(pos_x, pos_y))
         return rod_pos
+
+    @QtCore.pyqtSlot(RodNumberWidget)
+    def delete_rod(self, rod: RodNumberWidget) -> None:
+        """Deletes the given rod, thus sets its position to (0,0).
+
+        Parameters
+        ----------
+        rod : RodNumberWidget
+
+        Returns
+        -------
+        None
+        """
+        rod.setText(str(rod.rod_id))
+        delete_action = DeleteRodAction(rod.copy())
+        rod.rod_points = [0, 0, 0, 0]
+        rod.set_state(RodState.CHANGED)
+        self._logger.add_action(delete_action)
+        self.draw_rods()
+
+    def _connect_rod(self, rod: RodNumberWidget) -> None:
+        """Connects all signals from the given rod with the widget's slots.
+
+        Parameters
+        ----------
+        rod : RodNumberWidget
+
+        Returns
+        -------
+        None
+        """
+        rod.activated.connect(self.rod_activated)
+        rod.id_changed.connect(self.check_rod_conflicts)
+        rod.request_delete.connect(self.delete_rod)
+        rod.installEventFilter(self)
+        rod.show()
+
+    def eventFilter(self, source: QtCore.QObject, event: QtCore.QEvent) -> \
+            bool:
+        """Intercepts events, here QKeyEvents for frame switching and edit
+        aborting.
+
+        Parameters
+        ----------
+        source : QObject
+        event : QEvent
+
+        Returns
+        -------
+        bool
+            True, if the event shall not be propagated further.
+            False, if the event shall be passed to the next object to be
+            handled.
+        """
+        if type(event) != QtGui.QKeyEvent:
+            return False
+
+        event = QKeyEvent(event)
+        if type(source) != RodNumberWidget:
+            return False
+        if source.isReadOnly():
+            if event.key() == QtCore.Qt.Key_Escape:
+                # Abort any editing (not rod number editing)
+                if self._edits is not None:
+                    # Deactivate any active rods
+                    self.rod_activated(-1)
+                    return True
+            elif event.key() == QtCore.Qt.Key_Right:
+                self.request_frame_change.emit(self._logger.frame + 1)
+                return False
+            elif event.key() == QtCore.Qt.Key_Left:
+                self.request_frame_change.emit(self._logger.frame - 1)
+                return False
+            else:
+                # RodNumberWidget is in the process of rod number changing,
+                # let the widget handle that itself
+                return False
+
+        return False
