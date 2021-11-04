@@ -756,8 +756,8 @@ class ActionLogger(QtCore.QObject):
                 # No more unsaved changes present
                 self.notify_unsaved.emit(False)
         undo_item.revert = True
-        self.data_changed.emit(undo_item)
         self.undo_action.emit(undo_item)
+        self.data_changed.emit(undo_item)
         del undo_item
 
     def register_undone(self, undone_action: Action):

@@ -59,6 +59,7 @@ class RodImageWidget(QLabel):
     request_frame_change = QtCore.pyqtSignal(int, name="request_frame_change")
     notify_undone = QtCore.pyqtSignal(Action, name="notify_undone")
     request_new_rod = QtCore.pyqtSignal(int, list, name="request_new_rod")
+    normal_frame_change = QtCore.pyqtSignal(int, name="normal_frame_change")
     _logger: ActionLogger = None
 
     def __init__(self, *args, **kwargs):
@@ -637,6 +638,10 @@ class RodImageWidget(QLabel):
         """
         if action.parent_id != self._cam_id:
             return
+
+        if action.frame != self.logger.frame:
+            self.request_frame_change.emit(action.frame)
+
         try:
             action_color = action.rod.color
             if action_color != self._edits[0].color:
@@ -644,8 +649,6 @@ class RodImageWidget(QLabel):
         except AttributeError:
             # given action does not require a color to be handled
             pass
-        if action.frame != self.logger.frame:
-            self.request_frame_change.emit(action.frame)
 
         if type(action) == ChangeRodPositionAction:
             new_rods = action.undo(rods=self._edits)
@@ -857,10 +860,10 @@ class RodImageWidget(QLabel):
                     self.rod_activated(-1)
                     return True
             elif event.key() == QtCore.Qt.Key_Right:
-                self.request_frame_change.emit(self._logger.frame + 1)
+                self.normal_frame_change.emit(1)
                 return False
             elif event.key() == QtCore.Qt.Key_Left:
-                self.request_frame_change.emit(self._logger.frame - 1)
+                self.normal_frame_change.emit(-1)
                 return False
             else:
                 # RodNumberWidget is in the process of rod number changing,

@@ -152,6 +152,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
             cam.request_color_change.connect(self.change_color)
             cam.request_frame_change.connect(self.change_frame)
+            cam.normal_frame_change.connect(self.show_next)
             self.request_undo.connect(cam.logger.undo_last)
             self.request_redo.connect(cam.logger.redo_last)
             cam.logger.notify_unsaved.connect(self.tab_has_changes)
