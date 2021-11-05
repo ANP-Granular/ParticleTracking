@@ -780,6 +780,7 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="action_docs"/>
     <addaction name="action_about_qt"/>
     <addaction name="action_about"/>
    </widget>
@@ -878,6 +879,11 @@
   <action name="action_about_qt">
    <property name="text">
     <string>About Qt</string>
+   </property>
+  </action>
+  <action name="action_docs">
+   <property name="text">
+    <string>Read Me</string>
    </property>
   </action>
  </widget>

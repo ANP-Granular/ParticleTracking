@@ -4,6 +4,7 @@ import sys
 import platform
 import re
 from typing import List
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
@@ -221,7 +222,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.slider_frames.setMaximum(1)
         self.ui.slider_frames.sliderMoved.connect(self.slider_moved)
 
-        # About page
+        # Help
+        self.ui.action_docs.triggered.connect(self.show_readme)
         self.ui.action_about.triggered.connect(self.show_about)
         self.ui.action_about_qt.triggered.connect(lambda: QMessageBox.aboutQt(
             self, "RodTracker"))
@@ -1290,6 +1292,24 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         </p>"""
         QMessageBox.about(self, "About RodTracker",
                           about_txt)
+
+    def show_readme(self):
+        docs_dialog = QtWidgets.QDialog(self)
+        docs_dialog.resize(600, 600)
+        docs_dialog.setWindowTitle("README")
+
+        docs_dialog.docs = QtWidgets.QTextEdit(parent=docs_dialog)
+        docs_dialog.docs.setReadOnly(True)
+        docs_dialog.docs.setStyleSheet("background-color: transparent;")
+        docs_dialog.docs.setFrameShape(QtWidgets.QFrame.NoFrame)
+
+        docs_dialog.layout = QtWidgets.QVBoxLayout()
+        docs_dialog.layout.addWidget(docs_dialog.docs)
+        docs_dialog.setLayout(docs_dialog.layout)
+
+        readme_md = Path('../README.md').read_text()
+        docs_dialog.docs.setMarkdown(readme_md)
+        docs_dialog.show()
 
 
 if __name__ == "__main__":

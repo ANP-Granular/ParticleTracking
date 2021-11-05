@@ -1,5 +1,8 @@
 # Track_Gui
+
+---
 ## Python GUI for image tracking task
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/136808942-21f516b1-13aa-4fbb-9c6b-fbe885c853b6.png "RodTracker - GUI")
 ### Notes for users
@@ -8,7 +11,7 @@
    Images` button.
    - Switch between images in the folder using the `left`/`right` keys or the 
     `Previous`/`Next` buttons or the `Slider` below.
-3. Load and overlay rod coordinates from disc by pressing the`Overlay` button 
+3. Load and overlay rod coordinates from disc by pressing the `Overlay` button 
    and selecting the folder those `*.csv` coordinate files are stored.
    > Note that the folder of the `*.csv` file must be named like the x,
    > y-identifier in the `*.csv`, i.e. if the x_**gp4** the location should 

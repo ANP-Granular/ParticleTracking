@@ -389,6 +389,8 @@ class Ui_MainWindow(object):
         self.action_about.setObjectName("action_about")
         self.action_about_qt = QtWidgets.QAction(MainWindow)
         self.action_about_qt.setObjectName("action_about_qt")
+        self.action_docs = QtWidgets.QAction(MainWindow)
+        self.action_docs.setObjectName("action_docs")
         self.menuFile.addAction(self.action_open)
         self.menuFile.addAction(self.action_save)
         self.menuEdit.addAction(self.action_revert)
@@ -398,6 +400,7 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.action_zoom_out)
         self.menuView.addAction(self.action_original_size)
         self.menuView.addAction(self.action_fit_to_window)
+        self.menuHelp.addAction(self.action_docs)
         self.menuHelp.addAction(self.action_about_qt)
         self.menuHelp.addAction(self.action_about)
         self.menubar.addAction(self.menuFile.menuAction())
@@ -456,6 +459,7 @@ class Ui_MainWindow(object):
         self.action_redo.setShortcut(_translate("MainWindow", "Ctrl+Shift+Z"))
         self.action_about.setText(_translate("MainWindow", "About"))
         self.action_about_qt.setText(_translate("MainWindow", "About Qt"))
+        self.action_docs.setText(_translate("MainWindow", "Read Me"))
 from actionlogger import ActionLoggerWidget
 from rodimagewidget import RodImageWidget
 
