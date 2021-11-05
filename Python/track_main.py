@@ -221,6 +221,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.slider_frames.setMaximum(1)
         self.ui.slider_frames.sliderMoved.connect(self.slider_moved)
 
+        # About page
+        self.ui.action_about.triggered.connect(self.show_about)
+        self.ui.action_about_qt.triggered.connect(lambda: QMessageBox.aboutQt(
+            self, "RodTracker"))
+
     @property
     def current_file_index(self):
         return self._CurrentFileIndex
@@ -1210,6 +1215,81 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 a0.accept()
         else:
             a0.accept()
+
+    def show_about(self):
+        about_txt = """
+        <style>
+            table { background-color: transparent; }
+            a { text-decoration:none; font-weight:bold; }
+        </style>
+        <table border="0" cellpadding="0" cellspacing="5" width="400" 
+        align="left" style="margin-top:0px;">
+            <tr>
+                <td width="200", colspan="2"> <h3>Version:</h3> </td>
+                <td width="200"> <p> 0.0.1 - beta </p> </td>
+            </tr>
+            <tr>
+                <td width="200", colspan="2"> <h3>Date:</h3> </td>
+                <td width="200"> <p> 04.11.2021 </p> </td>
+            </tr>
+            <tr>
+                <td width="200", colspan="2"> <h3><br>Developers:<br></h3> </td>
+                <td width="200"> 
+                    <p> Adrian Niemann <br> Dmitry Puzyrev <br> Meera 
+                    Subramanian  </p> 
+                </td>
+            </tr>
+            <tr>
+                <td width="200", colspan="2"> <h3>License:</h3> </td>
+                <td width="200"> 
+                    <p><a href="https://www.gnu.org/licenses/gpl-3.0.en.html">GPLv3</a> 
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td width="400", colspan="3"> <br><h3>3rd Party Software:</h3> 
+                <p> This application either uses code and tools from the 
+                    following projects in part or in their entirety as deemed 
+                    permissible by each project's open-source license.</p>
+                </td>
+            </tr>
+            <tr>
+                <td width="50">
+                    <p><a href="https://numpy.org/"> numpy </a>:</p>
+                </td>
+                <td width="150">1.21.0</td>
+                <td width="200"><p> BSD </p></td>
+            </tr>
+            <tr>
+                <td width="50">
+                    <p><a href="https://pandas.pydata.org/">Pandas</a>:</p>
+                </td>
+                <td width="150">1.2.5</td>
+                <td width="200"><p> BSD3 </p></td>
+            </tr>
+            <tr>
+                <td width="50">
+                    <p><a  href="https://www.riverbankcomputing.com/software
+                    /pyqt">PyQt5</a>:</p>
+                </td>
+                <td width="150">5.15.4</td>
+                <td width="200"><p> GPLv3+ </p></td>
+            </tr>
+            <tr>
+                <td width="50">
+                    <p><a href="https://www.qt.io">Qt5</a>:</p>
+                </td>
+                <td width="150">5.15.2</td>
+                <td width="200"><p> LGPLv3 </p></td>
+            </tr>
+        </table>
+        <br>
+        <br>
+        <p>
+            Copyright © 2021 Otto-von-Guericke University Magdeburg
+        </p>"""
+        QMessageBox.about(self, "About RodTracker",
+                          about_txt)
 
 
 if __name__ == "__main__":
