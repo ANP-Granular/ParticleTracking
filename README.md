@@ -1,5 +1,10 @@
 # Track_Gui
+
+---
 ## Python GUI for image tracking task
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/136808942-21f516b1-13aa-4fbb-9c6b-fbe885c853b6.png "RodTracker - GUI")
 ![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/141676583-2f294dec-a505-4b7e-a8b5-484af964ea09.png "RodTracker - GUI")
 ### Notes for users
 1. Run [RodTracker.py](Python/RodTracker.py)
