@@ -544,8 +544,9 @@ class CreateRodAction(Action):
         Default is "Created new rod".
     """
 
-    def __init__(self, new_rod: RodNumberWidget, coupled_action: Union[
-        Action, ChangedRodNumberAction] = None, *args, **kwargs):
+    def __init__(self, new_rod: RodNumberWidget,
+                 coupled_action: Union[Action, ChangedRodNumberAction] = None,
+                 *args, **kwargs):
         self.rod = new_rod
         self.action = "Created new rod"
         self.coupled_action = coupled_action
@@ -633,6 +634,21 @@ class CreateRodAction(Action):
         if inverted.coupled_action is not None:
             inverted.coupled_action.coupled_action = inverted
         return inverted
+
+
+class PermanentRemoveAction(Action):
+    def __init__(self, rod_quantity: int, *args, **kwargs):
+        self.quantity = rod_quantity
+        self.action = "Permanently deleted {:d} unused rods"
+        super().__init__(str(self), *args, **kwargs)
+
+    def __str__(self):
+        to_str = self.action.format(self.quantity)
+        return to_str
+
+    def undo(self, rods: Optional[Iterable[RodNumberWidget]]):
+        # TODO: implement
+        pass
 
 
 class ActionLogger(QtCore.QObject):
@@ -779,8 +795,7 @@ class ActionLogger(QtCore.QObject):
                 self.notify_unsaved.emit(False)
 
     def discard_changes(self):
-        """Discards all unsaved changes made. Currently only deletes the
-        Actions, but does NOT revert the changes."""
+        """Discards and reverts all unsaved changes made."""
         for item in self.unsaved_changes:
             item.revert = True
             self.data_changed.emit(item)
@@ -958,9 +973,5 @@ class ActionLoggerWidget(QListWidget):
         self.scrollToBottom()
 
     def discard_changes(self):
-        # FIXME: It might be a bad idea to discard the changes from all the
-        #  loggers here. The question is whether this should be used only in
-        #  the application close operation or whether its used when new data
-        #  is loaded or when stuff is done on only one of the cameras?
         for logger in self._loggers:
             logger.discard_changes()

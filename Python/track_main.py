@@ -13,7 +13,7 @@ from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QImage, QWheelEvent
 
 from actionlogger import FileAction, TEMP_DIR, FileActions, ActionLogger, \
-    CreateRodAction, Action
+    CreateRodAction, Action, PermanentRemoveAction
 from track_ui import Ui_MainWindow
 from rodnumberwidget import RodNumberWidget, RodState
 
@@ -175,6 +175,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.logger.data_changed.connect(self.catch_data)
 
         # Connect signals
+        self.ui.action_cleanup.triggered.connect(self.clean_data)
+
         # Viewing actions
         self.ui.sa_camera_0.verticalScrollBar().installEventFilter(self)
         self.ui.sa_camera_1.verticalScrollBar().installEventFilter(self)
@@ -192,6 +194,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.pb_load_images.clicked.connect(self.open_image_folder)
         self.ui.action_open.triggered.connect(self.open_image_folder)
         self.ui.le_image_dir.returnPressed.connect(self.open_image_folder)
+        self.ui.action_open_rods.triggered.connect(self.open_rod_folder)
         self.ui.pb_load_rods.clicked.connect(self.open_rod_folder)
         self.ui.le_rod_dir.returnPressed.connect(self.open_rod_folder)
         self.ui.pb_previous.clicked.connect(
@@ -922,6 +925,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             msg.exec()
             if msg.clickedButton() == btn_cancel:
                 return
+        # Clean up data from unused rods before saving
+        self.clean_data()
+
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
 
@@ -932,6 +938,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             this_action.parent_id = self.logger_id
             self.ui.lv_actions_list.add_action(this_action)
         # notify loggers that everything was saved
+        self.logger.actions_saved()
         for cam in self.cameras:
             cam.logger.actions_saved()
 
@@ -1117,8 +1124,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """
         tab_idx = self.ui.camera_tabs.currentIndex()
         if has_changes:
+            if self.ui.camera_tabs.tabText(tab_idx)[-1] == "*":
+                return
             new_text = self.ui.camera_tabs.tabText(tab_idx) + "*"
         else:
+            if self.ui.camera_tabs.tabText(tab_idx)[-1] != "*":
+                return
             new_text = self.ui.camera_tabs.tabText(tab_idx)[0:-1]
         self.ui.camera_tabs.setTabText(tab_idx, new_text)
 
@@ -1210,6 +1221,92 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 a0.accept()
         else:
             a0.accept()
+
+    def clean_data(self):
+        cam_regex = re.compile('[xy][12]_gp\d+')
+        to_include = []
+        for col in self.df_data.columns:
+            if re.fullmatch(cam_regex, col):
+                to_include.append(col)
+
+        has_nans = self.df_data[self.df_data.isna().any(axis=1)]
+        has_data = has_nans.loc[:, has_nans.columns.isin(to_include)].any(
+            axis=1)
+        to_delete = has_data.index[has_data == False]
+        exclude_delete = len(to_delete)*[False]
+        if len(to_delete):
+            def handle_item_clicked(item):
+                nonlocal to_delete, exclude_delete
+                if item.checkState() == QtCore.Qt.Checked:
+                    exclude_delete[item.row()] = False
+                else:
+                    exclude_delete[item.row()] = True
+
+            confirm = QtWidgets.QDialog(self)
+            confirm.setWindowTitle("Confirm deletions")
+            description = QtWidgets.QLabel(
+                "Please review the rods that were marked for "
+                "complete deletion from the output files.")
+
+            table = QtWidgets.QTableWidget(len(to_delete), 3, parent=confirm)
+            table.setHorizontalHeaderLabels(["Number", "Frame", "Color"])
+            h_header = table.horizontalHeader()
+            h_header.setStyleSheet("font: bold;")
+            table.verticalHeader().hide()
+
+            btns = QtWidgets.QDialogButtonBox.Ok | \
+                QtWidgets.QDialogButtonBox.Cancel
+            confirm.controls = QtWidgets.QDialogButtonBox(btns)
+            confirm.controls.accepted.connect(confirm.accept)
+            confirm.controls.rejected.connect(confirm.reject)
+
+            confirm.layout = QtWidgets.QVBoxLayout(confirm)
+            confirm.layout.addWidget(description)
+            confirm.layout.addWidget(table)
+            confirm.layout.addWidget(confirm.controls)
+            confirm.layout.addStretch()
+            table.horizontalHeader().setSectionResizeMode(
+                QtWidgets.QHeaderView.Stretch)
+            confirm.setLayout(confirm.layout)
+
+            next_row = 0
+            for row in has_nans[has_data == False].iterrows():
+                next_frame = QtWidgets.QTableWidgetItem(str(row[1].frame))
+                next_color = QtWidgets.QTableWidgetItem(str(row[1].color))
+                next_particle = QtWidgets.QTableWidgetItem(
+                    str(row[1].particle))
+                next_frame.setTextAlignment(QtCore.Qt.AlignHCenter |
+                                            QtCore.Qt.AlignVCenter)
+                next_color.setTextAlignment(QtCore.Qt.AlignHCenter |
+                                            QtCore.Qt.AlignVCenter)
+                next_particle.setTextAlignment(QtCore.Qt.AlignHCenter |
+                                               QtCore.Qt.AlignVCenter)
+
+                table.setItem(next_row, 1, next_frame)
+                table.setItem(next_row, 2, next_color)
+                next_particle.setFlags(QtCore.Qt.ItemIsUserCheckable |
+                                       QtCore.Qt.ItemIsEnabled)
+                next_particle.setCheckState(QtCore.Qt.Checked)
+                table.setItem(next_row, 0, next_particle)
+                next_row += 1
+            table.itemClicked.connect(handle_item_clicked)
+
+            if confirm.exec():
+                to_delete = to_delete.delete(exclude_delete)
+                deleted_rows = self.df_data.loc[to_delete].copy()
+                self.df_data = self.df_data.drop(index=to_delete)
+                performed_action = PermanentRemoveAction(len(to_delete))
+                self.logger.add_action(performed_action)
+                self.load_rods()
+
+            else:
+                self.ui.statusbar.showMessage("Aborted data cleaning.",
+                                              4000)
+                return
+        else:
+            self.ui.statusbar.showMessage("No unused rods found for "
+                                          "deletion.", 4000)
+            return
 
 
 if __name__ == "__main__":

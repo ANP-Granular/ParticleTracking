@@ -754,6 +754,7 @@
      <string>File</string>
     </property>
     <addaction name="action_open"/>
+    <addaction name="action_open_rods"/>
     <addaction name="action_save"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -765,6 +766,7 @@
     </property>
     <addaction name="action_revert"/>
     <addaction name="action_redo"/>
+    <addaction name="action_cleanup"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -783,7 +785,7 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_open">
    <property name="text">
-    <string>Open</string>
+    <string>Open Images</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -860,6 +862,16 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+Z</string>
+   </property>
+  </action>
+  <action name="action_cleanup">
+   <property name="text">
+    <string>Cleanup Data</string>
+   </property>
+  </action>
+  <action name="action_open_rods">
+   <property name="text">
+    <string>Open Rod Data</string>
    </property>
   </action>
  </widget>
