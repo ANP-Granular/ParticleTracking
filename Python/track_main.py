@@ -1284,6 +1284,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 <td width="150">5.15.2</td>
                 <td width="200"><p> LGPLv3 </p></td>
             </tr>
+            <tr>
+                <td width="50">
+                    <p><a href="https://material.io/">Material Design</a>:</p>
+                </td>
+                <td width="150">2</td>
+                <td width="200"><p> Apache-2.0 </p></td>
+            </tr>
         </table>
         <br>
         <br>
