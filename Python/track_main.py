@@ -138,6 +138,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         cb_ov_size = self.ui.cb_overlay.fontMetrics().width(cb_ov_txt)
         self.ui.cb_overlay.setMaximumWidth(int(2*cb_ov_size))
 
+        # Set possible inputs for rod selection field
+        self.ui.le_disp_one.setInputMask("99")
+        self.ui.le_disp_one.setText("00")
+
         self.setWindowState(QtCore.Qt.WindowMaximized)
         self.setFocus()
 
