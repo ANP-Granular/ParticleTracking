@@ -1251,6 +1251,20 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             a0.accept()
 
     def clean_data(self):
+        """Deletes unused rods from the dataset in RAM.
+
+        Unused rods are identified by not having positional data in the
+        *gp_* columns of the dataset. This assumed when only NaN or 0 is
+        present in all these columns for a given rod/row. The user is asked
+        to confirm these deletions and has the opportunity to exclude
+        identified candidates from deletion. All confirmed rows are then
+        deleted from the main dataset in RAM and therefore propagated to
+        disk on the next saving operation.
+
+        Returns
+        -------
+        None
+        """
         cam_regex = re.compile('[xy][12]_gp\d+')
         to_include = []
         for col in self.df_data.columns:
@@ -1272,9 +1286,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
             confirm = QtWidgets.QDialog(self)
             confirm.setWindowTitle("Confirm deletions")
-            description = QtWidgets.QLabel(
-                "Please review the rods that were marked for "
-                "complete deletion from the output files.")
+
+            description_text = """
+            <p>Please review the rods that were marked for complete deletion 
+            from the output files. <br><br>
+            <b>Caution: The changes made after clicking OK cannot be 
+            reverted.</b></p>
+            """
+            description = QtWidgets.QLabel(description_text)
 
             table = QtWidgets.QTableWidget(len(to_delete), 3, parent=confirm)
             table.setHorizontalHeaderLabels(["Number", "Frame", "Color"])
