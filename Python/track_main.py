@@ -4,7 +4,6 @@ import sys
 import platform
 import re
 from typing import List
-import time
 
 import pandas as pd
 import numpy as np
@@ -13,6 +12,7 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, QScrollArea
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QImage, QWheelEvent
 
+from settings import Settings
 from actionlogger import FileAction, TEMP_DIR, FileActions, ActionLogger, \
     CreateRodAction, Action, PermanentRemoveAction
 from track_ui import Ui_MainWindow
@@ -95,6 +95,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     request_undo(str)
         Is emitted when the user wants to revert an action. The payload is
         the ID of the widget on which the last action shall be reverted.
+    request_redo(str)
+        Is emitted when the user wants to redo a previously reverted action.
+        The payload is the ID of the widget on which the last action shall
+        be redone.
 
     Slots
     -----
@@ -232,6 +236,16 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         for rb in self.ui.group_disp_method.findChildren(QRadioButton):
             rb.toggled.connect(self.display_method_change)
 
+        # Settings
+        self.settings = Settings()
+        self.settings.settings_changed.connect(self.update_settings)
+        self.settings.settings_changed.connect(RodNumberWidget.update_defaults)
+        for cam in self.cameras:
+            self.settings.settings_changed.connect(cam.update_settings)
+        self.settings.send_settings()
+        self.ui.action_preferences.triggered.connect(
+            lambda: self.settings.show_dialog(self))
+
     @property
     def current_file_index(self):
         return self._CurrentFileIndex
@@ -266,6 +280,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             new_idx = self.ui.slider_frames.sliderPosition()
             idx_diff = new_idx - self.current_file_index
             self.show_next(idx_diff)
+
+    @QtCore.pyqtSlot(dict)
+    def update_settings(self, settings: dict):
+        pass
 
     def open_image_folder(self):
         """Lets the user select an image folder to show images from.
@@ -494,8 +512,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Rod position data was selected correctly
                     self.ui.le_rod_dir.setText(self.original_data[:-1])
                     self.ui.le_save_dir.setText(out_folder)
-                    # self.ui.le_save_dir.setText(self.original_data[:-1] +
-                    #                             "_corrected")
                     this_action = FileAction(self.original_data[:-1],
                                              FileActions.LOAD_RODS)
                     this_action.parent_id = self.logger_id
@@ -609,7 +625,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         new_rods = self._load_rods(self.df_data, self.current_camera.cam_id,
                                    int(file_name), color)
         for rod in new_rods:
+            self.settings.settings_changed.connect(rod.update_settings)
             rod.setParent(self.current_camera)
+        # Trick to adjust the RodNumber bounds
+        self.settings.send_settings()
 
         # Distinguish between display methods
         if self.ui.rb_disp_all.isChecked():

@@ -62,6 +62,10 @@ class RodImageWidget(QLabel):
     normal_frame_change = QtCore.pyqtSignal(int, name="normal_frame_change")
     _logger: ActionLogger = None
 
+    _rod_thickness = 3
+    _rod_color = []
+    _number_offset = 15
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -231,7 +235,7 @@ class RodImageWidget(QLabel):
 
             # Set the line style depending on the rod number widget state
             if rod.rod_state == RodState.NORMAL:
-                pen_color = QtCore.Qt.cyan
+                pen_color = QtGui.QColor(*self._rod_color)
             elif rod.rod_state == RodState.SELECTED:
                 pen_color = QtCore.Qt.white
             elif rod.rod_state == RodState.EDITING:
@@ -251,7 +255,7 @@ class RodImageWidget(QLabel):
                 msg.exec()
                 continue
             # Draw the rods
-            pen = QtGui.QPen(pen_color, 3)
+            pen = QtGui.QPen(pen_color, self._rod_thickness)
             painter.setPen(pen)
             painter.drawLine(*rod_pos)
 
@@ -379,7 +383,7 @@ class RodImageWidget(QLabel):
             end = self.subtract_offset(mouse_event.pos(), self._offset)
             pixmap = QtGui.QPixmap(self.rod_pixmap)
             qp = QtGui.QPainter(pixmap)
-            pen = QtGui.QPen(QtCore.Qt.white, 3)
+            pen = QtGui.QPen(QtCore.Qt.white, self._rod_thickness)
             qp.setPen(pen)
             qp.drawLine(self.startPos, end)
             qp.end()
@@ -775,17 +779,17 @@ class RodImageWidget(QLabel):
         len_vec = math.sqrt(x_orthogonal ** 2 + y_orthogonal ** 2)
         try:
             pos_x = rod_pos[0] + int(
-                x_orthogonal / len_vec * 15) + int(x / 2)
+                x_orthogonal / len_vec * self._number_offset) + int(x / 2)
             pos_y = rod_pos[1] + int(
-                y_orthogonal / len_vec * 15) + int(y / 2)
+                y_orthogonal / len_vec * self._number_offset) + int(y / 2)
             # Account for the widget's dimensions
             pos_x -= rod.size().width() / 2
             pos_y -= rod.size().height() / 2
 
         except ZeroDivisionError:
             # Rod has length of 0
-            pos_x = rod_pos[0] + 17
-            pos_y = rod_pos[1] + 17
+            pos_x = rod_pos[0] + self._number_offset
+            pos_y = rod_pos[1] + self._number_offset
 
         pos_x += self._offset[0]
         pos_y += self._offset[1]
@@ -871,3 +875,19 @@ class RodImageWidget(QLabel):
                 return False
 
         return False
+
+    @QtCore.pyqtSlot(dict)
+    def update_settings(self, settings: dict):
+        settings_changed = False
+        if "rod_thickness" in settings:
+            settings_changed = True
+            self._rod_thickness = settings["rod_thickness"]
+        if "rod_color" in settings:
+            settings_changed = True
+            self._rod_color = settings["rod_color"]
+        if "number_offset" in settings:
+            settings_changed = True
+            self._number_offset = settings["number_offset"]
+
+        if settings_changed:
+            self.draw_rods()

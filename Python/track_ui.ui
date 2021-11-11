@@ -751,7 +751,7 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>502</width>
+                     <width>274</width>
                      <height>274</height>
                     </rect>
                    </property>
@@ -873,6 +873,7 @@
     <addaction name="action_open"/>
     <addaction name="action_open_rods"/>
     <addaction name="action_save"/>
+    <addaction name="action_preferences"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="enabled">
@@ -989,6 +990,11 @@
   <action name="action_open_rods">
    <property name="text">
     <string>Open Rod Data</string>
+   </property>
+  </action>
+  <action name="action_preferences">
+   <property name="text">
+    <string>Preferences</string>
    </property>
   </action>
  </widget>

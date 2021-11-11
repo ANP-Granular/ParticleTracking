@@ -338,7 +338,7 @@ class Ui_MainWindow(object):
         self.sa_camera_1.setWidgetResizable(True)
         self.sa_camera_1.setObjectName("sa_camera_1")
         self.scrollAreaWidgetContents_8 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 502, 274))
+        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 274, 274))
         self.scrollAreaWidgetContents_8.setObjectName("scrollAreaWidgetContents_8")
         self.verticalLayout_18 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_8)
         self.verticalLayout_18.setObjectName("verticalLayout_18")
@@ -434,9 +434,12 @@ class Ui_MainWindow(object):
         self.action_cleanup.setObjectName("action_cleanup")
         self.action_open_rods = QtWidgets.QAction(MainWindow)
         self.action_open_rods.setObjectName("action_open_rods")
+        self.action_preferences = QtWidgets.QAction(MainWindow)
+        self.action_preferences.setObjectName("action_preferences")
         self.menuFile.addAction(self.action_open)
         self.menuFile.addAction(self.action_open_rods)
         self.menuFile.addAction(self.action_save)
+        self.menuFile.addAction(self.action_preferences)
         self.menuEdit.addAction(self.action_revert)
         self.menuEdit.addAction(self.action_redo)
         self.menuEdit.addAction(self.action_cleanup)
@@ -502,6 +505,7 @@ class Ui_MainWindow(object):
         self.action_redo.setShortcut(_translate("MainWindow", "Ctrl+Shift+Z"))
         self.action_cleanup.setText(_translate("MainWindow", "Cleanup Data"))
         self.action_open_rods.setText(_translate("MainWindow", "Open Rod Data"))
+        self.action_preferences.setText(_translate("MainWindow", "Preferences"))
 from actionlogger import ActionLoggerWidget
 from rodimagewidget import RodImageWidget
 
