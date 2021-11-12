@@ -1,4 +1,5 @@
 import copy
+import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 from Python.ui import rodnumberwidget as rn, rodimagewidget as ri
 
@@ -238,3 +239,75 @@ class SettingsDialog(QtWidgets.QDialog):
             self.draw_icon(QtGui.QColor(*self.tmp_contents["visual"][
                 "number_color"]), self.number_color)
             self.update_preview()
+
+
+class ConfirmDeleteDialog(QtWidgets.QDialog):
+    def __init__(self, to_delete: pd.DataFrame, parent: QtWidgets.QWidget):
+        super().__init__(parent=parent)
+        self.to_delete = to_delete
+        self.confirmed_delete = len(to_delete)*[True]
+
+        # Create visual elements
+        self.description = QtWidgets.QLabel("")
+        self.table = QtWidgets.QTableWidget(len(to_delete), 3, parent=self)
+        self.controls = QtWidgets.QDialogButtonBox()
+        self.layout = QtWidgets.QVBoxLayout(self)
+
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setWindowTitle("Confirm deletions")
+
+        description_text = """
+            <p>Please review the rods that were marked for complete deletion 
+            from the output files. <br><br>
+            <b>Caution: The changes made after clicking OK cannot be 
+            reverted.</b></p>
+            """
+        self.description.setText(description_text)
+
+        self.table.setHorizontalHeaderLabels(["Number", "Frame", "Color"])
+        h_header = self.table.horizontalHeader()
+        h_header.setStyleSheet("font: bold;")
+        self.table.verticalHeader().hide()
+
+        self.controls.addButton(QtWidgets.QDialogButtonBox.Ok)
+        self.controls.addButton(QtWidgets.QDialogButtonBox.Cancel)
+        self.controls.accepted.connect(self.accept)
+        self.controls.rejected.connect(self.reject)
+
+        self.layout.addWidget(self.description)
+        self.layout.addWidget(self.table)
+        self.layout.addWidget(self.controls)
+        self.layout.addStretch()
+        self.table.horizontalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Stretch)
+        self.setLayout(self.layout)
+
+        next_row = 0
+        for row in self.to_delete.iterrows():
+            next_frame = QtWidgets.QTableWidgetItem(str(row[1].frame))
+            next_color = QtWidgets.QTableWidgetItem(str(row[1].color))
+            next_particle = QtWidgets.QTableWidgetItem(
+                str(row[1].particle))
+            next_frame.setTextAlignment(QtCore.Qt.AlignHCenter |
+                                        QtCore.Qt.AlignVCenter)
+            next_color.setTextAlignment(QtCore.Qt.AlignHCenter |
+                                        QtCore.Qt.AlignVCenter)
+            next_particle.setTextAlignment(QtCore.Qt.AlignHCenter |
+                                           QtCore.Qt.AlignVCenter)
+
+            self.table.setItem(next_row, 1, next_frame)
+            self.table.setItem(next_row, 2, next_color)
+            next_particle.setFlags(QtCore.Qt.ItemIsUserCheckable |
+                                   QtCore.Qt.ItemIsEnabled)
+            next_particle.setCheckState(QtCore.Qt.Checked)
+            self.table.setItem(next_row, 0, next_particle)
+            next_row += 1
+        self.table.itemClicked.connect(self.handle_item_clicked)
+
+    def handle_item_clicked(self, item):
+        if item.checkState() == QtCore.Qt.Checked:
+            self.confirmed_delete[item.row()] = True
+        else:
+            self.confirmed_delete[item.row()] = False

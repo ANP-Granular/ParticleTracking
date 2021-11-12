@@ -12,7 +12,7 @@ from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QImage, QWheelEvent
 
 from Python.backend import settings as se, logger as lg
-from Python.ui import rodnumberwidget as rn, mainwindow_layout as mw_l
+from Python.ui import rodnumberwidget as rn, mainwindow_layout as mw_l, dialogs
 
 ICON_PATH = "./resources/icon_main.ico"
 
@@ -1273,6 +1273,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
+        if self.df_data is None:
+            self.ui.statusbar.showMessage("No position data loaded. Unable "
+                                          "to clean unused rods.", 4000)
+            return
         cam_regex = re.compile('[xy][12]_gp\d+')
         to_include = []
         for col in self.df_data.columns:
@@ -1282,78 +1286,21 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         has_nans = self.df_data[self.df_data.isna().any(axis=1)]
         has_data = has_nans.loc[:, has_nans.columns.isin(to_include)].any(
             axis=1)
-        to_delete = has_data.index[has_data == False]
-        exclude_delete = len(to_delete)*[False]
+        to_delete = has_nans.loc[has_data == False]
+
         if len(to_delete):
-            def handle_item_clicked(item):
-                nonlocal to_delete, exclude_delete
-                if item.checkState() == QtCore.Qt.Checked:
-                    exclude_delete[item.row()] = False
-                else:
-                    exclude_delete[item.row()] = True
-
-            confirm = QtWidgets.QDialog(self)
-            confirm.setWindowTitle("Confirm deletions")
-
-            description_text = """
-            <p>Please review the rods that were marked for complete deletion 
-            from the output files. <br><br>
-            <b>Caution: The changes made after clicking OK cannot be 
-            reverted.</b></p>
-            """
-            description = QtWidgets.QLabel(description_text)
-
-            table = QtWidgets.QTableWidget(len(to_delete), 3, parent=confirm)
-            table.setHorizontalHeaderLabels(["Number", "Frame", "Color"])
-            h_header = table.horizontalHeader()
-            h_header.setStyleSheet("font: bold;")
-            table.verticalHeader().hide()
-
-            btns = QtWidgets.QDialogButtonBox.Ok | \
-                QtWidgets.QDialogButtonBox.Cancel
-            confirm.controls = QtWidgets.QDialogButtonBox(btns)
-            confirm.controls.accepted.connect(confirm.accept)
-            confirm.controls.rejected.connect(confirm.reject)
-
-            confirm.layout = QtWidgets.QVBoxLayout(confirm)
-            confirm.layout.addWidget(description)
-            confirm.layout.addWidget(table)
-            confirm.layout.addWidget(confirm.controls)
-            confirm.layout.addStretch()
-            table.horizontalHeader().setSectionResizeMode(
-                QtWidgets.QHeaderView.Stretch)
-            confirm.setLayout(confirm.layout)
-
-            next_row = 0
-            for row in has_nans[has_data == False].iterrows():
-                next_frame = QtWidgets.QTableWidgetItem(str(row[1].frame))
-                next_color = QtWidgets.QTableWidgetItem(str(row[1].color))
-                next_particle = QtWidgets.QTableWidgetItem(
-                    str(row[1].particle))
-                next_frame.setTextAlignment(QtCore.Qt.AlignHCenter |
-                                            QtCore.Qt.AlignVCenter)
-                next_color.setTextAlignment(QtCore.Qt.AlignHCenter |
-                                            QtCore.Qt.AlignVCenter)
-                next_particle.setTextAlignment(QtCore.Qt.AlignHCenter |
-                                               QtCore.Qt.AlignVCenter)
-
-                table.setItem(next_row, 1, next_frame)
-                table.setItem(next_row, 2, next_color)
-                next_particle.setFlags(QtCore.Qt.ItemIsUserCheckable |
-                                       QtCore.Qt.ItemIsEnabled)
-                next_particle.setCheckState(QtCore.Qt.Checked)
-                table.setItem(next_row, 0, next_particle)
-                next_row += 1
-            table.itemClicked.connect(handle_item_clicked)
-
+            confirm = dialogs.ConfirmDeleteDialog(to_delete, parent=self)
             if confirm.exec():
-                to_delete = to_delete.delete(exclude_delete)
-                deleted_rows = self.df_data.loc[to_delete].copy()
-                self.df_data = self.df_data.drop(index=to_delete)
-                performed_action = lg.PermanentRemoveAction(len(to_delete))
-                self.logger.add_action(performed_action)
-                self.load_rods()
-
+                delete_idx = to_delete.index[confirm.confirmed_delete]
+                if len(delete_idx):
+                    deleted_rows = self.df_data.loc[delete_idx].copy()
+                    self.df_data = self.df_data.drop(index=delete_idx)
+                    performed_action = lg.PermanentRemoveAction(len(delete_idx))
+                    self.logger.add_action(performed_action)
+                    self.load_rods()
+                else:
+                    self.ui.statusbar.showMessage("No rods confirmed for "
+                                                  "permanent deletion.", 4000)
             else:
                 self.ui.statusbar.showMessage("Aborted data cleaning.",
                                               4000)
