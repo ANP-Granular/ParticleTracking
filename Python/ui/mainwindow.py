@@ -1,6 +1,5 @@
 import os
 import shutil
-import sys
 import platform
 import re
 from typing import List
@@ -12,21 +11,10 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, QScrollArea
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QImage, QWheelEvent
 
-from settings import Settings
-from actionlogger import FileAction, TEMP_DIR, FileActions, ActionLogger, \
-    CreateRodAction, Action, PermanentRemoveAction
-from track_ui import Ui_MainWindow
-from rodnumberwidget import RodNumberWidget, RodState
+from Python.backend import settings as se, logger as lg
+from Python.ui import rodnumberwidget as rn, mainwindow_layout as mw_l
 
 ICON_PATH = "./resources/icon_main.ico"
-
-HAS_SPLASH = False
-try:
-    import pyi_splash
-    HAS_SPLASH = True
-except ModuleNotFoundError:
-    # Application not bundled
-    HAS_SPLASH = False
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
@@ -111,7 +99,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     """
     fileList: List[str] = None
     logger_id: str = "main"
-    logger: ActionLogger
+    logger: lg.ActionLogger
     request_undo = QtCore.pyqtSignal(str, name="request_undo")
     request_redo = QtCore.pyqtSignal(str, name="request_redo")
     _current_file_ids: list = []
@@ -120,7 +108,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.ui = Ui_MainWindow()
+        self.ui = mw_l.Ui_MainWindow()
         self.ui.setupUi(self)
 
         # Adaptations of the UI
@@ -237,9 +225,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             rb.toggled.connect(self.display_method_change)
 
         # Settings
-        self.settings = Settings()
+        self.settings = se.Settings()
         self.settings.settings_changed.connect(self.update_settings)
-        self.settings.settings_changed.connect(RodNumberWidget.update_defaults)
+        self.settings.settings_changed.connect(
+            rn.RodNumberWidget.update_defaults)
         for cam in self.cameras:
             self.settings.settings_changed.connect(cam.update_settings)
         self.settings.send_settings()
@@ -372,10 +361,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             new_frame = self.current_file_ids[self.current_file_index]
             self.logger.frame = new_frame
             self.current_camera.logger.frame = new_frame
-            first_action = FileAction(dirpath, FileActions.LOAD_IMAGES,
-                                      len(self.fileList),
-                                      cam_id=self.current_camera.cam_id,
-                                      parent_id="main")
+            first_action = lg.FileAction(dirpath, lg.FileActions.LOAD_IMAGES,
+                                         len(self.fileList),
+                                         cam_id=self.current_camera.cam_id,
+                                         parent_id="main")
             first_action.parent_id = self.logger_id
             self.logger.add_action(first_action)
 
@@ -512,8 +501,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Rod position data was selected correctly
                     self.ui.le_rod_dir.setText(self.original_data[:-1])
                     self.ui.le_save_dir.setText(out_folder)
-                    this_action = FileAction(self.original_data[:-1],
-                                             FileActions.LOAD_RODS)
+                    this_action = lg.FileAction(self.original_data[:-1],
+                                                lg.FileActions.LOAD_RODS)
                     this_action.parent_id = self.logger_id
                     self.ui.lv_actions_list.add_action(
                         this_action)
@@ -699,7 +688,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             y1 = df_part2[f'y1_{cam_id}'][ind_rod]
             y2 = df_part2[f'y2_{cam_id}'][ind_rod]
             # Add rods
-            ident = RodNumberWidget(color, None, str(value), QPoint(0, 0))
+            ident = rn.RodNumberWidget(color, None, str(value), QPoint(0, 0))
             ident.rod_id = value
             ident.rod_points = [x1, y1, x2, y2]
             ident.setObjectName(f"rn_{ind_rod}")
@@ -902,22 +891,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        new_rod = RodNumberWidget(self.last_color, self.current_camera,
-                                  str(number))
+        new_rod = rn.RodNumberWidget(self.last_color, self.current_camera,
+                                     str(number))
         new_rod.rod_id = number
         new_rod.setObjectName(f"rn_{number}")
         new_rod.rod_points = new_position
-        new_rod.set_state(RodState.SELECTED)
+        new_rod.set_state(rn.RodState.SELECTED)
         new_rods = []
         for rod in self.current_camera.edits:
             new_rods.append(rod.copy())
         new_rods.append(new_rod)
         self.current_camera.edits = new_rods
-        last_action = CreateRodAction(new_rod.copy())
+        last_action = lg.CreateRodAction(new_rod.copy())
         self.current_camera.logger.add_action(last_action)
 
-    @QtCore.pyqtSlot(Action)
-    def catch_data(self, change: Action) -> None:
+    @QtCore.pyqtSlot(lg.Action)
+    def catch_data(self, change: lg.Action) -> None:
         """Changes the data stored in RAM according to the Action performed."""
         new_data = change.to_save()
         if new_data is not None:
@@ -1011,7 +1000,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         for file in os.listdir(self.data_files):
             shutil.copy2(self.data_files + "/" + file, save_dir + "/" + file)
             save_file = save_dir + "/" + file
-            this_action = FileAction(save_file, FileActions.SAVE)
+            this_action = lg.FileAction(save_file, lg.FileActions.SAVE)
             this_action.parent_id = self.logger_id
             self.ui.lv_actions_list.add_action(this_action)
         # notify loggers that everything was saved
@@ -1361,7 +1350,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 to_delete = to_delete.delete(exclude_delete)
                 deleted_rows = self.df_data.loc[to_delete].copy()
                 self.df_data = self.df_data.drop(index=to_delete)
-                performed_action = PermanentRemoveAction(len(to_delete))
+                performed_action = lg.PermanentRemoveAction(len(to_delete))
                 self.logger.add_action(performed_action)
                 self.load_rods()
 
@@ -1373,24 +1362,3 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.statusbar.showMessage("No unused rods found for "
                                           "deletion.", 4000)
             return
-
-
-if __name__ == "__main__":
-    if HAS_SPLASH:
-        pyi_splash.update_text("Updating environment...")
-
-    if not os.path.exists(TEMP_DIR):
-        os.mkdir(TEMP_DIR)
-
-    if HAS_SPLASH:
-        pyi_splash.update_text("Loading UI...")
-
-    app = QtWidgets.QApplication(sys.argv)
-    main_window = RodTrackWindow()
-
-    if HAS_SPLASH:
-        # Close the splash screen.
-        pyi_splash.close()
-
-    main_window.show()
-    sys.exit(app.exec_())

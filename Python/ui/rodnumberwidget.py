@@ -1,7 +1,4 @@
-from PyQt5 import QtGui
-from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QLineEdit
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from enum import Enum
 
 
@@ -38,7 +35,7 @@ class RodStateError(ValueError):
         super().__init__(self.message)
 
 
-class RodNumberWidget(QLineEdit):
+class RodNumberWidget(QtWidgets.QLineEdit):
     """A custom QLineEdit to display rod numbers and have associated rods.
 
     Parameters
@@ -70,23 +67,24 @@ class RodNumberWidget(QLineEdit):
     -------
     gotActivated(int)
     droppedRodNumber(QPoint)
-
     """
 
     __pyqtSignals__ = ("gotActivated(int)", "droppedRodNumber(QPoint)",
                        "changedRodNumber(QLineEdit, int)")
     # Create custom signals
     activated = QtCore.pyqtSignal(int, name="gotActivated")
-    dropped = QtCore.pyqtSignal(QPoint, name="droppedRodNumber")
-    id_changed = QtCore.pyqtSignal(QLineEdit, int, name="changedRodNumber")
-    request_delete = QtCore.pyqtSignal(QLineEdit, name="request_delete")
+    dropped = QtCore.pyqtSignal(QtCore.QPoint, name="droppedRodNumber")
+    id_changed = QtCore.pyqtSignal(QtWidgets.QLineEdit, int,
+                                   name="changedRodNumber")
+    request_delete = QtCore.pyqtSignal(QtWidgets.QLineEdit,
+                                       name="request_delete")
     rod_state: RodState
 
     _boundary_offset: int = 5
     _number_size: int = 12
     _number_color: [int] = [0, 0, 0]
 
-    def __init__(self, color, parent=None, text="", pos=QPoint(0, 0)):
+    def __init__(self, color, parent=None, text="", pos=QtCore.QPoint(0, 0)):
         # General setup
         super().__init__()
         self.__mousePressPos = None
@@ -231,7 +229,7 @@ class RodNumberWidget(QLineEdit):
         """
 
         # Propagate regular event (otherwise blocks functions relying on it)
-        QLineEdit.mousePressEvent(self, event)
+        QtWidgets.QLineEdit.mousePressEvent(self, event)
 
         if self.isReadOnly():
             self.__mousePressPos = None

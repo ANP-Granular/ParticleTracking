@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'track_ui.ui'
+# Form implementation generated from reading ui file 'mainwindow_layout.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -307,7 +307,7 @@ class Ui_MainWindow(object):
         self.sa_camera_0.setWidgetResizable(True)
         self.sa_camera_0.setObjectName("sa_camera_0")
         self.scrollAreaWidgetContents_0 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_0.setGeometry(QtCore.QRect(0, 0, 502, 274))
+        self.scrollAreaWidgetContents_0.setGeometry(QtCore.QRect(0, 0, 411, 180))
         self.scrollAreaWidgetContents_0.setObjectName("scrollAreaWidgetContents_0")
         self.verticalLayout_16 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_0)
         self.verticalLayout_16.setObjectName("verticalLayout_16")
@@ -338,7 +338,7 @@ class Ui_MainWindow(object):
         self.sa_camera_1.setWidgetResizable(True)
         self.sa_camera_1.setObjectName("sa_camera_1")
         self.scrollAreaWidgetContents_8 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 274, 274))
+        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 411, 180))
         self.scrollAreaWidgetContents_8.setObjectName("scrollAreaWidgetContents_8")
         self.verticalLayout_18 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_8)
         self.verticalLayout_18.setObjectName("verticalLayout_18")
@@ -366,7 +366,7 @@ class Ui_MainWindow(object):
         self.undo_layout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         self.undo_layout.setContentsMargins(0, 0, 0, 0)
         self.undo_layout.setObjectName("undo_layout")
-        self.lv_actions_list = ActionLoggerWidget(self.verticalLayoutWidget)
+        self.lv_actions_list = LoggerWidget(self.verticalLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -506,8 +506,8 @@ class Ui_MainWindow(object):
         self.action_cleanup.setText(_translate("MainWindow", "Cleanup Data"))
         self.action_open_rods.setText(_translate("MainWindow", "Open Rod Data"))
         self.action_preferences.setText(_translate("MainWindow", "Preferences"))
-from actionlogger import ActionLoggerWidget
-from rodimagewidget import RodImageWidget
+from Python.ui.loggerwidget import LoggerWidget
+from Python.ui.rodimagewidget import RodImageWidget
 
 
 if __name__ == "__main__":

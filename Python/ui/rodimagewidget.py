@@ -5,9 +5,10 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QLabel, QMessageBox, QInputDialog
 
-from rodnumberwidget import RodNumberWidget, RodState
-from actionlogger import ActionLogger, DeleteRodAction, \
+from Python.ui.rodnumberwidget import RodNumberWidget, RodState
+from Python.backend.logger import ActionLogger, DeleteRodAction, \
     ChangeRodPositionAction, Action, ChangedRodNumberAction, CreateRodAction
+
 
 ICON_PATH = "./resources/icon_main.ico"
 
