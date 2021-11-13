@@ -3,6 +3,8 @@ import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 from Python.ui import rodnumberwidget as rn, rodimagewidget as ri
 
+ICON_PATH = "./resources/icon_main.ico"
+
 
 class SettingsDialog(QtWidgets.QDialog):
     tmp_contents: dict
@@ -311,3 +313,13 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
             self.confirmed_delete[item.row()] = True
         else:
             self.confirmed_delete[item.row()] = False
+
+
+def show_warning(text: str):
+    msg = QtWidgets.QMessageBox()
+    msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+    msg.setIcon(QtWidgets.QMessageBox.Warning)
+    msg.setWindowTitle("Rod Tracker")
+    msg.setText(text)
+    msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+    msg.exec()
