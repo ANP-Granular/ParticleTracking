@@ -117,5 +117,6 @@ class LoggerWidget(QtWidgets.QListWidget):
         self.scrollToBottom()
 
     def discard_changes(self):
+        """Discard unsaved changes in all maintained `ActionLogger`s."""
         for logger in self._loggers:
             logger.discard_changes()

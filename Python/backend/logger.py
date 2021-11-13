@@ -635,6 +635,17 @@ class CreateRodAction(Action):
 
 
 class PermanentRemoveAction(Action):
+    """Action to describe permanent deletion of a rod from a dataset.
+
+    Parameters
+    ----------
+    rod_quantity : int
+        Number of rods (rows) have been deleted.
+    *args : iterable
+        Positional arguments for the `QListWidgetItem` superclass.
+    **kwargs : dict
+        Keyword arguments for the `QListWidgetItem` superclass.
+    """
     def __init__(self, rod_quantity: int, *args, **kwargs):
         self.quantity = rod_quantity
         self.action = "Permanently deleted {:d} unused rods"
@@ -707,7 +718,6 @@ class ActionLogger(QtCore.QObject):
     undo_last(str)
     actions_saved()
     redo_last(str)
-
     """
     __pyqtSignals__ = ("undoAction(Action)",)
     # Create custom signals

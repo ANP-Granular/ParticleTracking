@@ -7,6 +7,24 @@ ICON_PATH = "./resources/icon_main.ico"
 
 
 class SettingsDialog(QtWidgets.QDialog):
+    """Dialog to let users adjust settings.
+
+    Parameters
+    ----------
+    contents : dict
+        The settings that will be editable by the user.
+    parent : QWidget
+        Window/Widget that serves as this dialog's parent.
+    defaults : dict
+        The default values/settings which can be restored in the dialog
+        using a button.
+
+    Attributes
+    ----------
+    tmp_contents : dict
+        The settings that are/were edited by the user. This is initially a
+        copy of `contents`.
+    """
     tmp_contents: dict
     heading_style = "font-weight: bold;" \
                     "font: 20px;" \
@@ -168,6 +186,7 @@ class SettingsDialog(QtWidgets.QDialog):
         main_layout.addWidget(self.controls)
 
     def update_preview(self):
+        """Updates the preview widget with the currently selected settings."""
         # Initialize
         if not self.preview.image:
             preview_size = QtCore.QSize(100, 100)
@@ -191,18 +210,22 @@ class SettingsDialog(QtWidgets.QDialog):
         self.thickness.lineEdit().deselect()
 
     def handle_rod_thickness(self, new_val: int):
+        """Handles changes of the rod thickness by the dialog's controls."""
         self.tmp_contents["visual"]["rod_thickness"] = new_val
         self.update_preview()
 
     def handle_number_offset(self, new_val: int):
+        """Handles changes of the number offset by the dialog's controls."""
         self.tmp_contents["visual"]["number_offset"] = new_val
         self.update_preview()
 
     def handle_number_size(self, new_val: int):
+        """Handles changes of the number size by the dialog's controls."""
         self.tmp_contents["visual"]["number_size"] = new_val
         self.update_preview()
 
     def handle_color_pick(self, target: QtWidgets.QToolButton):
+        """Lets the user select a color."""
         color_vals = self.tmp_contents["visual"][target.objectName()]
         color = QtWidgets.QColorDialog(QtGui.QColor(*color_vals), self)
         if color.exec():
@@ -214,6 +237,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
     @staticmethod
     def draw_icon(color: QtGui.QColor, target: QtWidgets.QToolButton):
+        """Helper method to set the color selection button's background."""
         to_icon = QtGui.QPixmap(35, 25)
         painter = QtGui.QPainter(to_icon)
         painter.fillRect(QtCore.QRect(0, 0, 35, 25),
@@ -223,6 +247,7 @@ class SettingsDialog(QtWidgets.QDialog):
         target.setIconSize(QtCore.QSize(28, 15))
 
     def restore_defaults(self):
+        """Resets the displayed settings to the default values."""
         if self.defaults is None:
             QtWidgets.QMessageBox.critical(
                 self, "Restore defaults",
@@ -244,6 +269,26 @@ class SettingsDialog(QtWidgets.QDialog):
 
 
 class ConfirmDeleteDialog(QtWidgets.QDialog):
+    """Confirmation dialog for data that was marked for deletion automatically.
+
+    The user shall confirm/deny the deletion of rows that were automatically
+    marked for deletion.
+
+    Parameters
+    ----------
+    to_delete : DataFrame
+        Rows of the main DataFrame that are automatically identified to be
+        deleted and shall be confirmed by the user.
+    parent : QWidget
+        Window/Widget that serves as this dialog's parent.
+
+    Attributes
+    ----------
+    confirmed_delete : List[bool]
+        Entries correspond to a row from the `to_delete` DataFrame.
+        True -> user confirms deletion
+        False -> user denies deletion
+    """
     def __init__(self, to_delete: pd.DataFrame, parent: QtWidgets.QWidget):
         super().__init__(parent=parent)
         self.to_delete = to_delete
@@ -258,6 +303,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.setup_ui()
 
     def setup_ui(self):
+        """Setup the UI elements."""
         self.setWindowTitle("Confirm deletions")
 
         description_text = """
@@ -308,7 +354,18 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
             next_row += 1
         self.table.itemClicked.connect(self.handle_item_clicked)
 
-    def handle_item_clicked(self, item):
+    @QtCore.pyqtSlot(QtWidgets.QTableWidgetItem)
+    def handle_item_clicked(self, item: QtWidgets.QTableWidgetItem) -> None:
+        """Handles the checking/unchecking of rows to mark for deletion.
+
+        Parameters
+        ----------
+        item : QTableWidgetItem
+
+        Returns
+        -------
+        None
+        """
         if item.checkState() == QtCore.Qt.Checked:
             self.confirmed_delete[item.row()] = True
         else:
@@ -316,6 +373,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
 
 
 def show_warning(text: str):
+    """Display a warning with custom text and Ok button."""
     msg = QtWidgets.QMessageBox()
     msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
     msg.setIcon(QtWidgets.QMessageBox.Warning)

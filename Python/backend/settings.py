@@ -7,6 +7,7 @@ from Python.backend.logger import TEMP_DIR
 
 
 class Configuration(QtCore.QObject):
+    """Generic class that shall hold configurations/settings."""
     __default: dict
     _contents: dict
     path: str = TEMP_DIR + "/configurations.json"
@@ -74,6 +75,24 @@ class Configuration(QtCore.QObject):
 
 
 class Settings(Configuration):
+    """Holds settings for the GUI.
+
+    Parameters
+    ----------
+    path : str, optional
+        Location and name where the settings are saved as a *.json file. The
+        default location is used, if no path is given.
+
+    Attributes
+    ----------
+    path : str
+        Location and name where the settings are saved as a *.json file.
+    parent : QWidget
+
+    Signals
+    -------
+    settings_changed(dict)
+    """
     path = TEMP_DIR + "/settings.json"
     __default = {
         "visual": {

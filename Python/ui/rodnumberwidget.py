@@ -67,6 +67,12 @@ class RodNumberWidget(QtWidgets.QLineEdit):
     -------
     gotActivated(int)
     droppedRodNumber(QPoint)
+    changedRodNumber(QLineEdit, int)
+    request_delete(QLineEdit)
+
+    Slots
+    -----
+    update_settings(dict)
     """
 
     __pyqtSignals__ = ("gotActivated(int)", "droppedRodNumber(QPoint)",
@@ -318,7 +324,8 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     @QtCore.pyqtSlot(int)
     def resolution_adjust(self, font_size, bound_offset=5):
-        """Sets the new font size and adapts the widgets size to it."""
+        """Sets the new font size and adapts the widgets size to it.
+        Currently not used."""
         current_font = self.font()
         current_font.setPointSizeF(font_size)
         self.setFont(current_font)
@@ -330,6 +337,20 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict):
+        """Catches updates of the settings from a `Settings` class.
+
+        Checks for the keys relevant to itself and updates the corresponding
+        attributes. Redraws itself with the new settings in place, if
+        settings were changed.
+
+        Parameters
+        ----------
+        settings : dict
+
+        Returns
+        -------
+        None
+        """
         settings_changed = False
         if "number_size" in settings:
             settings_changed = True
@@ -359,7 +380,21 @@ class RodNumberWidget(QtWidgets.QLineEdit):
             self.setGeometry(content_size)
 
     @classmethod
-    def update_defaults(cls, settings):
+    def update_defaults(cls, settings: dict) -> None:
+        """Catches updates of the settings from a `Settings` class.
+
+        Checks for the keys relevant to itself and updates the corresponding
+        class attributes. Updates those attributes to already have the
+        correct values when new RodNumberWidgets are created.
+
+        Parameters
+        ----------
+        settings : dict
+
+        Returns
+        -------
+        None
+        """
         if "number_size" in settings:
             cls._number_size = settings["number_size"]
         if "number_color" in settings:

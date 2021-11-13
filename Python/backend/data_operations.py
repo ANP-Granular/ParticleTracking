@@ -51,7 +51,22 @@ def extract_rods(data, cam_id: str, frame: int, color: str) -> \
     return new_rods
 
 
-def find_unused_rods(data: pd.DataFrame):
+def find_unused_rods(data: pd.DataFrame) -> pd.DataFrame:
+    """Searches for unused rods in the given dataset.
+
+    Marks and returns unused rods by verifying that the columns "\*_gp\*" in
+    the dataset contain only 0 or NaN.
+
+    Parameters
+    ----------
+    data : DataFrame
+        Dataset of rods.
+
+    Returns
+    -------
+    DataFrame
+        The rows from the given dataset that were identified as not being used.
+    """
     cam_regex = re.compile('[xy][12]_gp\d+')
     to_include = []
     for col in data.columns:
@@ -66,6 +81,21 @@ def find_unused_rods(data: pd.DataFrame):
 
 
 def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
+    """Changes or extends the rod dataset with the given new data.
+
+    Parameters
+    ----------
+    dataset : DataFrame
+        Dataset of rods.
+    new_data : dict
+        Dictionary describing the new/changed rod data. Must contain the fields
+        ["frame", "cam_id", "color", "position", "rod_id"]
+
+    Returns
+    -------
+    DataFrame
+        The changed/extended dataset.
+    """
     frame = new_data["frame"]
     cam_id = new_data["cam_id"]
     color = new_data["color"]

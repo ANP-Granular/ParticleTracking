@@ -8,8 +8,23 @@ COLOR_DATA_REGEX = re.compile('rods_df_\w+\.csv')
 
 
 def get_images(read_dir: str) -> Tuple[List[str], List[int]]:
-    # checks all files for naming convention according to the selected file
-    # and generate ids from them
+    """Reads image files from a directory.
+
+    Checks all files for naming convention according to the selected file
+    and generates the frame IDs from them.
+
+    Parameters
+    ----------
+    read_dir : str
+        Path to the directory to read image files from.
+
+    Returns
+    -------
+    Tuple[List[str], List[int]]
+        Full paths to the found image files and frame numbers extracted from
+        the file names.
+    """
+
     files = []
     file_ids = []
     for idx, f in enumerate(os.listdir(read_dir)):
@@ -25,6 +40,24 @@ def get_images(read_dir: str) -> Tuple[List[str], List[int]]:
 
 def get_color_data(read_dir: str, write_dir: str) -> \
         Tuple[pd.DataFrame, List[str]]:
+    """Reads rod data files from a directory.
+
+    Checks all *.csv files for the rod data naming convention, loads and
+    concatenates them, and extracts the corresponding color from the file
+    names. The matching files are copied to the given write directory.
+
+    Parameters
+    ----------
+    read_dir : str
+        Path to the directory to read position data files from.
+    write_dir : str
+        Path to the temporary directory to write copies of the found files to.
+
+    Returns
+    -------
+    Tuple[DataFrame, List[str]]
+        Concatenated dataset and list of all found colors.
+    """
     found_colors = []
     dataset = None
     for file in os.listdir(read_dir):

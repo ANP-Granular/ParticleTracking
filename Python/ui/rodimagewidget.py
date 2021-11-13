@@ -6,6 +6,7 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QLabel, QMessageBox, QInputDialog
 
 from Python.ui.rodnumberwidget import RodNumberWidget, RodState
+from Python.ui import dialogs
 from Python.backend.logger import ActionLogger, DeleteRodAction, \
     ChangeRodPositionAction, Action, ChangedRodNumberAction, CreateRodAction
 
@@ -45,13 +46,26 @@ class RodImageWidget(QLabel):
     request_color_change(str)
         Request to change the displayed colors. Currently this is used to
         revert actions performed on a color other than the displayed one.
+    request_frame_change(int)
+        Request to change the displayed frames. Currently this is used to
+        revert actions performed on a frame other than the displayed one.
     notify_undone(Action)
         Notifies objects, that the `Action` in the payload has been reverted.
+    request_new_rod(int, list)
+        Request to generate and display a new rod with the ID and position
+        given in the payload. The rod's position is given in the saving
+        frame of reference.
+    normal_frame_change(int)
+        Requests a normal change of frame. The payload is the index of the
+        desired frame, relative to the current one, e.g. -1 to request the
+        previous image.
 
     Slots
     -----
     undo_action(Union[Action, ChangeRodPositionAction, ChangedRodNumberAction,
                       DeleteRodAction])
+    delete_rod(RodNumberWidget)
+    update_settings(dict)
 
     """
 
@@ -62,7 +76,7 @@ class RodImageWidget(QLabel):
     request_new_rod = QtCore.pyqtSignal(int, list, name="request_new_rod")
     normal_frame_change = QtCore.pyqtSignal(int, name="normal_frame_change")
     _logger: ActionLogger = None
-
+    # Settings
     _rod_thickness = 3
     _rod_color = []
     _number_offset = 15
@@ -247,13 +261,8 @@ class RodImageWidget(QLabel):
             elif rod.rod_state == RodState.CONFLICT:
                 pen_color = QtCore.Qt.red
             else:
-                msg = QMessageBox()
-                msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
-                msg.setIcon(QMessageBox.Warning)
-                msg.setWindowTitle("Rod Tracker")
-                msg.setText("A rod with unknown state was encountered!")
-                msg.setStandardButtons(QMessageBox.Ok)
-                msg.exec()
+                dialogs.show_warning("A rod with unknown state was "
+                                     "encountered!")
                 continue
             # Draw the rods
             pen = QtGui.QPen(pen_color, self._rod_thickness)
@@ -878,7 +887,20 @@ class RodImageWidget(QLabel):
         return False
 
     @QtCore.pyqtSlot(dict)
-    def update_settings(self, settings: dict):
+    def update_settings(self, settings: dict) -> None:
+        """Catches updates of the settings from a `Settings` class.
+
+        Checks for the keys relevant to itself and updates the corresponding
+        attributes. Redraws itself with the new settings in place.
+
+        Parameters
+        ----------
+        settings : dict
+
+        Returns
+        -------
+        None
+        """
         settings_changed = False
         if "rod_thickness" in settings:
             settings_changed = True
