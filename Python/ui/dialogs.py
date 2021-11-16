@@ -35,7 +35,7 @@ class SettingsDialog(QtWidgets.QDialog):
     def __init__(self, contents: dict, parent: QtWidgets.QWidget,
                  defaults: dict = None):
         super().__init__(parent)
-        self.tmp_contents = contents
+        self.tmp_contents = copy.deepcopy(contents)
         self.defaults = defaults
         self.preview_rod_number = None
 
