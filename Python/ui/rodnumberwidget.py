@@ -1,20 +1,21 @@
-from PyQt5 import QtGui
-from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QLineEdit
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from enum import Enum
 
 
 class RodStyle(str, Enum):
     """Styles for rod numbers."""
     GENERAL = "background-color: transparent;" \
-              "color: black; font-weight: bold;"
+              "color: rgb({},{},{}); " \
+              "font: {}px; font-weight: bold;"
     SELECTED = "background-color: transparent;" \
-               "color: white; font-weight: bold;"
+               "color: white; " \
+               "font: {}px; font-weight: bold;"
     CONFLICT = "background-color: transparent;" \
-               "color: red; font-weight: bold;"
+               "color: red; " \
+               "font: {}px; font-weight: bold;"
     CHANGED = "background-color: transparent;" \
-              "color: green; font-weight: bold;"
+              "color: green; " \
+              "font: {}px; font-weight: bold;"
 
 
 class RodState(Enum):
@@ -34,7 +35,7 @@ class RodStateError(ValueError):
         super().__init__(self.message)
 
 
-class RodNumberWidget(QLineEdit):
+class RodNumberWidget(QtWidgets.QLineEdit):
     """A custom QLineEdit to display rod numbers and have associated rods.
 
     Parameters
@@ -66,19 +67,30 @@ class RodNumberWidget(QLineEdit):
     -------
     gotActivated(int)
     droppedRodNumber(QPoint)
+    changedRodNumber(QLineEdit, int)
+    request_delete(QLineEdit)
 
+    Slots
+    -----
+    update_settings(dict)
     """
 
     __pyqtSignals__ = ("gotActivated(int)", "droppedRodNumber(QPoint)",
                        "changedRodNumber(QLineEdit, int)")
     # Create custom signals
     activated = QtCore.pyqtSignal(int, name="gotActivated")
-    dropped = QtCore.pyqtSignal(QPoint, name="droppedRodNumber")
-    id_changed = QtCore.pyqtSignal(QLineEdit, int, name="changedRodNumber")
-    request_delete = QtCore.pyqtSignal(QLineEdit, name="request_delete")
+    dropped = QtCore.pyqtSignal(QtCore.QPoint, name="droppedRodNumber")
+    id_changed = QtCore.pyqtSignal(QtWidgets.QLineEdit, int,
+                                   name="changedRodNumber")
+    request_delete = QtCore.pyqtSignal(QtWidgets.QLineEdit,
+                                       name="request_delete")
     rod_state: RodState
 
-    def __init__(self, color, parent=None, text="", pos=QPoint(0, 0)):
+    _boundary_offset: int = 5
+    _number_size: int = 12
+    _number_color: [int] = [0, 0, 0]
+
+    def __init__(self, color, parent=None, text="", pos=QtCore.QPoint(0, 0)):
         # General setup
         super().__init__()
         self.__mousePressPos = None
@@ -100,9 +112,11 @@ class RodNumberWidget(QLineEdit):
         self.setMouseTracking(False)
         self.setFrame(False)
         self.setReadOnly(True)
-        self.setStyleSheet(RodStyle.GENERAL)
+        self.setStyleSheet(RodStyle.GENERAL.format(*self._number_color,
+                                                   self._number_size))
+
         content_size = self.fontMetrics().boundingRect("99")
-        content_size.setWidth(content_size.width()+5)
+        content_size.setWidth(content_size.width() + self._boundary_offset)
         self.setGeometry(content_size)
 
     @property
@@ -220,9 +234,8 @@ class RodNumberWidget(QLineEdit):
         None
         """
 
-        # Propagate regular event (otherwise blocks functions relying
-        # on it)
-        QLineEdit.mousePressEvent(self, event)
+        # Propagate regular event (otherwise blocks functions relying on it)
+        QtWidgets.QLineEdit.mousePressEvent(self, event)
 
         if self.isReadOnly():
             self.__mousePressPos = None
@@ -230,7 +243,7 @@ class RodNumberWidget(QLineEdit):
             if event.button() == QtCore.Qt.LeftButton:
                 self.__mousePressPos = event.globalPos()
                 self.__mouseMovePos = event.globalPos()
-                self.setStyleSheet(RodStyle.SELECTED)
+                self.setStyleSheet(RodStyle.SELECTED.format(self._number_size))
                 self.activated.emit(self.rod_id)
 
     def mouseReleaseEvent(self, event) -> None:
@@ -264,7 +277,8 @@ class RodNumberWidget(QLineEdit):
         None
         """
         if self.styleSheet() != RodStyle.CONFLICT:
-            self.setStyleSheet(RodStyle.GENERAL)
+            self.setStyleSheet(RodStyle.GENERAL.format(*self._number_color,
+                                                       self._number_size))
             self.rod_state = RodState.NORMAL
         self.setReadOnly(True)
 
@@ -283,13 +297,13 @@ class RodNumberWidget(QLineEdit):
         if new_state == RodState.NORMAL:
             self.deactivate_rod()
         elif new_state == RodState.SELECTED:
-            self.setStyleSheet(RodStyle.SELECTED)
+            self.setStyleSheet(RodStyle.SELECTED.format(self._number_size))
         elif new_state == RodState.EDITING:
-            self.setStyleSheet(RodStyle.SELECTED)
+            self.setStyleSheet(RodStyle.SELECTED.format(self._number_size))
         elif new_state == RodState.CHANGED:
-            self.setStyleSheet(RodStyle.CHANGED)
+            self.setStyleSheet(RodStyle.CHANGED.format(self._number_size))
         elif new_state == RodState.CONFLICT:
-            self.setStyleSheet(RodStyle.CONFLICT)
+            self.setStyleSheet(RodStyle.CONFLICT.format(self._number_size))
         else:
             raise(RodStateError())
 
@@ -307,3 +321,83 @@ class RodNumberWidget(QLineEdit):
         copied.rod_id = self.rod_id
         copied.setVisible(False)
         return copied
+
+    @QtCore.pyqtSlot(int)
+    def resolution_adjust(self, font_size, bound_offset=5):
+        """Sets the new font size and adapts the widgets size to it.
+        Currently not used."""
+        current_font = self.font()
+        current_font.setPointSizeF(font_size)
+        self.setFont(current_font)
+
+        self._boundary_offset = bound_offset
+        content_size = self.fontMetrics().boundingRect("99")
+        content_size.setWidth(content_size.width() + self._boundary_offset)
+        self.setGeometry(content_size)
+
+    @QtCore.pyqtSlot(dict)
+    def update_settings(self, settings: dict):
+        """Catches updates of the settings from a `Settings` class.
+
+        Checks for the keys relevant to itself and updates the corresponding
+        attributes. Redraws itself with the new settings in place, if
+        settings were changed.
+
+        Parameters
+        ----------
+        settings : dict
+
+        Returns
+        -------
+        None
+        """
+        settings_changed = False
+        if "number_size" in settings:
+            settings_changed = True
+            self._number_size = settings["number_size"]
+        if "number_color" in settings:
+            settings_changed = True
+            self._number_color = settings["number_color"]
+        if "boundary_offset" in settings:
+            settings_changed = True
+            self._boundary_offset = settings["boundary_offset"]
+
+        if settings_changed:
+            if self.rod_state == RodState.NORMAL:
+                self.setStyleSheet(RodStyle.GENERAL.format(
+                    *self._number_color, self._number_size))
+            elif self.rod_state == RodState.SELECTED:
+                self.setStyleSheet(RodStyle.SELECTED.format(self._number_size))
+            elif self.rod_state == RodState.EDITING:
+                self.setStyleSheet(RodStyle.SELECTED.format(self._number_size))
+            elif self.rod_state == RodState.CHANGED:
+                self.setStyleSheet(RodStyle.CHANGED.format(self._number_size))
+            elif self.rod_state == RodState.CONFLICT:
+                self.setStyleSheet(RodStyle.CONFLICT.format(self._number_size))
+
+            content_size = self.fontMetrics().boundingRect("99")
+            content_size.setWidth(content_size.width() + self._boundary_offset)
+            self.setGeometry(content_size)
+
+    @classmethod
+    def update_defaults(cls, settings: dict) -> None:
+        """Catches updates of the settings from a `Settings` class.
+
+        Checks for the keys relevant to itself and updates the corresponding
+        class attributes. Updates those attributes to already have the
+        correct values when new RodNumberWidgets are created.
+
+        Parameters
+        ----------
+        settings : dict
+
+        Returns
+        -------
+        None
+        """
+        if "number_size" in settings:
+            cls._number_size = settings["number_size"]
+        if "number_color" in settings:
+            cls._number_color = settings["number_color"]
+        if "boundary_offset" in settings:
+            cls._boundary_offset = settings["boundary_offset"]

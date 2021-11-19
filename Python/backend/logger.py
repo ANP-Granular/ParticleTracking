@@ -2,11 +2,9 @@ import tempfile
 from abc import abstractmethod
 from enum import Enum
 from typing import Optional, Iterable, Union, List
-
-from PyQt5.QtWidgets import QListWidgetItem, QListWidget
+from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
-
-from rodnumberwidget import RodNumberWidget, RodState
+from Python.ui import rodnumberwidget as rn
 
 TEMP_DIR = tempfile.gettempdir() + "/RodTracker"
 
@@ -61,7 +59,7 @@ class Action(QListWidgetItem):
         """Returns a string representation of the action."""
 
     @abstractmethod
-    def undo(self, rods: Optional[Iterable[RodNumberWidget]]):
+    def undo(self, rods: Optional[Iterable[rn.RodNumberWidget]]):
         """Triggers events to revert this action."""
 
     def to_save(self):
@@ -190,7 +188,7 @@ class ChangedRodNumberAction(Action):
         this and must be reverted as well, if this `Action` is reverted.
     """
 
-    def __init__(self, old_rod: RodNumberWidget, new_id: int,
+    def __init__(self, old_rod: rn.RodNumberWidget, new_id: int,
                  coupled_action: Action = None, *args,
                  **kwargs):
         self.rod = old_rod
@@ -219,7 +217,7 @@ class ChangedRodNumberAction(Action):
         to_str = "(" + to_str
         return to_str
 
-    def undo(self, rods: [RodNumberWidget]) -> [RodNumberWidget]:
+    def undo(self, rods: [rn.RodNumberWidget]) -> [rn.RodNumberWidget]:
         """Triggers events to revert this action.
 
         Parameters
@@ -315,7 +313,7 @@ class DeleteRodAction(Action):
         this and must be reverted as well, if this `Action` is reverted.
 
     """
-    def __init__(self, old_rod: RodNumberWidget, coupled_action: Union[
+    def __init__(self, old_rod: rn.RodNumberWidget, coupled_action: Union[
         Action, ChangedRodNumberAction] = None,
                  *args, **kwargs):
         self.rod = old_rod
@@ -342,7 +340,7 @@ class DeleteRodAction(Action):
         to_str = "(" + to_str
         return to_str
 
-    def undo(self, rods: [RodNumberWidget] = None):
+    def undo(self, rods: [rn.RodNumberWidget] = None):
         """Triggers events to revert this action.
 
         Parameters
@@ -358,7 +356,7 @@ class DeleteRodAction(Action):
         if self.coupled_action:
             self.rod.rod_id = self.coupled_action.new_id
         self.rod.setText(str(self.rod.rod_id))
-        self.rod.rod_state = RodState.NORMAL
+        self.rod.rod_state = rn.RodState.NORMAL
         self.rod.setVisible(True)
         return self.rod
 
@@ -428,7 +426,7 @@ class ChangeRodPositionAction(Action):
         Default is "Rod position updated".
     """
 
-    def __init__(self, old_rod: RodNumberWidget, new_position: [int], *args,
+    def __init__(self, old_rod: rn.RodNumberWidget, new_position: [int], *args,
                  **kwargs):
         self.rod = old_rod
         self.new_pos = new_position
@@ -461,7 +459,7 @@ class ChangeRodPositionAction(Action):
         to_str = "(" + to_str
         return to_str
 
-    def undo(self, rods: [RodNumberWidget] = None) -> [RodNumberWidget]:
+    def undo(self, rods: [rn.RodNumberWidget] = None) -> [rn.RodNumberWidget]:
         """Triggers events to revert this action.
 
         Parameters
@@ -544,8 +542,9 @@ class CreateRodAction(Action):
         Default is "Created new rod".
     """
 
-    def __init__(self, new_rod: RodNumberWidget, coupled_action: Union[
-        Action, ChangedRodNumberAction] = None, *args, **kwargs):
+    def __init__(self, new_rod: rn.RodNumberWidget,
+                 coupled_action: Union[Action, ChangedRodNumberAction] = None,
+                 *args, **kwargs):
         self.rod = new_rod
         self.action = "Created new rod"
         self.coupled_action = coupled_action
@@ -569,8 +568,8 @@ class CreateRodAction(Action):
         to_str = "(" + to_str
         return to_str
 
-    def undo(self, rods: List[RodNumberWidget] = None) -> \
-            List[RodNumberWidget]:
+    def undo(self, rods: List[rn.RodNumberWidget] = None) -> \
+            List[rn.RodNumberWidget]:
         """Triggers events to revert this action.
 
         Parameters
@@ -635,14 +634,40 @@ class CreateRodAction(Action):
         return inverted
 
 
+class PermanentRemoveAction(Action):
+    """Action to describe permanent deletion of a rod from a dataset.
+
+    Parameters
+    ----------
+    rod_quantity : int
+        Number of rods (rows) have been deleted.
+    *args : iterable
+        Positional arguments for the `QListWidgetItem` superclass.
+    **kwargs : dict
+        Keyword arguments for the `QListWidgetItem` superclass.
+    """
+    def __init__(self, rod_quantity: int, *args, **kwargs):
+        self.quantity = rod_quantity
+        self.action = "Permanently deleted {:d} unused rods"
+        super().__init__(str(self), *args, **kwargs)
+
+    def __str__(self):
+        to_str = self.action.format(self.quantity)
+        return to_str
+
+    def undo(self, rods: Optional[Iterable[rn.RodNumberWidget]]):
+        # TODO: implement
+        pass
+
+
 class ActionLogger(QtCore.QObject):
     """Logs actions performed on its associated GUI object.
 
     Keeps track of actions performed on/by a GUI object that is associated
     with it. It provides a list of the performed actions to a
-    `ActionLoggerWidget` for display in the GUI. It is also used to trigger
+    `LoggerWidget` for display in the GUI. It is also used to trigger
     reverting of these actions. Do NOT create instances of this class
-    directly but let an instance of the `ActionLoggerWidget` class do that,
+    directly but let an instance of the `LoggerWidget` class do that,
     if the logged actions shall be displayed in the GUI.
 
     Parameters
@@ -693,7 +718,6 @@ class ActionLogger(QtCore.QObject):
     undo_last(str)
     actions_saved()
     redo_last(str)
-
     """
     __pyqtSignals__ = ("undoAction(Action)",)
     # Create custom signals
@@ -779,8 +803,7 @@ class ActionLogger(QtCore.QObject):
                 self.notify_unsaved.emit(False)
 
     def discard_changes(self):
-        """Discards all unsaved changes made. Currently only deletes the
-        Actions, but does NOT revert the changes."""
+        """Discards and reverts all unsaved changes made."""
         for item in self.unsaved_changes:
             item.revert = True
             self.data_changed.emit(item)
@@ -843,124 +866,3 @@ class ActionLogger(QtCore.QObject):
         self.undo_action.emit(rep_item)
         self.added_action.emit(inv_rep_item)
         del rep_item
-
-
-class ActionLoggerWidget(QListWidget):
-    """A custom Widget to maintain loggers and display Actions in the GUI.
-
-    This class maintains the `ActionLogger` objects that are used in the
-    program. It also manages the location for any temporary files that are
-    program session specific. This widget displays the logged actions in the
-    GUI. Use an instance of this class to create new loggers for other
-    objects of the GUI that perform actions that can be logged or reverted.
-
-    Parameters
-    ----------
-    *args : iterable
-        Positional arguments for the QListWidget superclass.
-    **kwargs : dict
-        Keyword arguments for the QListWidget superclass.
-
-    Attributes
-    ----------
-    temp_manager : TemporaryDirectory
-    unsaved_changes : List[Action]
-        An ordered list of all actions that were logged by the
-        `ActionLogger` objects maintained by this `ActionLoggerWidget`
-        instance. Do NOT try to insert performed actions in here directly.
-        This property only derives its contents from the `ActionLogger`
-        objects.
-    repeatable_changes : List[Action]
-        An ordered list of all currently redoable/repeatable actions that were
-        logged by the `ActionLogger` objects maintained by this
-        `ActionLoggerWidget` instance. Do NOT try to insert performed actions
-        in here directly. This property only derives its contents from the
-        `ActionLogger` objects.
-
-    Slots
-    -----
-    add_action(Action)
-    remove_action(Action)
-
-    """
-
-    temp_manager: tempfile.TemporaryDirectory
-    _loggers: List[ActionLogger] = []
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.temp_manager = tempfile.TemporaryDirectory(
-            prefix="Session_", dir=TEMP_DIR)
-
-    @property
-    def unsaved_changes(self) -> List[Action]:
-        """Collects the unsaved changes from all loggers and returns them
-        collectively.
-
-        Returns
-        -------
-        List[Action]
-        """
-        all_unsaved = [item for changes in self._loggers for item in
-                       changes.unsaved_changes]
-        return all_unsaved
-
-    @property
-    def repeatable_changes(self) -> List[Action]:
-        """Collects the repeatable changes from all loggers and returns them
-        collectively.
-
-        Returns
-        -------
-        List[Action]
-        """
-        all_repeatable = [item for changes in self._loggers for item in
-                          changes.repeatable_changes]
-        return all_repeatable
-
-    def get_new_logger(self, parent_id: str) -> ActionLogger:
-        """
-        Creates a new ActionLogger, registers its signals for displaying the
-        actions logged by it and returns it.
-
-        Parameters
-        ----------
-        parent_id : str
-            A unique name that indicates the object from which actions will
-            be logged in the ActionLogger.
-
-        Returns
-        -------
-        ActionLogger
-        """
-        new_logger = ActionLogger(parent_id)
-        new_logger.added_action.connect(self.add_action)
-        new_logger.undo_action.connect(self.remove_action)
-        new_logger.undone_action.connect(self.remove_action)
-        self._loggers.append(new_logger)
-        return new_logger
-
-    @QtCore.pyqtSlot(Action)
-    def add_action(self, new_action: Action) -> None:
-        """Adds a new action to the list being displayed in the GUI."""
-        if not self._loggers:
-            # No loggers exist yet/anymore
-            return
-        self.insertItem(self.count(), new_action)
-        self.scrollToBottom()
-
-    @QtCore.pyqtSlot(Action)
-    def remove_action(self, undo_action: Action) -> None:
-        """Removes an Action from the displayed list and deletes it."""
-        item_pos = self.row(undo_action)
-        undo_item = self.takeItem(item_pos)
-        del undo_item
-        self.scrollToBottom()
-
-    def discard_changes(self):
-        # FIXME: It might be a bad idea to discard the changes from all the
-        #  loggers here. The question is whether this should be used only in
-        #  the application close operation or whether its used when new data
-        #  is loaded or when stuff is done on only one of the cameras?
-        for logger in self._loggers:
-            logger.discard_changes()
