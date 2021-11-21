@@ -265,7 +265,12 @@ class RodImageWidget(QLabel):
                                      "encountered!")
                 continue
             # Draw the rods
-            pen = QtGui.QPen(pen_color, self._rod_thickness)
+            if rod.seen:
+                line_style = QtCore.Qt.SolidLine
+            else:
+                line_style = QtCore.Qt.DotLine
+
+            pen = QtGui.QPen(pen_color, self._rod_thickness, line_style)
             painter.setPen(pen)
             painter.drawLine(*rod_pos)
 

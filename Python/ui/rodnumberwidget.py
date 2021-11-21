@@ -85,6 +85,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
     request_delete = QtCore.pyqtSignal(QtWidgets.QLineEdit,
                                        name="request_delete")
     rod_state: RodState
+    seen: bool = False
 
     _boundary_offset: int = 5
     _number_size: int = 12

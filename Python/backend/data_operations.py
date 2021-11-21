@@ -30,7 +30,7 @@ def extract_rods(data, cam_id: str, frame: int, color: str) -> \
     """
     col_list = ["particle", "frame", f"x1_{cam_id}",
                 f"x2_{cam_id}", f"y1_{cam_id}",
-                f"y2_{cam_id}"]
+                f"y2_{cam_id}", "seen"]
 
     df_part = data.loc[data.color == color, col_list]
     df_part2 = df_part[df_part["frame"] == frame].reset_index().fillna(0)
@@ -41,12 +41,15 @@ def extract_rods(data, cam_id: str, frame: int, color: str) -> \
         x2 = df_part2[f'x2_{cam_id}'][ind_rod]
         y1 = df_part2[f'y1_{cam_id}'][ind_rod]
         y2 = df_part2[f'y2_{cam_id}'][ind_rod]
+        seen = bool(df_part2["seen"][ind_rod])
+
         # Add rods
         ident = rn.RodNumberWidget(color, None, str(value),
                                    QtCore.QPoint(0, 0))
         ident.rod_id = value
         ident.rod_points = [x1, y1, x2, y2]
         ident.setObjectName(f"rn_{ind_rod}")
+        ident.seen = seen
         new_rods.append(ident)
     return new_rods
 
