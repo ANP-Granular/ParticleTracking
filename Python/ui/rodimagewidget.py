@@ -5,7 +5,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QLabel, QMessageBox, QInputDialog
 
-from Python.ui.rodnumberwidget import RodNumberWidget, RodState
+from Python.ui.rodnumberwidget import RodNumberWidget, RodState, RodStateError
 from Python.ui import dialogs
 from Python.backend.logger import ActionLogger, DeleteRodAction, \
     ChangeRodPositionAction, Action, ChangedRodNumberAction, CreateRodAction
@@ -78,7 +78,6 @@ class RodImageWidget(QLabel):
     _logger: ActionLogger = None
     # Settings
     _rod_thickness = 3
-    _rod_color = []
     _number_offset = 15
 
     def __init__(self, *args, **kwargs):
@@ -247,30 +246,15 @@ class RodImageWidget(QLabel):
         painter = QtGui.QPainter(rod_pixmap)
         for rod in self._edits:
             rod_pos = self.adjust_rod_position(rod)
-
-            # Set the line style depending on the rod number widget state
-            if rod.rod_state == RodState.NORMAL:
-                pen_color = QtGui.QColor(*self._rod_color)
-            elif rod.rod_state == RodState.SELECTED:
-                pen_color = QtCore.Qt.white
-            elif rod.rod_state == RodState.EDITING:
-                # Skip this rod as a new one is currently drawn
-                continue
-            elif rod.rod_state == RodState.CHANGED:
-                pen_color = QtCore.Qt.green
-            elif rod.rod_state == RodState.CONFLICT:
-                pen_color = QtCore.Qt.red
-            else:
+            # Gets the display style from the rod number widget.
+            try:
+                pen = rod.pen
+            except RodStateError:
                 dialogs.show_warning("A rod with unknown state was "
                                      "encountered!")
+                pen = None
+            if pen is None:
                 continue
-            # Draw the rods
-            if rod.seen:
-                line_style = QtCore.Qt.SolidLine
-            else:
-                line_style = QtCore.Qt.DotLine
-
-            pen = QtGui.QPen(pen_color, self._rod_thickness, line_style)
             painter.setPen(pen)
             painter.drawLine(*rod_pos)
 
@@ -360,7 +344,7 @@ class RodImageWidget(QLabel):
                                                          self._offset)
                     for rod in self._edits:
                         if rod.rod_state == RodState.SELECTED:
-                            rod.set_state(RodState.EDITING)
+                            rod.rod_state = RodState.EDITING
                     self.rod_pixmap = self.draw_rods()
             else:
                 if event.button() == QtCore.Qt.RightButton:
@@ -368,7 +352,7 @@ class RodImageWidget(QLabel):
                     self.startPos = None
                     for rod in self._edits:
                         if rod.rod_state == RodState.EDITING:
-                            rod.set_state(RodState.SELECTED)
+                            rod.rod_state = RodState.SELECTED
                     self.draw_rods()
                     self.rod_pixmap = None
                 else:
@@ -432,7 +416,7 @@ class RodImageWidget(QLabel):
                                                       new_position)
                 self._logger.add_action(this_action)
                 rod.rod_points = new_position
-                rod.set_state(RodState.SELECTED)
+                rod.rod_state = RodState.SELECTED
                 send_rod = rod
                 break
         if send_rod is None:
@@ -458,7 +442,7 @@ class RodImageWidget(QLabel):
                                                           new_position)
                     self._logger.add_action(this_action)
                     rod.rod_points = new_position
-                    rod.set_state(RodState.SELECTED)
+                    rod.rod_state = RodState.SELECTED
                     break
             if not rod_exists:
                 # Rod didn't exists -> create new RodNumber
@@ -472,7 +456,7 @@ class RodImageWidget(QLabel):
     def rod_activated(self, rod_id: int) -> None:
         """Changes the rod state of the one given to active.
 
-        The rod state of the rod, which id is given to active and
+        The rod state of the rod, which ID is given to active and
         deactivates all other rods maintained by this widget.
 
         Parameters
@@ -489,7 +473,7 @@ class RodImageWidget(QLabel):
             if rod.rod_id != rod_id:
                 rod.deactivate_rod()
             if rod.rod_id == rod_id:
-                rod.set_state(RodState.SELECTED)
+                rod.rod_state = RodState.SELECTED
         self.draw_rods()
 
     def check_rod_conflicts(self, set_rod: RodNumberWidget, last_id: int) ->\
@@ -518,7 +502,7 @@ class RodImageWidget(QLabel):
                 conflicting.append(rod)
         if len(conflicting) > 1:
             for rod in conflicting:
-                rod.set_state(RodState.CONFLICT)
+                rod.rod_state = RodState.CONFLICT
         self.draw_rods()
         if len(conflicting) > 1:
             msg = QMessageBox()
@@ -549,7 +533,7 @@ class RodImageWidget(QLabel):
                 first_change = None
                 second_change = None
                 for rod in conflicting:
-                    rod.set_state(RodState.CHANGED)
+                    rod.rod_state = RodState.CHANGED
                     if rod is not set_rod:
                         id_to_log = rod.rod_id
                         rod.setText(str(last_id))
@@ -571,7 +555,7 @@ class RodImageWidget(QLabel):
                     set_rod.setText(str(last_id))
                     set_rod.rod_id = last_id
                 for rod in conflicting:
-                    rod.set_state(RodState.CHANGED)
+                    rod.rod_state = RodState.CHANGED
             elif msg.clickedButton() == btn_disc_old:
                 # Discard old rod
                 delete_action = None
@@ -583,9 +567,9 @@ class RodImageWidget(QLabel):
                         rod.setText(str(last_id))
                         delete_action = DeleteRodAction(rod.copy())
                         rod.rod_points = [0, 0, 0, 0]
-                        rod.set_state(RodState.CHANGED)
+                        rod.rod_state = RodState.CHANGED
                         continue
-                    rod.set_state(RodState.CHANGED)
+                    rod.rod_state = RodState.CHANGED
                     change_action = self.catch_rodnumber_change(
                         rod, last_id)
                 delete_action.coupled_action = change_action
@@ -827,7 +811,7 @@ class RodImageWidget(QLabel):
         rod.setText(str(rod.rod_id))
         delete_action = DeleteRodAction(rod.copy())
         rod.rod_points = [0, 0, 0, 0]
-        rod.set_state(RodState.CHANGED)
+        rod.rod_state = RodState.CHANGED
         self._logger.add_action(delete_action)
         self.draw_rods()
 
@@ -910,9 +894,6 @@ class RodImageWidget(QLabel):
         if "rod_thickness" in settings:
             settings_changed = True
             self._rod_thickness = settings["rod_thickness"]
-        if "rod_color" in settings:
-            settings_changed = True
-            self._rod_color = settings["rod_color"]
         if "number_offset" in settings:
             settings_changed = True
             self._number_offset = settings["number_offset"]

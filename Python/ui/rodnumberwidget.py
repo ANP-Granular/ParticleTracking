@@ -90,6 +90,8 @@ class RodNumberWidget(QtWidgets.QLineEdit):
     _boundary_offset: int = 5
     _number_size: int = 12
     _number_color: [int] = [0, 0, 0]
+    _rod_thickness: int = 3
+    _rod_color: [int] = [0, 255, 255]
 
     def __init__(self, color, parent=None, text="", pos=QtCore.QPoint(0, 0)):
         # General setup
@@ -104,7 +106,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         self.initial_pos = pos
         self.move(pos)
         self._rod_id = None
-        self.rod_state = RodState.NORMAL
+        self._rod_state = RodState.NORMAL
         self.rod_points = [0, 0, 0, 0]
         self.color = color
 
@@ -137,6 +139,60 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         self._rod_id = new_id
         self.initial_text = str(new_id)
         self.setText(str(new_id))
+
+    @property
+    def rod_state(self):
+        """Holds the state of the rod.
+
+        State of the rod also determines the visual appearance.
+
+        Returns
+        -------
+        RodState
+        """
+        return self._rod_state
+
+    @rod_state.setter
+    def rod_state(self, new_state: RodState):
+        new_style = ""
+        if new_state == RodState.NORMAL:
+            new_style = RodStyle.GENERAL.format(*self._number_color,
+                                                self._number_size)
+        elif new_state == RodState.SELECTED:
+            new_style = RodStyle.SELECTED.format(self._number_size)
+        elif new_state == RodState.EDITING:
+            new_style = RodStyle.SELECTED.format(self._number_size)
+        elif new_state == RodState.CHANGED:
+            new_style = RodStyle.CHANGED.format(self._number_size)
+        elif new_state == RodState.CONFLICT:
+            new_style = RodStyle.CONFLICT.format(self._number_size)
+        else:
+            raise RodStateError()
+        self._rod_state = new_state
+        self.setStyleSheet(new_style)
+
+    @property
+    def pen(self):
+        color = None
+        if self.rod_state == RodState.NORMAL:
+            color = QtGui.QColor(*self._rod_color)
+        elif self.rod_state == RodState.SELECTED:
+            color = QtCore.Qt.white
+        elif self.rod_state == RodState.EDITING:
+            # Don't return a pen as a new rod is currently drawn
+            return None
+        elif self.rod_state == RodState.CHANGED:
+            color = QtCore.Qt.green
+        elif self.rod_state == RodState.CONFLICT:
+            color = QtCore.Qt.red
+        else:
+            raise RodStateError()
+        if self.seen:
+            line_style = QtCore.Qt.SolidLine
+        else:
+            line_style = QtCore.Qt.DotLine
+
+        return QtGui.QPen(color, self._rod_thickness, line_style)
 
     # Controlling "editing" behaviour
     def mouseDoubleClickEvent(self, e: QtGui.QMouseEvent) -> None:
@@ -244,7 +300,6 @@ class RodNumberWidget(QtWidgets.QLineEdit):
             if event.button() == QtCore.Qt.LeftButton:
                 self.__mousePressPos = event.globalPos()
                 self.__mouseMovePos = event.globalPos()
-                self.setStyleSheet(RodStyle.SELECTED.format(self._number_size))
                 self.activated.emit(self.rod_id)
 
     def mouseReleaseEvent(self, event) -> None:
@@ -277,36 +332,9 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         -------
         None
         """
-        if self.styleSheet() != RodStyle.CONFLICT:
-            self.setStyleSheet(RodStyle.GENERAL.format(*self._number_color,
-                                                       self._number_size))
+        if self.styleSheet() != RodStyle.CONFLICT.format(self._number_size):
             self.rod_state = RodState.NORMAL
         self.setReadOnly(True)
-
-    def set_state(self, new_state: RodState) -> None:
-        """Handles state changes of this rod.
-
-        Parameters
-        ----------
-        new_state : RodState
-
-        Returns
-        -------
-        None
-        """
-        self.rod_state = new_state
-        if new_state == RodState.NORMAL:
-            self.deactivate_rod()
-        elif new_state == RodState.SELECTED:
-            self.setStyleSheet(RodStyle.SELECTED.format(self._number_size))
-        elif new_state == RodState.EDITING:
-            self.setStyleSheet(RodStyle.SELECTED.format(self._number_size))
-        elif new_state == RodState.CHANGED:
-            self.setStyleSheet(RodStyle.CHANGED.format(self._number_size))
-        elif new_state == RodState.CONFLICT:
-            self.setStyleSheet(RodStyle.CONFLICT.format(self._number_size))
-        else:
-            raise(RodStateError())
 
     def copy(self):
         """Copies this instance of a RodNumberWidget.
@@ -362,6 +390,12 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         if "boundary_offset" in settings:
             settings_changed = True
             self._boundary_offset = settings["boundary_offset"]
+        if "rod_thickness" in settings:
+            settings_changed = True
+            self._rod_thickness = settings["rod_thickness"]
+        if "rod_color" in settings:
+            settings_changed = True
+            self._rod_color = settings["rod_color"]
 
         if settings_changed:
             if self.rod_state == RodState.NORMAL:
@@ -402,3 +436,8 @@ class RodNumberWidget(QtWidgets.QLineEdit):
             cls._number_color = settings["number_color"]
         if "boundary_offset" in settings:
             cls._boundary_offset = settings["boundary_offset"]
+        if "rod_thickness" in settings:
+            cls._rod_thickness = settings["rod_thickness"]
+        if "rod_color" in settings:
+            cls._rod_color = settings["rod_color"]
+

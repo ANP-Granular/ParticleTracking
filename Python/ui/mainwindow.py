@@ -766,7 +766,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         new_rod.rod_id = number
         new_rod.setObjectName(f"rn_{number}")
         new_rod.rod_points = new_position
-        new_rod.set_state(rn.RodState.SELECTED)
+        new_rod.rod_state = rn.RodState.SELECTED
         new_rods = []
         for rod in self.current_camera.edits:
             new_rods.append(rod.copy())
