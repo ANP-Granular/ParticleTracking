@@ -1,4 +1,21 @@
+#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of RodTracker.
+#  RodTracker is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  RodTracker is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 import copy
+from pathlib import Path
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 from Python.ui import rodnumberwidget as rn, rodimagewidget as ri
@@ -381,3 +398,98 @@ def show_warning(text: str):
     msg.setText(text)
     msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
     msg.exec()
+
+
+def show_about(parent: QtWidgets.QWidget):
+    about_txt = """
+    <style>
+        table { background-color: transparent; }
+        a { text-decoration:none; font-weight:bold; }
+    </style>
+    <table border="0" cellpadding="0" cellspacing="5" width="400" 
+    align="left" style="margin-top:0px;">
+        <tr>
+            <td width="200", colspan="2"> <h3>Version:</h3> </td>
+            <td width="200"> <p> 0.0.1 - beta </p> </td>
+        </tr>
+        <tr>
+            <td width="200", colspan="2"> <h3>Date:</h3> </td>
+            <td width="200"> <p> 25.11.2021 </p> </td>
+        </tr>
+        <tr>
+            <td width="200", colspan="2"> <h3><br>Developers:<br></h3> </td>
+            <td width="200"> 
+                <p> Adrian Niemann <br> Dmitry Puzyrev <br> Meera 
+                Subramanian  </p> 
+            </td>
+        </tr>
+        <tr>
+            <td width="200", colspan="2"> <h3>License:</h3> </td>
+            <td width="200"> 
+                <p><a href="https://www.gnu.org/licenses/gpl-3.0.en.html">
+                GPLv3</a> 
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td width="400", colspan="3"> <br><h3>3rd Party Software:</h3> 
+            <p> This application either uses code and tools from the 
+                following projects in part or in their entirety as deemed 
+                permissible by each project's open-source license.</p>
+            </td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://pandas.pydata.org/">Pandas</a>:</p>
+            </td>
+            <td width="150">1.2.5</td>
+            <td width="200"><p> BSD3 </p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a  href="https://www.riverbankcomputing.com/software
+                /pyqt">PyQt5</a>:</p>
+            </td>
+            <td width="150">5.15.4</td>
+            <td width="200"><p> GPLv3+ </p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://www.qt.io">Qt5</a>:</p>
+            </td>
+            <td width="150">5.15.2</td>
+            <td width="200"><p> LGPLv3 </p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://material.io/">Material Design</a>:</p>
+            </td>
+            <td width="150">2</td>
+            <td width="200"><p> Apache-2.0 </p></td>
+        </tr>
+    </table>
+    <br>
+    <br>
+    <p>
+        Copyright © 2021 Otto-von-Guericke University Magdeburg
+    </p>"""
+    QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
+
+
+def show_readme(parent: QtWidgets.QWidget):
+    docs_dialog = QtWidgets.QDialog(parent)
+    docs_dialog.resize(600, 600)
+    docs_dialog.setWindowTitle("README")
+
+    docs_dialog.docs = QtWidgets.QTextEdit(parent=docs_dialog)
+    docs_dialog.docs.setReadOnly(True)
+    docs_dialog.docs.setStyleSheet("background-color: transparent;")
+    docs_dialog.docs.setFrameShape(QtWidgets.QFrame.NoFrame)
+
+    docs_dialog.layout = QtWidgets.QVBoxLayout()
+    docs_dialog.layout.addWidget(docs_dialog.docs)
+    docs_dialog.setLayout(docs_dialog.layout)
+
+    readme_md = Path('../README.md').read_text()
+    docs_dialog.docs.setMarkdown(readme_md)
+    docs_dialog.show()

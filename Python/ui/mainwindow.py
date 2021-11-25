@@ -251,6 +251,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.request_redo.connect(cam.logger.redo_last)
             self.settings.settings_changed.connect(cam.update_settings)
 
+        # Help
+        self.ui.action_docs.triggered.connect(lambda: dialogs.show_readme(
+            self))
+        self.ui.action_about.triggered.connect(lambda: dialogs.show_about(
+            self))
+        self.ui.action_about_qt.triggered.connect(
+            lambda: QMessageBox.aboutQt(self, "RodTracker"))
+
     @property
     def current_file_index(self):
         return self._CurrentFileIndex

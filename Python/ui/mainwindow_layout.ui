@@ -751,8 +751,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>411</width>
-                     <height>180</height>
+                     <width>98</width>
+                     <height>31</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -896,9 +896,18 @@
     <addaction name="action_original_size"/>
     <addaction name="action_fit_to_window"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="action_docs"/>
+    <addaction name="action_about"/>
+    <addaction name="action_about_qt"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuView"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_open">
@@ -995,6 +1004,21 @@
   <action name="action_preferences">
    <property name="text">
     <string>Preferences</string>
+   </property>
+  </action>
+  <action name="action_docs">
+   <property name="text">
+    <string>Read Me</string>
+   </property>
+  </action>
+  <action name="action_about">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="action_about_qt">
+   <property name="text">
+    <string>About Qt</string>
    </property>
   </action>
  </widget>
