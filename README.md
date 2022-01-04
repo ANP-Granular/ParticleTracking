@@ -7,14 +7,13 @@
 ![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/136808942-21f516b1-13aa-4fbb-9c6b-fbe885c853b6.png "RodTracker - GUI")
 ![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/141676583-2f294dec-a505-4b7e-a8b5-484af964ea09.png "RodTracker - GUI")
 ### Notes for users
-1. Run [RodTracker.py](Python/RodTracker.py)
+1. Run [track_main.py](./Python/track_main.py)
 2. Open images from disk using the `File` dropdown menu or the `Load 
    Images` button.
    - Switch between images in the folder using the `left`/`right` keys or the 
     `Previous`/`Next` buttons or the `Slider` below.
-3. Load rod coordinates from disc using the `File` dropdown menu or the `Load 
-   Images` button and selecting the folder those `*.csv` coordinate files are 
-   stored.
+3. Load and overlay rod coordinates from disc by pressing the `Overlay` button 
+   and selecting the folder those `*.csv` coordinate files are stored.
    > Note that the folder of the `*.csv` file must be named like the x,
    > y-identifier in the `*.csv`, i.e. if the x_**gp4** the location should 
    > be like `./gp4/*.csv`. If this structure is not given the program will 
