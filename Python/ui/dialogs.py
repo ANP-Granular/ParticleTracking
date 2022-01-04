@@ -419,8 +419,11 @@ def show_about(parent: QtWidgets.QWidget):
         <tr>
             <td width="200", colspan="2"> <h3><br>Developers:<br></h3> </td>
             <td width="200"> 
-                <p> Adrian Niemann <br> Dmitry Puzyrev <br> Meera 
-                Subramanian  </p> 
+                <p> Adrian Niemann <br>
+                    Dmitry Puzyrev <br> 
+                    Meera Subramanian <br>
+                    Adithya Viswanathan
+                </p> 
             </td>
         </tr>
         <tr>
