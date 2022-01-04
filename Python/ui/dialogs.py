@@ -173,6 +173,25 @@ class SettingsDialog(QtWidgets.QDialog):
         self.number_size.valueChanged.connect(self.handle_number_size)
         self.number_size.lineEdit().selectionChanged.connect(self.clear_select)
 
+        # Position Scaling
+        rod_scaling = QtWidgets.QLabel("Position Scaling")
+        rod_scaling.setStyleSheet(self.item_style)
+        self.position_scaling = QtWidgets.QLineEdit()
+        self.position_scaling.setInputMask("00.00;0")
+        self.position_scaling.setMaximumWidth(35)
+        self.position_scaling.setText(
+            f"{self.tmp_contents['visual']['position_scaling']:05.2f}")
+        self.position_scaling.setAlignment(QtCore.Qt.AlignRight)
+        inner_layout = QtWidgets.QHBoxLayout()
+        inner_layout.addWidget(rod_scaling)
+        item_spacer_5 = QtWidgets.QSpacerItem(
+            10, 20, hPolicy=QtWidgets.QSizePolicy.Expanding,
+            vPolicy=QtWidgets.QSizePolicy.Fixed)
+        inner_layout.addItem(item_spacer_5)
+        inner_layout.addWidget(self.position_scaling)
+        visual_items_layout.addLayout(inner_layout)
+        self.position_scaling.textChanged.connect(self.handle_scaled_position)
+
         # Control Buttons
         btns = QtWidgets.QDialogButtonBox.Save | \
             QtWidgets.QDialogButtonBox.Cancel
@@ -235,6 +254,15 @@ class SettingsDialog(QtWidgets.QDialog):
                 [color.red(), color.green(), color.blue()]
             self.update_preview()
 
+    def handle_scaled_position(self, _: str):
+        """Handles changes of the position scaling by the dialog's controls."""
+        try:
+            converted_val = float(self.position_scaling.displayText())
+        except ValueError:
+            converted_val = 1.0
+        self.tmp_contents["visual"]["position_scaling"] = converted_val
+        self.update_preview()
+
     @staticmethod
     def draw_icon(color: QtGui.QColor, target: QtWidgets.QToolButton):
         """Helper method to set the color selection button's background."""
@@ -265,6 +293,8 @@ class SettingsDialog(QtWidgets.QDialog):
                 "rod_color"]), self.rod_color)
             self.draw_icon(QtGui.QColor(*self.tmp_contents["visual"][
                 "number_color"]), self.number_color)
+            self.position_scaling.setText(str(self.tmp_contents["visual"]
+                                              ["position_scaling"]))
             self.update_preview()
 
 

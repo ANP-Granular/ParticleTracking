@@ -79,6 +79,7 @@ class RodImageWidget(QLabel):
     # Settings
     _rod_thickness = 3
     _number_offset = 15
+    _position_scaling = 10.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -409,9 +410,9 @@ class RodImageWidget(QLabel):
         for rod in self._edits:
             if rod.rod_state == RodState.EDITING:
                 new_position = [start.x(), start.y(), end.x(), end.y()]
-                new_position = [coord / 10 / self._scale_factor for coord
-                                in
-                                new_position]
+                new_position = \
+                    [coord / self._position_scaling / self._scale_factor
+                     for coord in new_position]
                 this_action = ChangeRodPositionAction(rod.copy(),
                                                       new_position)
                 self._logger.add_action(this_action)
@@ -435,9 +436,9 @@ class RodImageWidget(QLabel):
                     rod_exists = True
                     rod.rod_id = selected_rod
                     new_position = [start.x(), start.y(), end.x(), end.y()]
-                    new_position = [coord / 10 / self._scale_factor for coord
-                                    in
-                                    new_position]
+                    new_position = \
+                        [coord / self._position_scaling / self._scale_factor
+                         for coord in new_position]
                     this_action = ChangeRodPositionAction(rod.copy(),
                                                           new_position)
                     self._logger.add_action(this_action)
@@ -446,10 +447,12 @@ class RodImageWidget(QLabel):
                     break
             if not rod_exists:
                 # Rod didn't exists -> create new RodNumber
-                corrected_pos = [start.x() / 10 / self._scale_factor,
-                                 start.y() / 10 / self._scale_factor,
-                                 end.x() / 10 / self._scale_factor,
-                                 end.y() / 10 / self._scale_factor]
+                corrected_pos = [
+                    start.x() / self._position_scaling / self._scale_factor,
+                    start.y() / self._position_scaling / self._scale_factor,
+                    end.x() / self._position_scaling / self._scale_factor,
+                    end.y() / self._position_scaling / self._scale_factor
+                ]
                 self.request_new_rod.emit(selected_rod, corrected_pos)
 
     # Rod Handling ============================================================
@@ -763,7 +766,7 @@ class RodImageWidget(QLabel):
         List[int]
         """
         rod_pos = rod.rod_points
-        rod_pos = [int(10 * self._scale_factor * coord)
+        rod_pos = [int(self._position_scaling * self._scale_factor * coord)
                    for coord in rod_pos]
 
         # Update rod number positions
@@ -897,6 +900,9 @@ class RodImageWidget(QLabel):
         if "number_offset" in settings:
             settings_changed = True
             self._number_offset = settings["number_offset"]
+        if "position_scaling" in settings:
+            settings_changed = True
+            self._position_scaling = settings["position_scaling"]
 
         if settings_changed:
             self.draw_rods()

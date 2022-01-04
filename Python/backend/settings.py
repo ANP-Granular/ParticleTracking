@@ -1,6 +1,5 @@
 import json
 from abc import abstractmethod
-
 from PyQt5 import QtWidgets, QtCore
 from Python.ui.dialogs import SettingsDialog
 from Python.backend.logger import TEMP_DIR
@@ -8,7 +7,7 @@ from Python.backend.logger import TEMP_DIR
 
 class Configuration(QtCore.QObject):
     """Generic class that shall hold configurations/settings."""
-    __default: dict
+    _default: dict
     _contents: dict
     path: str = TEMP_DIR + "/configurations.json"
 
@@ -33,6 +32,14 @@ class Configuration(QtCore.QObject):
             if contents is None:
                 raise FileNotFoundError
             else:
+                for key in self._default.keys():
+                    if key not in contents.keys():
+                        contents[key] = self._default[key]
+                        continue
+                    for inner_key in self._default[key].keys():
+                        if inner_key not in contents[key].keys():
+                            contents[key][inner_key] = \
+                                self._default[key][inner_key]
                 self._contents = contents
 
     @abstractmethod
@@ -94,21 +101,22 @@ class Settings(Configuration):
     settings_changed(dict)
     """
     path = TEMP_DIR + "/settings.json"
-    __default = {
+    _default = {
         "visual": {
             "rod_thickness": 3,
             "rod_color": [0, 255, 255],
             "number_offset": 15,
             "number_color": [0, 0, 0],
             "number_size": 11,
-            "boundary_offset": 5
+            "boundary_offset": 5,
+            "position_scaling": 10.0
         },
         "data": {
             "images_root": "./",
             "positions_root": "./",
         }
     }
-    _contents = __default
+    _contents = _default
     parent: QtWidgets.QMainWindow
     settings_changed = QtCore.pyqtSignal([dict], name="settings_changed")
 
@@ -130,7 +138,7 @@ class Settings(Configuration):
         self.send_settings()
 
     def reset_to_default(self):
-        self._contents = self.__default
+        self._contents = self._default
         self.send_settings()
 
     def send_settings(self):
@@ -144,7 +152,7 @@ class Settings(Configuration):
     def show_dialog(self, parent: QtWidgets.QMainWindow):
         self.parent = parent
         settings_dialog = SettingsDialog(self._contents, parent,
-                                         self.__default)
+                                         self._default)
         if settings_dialog.exec():
             self.parent.statusBar().showMessage("Saved settings changes. "
                                                 "Right click to see rod "
