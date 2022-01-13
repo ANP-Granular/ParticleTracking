@@ -1,3 +1,19 @@
+#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of RodTracker.
+#  RodTracker is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  RodTracker is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import shutil
 import platform
@@ -234,6 +250,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.request_undo.connect(cam.logger.undo_last)
             self.request_redo.connect(cam.logger.redo_last)
             self.settings.settings_changed.connect(cam.update_settings)
+
+        # Help
+        self.ui.action_docs.triggered.connect(lambda: dialogs.show_readme(
+            self))
+        self.ui.action_about.triggered.connect(lambda: dialogs.show_about(
+            self))
+        self.ui.action_about_qt.triggered.connect(
+            lambda: QMessageBox.aboutQt(self, "RodTracker"))
 
     @property
     def current_file_index(self):

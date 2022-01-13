@@ -1,15 +1,18 @@
 # Track_Gui
+
+---
 ## Python GUI for image tracking task
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 ![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/141676583-2f294dec-a505-4b7e-a8b5-484af964ea09.png "RodTracker - GUI")
 ### Notes for users
-1. Run [RodTracker.py](Python/RodTracker.py)
+1. Run [track_main.py](./Python/track_main.py)
 2. Open images from disk using the `File` dropdown menu or the `Load 
    Images` button.
    - Switch between images in the folder using the `left`/`right` keys or the 
     `Previous`/`Next` buttons or the `Slider` below.
-3. Load rod coordinates from disc using the `File` dropdown menu or the `Load 
-   Images` button and selecting the folder those `*.csv` coordinate files are 
-   stored.
+3. Load and overlay rod coordinates from disc by pressing the `Overlay` button 
+   and selecting the folder those `*.csv` coordinate files are stored.
    > Note that the folder of the `*.csv` file must be named like the x,
    > y-identifier in the `*.csv`, i.e. if the x_**gp4** the location should 
    > be like `./gp4/*.csv`. If this structure is not given the program will 
@@ -46,23 +49,23 @@
 - a dialog is displayed where you choose how to handle this conflict (the 
   `Resolve Manual` and `Discard old rod` options are currently disabled)
 
-|Button | Action performed|
-|:---: | :--- |
-| `Switch Numbers` | The changed rod keeps its changes and the conflicting  rod gets assigned <br />the changed rod's old number. Both rods are saved to disk. |
-| `Return state` | The changed rod number is returned to its previous state. <br />Nothing gets saved to disk. |
-| `Discard old rod` | ~~The changed rod keeps its changes and the conflicting rod is deleted. <br /> The changed rod is saved to disk~~.|
-| `Resolve manual` | ~~The changed rod keeps its changes and is saved to disk. <br /> The conflicting rod keeps being displayed during runtime~~.|
+|      Button       | Action performed                                                                                                                          |
+|:-----------------:|:------------------------------------------------------------------------------------------------------------------------------------------|
+| `Switch Numbers`  | The changed rod keeps its changes and the conflicting  rod gets assigned <br />the changed rod's old number. Both rods are saved to disk. |
+|  `Return state`   | The changed rod number is returned to its previous state. <br />Nothing gets saved to disk.                                               |
+| `Discard old rod` | ~~The changed rod keeps its changes and the conflicting rod is deleted. <br /> The changed rod is saved to disk~~.                        |
+| `Resolve manual`  | ~~The changed rod keeps its changes and is saved to disk. <br /> The conflicting rod keeps being displayed during runtime~~.              |
 
 #### Shortcuts
-| Feature | Shortcut |
-| :---- | :---:|
-| Open images | `Ctrl + O`|
-| Save rod position data| `Ctrl + S` |
-| Switch to next/previous view | `Tab`/ `Ctrl+Tab` |
-| Zoom in/out | `+`/`-` <br /> (MacOS: `Ctrl + H`/`Ctrl + =`) |
-| Show in original size | `Ctrl + R` |
-| Next/previous image | `Right`/`Left` |
-| Undo | `Ctrl + Z`|
+| Feature                      |                   Shortcut                    |
+|:-----------------------------|:---------------------------------------------:|
+| Open images                  |                  `Ctrl + O`                   |
+| Save rod position data       |                  `Ctrl + S`                   |
+| Switch to next/previous view |               `Tab`/ `Ctrl+Tab`               |
+| Zoom in/out                  | `+`/`-` <br /> (MacOS: `Ctrl + H`/`Ctrl + =`) |
+| Show in original size        |                  `Ctrl + R`                   |
+| Next/previous image          |                `Right`/`Left`                 |
+| Undo                         |                  `Ctrl + Z`                   |
 
 #### Miscellaneous
 - the visual display properties of rods and their number can be changed 
