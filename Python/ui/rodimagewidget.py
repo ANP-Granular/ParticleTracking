@@ -1,4 +1,5 @@
 import math
+import numpy as np
 import re
 from typing import List, Union
 from PyQt5 import QtGui, QtCore
@@ -433,12 +434,14 @@ class RodImageWidget(QLabel):
                 if rod.seen == False:
                     rods_unseen.append(rod.rod_id)
                     
+            rods_unseen.sort()
+                    
             
             if rods_unseen:
                 dialog_rodnum = 'Unseen rods: ' + str (rods_unseen) + '\n Enter rod number:'
                 selected_rod, ok = QInputDialog.getInt(self,
                                                        'Choose a rod to replace',
-                                                       dialog_rodnum, min=0,
+                                                       dialog_rodnum, value = rods_unseen[0], min=0,
                                                        max=99)
             else:    
                 dialog_rodnum = 'No unseen rods. Enter rod number: '
