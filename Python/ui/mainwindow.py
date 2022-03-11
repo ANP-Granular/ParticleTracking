@@ -820,8 +820,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             tmp_file = self.data_files + "/" + self.data_file_name.format(
                 color)
             df_current = self.df_data.loc[self.df_data.color == color].copy()
-            df_current = df_current.astype({"frame": 'int', "seen": 'int',
-                                            "particle": 'int'})
+            df_current = df_current.astype({"frame": 'int', "particle": 'int'})
+            
+            #df_current = df_current.astype({"frame": 'int', "seen": 'int',
+            #                                "particle": 'int'})
             df_current.to_csv(tmp_file, index_label="")
 
         if temp_only:
