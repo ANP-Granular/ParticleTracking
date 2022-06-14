@@ -795,6 +795,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         new_rod.setObjectName(f"rn_{number}")
         new_rod.rod_points = new_position
         new_rod.rod_state = rn.RodState.SELECTED
+        # Newly created rods are always "seen"
+        new_rod.seen = True
         new_rods = []
         for rod in self.current_camera.edits:
             new_rods.append(rod.copy())
@@ -846,8 +848,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             tmp_file = self.data_files + "/" + self.data_file_name.format(
                 color)
             df_current = self.df_data.loc[self.df_data.color == color].copy()
-            df_current = df_current.astype({"frame": 'int', "seen": 'int',
-                                            "particle": 'int'})
+            df_current = df_current.astype({"frame": 'int', "particle": 'int'})
+            
+            #df_current = df_current.astype({"frame": 'int', "seen": 'int',
+            #                                "particle": 'int'})
             df_current.to_csv(tmp_file, index_label="")
 
         if temp_only:

@@ -15,6 +15,7 @@
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+import numpy as np
 import re
 from typing import List, Union
 from PyQt5 import QtGui, QtCore
@@ -436,12 +437,35 @@ class RodImageWidget(QLabel):
                 rod.rod_state = RodState.SELECTED
                 send_rod = rod
                 break
+        
         if send_rod is None:
             # Get intended rod number from user
-            selected_rod, ok = QInputDialog.getInt(self,
-                                                   'Choose a rod to replace',
-                                                   'Rod number', min=0,
-                                                   max=99)
+            
+    
+            # Find out which rods are unseen
+            
+            rods_unseen = []
+            
+            for rod in self._edits:
+                if rod.seen == False:
+                    rods_unseen.append(rod.rod_id)
+                    
+            rods_unseen.sort()
+                    
+            
+            if rods_unseen:
+                dialog_rodnum = 'Unseen rods: ' + str (rods_unseen) + '\n Enter rod number:'
+                selected_rod, ok = QInputDialog.getInt(self,
+                                                       'Choose a rod to replace',
+                                                       dialog_rodnum, value = rods_unseen[0], min=0,
+                                                       max=99)
+            else:    
+                dialog_rodnum = 'No unseen rods. Enter rod number: '
+                selected_rod, ok = QInputDialog.getInt(self,
+                                                       'Choose a rod to replace',
+                                                       dialog_rodnum, min=0,
+                                                       max=99)
+            
             if not ok:
                 return
             # Check whether the rod already exists
@@ -459,6 +483,8 @@ class RodImageWidget(QLabel):
                                                           new_position)
                     self._logger.add_action(this_action)
                     rod.rod_points = new_position
+                    # Mark rod as "seen"
+                    rod.seen = True
                     rod.rod_state = RodState.SELECTED
                     break
             if not rod_exists:
