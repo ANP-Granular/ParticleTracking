@@ -439,32 +439,25 @@ class RodImageWidget(QLabel):
                 break
         
         if send_rod is None:
-            # Get intended rod number from user
-            
-    
             # Find out which rods are unseen
-            
             rods_unseen = []
-            
             for rod in self._edits:
-                if rod.seen == False:
+                if not rod.seen:
                     rods_unseen.append(rod.rod_id)
-                    
             rods_unseen.sort()
-                    
-            
+
+            # Get intended rod number from user
             if rods_unseen:
-                dialog_rodnum = 'Unseen rods: ' + str (rods_unseen) + '\n Enter rod number:'
-                selected_rod, ok = QInputDialog.getInt(self,
-                                                       'Choose a rod to replace',
-                                                       dialog_rodnum, value = rods_unseen[0], min=0,
-                                                       max=99)
+                dialog_rodnum = f"Unseen rods: {rods_unseen}\nEnter rod number:"
+                # dialog_rodnum = 'Unseen rods: ' + str(rods_unseen) + '\n Enter rod number:'
+                selected_rod, ok = QInputDialog.getInt(
+                    self, 'Choose a rod to replace', dialog_rodnum,
+                    value=rods_unseen[0], min=0, max=99)
             else:    
                 dialog_rodnum = 'No unseen rods. Enter rod number: '
-                selected_rod, ok = QInputDialog.getInt(self,
-                                                       'Choose a rod to replace',
-                                                       dialog_rodnum, min=0,
-                                                       max=99)
+                selected_rod, ok = QInputDialog.getInt(
+                    self, 'Choose a rod to replace', dialog_rodnum, min=0,
+                    max=99)
             
             if not ok:
                 return
