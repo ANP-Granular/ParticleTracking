@@ -313,10 +313,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # check for a directory
         ui_dir = self.ui.le_image_dir.text()
         # opens directory to select image
+        kwargs = {}
+        # handle file path issue when running on linux as a snap
+        if 'SNAP' in os.environ:
+            kwargs["options"] = QFileDialog.DontUseNativeDialog
         chosen_file, _ = QFileDialog.getOpenFileName(self, 'Open an image',
                                                      ui_dir,
                                                      'Images (*.png *.jpeg '
-                                                     '*.jpg)')
+                                                     '*.jpg)', **kwargs)
         file_name = os.path.split(chosen_file)[-1]
         file_name = os.path.splitext(file_name)[0]
         if chosen_file:
