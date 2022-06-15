@@ -368,6 +368,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     for idx, gp in enumerate(
                             self.rod_info[frame][color][particle]):
                         current_particle.setText(idx + 1, gp)
+        self.update_tree_folding()
 
     def slider_moved(self, _):
         if self.current_file_ids:
