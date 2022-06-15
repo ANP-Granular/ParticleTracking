@@ -430,6 +430,7 @@ class RodImageWidget(QLabel):
                 new_position = \
                     [coord / self._position_scaling / self._scale_factor
                      for coord in new_position]
+                rod.seen = True
                 this_action = ChangeRodPositionAction(rod.copy(),
                                                       new_position)
                 self._logger.add_action(this_action)
@@ -472,12 +473,12 @@ class RodImageWidget(QLabel):
                     new_position = \
                         [coord / self._position_scaling / self._scale_factor
                          for coord in new_position]
+                    # Mark rod as "seen", before logging!
+                    rod.seen = True
                     this_action = ChangeRodPositionAction(rod.copy(),
                                                           new_position)
                     self._logger.add_action(this_action)
                     rod.rod_points = new_position
-                    # Mark rod as "seen"
-                    rod.seen = True
                     rod.rod_state = RodState.SELECTED
                     break
             if not rod_exists:
@@ -605,6 +606,7 @@ class RodImageWidget(QLabel):
                         rod.setText(str(last_id))
                         delete_action = DeleteRodAction(rod.copy())
                         rod.rod_points = [0, 0, 0, 0]
+                        rod.seen = False
                         rod.rod_state = RodState.CHANGED
                         continue
                     rod.rod_state = RodState.CHANGED
@@ -848,6 +850,7 @@ class RodImageWidget(QLabel):
         """
         rod.setText(str(rod.rod_id))
         delete_action = DeleteRodAction(rod.copy())
+        rod.seen = False
         rod.rod_points = [0, 0, 0, 0]
         rod.rod_state = RodState.CHANGED
         self._logger.add_action(delete_action)

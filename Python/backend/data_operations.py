@@ -164,6 +164,7 @@ def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
     color = new_data["color"]
     points = new_data["position"]
     rod_id = new_data["rod_id"]
+    seen = new_data["seen"]
 
     data_unavailable = dataset.loc[(dataset.frame == frame) & (
             dataset.particle == rod_id) & (dataset.color == color),
@@ -174,12 +175,13 @@ def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
         dataset.loc[new_idx, [f"x1_{cam_id}", f"y1_{cam_id}",
                               f"x2_{cam_id}", f"y2_{cam_id}", "frame",
                               f"seen_{cam_id}", "particle", "color"]] \
-            = [*points, frame, 1, rod_id, color]
+            = [*points, frame, seen, rod_id, color]
     else:
         dataset.loc[(dataset.frame == frame) & (dataset.particle == rod_id)
                     & (dataset.color == color),
                     [f"x1_{cam_id}", f"y1_{cam_id}",
-                     f"x2_{cam_id}", f"y2_{cam_id}", f"seen_{cam_id}"]] = [*points, 1]
+                     f"x2_{cam_id}", f"y2_{cam_id}", f"seen_{cam_id}"]] = \
+            [*points, seen]
     dataset = dataset.astype({"frame": 'int', f"seen_{cam_id}": 'int',
                               "particle": 'int'})
     return dataset

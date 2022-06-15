@@ -169,6 +169,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.data_file_name = 'rods_df_{:s}.csv'
         self.df_data = None
         self.last_color = None
+        self.rod_info = None
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             if rb.isChecked():
                 self.last_color = rb.objectName()[3:]
@@ -308,6 +309,38 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 selected_rod = int(item.text(0)[4:6])
                 self.current_camera.rod_activated(selected_rod)
         return
+
+    def update_tree(self, new_data: dict):
+        """Update the "seen" status in the displayed rod data tree."""
+        # self.generate_tree()
+        # self.ui.tv_rods.clear()
+        header = self.ui.tv_rods.headerItem()
+        headings = []
+        for i in range(1, header.columnCount()):
+            headings.append(header.text(i))
+        insert_idx = headings.index(new_data["cam_id"])
+        self.rod_info[new_data["frame"]][new_data["color"]][new_data[
+            "rod_id"]][insert_idx] = "seen" if new_data["seen"] else "unseen"
+        self.generate_tree()
+
+    def generate_tree(self):
+        self.ui.tv_rods.clear()
+        for frame in self.rod_info.keys():
+            current_frame = QTreeWidgetItem(self.ui.tv_rods)
+            current_frame.setText(0, f"Frame: {frame}")
+            for color in self.rod_info[frame].keys():
+                current_color = QTreeWidgetItem(
+                    current_frame)
+                current_color.setText(0, color)
+                for particle in self.rod_info[frame][color].keys():
+                    current_particle = QTreeWidgetItem(
+                        current_color)
+                    current_particle.setText(
+                        0, f"Rod{particle:3d}: "
+                    )
+                    for idx, gp in enumerate(
+                            self.rod_info[frame][color][particle]):
+                        current_particle.setText(idx + 1, gp)
 
     def slider_moved(self, _):
         if self.current_file_ids:
@@ -485,28 +518,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         self.original_data, self.data_files)
 
                     # Display as a tree
-                    rod_info, columns = d_ops.extract_seen_information(
+                    self.rod_info, columns = d_ops.extract_seen_information(
                         self.df_data)
                     self.ui.tv_rods.clear()
-                    self.ui.tv_rods.setColumnCount(len(columns)+1)
+                    self.ui.tv_rods.setColumnCount(len(columns) + 1)
                     headers = [self.ui.tv_rods.headerItem().text(0), *columns]
                     self.ui.tv_rods.setHeaderLabels(headers)
-                    for frame in rod_info.keys():
-                        current_frame = QTreeWidgetItem(self.ui.tv_rods)
-                        current_frame.setText(0, f"Frame: {frame}")
-                        for color in rod_info[frame].keys():
-                            current_color = QTreeWidgetItem(
-                                current_frame)
-                            current_color.setText(0, color)
-                            for particle in rod_info[frame][color].keys():
-                                current_particle = QTreeWidgetItem(
-                                    current_color)
-                                current_particle.setText(
-                                    0, f"Rod{particle:3d}: "
-                                )
-                                for idx, gp in enumerate(
-                                        rod_info[frame][color][particle]):
-                                    current_particle.setText(idx+1, gp)
+                    self.generate_tree()
 
                     # Update visual elements
                     rb_colors = [child for child
@@ -856,6 +874,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         new_data = change.to_save()
         if new_data is not None:
             self.df_data = d_ops.change_data(self.df_data, new_data)
+            self.update_tree(new_data)
 
     def save_changes(self, temp_only=False):
         """Saves unsaved changes to disk temporarily or permanently.
@@ -894,9 +913,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 color)
             df_current = self.df_data.loc[self.df_data.color == color].copy()
             df_current = df_current.astype({"frame": 'int', "particle": 'int'})
-            
-            #df_current = df_current.astype({"frame": 'int', "seen": 'int',
-            #                                "particle": 'int'})
             df_current.to_csv(tmp_file, index_label="")
 
         if temp_only:
