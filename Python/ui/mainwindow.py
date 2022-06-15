@@ -21,7 +21,7 @@ from typing import List
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, \
-    QScrollArea, QTreeWidgetItem
+    QScrollArea, QTreeWidgetItem, QAbstractItemView
 from PyQt5.QtGui import QImage, QWheelEvent
 
 from Python.backend import settings as se, logger as lg, \
@@ -323,6 +323,33 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             "rod_id"]][insert_idx] = "seen" if new_data["seen"] else "unseen"
         self.generate_tree()
 
+    def update_tree_folding(self):
+        """Updates the folding of the tree view.
+
+        The tree view is updated in synchrony with the UI switching frames
+        and colors. The corresponding portion of the tree is expanded and
+        moved into view.
+        """
+        self.ui.tv_rods.collapseAll()
+        root = self.ui.tv_rods.invisibleRootItem()
+        frames = [int(root.child(i).text(0)[7:])
+                  for i in range(root.childCount())]
+        try:
+            expand_frame = root.child(frames.index(self.logger.frame))
+        except ValueError:
+            # frame not found in list -> unable to update the list
+            return
+        colors = [expand_frame.child(i).text(0)
+                  for i in range(expand_frame.childCount())]
+        expand_color = expand_frame.child(
+            colors.index(self.get_selected_color()))
+
+        self.ui.tv_rods.expandItem(expand_frame)
+        self.ui.tv_rods.expandItem(expand_color)
+        self.ui.tv_rods.scrollToItem(expand_frame,
+                                     QAbstractItemView.PositionAtTop)
+        return
+
     def generate_tree(self):
         self.ui.tv_rods.clear()
         for frame in self.rod_info.keys():
@@ -436,6 +463,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             first_action.parent_id = self.logger_id
             self.logger.add_action(first_action)
 
+            self.update_tree_folding()
+
     def open_rod_folder(self):
         """Lets the user select a folder with rod position data.
 
@@ -525,6 +554,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     headers = [self.ui.tv_rods.headerItem().text(0), *columns]
                     self.ui.tv_rods.setHeaderLabels(headers)
                     self.generate_tree()
+                    self.update_tree_folding()
 
                     # Update visual elements
                     rb_colors = [child for child
@@ -750,6 +780,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     new_frame = self.current_file_ids[self.current_file_index]
                     self.logger.frame = new_frame
                     self.current_camera.logger.frame = new_frame
+                    self.update_tree_folding()
 
             except IndexError:
                 # the iterator has finished, restart it
@@ -831,6 +862,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if state:
             self.last_color = self.get_selected_color()
             self.show_overlay()
+            self.update_tree_folding()
 
     @QtCore.pyqtSlot(int, list)
     def create_new_rod(self, number: int, new_position: list) -> None:
@@ -996,6 +1028,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             if rb.objectName()[3:] == to_color:
                 # activate the last color
                 rb.toggle()
+                self.update_tree_folding()
 
     @QtCore.pyqtSlot(int)
     def change_frame(self, to_frame: int):
