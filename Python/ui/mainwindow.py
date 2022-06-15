@@ -20,7 +20,8 @@ import platform
 from typing import List
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, QScrollArea
+from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, \
+    QScrollArea, QTreeWidgetItem
 from PyQt5.QtGui import QImage, QWheelEvent
 
 from Python.backend import settings as se, logger as lg, \
@@ -125,6 +126,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
 
         # Adaptations of the UI
+        self.ui.tv_rods.header().setDefaultSectionSize(150)
+        self.ui.tv_rods.header().setMinimumSectionSize(125)
         # Adapt menu action shortcuts for Mac
         if platform.system() == "Darwin":
             self.ui.action_zoom_in.setShortcut("Ctrl+=")
@@ -221,6 +224,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.switch_right.activated.connect(lambda: self.change_view(1))
         self.ui.camera_tabs.currentChanged.connect(self.view_changed)
         self.ui.slider_frames.sliderMoved.connect(self.slider_moved)
+        self.ui.tv_rods.itemClicked.connect(self.tree_selection)
 
         # Display methods
         self.ui.le_disp_one.textChanged.connect(self.display_rod_changed)
@@ -287,6 +291,23 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.slider_frames.setSliderPosition(self.current_file_index)
         except IndexError:
             self.ui.le_frame_disp.setText("Frame: ???")
+
+    @QtCore.pyqtSlot(QTreeWidgetItem, int)
+    def tree_selection(self, item: QTreeWidgetItem, col: int):
+        if not item.childCount():
+            # change camera
+            # TODO
+            # change color
+            color = item.parent().text(0)
+            self.change_color(color)
+            # change frame
+            frame = int(item.parent().parent().text(0)[7:])
+            self.change_frame(frame)
+            # activate clicked rod
+            if self.current_camera.edits:
+                selected_rod = int(item.text(0)[4:6])
+                self.current_camera.rod_activated(selected_rod)
+        return
 
     def slider_moved(self, _):
         if self.current_file_ids:
@@ -462,6 +483,30 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Load data
                     self.df_data, found_colors = f_ops.get_color_data(
                         self.original_data, self.data_files)
+
+                    # Display as a tree
+                    rod_info, columns = d_ops.extract_seen_information(
+                        self.df_data)
+                    self.ui.tv_rods.clear()
+                    self.ui.tv_rods.setColumnCount(len(columns)+1)
+                    headers = [self.ui.tv_rods.headerItem().text(0), *columns]
+                    self.ui.tv_rods.setHeaderLabels(headers)
+                    for frame in rod_info.keys():
+                        current_frame = QTreeWidgetItem(self.ui.tv_rods)
+                        current_frame.setText(0, f"Frame: {frame}")
+                        for color in rod_info[frame].keys():
+                            current_color = QTreeWidgetItem(
+                                current_frame)
+                            current_color.setText(0, color)
+                            for particle in rod_info[frame][color].keys():
+                                current_particle = QTreeWidgetItem(
+                                    current_color)
+                                current_particle.setText(
+                                    0, f"Rod{particle:3d}: "
+                                )
+                                for idx, gp in enumerate(
+                                        rod_info[frame][color][particle]):
+                                    current_particle.setText(idx+1, gp)
 
                     # Update visual elements
                     rb_colors = [child for child

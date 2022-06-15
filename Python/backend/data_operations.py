@@ -17,8 +17,9 @@
 import re
 import math
 import pandas as pd
-from typing import List
+from typing import List, Dict, Tuple
 from PyQt5 import QtCore
+from PyQt5.QtWidgets import QTreeWidget
 import Python.ui.rodnumberwidget as rn
 
 
@@ -68,6 +69,49 @@ def extract_rods(data, cam_id: str, frame: int, color: str) -> \
         ident.seen = seen
         new_rods.append(ident)
     return new_rods
+
+
+# TODO: move to different Thread
+def extract_seen_information(data: pd.DataFrame) -> \
+        Tuple[Dict[int, Dict[str, dict]], list]:
+    """Extracts the seen/unseen parameter for all rods in the dataset.
+
+    Parameters
+    ----------
+    data : DataFrame
+        (Complete) dataset of rods.
+
+    Returns
+    -------
+    Dict[Dict[dict]]
+        Frame[Color[RodNo.]] -> out[501]["red"][1] = ["seen", "unseen"]
+    list
+        out_list = ["gp1_seen", "gp2_seen"]
+    """
+    seen_data = {}
+    col_list = ["particle", "frame", "color"]
+    cam_regex = re.compile('seen_gp\d+')
+    to_include = []
+    for col in data.columns:
+        if re.fullmatch(cam_regex, col):
+            to_include.append(col)
+    col_list.extend(to_include)
+
+    df_part = data[col_list]
+    for item in df_part.iterrows():
+        item = item[1]
+        current_seen = ['seen' if item[gp] else 'unseen' for gp in
+                        to_include]
+        if item.frame in seen_data.keys():
+            if item.color in seen_data[item.frame].keys():
+                seen_data[item.frame][item.color][item.particle] = current_seen
+            else:
+                seen_data[item.frame][item.color] = {item.particle:
+                                                     current_seen}
+        else:
+            seen_data[item.frame] = \
+                {item.color: {item.particle: current_seen}}
+    return seen_data, [cam.split("_")[-1] for cam in to_include]
 
 
 def find_unused_rods(data: pd.DataFrame) -> pd.DataFrame:

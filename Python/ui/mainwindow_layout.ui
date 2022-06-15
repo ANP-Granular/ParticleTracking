@@ -795,7 +795,7 @@
               </widget>
              </widget>
              <widget class="QWidget" name="verticalLayoutWidget">
-              <layout class="QVBoxLayout" name="undo_layout" stretch="0,0,0,0,0">
+              <layout class="QVBoxLayout" name="undo_layout" stretch="0,0,0,0">
                <property name="spacing">
                 <number>10</number>
                </property>
@@ -803,27 +803,7 @@
                 <enum>QLayout::SetMaximumSize</enum>
                </property>
                <item>
-                <widget class="QLabel" name="lbl_rodslist">
-                 <property name="font">
-                  <font>
-                   <pointsize>9</pointsize>
-                   <weight>75</weight>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">background-color: transparent;font-weight: bold;</string>
-                 </property>
-                 <property name="text">
-                  <string>List of Rods:</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QListWidget" name="lv_rods">
+                <widget class="QTreeWidget" name="tv_rods">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -836,6 +816,29 @@
                    <height>16777215</height>
                   </size>
                  </property>
+                 <attribute name="headerMinimumSectionSize">
+                  <number>26</number>
+                 </attribute>
+                 <attribute name="headerDefaultSectionSize">
+                  <number>100</number>
+                 </attribute>
+                 <attribute name="headerStretchLastSection">
+                  <bool>true</bool>
+                 </attribute>
+                 <column>
+                  <property name="text">
+                   <string>List of Rods:</string>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="textAlignment">
+                   <set>AlignCenter</set>
+                  </property>
+                 </column>
                 </widget>
                </item>
                <item>
