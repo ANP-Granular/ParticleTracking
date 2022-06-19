@@ -1,0 +1,5 @@
+/venv/
+/venv_linux/
+/.idea/
+/datasets/
+/detection/output/
