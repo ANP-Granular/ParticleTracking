@@ -46,3 +46,8 @@ def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
     """Computes the necessary iterations to achieve a given number of epochs."""
     batch_size = cfg.SOLVER.IMS_PER_BATCH
     return desired_epochs*(image_count/batch_size)
+
+
+def write_configs(cfg: CfgNode, directory: str) -> None:
+    with open(directory + "/config.yaml", "w") as f:
+        f.write(cfg.dump())

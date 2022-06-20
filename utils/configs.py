@@ -1,4 +1,3 @@
-import os
 import random
 from warnings import warn
 
@@ -7,7 +6,7 @@ from detectron2.config import get_cfg
 from detectron2.config.config import CfgNode
 from detectron2.data import transforms as T
 
-from utils.datasets import HGS, DataSet
+from utils.datasets import DataSet
 import utils.helper_funcs as hf
 
 
@@ -31,7 +30,7 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     cfg.DATASETS.TRAIN = ()
     cfg.DATASETS.TEST = ()
     cfg.DATALOADER.NUM_WORKERS = 2
-    cfg.SOLVER.CHECKPOINT_PERIOD = 500
+    cfg.SOLVER.CHECKPOINT_PERIOD = 1500
 
     # INPUT
     # TODO: The input sizing and cropping settings seem to be strange,

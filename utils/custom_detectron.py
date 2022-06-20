@@ -16,7 +16,8 @@ from detectron2.evaluation import COCOEvaluator, DatasetEvaluators, \
     DatasetEvaluator
 import detectron2.data.detection_utils as utils
 import detectron2.data.transforms as T
-from detectron2.utils.events import EventWriter, get_event_storage
+from detectron2.utils.events import EventWriter, get_event_storage, \
+    TensorboardXWriter
 
 
 class CustomEvaluator(DatasetEvaluator):
@@ -37,19 +38,28 @@ class CustomTrainer(DefaultTrainer):
     def build_hooks(self):
         cfg = self.cfg.clone()
         hooks = super().build_hooks()
+
+        ######################################################################
+        # eval which "standard" hooks to delete, because a custom version
+        # replaces it
+        # for hook in hooks:
+        #     if isinstance(hook, PeriodicWriter):
+        #         new_writers = [writer for writer in hook._writers if
+        #                        isinstance(writer, TensorboardXWriter)]
+        #         hook._writers = new_writers
+        #####################################################################
+
         hooks.insert(-1, EvalLossHook(
-            1, # cfg.TEST.EVAL_PERIOD,
+            cfg.TEST.EVAL_PERIOD,   # 1,
             self.model,
             build_detection_test_loader(
                 self.cfg,
                 self.cfg.DATASETS.TEST[0],
-                DatasetMapper(self.cfg, True)   # TODO: might need to be replaced
+                DatasetMapper(self.cfg, True)  # TODO: might need to be replaced
             )
         ))
-        # TODO: testing writers
         hooks.insert(-1, PeriodicWriter([CustomTensorboardWriter(
             cfg.OUTPUT_DIR, window_size=1)]))
-
         return hooks
 
     # # TODO: finish this (it worked without it too)
@@ -123,7 +133,7 @@ class EvalLossHook(HookBase):
 
         start_time = time.perf_counter()
         total_compute_time = 0
-        losses = []
+        losses = {}
         for idx, inputs in enumerate(self._data_loader):
             if idx == num_warmup:
                 start_time = time.perf_counter()
@@ -147,23 +157,31 @@ class EvalLossHook(HookBase):
                     ),
                     n=5,
                 )
-            loss_batch = self._get_loss(inputs)
-            losses.append(loss_batch)
-        mean_loss = np.mean(losses)
-        self.trainer.storage.put_scalar('test/total_loss', mean_loss)
-        comm.synchronize()
+            losses = self._get_loss(inputs, losses)
 
+        total_loss = 0
+        for loss, values in losses.items():
+            next_loss = np.mean(values)
+            self.trainer.storage.put_scalar("test/"+loss, next_loss)
+            total_loss += next_loss
+        self.trainer.storage.put_scalar('test/total_loss', total_loss)
+        comm.synchronize()
         return losses
 
-    def _get_loss(self, data):
+    def _get_loss(self, data, losses: dict):
         # How loss is calculated on train_loop
         metrics_dict = self._model(data)
-        metrics_dict = {
-            k: v.detach().cpu().item() if isinstance(v, torch.Tensor)
-            else float(v) for k, v in metrics_dict.items()
-        }
-        total_losses_reduced = sum(loss for loss in metrics_dict.values())
-        return total_losses_reduced
+        for k, v in metrics_dict.items():
+            float_v = 0.
+            if isinstance(v, torch.Tensor):
+                float_v = v.detach().cpu().item()
+            else:
+                float_v = float(v)
+            if k in losses.keys():
+                losses[k].append(float_v)
+            else:
+                losses[k] = [float_v]
+        return losses
 
     def after_step(self):
         next_iter = self.trainer.iter + 1
@@ -173,7 +191,6 @@ class EvalLossHook(HookBase):
         self.trainer.storage.put_scalars(timetest=12)
 
 
-# TODO:
 class CustomTensorboardWriter(EventWriter):
     """
     Write all scalars to a tensorboard file.
@@ -192,10 +209,10 @@ class CustomTensorboardWriter(EventWriter):
 
         self._writer = SummaryWriter(log_dir+"/test", **kwargs)
         self._writers = {
-            "complete": SummaryWriter(log_dir+"/complete"),
             "test": SummaryWriter(log_dir+"/test"),
             "train": SummaryWriter(log_dir+"/train")}
         self._last_write = -1
+        self.train_kw = ["fast_rcnn"]
 
     def write(self):
         storage = get_event_storage()
@@ -205,23 +222,21 @@ class CustomTensorboardWriter(EventWriter):
                 self._window_size).items():
             if iter > self._last_write:
                 for id, writer in self._writers.items():
-                    if id == "complete":
-                        writer.add_scalar(k, v, iter)
-                    elif id == "test":
+                    if id == "test":
                         if "test" in k:
-                            writer.add_scalar(k.split("/")[-1], v, iter)
+                            # print(f"Writer matched: {k} with 'test'.")
+                            if k == "timetest":
+                                writer.add_scalar("time", v, iter)
+                            else:
+                                # print(f"original: {k} \naltered: "
+                                #       f"{k.split('/')[-1]}")
+                                writer.add_scalar(k.split("/")[-1], v, iter)
+                    elif id == "train":
+                        if "test" not in k:
+                            writer.add_scalar(k, v, iter)
 
                 new_last_write = max(new_last_write, iter)
         self._last_write = new_last_write
-
-
-
-        # new_last_write = self._last_write
-        # for k, (v, iter) in storage.latest_with_smoothing_hint(self._window_size).items():
-        #     if iter > self._last_write:
-        #         self._writer.add_scalar(k, v, iter)
-        #         new_last_write = max(new_last_write, iter)
-        # self._last_write = new_last_write
 
         # storage.put_{image,histogram} is only meant to be used by
         # tensorboard writer. So we access its internal fields directly from here.
