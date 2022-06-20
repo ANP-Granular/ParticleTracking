@@ -28,12 +28,15 @@ class CustomEvaluator(DatasetEvaluator):
 class CustomTrainer(DefaultTrainer):
     @classmethod
     def build_evaluator(cls, cfg: CfgNode, dataset_name: str):
-        return
-        # dataset_evaluators = []
-        # dataset_evaluators.append(COCOEvaluator(dataset_name,
-        #                                         output_dir=cfg.OUTPUT_DIR))
-        # # dataset_evaluators.append(CustomEvaluator())
-        # return DatasetEvaluators(dataset_evaluators)
+        # return
+        dataset_evaluators = []
+        dataset_evaluators.append(COCOEvaluator(dataset_name,
+                                                output_dir=cfg.OUTPUT_DIR,
+                                                max_dets_per_image=cfg.TEST.DETECTIONS_PER_IMAGE,
+                                                # TODO: What exactly is max_dets_per_image controlling/ how does it influence the metrics
+                                                tasks=("segm",)))
+        # dataset_evaluators.append(CustomEvaluator())
+        return DatasetEvaluators(dataset_evaluators)
 
     def build_hooks(self):
         cfg = self.cfg.clone()
