@@ -19,7 +19,7 @@ import utils.custom_detectron as custom
 import utils.helper_funcs as hf
 from utils.helper_funcs import write_configs
 
-OUTPUT_DIR = "./test_coco_metrics/computed_max_det"
+OUTPUT_DIR = "../experiments/augmentations/ported"
 CONFIG_FILE = ""
 # DATASET & TEST_DATASET are ignored, if a CONFIG_FILE is given
 DATASET = HGS.train
