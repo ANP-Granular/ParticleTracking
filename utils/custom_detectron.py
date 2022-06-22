@@ -1,64 +1,42 @@
 import random
-
-from detectron2.evaluation import inference_context
-from detectron2.utils.logger import log_every_n_seconds
-from detectron2.data import DatasetMapper, build_detection_test_loader, \
-    build_detection_train_loader
-import detectron2.utils.comm as comm
-import torch
+import warnings
 import time
 import datetime
 import logging
 import copy
 import numpy as np
-from fvcore.transforms import Transform
-from torchmetrics.detection.mean_ap import MeanAveragePrecision
+
+import torch
 from imgaug import augmenters
-import warnings
 
 from detectron2.engine.hooks import HookBase, PeriodicWriter
 from detectron2.config.config import CfgNode
 from detectron2.engine.defaults import DefaultTrainer
-from detectron2.evaluation import COCOEvaluator, DatasetEvaluators, \
-    DatasetEvaluator
+from detectron2.evaluation import COCOEvaluator, DatasetEvaluators
 import detectron2.data.detection_utils as utils
 import detectron2.data.transforms as T
-from detectron2.utils.events import EventWriter, get_event_storage, \
-    TensorboardXWriter
-
-
-class CustomEvaluator(DatasetEvaluator):
-    def process(self, inputs, outputs):
-        print(f"CustomEvaluator: {outputs}")
+from detectron2.utils.events import EventWriter, get_event_storage
+from detectron2.utils.logger import log_every_n_seconds
+from detectron2.data import DatasetMapper, build_detection_test_loader, \
+    build_detection_train_loader
+import detectron2.utils.comm as comm
 
 
 class CustomTrainer(DefaultTrainer):
     @classmethod
     def build_evaluator(cls, cfg: CfgNode, dataset_name: str):
-        # return
-        dataset_evaluators = []
-        dataset_evaluators.append(COCOEvaluator(dataset_name,
-                                                output_dir=cfg.OUTPUT_DIR,
-                                                max_dets_per_image=cfg.TEST.DETECTIONS_PER_IMAGE,
-                                                # TODO: What exactly is max_dets_per_image controlling/ how does it influence the metrics
-                                                tasks=("segm",)))
-        # dataset_evaluators.append(CustomEvaluator(dataset_name))
+        # TODO: What exactly is max_dets_per_image controlling/ how does it
+        #  influence the metrics?
+        dataset_evaluators = [
+            COCOEvaluator(dataset_name, output_dir=cfg.OUTPUT_DIR,
+                          max_dets_per_image=cfg.TEST.DETECTIONS_PER_IMAGE,
+                        tasks=("segm",))
+        ]
         return DatasetEvaluators(dataset_evaluators)
 
     def build_hooks(self):
         cfg = self.cfg.clone()
         hooks = super().build_hooks()
-
-        ######################################################################
-        # eval which "standard" hooks to delete, because a custom version
-        # replaces it
-        # for hook in hooks:
-        #     if isinstance(hook, PeriodicWriter):
-        #         new_writers = [writer for writer in hook._writers if
-        #                        isinstance(writer, TensorboardXWriter)]
-        #         hook._writers = new_writers
-        #####################################################################
-
         hooks.insert(-1, EvalLossHook(
             cfg.TEST.EVAL_PERIOD,   # 1,
             self.model,
@@ -125,6 +103,7 @@ class CustomTrainer(DefaultTrainer):
                                             mapper=DatasetMapper(**mapper_conf))
 
 
+# Currently not used
 class CompleteMapper(DatasetMapper):
     """Provides annotation data in training and testing context."""
     def __call__(self, dataset_dict):
@@ -280,16 +259,20 @@ class CustomTensorboardWriter(EventWriter):
                 for id, writer in self._writers.items():
                     if id == "test":
                         if "test" in k:
-                            # print(f"Writer matched: {k} with 'test'.")
                             if k == "timetest":
                                 writer.add_scalar("time", v, iter)
                             else:
-                                # print(f"original: {k} \naltered: "
-                                #       f"{k.split('/')[-1]}")
-                                writer.add_scalar(k.split("/")[-1], v, iter)
+                                new_k = k.split("/")[-1]
+                                if "loss" in new_k:
+                                    writer.add_scalar("loss/" + new_k, v, iter)
+                                else:
+                                    writer.add_scalar(new_k, v, iter)
                     elif id == "train":
                         if "test" not in k:
-                            writer.add_scalar(k, v, iter)
+                            if "loss" in k:
+                                writer.add_scalar("loss/" + k, v, iter)
+                            else:
+                                writer.add_scalar(k, v, iter)
 
                 new_last_write = max(new_last_write, iter)
         self._last_write = new_last_write
@@ -403,7 +386,7 @@ class Multiply(T.Transform):
     def apply_coords(self, coords: np.ndarray):
         return coords
 
-    def inverse(self) -> "Transform":
+    def inverse(self) -> T.Transform:
         warnings.warn("The Sharpen transformation is not reversible.")
         return T.NoOpTransform()
 
