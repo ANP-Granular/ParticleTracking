@@ -2,4 +2,5 @@
 /venv_linux/
 /.idea/
 /datasets/
-/detection/output/
+/experiments/*
+!/experiments/example

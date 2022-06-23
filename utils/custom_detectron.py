@@ -395,7 +395,7 @@ if __name__ == "__main__":
     import os
     import utils.datasets
     import matplotlib.pyplot as plt
-    CONFIG_FILE = "../detection/test_augmentations/config.yaml"
+    CONFIG_FILE = "../runners/test_augmentations/config.yaml"
     print(os.path.abspath(CONFIG_FILE))
     cfg = CfgNode(CfgNode.load_yaml_with_base(CONFIG_FILE))
     test = CustomTrainer(cfg)

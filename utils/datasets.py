@@ -10,12 +10,6 @@ from detectron2.structures import BoxMode
 from detectron2.data import DatasetCatalog, MetadataCatalog
 
 
-DATASETS = "../datasets"
-TRAINING = "/train"
-VALIDATION = "/val"
-ANNOTATIONS = "/via_export_json.json"
-
-
 class DataSet:
     folder: str
     annotation: str
@@ -99,12 +93,17 @@ def get_dataset_size(dataset: DataSet):
     return image_count
 
 
-# Set up known dataset(s) for use with Detectron2
-HGS = DataGroup(
-    train=DataSet("hgs_train", DATASETS+"/hgs"+TRAINING, ANNOTATIONS),
-    val=DataSet("hgs_val", DATASETS+"/hgs"+VALIDATION, ANNOTATIONS)
-)
-# Register datasets to Detectron2
-register_dataset(HGS.train, classes=["polygon"])
-register_dataset(HGS.val, classes=["polygon"])
+if __name__ == "__main__":
+    DATASETS = "../datasets"
+    TRAINING = "/train"
+    VALIDATION = "/val"
+    ANNOTATIONS = "/via_export_json.json"
+    # Set up known dataset(s) for use with Detectron2
+    HGS = DataGroup(
+        train=DataSet("hgs_train", DATASETS+"/hgs"+TRAINING, ANNOTATIONS),
+        val=DataSet("hgs_val", DATASETS+"/hgs"+VALIDATION, ANNOTATIONS)
+    )
+    # Register datasets to Detectron2
+    register_dataset(HGS.train, classes=["polygon"])
+    register_dataset(HGS.val, classes=["polygon"])
 

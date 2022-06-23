@@ -1,4 +1,4 @@
-"""Script to run detection experiments with a previously trained network."""
+"""Script to run runners experiments with a previously trained network."""
 # import general libraries
 import os
 import cv2
@@ -18,7 +18,7 @@ from utils.helper_funcs import write_configs
 
 
 # Input
-INPUT_FOLDER = "./ported_configs_HGS"
+INPUT_FOLDER = "../experiments/fiddeling/base"
 MODEL_WEIGHTS = "/model_final.pth"
 DATASET_NAME = HGS.val
 RANDOMSAMPLES = -1  # Amount of random samples to draw from the dataset.
@@ -29,8 +29,8 @@ HIDE_TAGS = True
 SHOW_ORIGINAL = True
 # Output
 SAVE_RESULTS = False
-OUTPUT_FOLDER = "./detections"
-setup_logger(OUTPUT_FOLDER + "/detection.log")
+OUTPUT_FOLDER = "../experiments/fiddeling/base/output"
+setup_logger(OUTPUT_FOLDER + "/runners.log")
 
 # Configuration
 meta_data = MetadataCatalog.get(HGS.val.name)
