@@ -1,14 +1,11 @@
-import random
-import warnings
 import time
 import datetime
 import logging
 import copy
+from typing import List
+
 import numpy as np
-
 import torch
-from imgaug import augmenters
-
 from detectron2.engine.hooks import HookBase, PeriodicWriter
 from detectron2.config.config import CfgNode
 from detectron2.engine.defaults import DefaultTrainer
@@ -23,6 +20,8 @@ import detectron2.utils.comm as comm
 
 
 class CustomTrainer(DefaultTrainer):
+    augmentations: List[T.Augmentation] = []
+
     @classmethod
     def build_evaluator(cls, cfg: CfgNode, dataset_name: str):
         # TODO: What exactly is max_dets_per_image controlling/ how does it
@@ -88,16 +87,8 @@ class CustomTrainer(DefaultTrainer):
             )
 
         # Additional custom augmentations
-        custom_augmentations = SomeOf([
-            T.RandomFlip(prob=1.0, horizontal=True, vertical=False),
-            T.RandomFlip(prob=1.0, horizontal=False, vertical=True),
-            T.RandomRotation([90, 180, 270], sample_style="choice",
-                             expand=False),
-            MultiplyAugmentation((0.9, 1.1)),
-            GaussianBlurAugmentation(sigmas=(0.0, 2.0)),
-            SharpenAugmentation(alpha=(0.4, 0.6), lightness=(0.9, 1.1))
-        ], lower=0, upper=3)
-        mapper_conf["augmentations"].append(custom_augmentations)
+        if cls.augmentations:
+            mapper_conf["augmentations"].extend(cls.augmentations)
 
         return build_detection_train_loader(cfg,
                                             mapper=DatasetMapper(**mapper_conf))
@@ -297,98 +288,6 @@ class CustomTensorboardWriter(EventWriter):
     def close(self):
         if hasattr(self, "_writer"):  # doesn't exist when the code fails at import
             self._writer.close()
-
-
-class SomeOf(T.AugmentationList):
-    def __init__(self, augments, lower, upper):
-        amount = random.randint(lower, upper)
-        chosen = random.sample(augments, amount)
-        if len(chosen):
-            super().__init__(chosen)
-        else:
-            super().__init__([T.NoOpTransform()])
-
-    def get_transform(self, *args) -> T.Transform:
-        return super().get_transform(args)
-
-
-class GaussianBlurAugmentation(T.Augmentation):
-    def __init__(self, sigmas: tuple = (0.0, 2.0)):
-        super().__init__()
-        self.sigmas = sigmas
-
-    def get_transform(self, *args) -> T.Transform:
-        return GaussianBlur(self.sigmas)
-
-
-class GaussianBlur(T.Transform):
-    def __init__(self, sigmas: tuple = (0.0, 2.0)):
-        super().__init__()
-        self.sigmas = sigmas
-
-    def apply_coords(self, coords: np.ndarray):
-        return coords
-
-    def inverse(self) -> T.Transform:
-        warnings.warn("The GaussianBlur transformation is not reversible.")
-        return T.NoOpTransform()
-
-    def apply_image(self, img: np.ndarray) -> np.ndarray:
-        return augmenters.GaussianBlur(sigma=self.sigmas).augment_image(img)
-
-
-class SharpenAugmentation(T.Augmentation):
-    def __init__(self, alpha: tuple = (0.0, 0.2),
-                 lightness: tuple = (0.8, 1.2)):
-        self.alpha = alpha
-        self.lightness = lightness
-
-    def get_transform(self, *args) -> T.Transform:
-        return Sharpen(alpha=self.alpha, lightness=self.lightness)
-
-
-class Sharpen(T.Transform):
-    def __init__(self, alpha: tuple = (0.0, 0.2),
-                 lightness: tuple = (0.8, 1.2)):
-        super().__init__()
-        self.alpha = alpha
-        self.lightness = lightness
-
-    def apply_coords(self, coords: np.ndarray):
-        return coords
-
-    def inverse(self) -> T.Transform:
-        warnings.warn("The Sharpen transformation is not reversible.")
-        return T.NoOpTransform()
-
-    def apply_image(self, img: np.ndarray) -> np.ndarray:
-        return augmenters.Sharpen(alpha=self.alpha,
-                                  lightness=self.lightness).augment_image(img)
-
-
-class MultiplyAugmentation(T.Augmentation):
-    def __init__(self, mul: tuple = (0.8, 1.2)):
-        super().__init__()
-        self.mul = mul
-
-    def get_transform(self, *args) -> T.Transform:
-        return Multiply(self.mul)
-
-
-class Multiply(T.Transform):
-    def __init__(self, mul: tuple = (0.8, 1.2)):
-        super().__init__()
-        self.mul = mul
-
-    def apply_image(self, img: np.ndarray):
-        return augmenters.Multiply(mul=self.mul).augment_image(img)
-
-    def apply_coords(self, coords: np.ndarray):
-        return coords
-
-    def inverse(self) -> T.Transform:
-        warnings.warn("The Sharpen transformation is not reversible.")
-        return T.NoOpTransform()
 
 
 if __name__ == "__main__":

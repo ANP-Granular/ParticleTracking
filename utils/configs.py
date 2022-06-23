@@ -1,4 +1,3 @@
-import random
 from warnings import warn
 
 from detectron2 import model_zoo
@@ -8,6 +7,19 @@ from detectron2.data import transforms as T
 
 from utils.datasets import DataSet
 import utils.helper_funcs as hf
+import utils.custom_augmentations as ca
+
+
+PORTED_AUGMENTATIONS = [
+    ca.SomeOf([T.RandomFlip(prob=1.0, horizontal=True, vertical=False),
+               T.RandomFlip(prob=1.0, horizontal=False, vertical=True),
+               T.RandomRotation([90, 180, 270], sample_style="choice",
+                                expand=False),
+               ca.MultiplyAugmentation((0.9, 1.1)),
+               ca.GaussianBlurAugmentation(sigmas=(0.0, 2.0)),
+               ca.SharpenAugmentation(alpha=(0.4, 0.6), lightness=(0.9, 1.1))
+               ], lower=0, upper=3)
+    ]
 
 
 def run_test_config(dataset: DataSet) -> CfgNode:
@@ -110,27 +122,3 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     cfg.TEST.EVAL_PERIOD = 100
 
     return cfg
-
-
-class OldPortedAugmentation(T.Augmentation):
-    # TODO: finish to and use in the settings/run
-    possible_augs = [
-        T.RandomFlip(prob=0.5, horizontal=True, vertical=False),
-        T.RandomFlip(prob=0.5, horizontal=False, vertical=True),
-        T.RandomRotation([90, 180, 260], sample_style="choice"),
-        T.RandomBrightness(0.9, 1.1),
-        # TODO: GaussianBlur
-        # TODO: Sharpen
-    ]
-
-    @property
-    def augs(self):
-        return random.sample(self.possible_augs, 3)
-
-    def get_transform(self, image) -> T.Transform:
-        tfms = []
-        for x in self.augs:
-            tfm = x(image)
-            tfms.append(tfm)
-        return T.TransformList(tfms)
-

@@ -1,4 +1,6 @@
 import json
+import pickle
+
 from detectron2.config.config import CfgNode
 from utils.datasets import DataSet
 
@@ -29,10 +31,13 @@ def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
     return desired_epochs*(image_count/batch_size)
 
 
-def write_configs(cfg: CfgNode, directory: str) -> None:
+def write_configs(cfg: CfgNode, directory: str, augmentations=None) -> None:
     """Write a configuration to a 'config.yaml' file in a target directory."""
     with open(directory + "/config.yaml", "w") as f:
         f.write(cfg.dump())
+    if augmentations is not None:
+        with open(directory + "/augmentations.pkl", "wb") as f:
+            pickle.dump(augmentations, f)
 
 
 def get_object_counts(dataset: DataSet):

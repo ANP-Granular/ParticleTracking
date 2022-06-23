@@ -3,7 +3,8 @@
 import os
 import cv2
 import random
-from typing import Union
+import pickle
+from typing import Union, List
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -12,6 +13,7 @@ from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog
 from detectron2.utils.logger import setup_logger
 from detectron2.config import CfgNode
+import detectron2.data.transforms as T
 
 # import custom code
 from utils.datasets import load_custom_data
@@ -24,7 +26,8 @@ def run_training(train_set: ds.DataSet,
                  configuration: Union[str, CfgNode],
                  val_set: ds.DataSet = None,
                  output_dir: str = "./", log_name: str = "training.log",
-                 resume: bool = True, visualize: bool = False):
+                 resume: bool = True, visualize: bool = False,
+                 img_augmentations: List[T.Augmentation] = None):
 
     setup_logger(os.path.join(output_dir, log_name))
     if visualize:
@@ -41,11 +44,17 @@ def run_training(train_set: ds.DataSet,
             plt.show()
 
     resume_with_config = False
-    previous_config = os.path.join(output_dir, "config.yaml")
     # Try to load previously defined *.yaml configuration
-    if resume and os.path.exists(previous_config):
-        configuration = CfgNode(CfgNode.load_yaml_with_base(previous_config))
-        resume_with_config = True
+    if resume:
+        previous_config = os.path.join(output_dir, "config.yaml")
+        previous_augment = os.path.join(output_dir, "augmentations.pkl")
+        if os.path.exists(previous_config):
+            configuration = CfgNode(CfgNode.load_yaml_with_base(
+                previous_config))
+            resume_with_config = True
+        if os.path.exists(previous_augment):
+            with open(previous_augment, "rb") as f:
+                img_augmentations = pickle.load(f)
 
     if not resume_with_config:
         # Load configuration, if needed
@@ -68,9 +77,11 @@ def run_training(train_set: ds.DataSet,
 
         # Create output directory and save configuration
         os.makedirs(output_dir, exist_ok=True)
-        hf.write_configs(configuration, output_dir)
+        hf.write_configs(configuration, output_dir, img_augmentations)
 
     # Training
+    if img_augmentations:
+        custom.CustomTrainer.augmentations = img_augmentations
     trainer = custom.CustomTrainer(configuration)
     trainer.resume_or_load(resume=resume)
     trainer.train()
