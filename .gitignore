@@ -3,4 +3,5 @@
 /.idea/
 /datasets/
 /experiments/*
-!/experiments/example
+!/experiments/example/config.yaml
+!/experiments/example/experiment_train.py

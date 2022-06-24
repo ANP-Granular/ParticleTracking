@@ -1,4 +1,5 @@
 import os
+import warnings
 from dataclasses import dataclass
 import json
 
@@ -49,9 +50,11 @@ def load_custom_data(dataset: DataSet) -> List[dict]:
         annos = val["regions"]
         objs = []
         for anno in annos:
-            # TODO: evaluate what the information "region_attributes" holds
-            # if anno["region_attributes"]:
-            #     continue
+            try:
+                category_id = int(anno["region_attributes"]["rod_col"])
+            except KeyError:
+                category_id = 0
+
             anno = anno["shape_attributes"]
             px = anno["all_points_x"]
             py = anno["all_points_y"]
@@ -63,7 +66,7 @@ def load_custom_data(dataset: DataSet) -> List[dict]:
                 "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
                 "bbox_mode": BoxMode.XYXY_ABS,
                 "segmentation": [poly],
-                "category_id": 0,
+                "category_id": category_id,
             }
             objs.append(obj)
         record["annotations"] = objs
@@ -78,6 +81,9 @@ def register_dataset(dataset: DataSet,
                             lambda: generation_function(dataset))
     if classes is not None:
         MetadataCatalog.get(dataset.name).set(thing_classes=classes)
+    else:
+        warnings.warn("No thing_classes specified! This will prohibit the use "
+                      "of the built-in COCOEvaluator.")
 
 
 def get_dataset_size(dataset: DataSet):
@@ -91,6 +97,22 @@ def get_dataset_size(dataset: DataSet):
         if image["regions"]:
             image_count += 1
     return image_count
+
+
+def get_dataset_classes(dataset: DataSet):
+    """Retrieve the number and IDs of thing classes in the dataset."""
+    with open(dataset.annotation) as metadata:
+        annotations = json.load(metadata)
+    classes = {0, }
+    for image in list(annotations.values()):
+        regions = image["regions"]
+        if regions:
+            for region in regions:
+                try:
+                    classes.add(int(region["region_attributes"]["rod_col"]))
+                except KeyError:
+                    continue
+    return classes
 
 
 if __name__ == "__main__":
