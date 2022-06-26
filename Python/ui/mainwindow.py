@@ -20,7 +20,8 @@ import platform
 from typing import List
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, QScrollArea
+from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, \
+    QScrollArea, QTreeWidgetItem, QAbstractItemView
 from PyQt5.QtGui import QImage, QWheelEvent
 
 from Python.backend import settings as se, logger as lg, \
@@ -125,6 +126,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
 
         # Adaptations of the UI
+        self.ui.tv_rods.header().setDefaultSectionSize(150)
+        self.ui.tv_rods.header().setMinimumSectionSize(125)
         # Adapt menu action shortcuts for Mac
         if platform.system() == "Darwin":
             self.ui.action_zoom_in.setShortcut("Ctrl+=")
@@ -166,6 +169,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.data_file_name = 'rods_df_{:s}.csv'
         self.df_data = None
         self.last_color = None
+        self.rod_info = None
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             if rb.isChecked():
                 self.last_color = rb.objectName()[3:]
@@ -221,6 +225,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.switch_right.activated.connect(lambda: self.change_view(1))
         self.ui.camera_tabs.currentChanged.connect(self.view_changed)
         self.ui.slider_frames.sliderMoved.connect(self.slider_moved)
+        self.ui.tv_rods.itemClicked.connect(self.tree_selection)
 
         # Display methods
         self.ui.le_disp_one.textChanged.connect(self.display_rod_changed)
@@ -287,6 +292,85 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.slider_frames.setSliderPosition(self.current_file_index)
         except IndexError:
             self.ui.le_frame_disp.setText("Frame: ???")
+
+    @QtCore.pyqtSlot(QTreeWidgetItem, int)
+    def tree_selection(self, item: QTreeWidgetItem, col: int):
+        if not item.childCount():
+            # change camera
+            # TODO
+            # change color
+            color = item.parent().text(0)
+            self.change_color(color)
+            # change frame
+            frame = int(item.parent().parent().text(0)[7:])
+            self.change_frame(frame)
+            # activate clicked rod
+            if self.current_camera.edits:
+                selected_rod = int(item.text(0)[4:6])
+                self.current_camera.rod_activated(selected_rod)
+        return
+
+    def update_tree(self, new_data: dict):
+        """Update the "seen" status in the displayed rod data tree."""
+        # self.generate_tree()
+        # self.ui.tv_rods.clear()
+        header = self.ui.tv_rods.headerItem()
+        headings = []
+        for i in range(1, header.columnCount()):
+            headings.append(header.text(i))
+        insert_idx = headings.index(new_data["cam_id"])
+        self.rod_info[new_data["frame"]][new_data["color"]][new_data[
+            "rod_id"]][insert_idx] = "seen" if new_data["seen"] else "unseen"
+        self.generate_tree()
+
+    def update_tree_folding(self):
+        """Updates the folding of the tree view.
+
+        The tree view is updated in synchrony with the UI switching frames
+        and colors. The corresponding portion of the tree is expanded and
+        moved into view.
+        """
+        self.ui.tv_rods.collapseAll()
+        root = self.ui.tv_rods.invisibleRootItem()
+        frames = [int(root.child(i).text(0)[7:])
+                  for i in range(root.childCount())]
+        try:
+            expand_frame = root.child(frames.index(self.logger.frame))
+        except ValueError:
+            # frame not found in list -> unable to update the list
+            return
+        colors = [expand_frame.child(i).text(0)
+                  for i in range(expand_frame.childCount())]
+        expand_color = expand_frame.child(
+            colors.index(self.get_selected_color()))
+
+        self.ui.tv_rods.expandItem(expand_frame)
+        self.ui.tv_rods.expandItem(expand_color)
+        self.ui.tv_rods.scrollToItem(expand_frame,
+                                     QAbstractItemView.PositionAtTop)
+        return
+
+    def generate_tree(self):
+        self.ui.tv_rods.clear()
+        for frame in self.rod_info.keys():
+            current_frame = QTreeWidgetItem(self.ui.tv_rods)
+            current_frame.setText(0, f"Frame: {frame}")
+            for color in self.rod_info[frame].keys():
+                current_color = QTreeWidgetItem(
+                    current_frame)
+                current_color.setText(0, color)
+                for particle in self.rod_info[frame][color].keys():
+                    current_particle = QTreeWidgetItem(
+                        current_color)
+                    current_particle.setText(
+                        0, f"Rod{particle:3d}: "
+                    )
+                    for idx, gp in enumerate(
+                            self.rod_info[frame][color][particle]):
+                        current_particle.setText(idx + 1, gp)
+                current_color.sortChildren(0, QtCore.Qt.AscendingOrder)
+            current_frame.sortChildren(0, QtCore.Qt.AscendingOrder)
+        self.update_tree_folding()
 
     def slider_moved(self, _):
         if self.current_file_ids:
@@ -382,6 +466,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             first_action.parent_id = self.logger_id
             self.logger.add_action(first_action)
 
+            self.update_tree_folding()
+
     def open_rod_folder(self):
         """Lets the user select a folder with rod position data.
 
@@ -462,6 +548,16 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Load data
                     self.df_data, found_colors = f_ops.get_color_data(
                         self.original_data, self.data_files)
+
+                    # Display as a tree
+                    self.rod_info, columns = d_ops.extract_seen_information(
+                        self.df_data)
+                    self.ui.tv_rods.clear()
+                    self.ui.tv_rods.setColumnCount(len(columns) + 1)
+                    headers = [self.ui.tv_rods.headerItem().text(0), *columns]
+                    self.ui.tv_rods.setHeaderLabels(headers)
+                    self.generate_tree()
+                    self.update_tree_folding()
 
                     # Update visual elements
                     rb_colors = [child for child
@@ -687,6 +783,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     new_frame = self.current_file_ids[self.current_file_index]
                     self.logger.frame = new_frame
                     self.current_camera.logger.frame = new_frame
+                    self.update_tree_folding()
 
             except IndexError:
                 # the iterator has finished, restart it
@@ -768,6 +865,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if state:
             self.last_color = self.get_selected_color()
             self.show_overlay()
+            self.update_tree_folding()
 
     @QtCore.pyqtSlot(int, list)
     def create_new_rod(self, number: int, new_position: list) -> None:
@@ -795,6 +893,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         new_rod.setObjectName(f"rn_{number}")
         new_rod.rod_points = new_position
         new_rod.rod_state = rn.RodState.SELECTED
+        # Newly created rods are always "seen"
+        new_rod.seen = True
         new_rods = []
         for rod in self.current_camera.edits:
             new_rods.append(rod.copy())
@@ -809,6 +909,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         new_data = change.to_save()
         if new_data is not None:
             self.df_data = d_ops.change_data(self.df_data, new_data)
+            self.update_tree(new_data)
 
     def save_changes(self, temp_only=False):
         """Saves unsaved changes to disk temporarily or permanently.
@@ -846,8 +947,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             tmp_file = self.data_files + "/" + self.data_file_name.format(
                 color)
             df_current = self.df_data.loc[self.df_data.color == color].copy()
-            df_current = df_current.astype({"frame": 'int', "seen": 'int',
-                                            "particle": 'int'})
+            df_current = df_current.astype({"frame": 'int', "particle": 'int'})
             df_current.to_csv(tmp_file, index_label="")
 
         if temp_only:
@@ -931,6 +1031,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             if rb.objectName()[3:] == to_color:
                 # activate the last color
                 rb.toggle()
+                self.update_tree_folding()
 
     @QtCore.pyqtSlot(int)
     def change_frame(self, to_frame: int):

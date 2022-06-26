@@ -208,6 +208,23 @@ class SettingsDialog(QtWidgets.QDialog):
         inner_layout.addWidget(self.position_scaling)
         visual_items_layout.addLayout(inner_layout)
         self.position_scaling.textChanged.connect(self.handle_scaled_position)
+        
+        # True number of rods (each color)
+        lbl_number_rods = QtWidgets.QLabel("True number of rods")
+        lbl_number_rods.setStyleSheet(self.item_style)
+        self.number_rods = QtWidgets.QSpinBox()
+        self.number_rods.setValue(self.tmp_contents["visual"]["number_rods"])
+        self.number_rods.setMaximum(30)
+        self.number_rods.lineEdit().setReadOnly(True)
+        inner_layout = QtWidgets.QHBoxLayout()
+        inner_layout.addWidget(lbl_number_rods)
+        item_spacer_6 = QtWidgets.QSpacerItem(
+            10, 20, hPolicy=QtWidgets.QSizePolicy.Expanding,
+            vPolicy=QtWidgets.QSizePolicy.Fixed)
+        inner_layout.addItem(item_spacer_6)
+        inner_layout.addWidget(self.number_rods)
+        visual_items_layout.addLayout(inner_layout)
+        self.number_rods.valueChanged.connect(self.handle_number_rods)
 
         # Control Buttons
         btns = QtWidgets.QDialogButtonBox.Save | \
@@ -259,6 +276,11 @@ class SettingsDialog(QtWidgets.QDialog):
         """Handles changes of the number size by the dialog's controls."""
         self.tmp_contents["visual"]["number_size"] = new_val
         self.update_preview()
+        
+    def handle_number_rods(self, new_val: int):
+        """Handles changes of the number or rods by the dialog's controls."""
+        self.tmp_contents["visual"]["number_rods"] = new_val
+        self.update_preview()
 
     def handle_color_pick(self, target: QtWidgets.QToolButton):
         """Lets the user select a color."""
@@ -306,6 +328,9 @@ class SettingsDialog(QtWidgets.QDialog):
                 self.tmp_contents["visual"]["rod_thickness"])
             self.number_size.setValue(
                 self.tmp_contents["visual"]["number_size"])
+            self.number_size.setValue(
+                self.tmp_contents["visual"]["number_rods"])
+            
             self.draw_icon(QtGui.QColor(*self.tmp_contents["visual"][
                 "rod_color"]), self.rod_color)
             self.draw_icon(QtGui.QColor(*self.tmp_contents["visual"][

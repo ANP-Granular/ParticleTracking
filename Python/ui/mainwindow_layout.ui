@@ -38,8 +38,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1054</width>
-         <height>473</height>
+         <width>1088</width>
+         <height>458</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -670,6 +670,12 @@
               <bool>false</bool>
              </property>
              <widget class="QTabWidget" name="camera_tabs">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>5</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="currentIndex">
                <number>0</number>
               </property>
@@ -691,8 +697,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>411</width>
-                     <height>180</height>
+                     <width>766</width>
+                     <height>226</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -751,8 +757,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>98</width>
-                     <height>31</height>
+                     <width>766</width>
+                     <height>226</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -795,53 +801,117 @@
               </widget>
              </widget>
              <widget class="QWidget" name="verticalLayoutWidget">
-              <layout class="QVBoxLayout" name="undo_layout" stretch="0,0">
+              <layout class="QVBoxLayout" name="undo_layout" stretch="0">
+               <property name="spacing">
+                <number>10</number>
+               </property>
                <property name="sizeConstraint">
                 <enum>QLayout::SetMaximumSize</enum>
                </property>
                <item>
-                <widget class="LoggerWidget" name="lv_actions_list">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
+                <widget class="QSplitter" name="splitter_2">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
                  </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>400</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QPushButton" name="pb_undo">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="minimumSize">
-                  <size>
-                   <width>60</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>400</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="text">
-                  <string>Undo</string>
-                 </property>
-                 <property name="icon">
-                  <iconset>
-                   <normaloff>resources/left-arrow-96.png</normaloff>resources/left-arrow-96.png</iconset>
-                 </property>
+                 <widget class="QTreeWidget" name="tv_rods">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>16777215</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <attribute name="headerMinimumSectionSize">
+                   <number>26</number>
+                  </attribute>
+                  <attribute name="headerDefaultSectionSize">
+                   <number>100</number>
+                  </attribute>
+                  <attribute name="headerStretchLastSection">
+                   <bool>true</bool>
+                  </attribute>
+                  <column>
+                   <property name="text">
+                    <string>List of Rods:</string>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="textAlignment">
+                    <set>AlignCenter</set>
+                   </property>
+                  </column>
+                 </widget>
+                 <widget class="QWidget" name="verticalLayoutWidget_2">
+                  <layout class="QVBoxLayout" name="verticalLayout_5">
+                   <item>
+                    <widget class="QLabel" name="lbl_actions_list">
+                     <property name="styleSheet">
+                      <string notr="true">background-color: transparent;font-weight: bold;</string>
+                     </property>
+                     <property name="text">
+                      <string>Performed Actions:</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="LoggerWidget" name="lv_actions_list">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777214</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QPushButton" name="pb_undo">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>60</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Undo</string>
+                     </property>
+                     <property name="icon">
+                      <iconset>
+                       <normaloff>resources/left-arrow-96.png</normaloff>resources/left-arrow-96.png</iconset>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
                 </widget>
                </item>
               </layout>
@@ -863,7 +933,7 @@
      <x>0</x>
      <y>0</y>
      <width>1072</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

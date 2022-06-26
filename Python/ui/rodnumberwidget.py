@@ -364,6 +364,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         copied.rod_state = self.rod_state
         copied.rod_points = self.rod_points
         copied.rod_id = self.rod_id
+        copied.seen = self.seen
         copied.setVisible(False)
         return copied
 

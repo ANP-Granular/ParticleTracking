@@ -271,7 +271,8 @@ class ChangedRodNumberAction(Action):
             "position": self.rod.rod_points,
             "cam_id": self.parent_id,
             "frame": self.frame,
-            "color": self.rod.color
+            "color": self.rod.color,
+            "seen": self.rod.seen
         }
         if self.revert:
             # If the action was reverted
@@ -394,9 +395,11 @@ class DeleteRodAction(Action):
         if self.revert:
             # If the action was reverted
             out["position"] = self.rod.rod_points
+            out["seen"] = self.rod.seen
         else:
             # If the action was performed
             out["position"] = [0, 0, 0, 0]
+            out["seen"] = not self.rod.seen
         return out
 
     def invert(self):
@@ -512,7 +515,8 @@ class ChangeRodPositionAction(Action):
             "rod_id": self.rod.rod_id,
             "cam_id": self.parent_id,
             "frame": self.frame,
-            "color": self.rod.color
+            "color": self.rod.color,
+            "seen": self.rod.seen
         }
         if self.revert:
             # If the action was reverted
@@ -628,9 +632,11 @@ class CreateRodAction(Action):
         if self.revert:
             # If the action was reverted
             out["position"] = [0, 0, 0, 0]
+            out["seen"] = False
         else:
             # If the action was performed
             out["position"] = self.rod.rod_points
+            out["seen"] = True
         return out
 
     def invert(self):

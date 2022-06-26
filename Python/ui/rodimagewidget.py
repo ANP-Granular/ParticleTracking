@@ -15,6 +15,7 @@
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+import numpy as np
 import re
 from typing import List, Union
 from PyQt5 import QtGui, QtCore
@@ -429,6 +430,7 @@ class RodImageWidget(QLabel):
                 new_position = \
                     [coord / self._position_scaling / self._scale_factor
                      for coord in new_position]
+                rod.seen = True
                 this_action = ChangeRodPositionAction(rod.copy(),
                                                       new_position)
                 self._logger.add_action(this_action)
@@ -436,12 +438,28 @@ class RodImageWidget(QLabel):
                 rod.rod_state = RodState.SELECTED
                 send_rod = rod
                 break
+        
         if send_rod is None:
+            # Find out which rods are unseen
+            rods_unseen = []
+            for rod in self._edits:
+                if not rod.seen:
+                    rods_unseen.append(rod.rod_id)
+            rods_unseen.sort()
+
             # Get intended rod number from user
-            selected_rod, ok = QInputDialog.getInt(self,
-                                                   'Choose a rod to replace',
-                                                   'Rod number', min=0,
-                                                   max=99)
+            if rods_unseen:
+                dialog_rodnum = f"Unseen rods: {rods_unseen}\nEnter rod number:"
+                # dialog_rodnum = 'Unseen rods: ' + str(rods_unseen) + '\n Enter rod number:'
+                selected_rod, ok = QInputDialog.getInt(
+                    self, 'Choose a rod to replace', dialog_rodnum,
+                    value=rods_unseen[0], min=0, max=99)
+            else:    
+                dialog_rodnum = 'No unseen rods. Enter rod number: '
+                selected_rod, ok = QInputDialog.getInt(
+                    self, 'Choose a rod to replace', dialog_rodnum, min=0,
+                    max=99)
+            
             if not ok:
                 return
             # Check whether the rod already exists
@@ -455,6 +473,8 @@ class RodImageWidget(QLabel):
                     new_position = \
                         [coord / self._position_scaling / self._scale_factor
                          for coord in new_position]
+                    # Mark rod as "seen", before logging!
+                    rod.seen = True
                     this_action = ChangeRodPositionAction(rod.copy(),
                                                           new_position)
                     self._logger.add_action(this_action)
@@ -586,6 +606,7 @@ class RodImageWidget(QLabel):
                         rod.setText(str(last_id))
                         delete_action = DeleteRodAction(rod.copy())
                         rod.rod_points = [0, 0, 0, 0]
+                        rod.seen = False
                         rod.rod_state = RodState.CHANGED
                         continue
                     rod.rod_state = RodState.CHANGED
@@ -829,6 +850,7 @@ class RodImageWidget(QLabel):
         """
         rod.setText(str(rod.rod_id))
         delete_action = DeleteRodAction(rod.copy())
+        rod.seen = False
         rod.rod_points = [0, 0, 0, 0]
         rod.rod_state = RodState.CHANGED
         self._logger.add_action(delete_action)
