@@ -3,8 +3,10 @@ import cv2
 import random
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import torch
 from detectron2.data import MetadataCatalog
-from detectron2.utils.visualizer import Visualizer, ColorMode
+from detectron2.utils.visualizer import Visualizer, ColorMode, GenericMask
 
 import utils.datasets as ds
 
@@ -26,29 +28,70 @@ def visualize(prediction, original, meta_data=None, hide_tags=True,
         del to_draw._fields["pred_classes"]
         del to_draw._fields["scores"]
         del to_draw._fields["pred_boxes"]
-    out = v.draw_instance_predictions(to_draw)
 
     if isinstance(original, dict):
         # Display original as well
         fig_title = os.path.basename(original["file_name"])
-        fig = plt.figure(figsize=[6.4, 2*4.8])
-        ax1 = plt.subplot(2, 1, 1)
-        ax1.imshow(out.get_image()[:, :, ::-1])
-        ax2 = plt.subplot(2, 1, 2)
-        ax2.imshow(im)
-        fig.suptitle(fig_title)
+        create_figure(im, to_draw, original)
     else:
         fig_title = os.path.basename(original)
-        plt.figure()
-        plt.imshow(out.get_image()[:, :, ::-1])
-        plt.title(fig_title)
+        create_figure(im, to_draw, None)
 
     if output_dir:
         plt.savefig(os.path.join(output_dir, fig_title))
     plt.show()
 
 
-# ax3.fill(x, y, facecolor='none', edgecolor='purple', linewidth=3)
+def create_figure(img, predictions, gt: dict = None):
+    width, height = img.shape[1], img.shape[0]
+
+    def add_outlines(mask_data, axes):
+        if isinstance(mask_data, torch.Tensor):
+            mask_data = mask_data.numpy()
+        masks = [GenericMask(x, height, width) for x in mask_data]
+        for m in masks:
+            for segment in m.polygons:
+                polygon = mpl.patches.Polygon(
+                    segment.reshape(-1, 2),
+                    fill=False,
+                )
+                axes.add_patch(polygon)
+        return axes
+
+    fig = plt.figure(frameon=False)
+    dpi = fig.get_dpi()
+    # add a small 1e-2 to avoid precision lost due to matplotlib's truncation
+    # (https://github.com/matplotlib/matplotlib/issues/15363)
+    if gt:
+        fig.set_size_inches(
+            (width + 1e-2) / dpi,
+            2 * (height + 1e-2) / dpi,
+        )
+        # Prediction axes
+        ax1 = fig.add_axes([0, .5, 1, .5])
+        ax1.imshow(img)
+        ax1.axis("off")
+        add_outlines(predictions.pred_masks, ax1)
+
+        # Groundtruth axes
+        ax2 = fig.add_axes([0, 0, 1, .5])
+        ax2.imshow(img)
+        ax2.axis("off")
+        gt_masks = [anno["segmentation"] for anno in gt["annotations"]]
+        add_outlines(gt_masks, ax2)
+
+    else:
+        fig.set_size_inches(
+            (width + 1e-2) / dpi,
+            (height + 1e-2) / dpi,
+        )
+        # Prediction axes
+        ax1 = fig.add_axes([0, .5, 1, .5])
+        ax1.imshow(img)
+        ax1.axis("off")
+        add_outlines(predictions.pred_masks, ax1)
+
+    return fig
 
 
 def vis_single(dataset, filenames):
