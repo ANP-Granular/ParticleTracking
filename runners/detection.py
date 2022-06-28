@@ -4,10 +4,10 @@ import os
 import cv2
 import random
 from typing import Union, List
+import numpy as np
 
 # import detectron2 utilities
 from detectron2.engine import DefaultPredictor
-from detectron2.data import MetadataCatalog
 from detectron2.utils.logger import setup_logger
 from detectron2.config import CfgNode
 
@@ -23,8 +23,8 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
                   configuration: Union[CfgNode, str],
                   weights: str = None, output_dir: str = "./",
                   log_name: str = "detection.log",
-                  visualize: bool = True, hide_tags: bool = True,
-                  vis_random_samples: int = -1):
+                  visualize: bool = True,
+                  vis_random_samples: int = -1, **kwargs):
     setup_logger(os.path.join(output_dir, log_name))
 
     # Configuration
@@ -40,16 +40,21 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
     predictor = DefaultPredictor(cfg)
 
     # Handling the ds.DataSet, List[str] ambiguity
-    meta_data = None
     if isinstance(dataset, ds.DataSet):
-        meta_data = MetadataCatalog.get(dataset.name)
         dataset = ds.load_custom_data(dataset)
 
     # Randomly select several samples to visualize the prediction results.
-    if visualize and vis_random_samples > 0:
-        dataset = random.sample(dataset, vis_random_samples)
+    to_visualize = np.zeros(len(dataset))
+    if visualize:
+        if vis_random_samples > 0:
+            samples = random.sample(range(0, len(to_visualize)),
+                                    vis_random_samples)
+            to_visualize[samples] = 1
+        else:
+            # visualize all
+            to_visualize = np.ones(len(dataset))
 
-    for d in dataset:
+    for d, vis in zip(dataset, to_visualize):
         if isinstance(d, dict):
             file = d["file_name"]
         else:
@@ -57,13 +62,11 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
         im = cv2.imread(file)
         outputs = predictor(im)
 
-        if visualize:
+        if vis:
             if SHOW_ORIGINAL:
-                visualization.visualize(outputs, d, meta_data,
-                                        hide_tags=hide_tags,
-                                        output_dir=output_dir)
+                visualization.visualize(outputs, d, output_dir=output_dir,
+                                        **kwargs)
             else:
-                visualization.visualize(outputs, file,
-                                        hide_tags=hide_tags,
-                                        output_dir=output_dir)
+                visualization.visualize(outputs, file, output_dir=output_dir,
+                                        **kwargs)
         # Saving outputs
