@@ -3,7 +3,7 @@
 import os
 import cv2
 import random
-from typing import Union
+from typing import Union, List
 
 # import detectron2 utilities
 from detectron2.engine import DefaultPredictor
@@ -19,7 +19,8 @@ from runners import visualization
 SHOW_ORIGINAL = True
 
 
-def run_detection(dataset: ds.DataSet, configuration: Union[CfgNode, str],
+def run_detection(dataset: Union[ds.DataSet, List[str]],
+                  configuration: Union[CfgNode, str],
                   weights: str = None, output_dir: str = "./",
                   log_name: str = "detection.log",
                   visualize: bool = True, hide_tags: bool = True,
@@ -27,26 +28,33 @@ def run_detection(dataset: ds.DataSet, configuration: Union[CfgNode, str],
     setup_logger(os.path.join(output_dir, log_name))
 
     # Configuration
-    meta_data = MetadataCatalog.get(dataset.name)
     if isinstance(configuration, str):
         cfg = CfgNode(CfgNode.load_yaml_with_base(configuration))
     else:
         cfg = configuration
     if weights is not None:
         cfg.MODEL.WEIGHTS = os.path.abspath(weights)
-
+    cfg.MODEL.DEVICE = "cpu"  # to run predictions/visualizations while gpu in use
     write_configs(cfg, output_dir)
 
-    cfg.MODEL.DEVICE = "cpu"    # to run predictions/visualizations while gpu in use
     predictor = DefaultPredictor(cfg)
 
-    # Randomly select several samples to visualize the prediction results.
-    dataset_dicts = ds.load_custom_data(dataset)
-    if visualize and vis_random_samples > 0:
-        dataset_dicts = random.sample(dataset_dicts, vis_random_samples)
+    # Handling the ds.DataSet, List[str] ambiguity
+    meta_data = None
+    if isinstance(dataset, ds.DataSet):
+        meta_data = MetadataCatalog.get(dataset.name)
+        dataset = ds.load_custom_data(dataset)
 
-    for d in dataset_dicts:
-        im = cv2.imread(d["file_name"])
+    # Randomly select several samples to visualize the prediction results.
+    if visualize and vis_random_samples > 0:
+        dataset = random.sample(dataset, vis_random_samples)
+
+    for d in dataset:
+        if isinstance(d, dict):
+            file = d["file_name"]
+        else:
+            file = d
+        im = cv2.imread(file)
         outputs = predictor(im)
 
         if visualize:
@@ -55,7 +63,7 @@ def run_detection(dataset: ds.DataSet, configuration: Union[CfgNode, str],
                                         hide_tags=hide_tags,
                                         output_dir=output_dir)
             else:
-                visualization.visualize(outputs, d["file_name"],
+                visualization.visualize(outputs, file,
                                         hide_tags=hide_tags,
                                         output_dir=output_dir)
         # Saving outputs

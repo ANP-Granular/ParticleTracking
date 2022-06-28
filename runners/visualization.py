@@ -1,6 +1,7 @@
 import os
 import cv2
 import random
+from typing import Union
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -11,8 +12,8 @@ from detectron2.utils.visualizer import Visualizer, ColorMode, GenericMask
 import utils.datasets as ds
 
 
-def visualize(prediction, original, meta_data=None, hide_tags=True,
-              output_dir=""):
+def visualize(prediction, original: Union[dict, str], meta_data=None,
+              hide_tags=True, output_dir=""):
     """Visualizes predictions on one image with it's ground truth."""
     if isinstance(original, dict):
         im = cv2.imread(original["file_name"])
@@ -86,7 +87,7 @@ def create_figure(img, predictions, gt: dict = None):
             (height + 1e-2) / dpi,
         )
         # Prediction axes
-        ax1 = fig.add_axes([0, .5, 1, .5])
+        ax1 = fig.add_axes([0, 0, 1, 1])
         ax1.imshow(img)
         ax1.axis("off")
         add_outlines(predictions.pred_masks, ax1)
