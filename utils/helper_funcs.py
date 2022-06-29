@@ -1,14 +1,19 @@
 import json
+import os.path
 import pickle
 from collections import Counter
 
+import torch
 import numpy as np
+from PIL import Image
 from scipy.spatial import ConvexHull
 from sklearn.cluster import DBSCAN
 from skimage.transform import probabilistic_hough_line
 from detectron2.config.config import CfgNode
+from detectron2.structures import Instances
+from detectron2.utils.visualizer import GenericMask
 
-from utils.datasets import DataSet
+import utils.datasets as ds
 
 
 def dot_arccos(lineA, lineB):
@@ -73,7 +78,6 @@ def minimum_bounding_rectangle(points):
     :param points: an nx2 matrix of coordinates
     :rval: an nx2 matrix of coordinates
     """
-    from scipy.ndimage.interpolation import rotate
     pi2 = np.pi / 2.
 
     # get the convex hull for the points
@@ -212,7 +216,7 @@ def rod_endpoints(prediction, classes: dict):
     return results
 
 
-def get_dataset_size(dataset: DataSet):
+def get_dataset_size(dataset: ds.DataSet):
     """Compute the number of annotated images in a dataset (excluding
     augmentation)."""
     with open(dataset.annotation) as metadata:
@@ -247,14 +251,14 @@ def write_configs(cfg: CfgNode, directory: str, augmentations=None) -> None:
             pickle.dump(augmentations, f)
 
 
-def get_object_counts(dataset: DataSet):
+def get_object_counts(dataset: ds.DataSet):
     """Returns a list of the number of objects in each image in the dataset."""
     with open(dataset.annotation) as metadata:
         annotations = json.load(metadata)
     return [len(annotations[key]["regions"]) for key in annotations.keys()]
 
 
-def remove_duplicate_regions(dataset: DataSet):
+def remove_duplicate_regions(dataset: ds.DataSet):
     """Remove duplicate regions from the dataset's metadata."""
     with open(dataset.annotation) as metadata:
         annotations = json.load(metadata)
@@ -277,11 +281,72 @@ def remove_duplicate_regions(dataset: DataSet):
     return
 
 
-def create_keypoints():
-    """Creates rod endpoints as keypoints from segmentation and adds it to
-    the metadata."""
+def create_keypoints(file_name: str):
+    """Creates rod endpoints as key points from segmentation, adds it to
+    the metadata and saves that as a new file.
+
+    key points (list[float]) in the format of [x1, y1, v1,…, xn, yn, vn].
+    v=0: not labeled (in which case x=y=0),
+    v=1: labeled but not visible
+    v=2: labeled and visible
+    see https://cocodataset.org/#format-data for more details
+    """
+    to_change = ds.DataSet("to_change", os.path.dirname(file_name) + "/",
+                           os.path.basename(file_name))
+    classes = {cls: str(cls) for cls in ds.get_dataset_classes(to_change)}
+
+    with open(to_change.annotation) as metadata:
+        annotations = json.load(metadata)
+
+    for key, val in annotations.items():
+        # Skip non-annotated image entries
+        if not val["regions"]:
+            continue
+
+        # Create an entry in the custom dataset
+        filename = os.path.join(to_change.folder, val["filename"])
+        width, height = Image.open(filename).size[:2]
+        annos = val["regions"]
+        for idx_r, rod in enumerate(annos):
+            try:
+                category_id = int(rod["region_attributes"]["rod_col"])
+            except KeyError:
+                category_id = 0
+
+            rod = rod["shape_attributes"]
+            px = rod["all_points_x"]
+            py = rod["all_points_y"]
+            poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+            poly = [p for x in poly for p in x]
+
+            mask = np.asarray(GenericMask([poly], height, width).mask,
+                              dtype=bool).tolist()
+            inst = {"instances": Instances(
+                (height, width),
+                pred_classes=torch.Tensor([category_id]),
+                pred_masks=torch.Tensor([mask])
+            )}
+            try:
+                key_points = rod_endpoints(inst, classes)
+                key_points = key_points[str(category_id)].flatten()
+                to_insert = [*key_points[0:2], 1, *key_points[2:], 1]
+            except UnboundLocalError as e:
+                # no endpoints were found
+                to_insert = 6*[0]
+                print(e)
+            annotations[key]["regions"][idx_r]["keypoints"] = to_insert
+
+        print(f"Done with: {key}")
+
+    old_file, ext = os.path.splitext(file_name)
+    with open(old_file + "_keypoints" + ext, 'w') as metadata:
+        json.dump(annotations, metadata)
 
 
 if __name__ == "__main__":
-    from utils.datasets import HGS
-    remove_duplicate_regions(HGS.val)
+    # from utils.datasets import HGS
+    # remove_duplicate_regions(HGS.val)
+
+    file = "../datasets/rods_c4m/val/via_export_json.json"
+    file = "../datasets/rods_c4m/train/via_export_json.json"
+    create_keypoints(file)
