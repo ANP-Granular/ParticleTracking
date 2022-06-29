@@ -68,6 +68,9 @@ def load_custom_data(dataset: DataSet) -> List[dict]:
                 "segmentation": [poly],
                 "category_id": category_id,
             }
+            if "keypoints" in anno:
+                obj["keypoints"] = anno["keypoints"]
+
             objs.append(obj)
         record["annotations"] = objs
         custom_data.append(record)
