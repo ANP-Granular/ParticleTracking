@@ -3,6 +3,8 @@
 import os
 import cv2
 import random
+import logging
+import sys
 from typing import Union, List
 import numpy as np
 import scipy.io as sio
@@ -16,6 +18,17 @@ from detectron2.config import CfgNode
 import utils.datasets as ds
 import utils.helper_funcs as hf
 from runners import visualization
+
+_logger = logging.getLogger(__name__)
+_logger.setLevel(logging.INFO)
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
+    datefmt="%m/%d %H:%M:%S"
+    )
+ch.setFormatter(formatter)
+_logger.addHandler(ch)
 
 
 SHOW_ORIGINAL = True
@@ -56,6 +69,7 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
         else:
             # visualize all
             to_visualize = np.ones(len(dataset))
+    _logger.info(f"Starting inference on {len(to_visualize)} file(s).")
     predictions = []
     files = []
     for d, vis in zip(dataset, to_visualize):
@@ -63,6 +77,7 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
             file = d["file_name"]
         else:
             file = d
+        _logger.info(f"Inference on: {file}")
         im = cv2.imread(file)
         outputs = predictor(im)
         # Accumulate results
@@ -77,8 +92,10 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
                 visualization.visualize(outputs, file, output_dir=output_dir,
                                         **kwargs)
         # Saving outputs
+        _logger.info("Starting endpoint computation ...")
         points = hf.rod_endpoints(outputs, classes)
         save_to_mat(os.path.join(output_dir, os.path.basename(file)), points)
+        _logger.info(f"Done with: {os.path.basename(file)}")
 
 
 def save_to_csv(file_name, points: dict):
