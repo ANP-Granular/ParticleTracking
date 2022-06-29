@@ -1,8 +1,131 @@
 import json
 import pickle
 
+import numpy as np
+from scipy.spatial import ConvexHull
 from detectron2.config.config import CfgNode
 from utils.datasets import DataSet
+
+
+def dot_arccos(lineA, lineB):
+    # Get nicer vector form
+    vA = [(lineA[0] - lineA[2]), (lineA[1] - lineA[3])]
+    vB = [(lineB[0] - lineB[2]), (lineB[1] - lineB[3])]
+    # Get dot prod
+    dot_prod = np.dot(vA, vB)
+    # Get magnitudes, Get cosine value, Get angle in radians and then
+    # convert to degrees
+    return np.arccos(
+        np.clip(dot_prod / (np.linalg.norm(vA) * np.linalg.norm(vB)), -1,
+                1))
+
+
+def line_metric_4(l1, l2):
+    """Custom metric: (distance + const)*exp"""
+    num_min = np.argmin([np.linalg.norm([(l1[0] - l1[2]), (l1[1] - l1[3])]),
+                         np.linalg.norm(
+                             [(l2[0] - l2[2]), (l2[1] - l2[3])])])
+    if num_min == 0:
+        l_min = l1
+        l_max = l2
+    else:
+        l_min = l2
+        l_max = l1
+
+    len_min = np.linalg.norm(l_min)
+    len_max = np.linalg.norm(l_max)
+
+    g = np.min([np.linalg.norm([(l1[0] - l2[0]), (l1[1] - l2[1])]),
+                np.linalg.norm([(l1[0] - l2[2]), (l1[1] - l2[3])]),
+                np.linalg.norm([(l1[2] - l2[0]), (l1[3] - l2[1])]),
+                np.linalg.norm([(l1[2] - l2[2]), (l1[3] - l2[3])]), ])
+
+    p1 = np.array(
+        [np.mean([l_min[0], l_min[2]]), np.mean([l_min[1], l_min[3]])])
+    p2 = np.array([l_max[0], l_max[1]])
+    p3 = np.array([l_max[2], l_max[3]])
+
+    s = np.cross(p2 - p1, p1 - p3) / np.linalg.norm(p2 - p1)
+
+    # Proximity
+    prox_m = (g / len_min) ** 2
+
+    # Parallelism
+    parr_m = (dot_arccos(l1, l2) * s * len_max) / (len_min * len_min)
+
+    # Collinearity
+    coll_m = (dot_arccos(l1, l2) * s * (len_min + g)) / (len_min * len_min)
+
+    # return [prox_m, parr_m, coll_m]
+    return np.linalg.norm([prox_m, 5.0 * parr_m, 4.0 * coll_m])
+
+
+def minimum_bounding_rectangle(points):
+    """Minimum bounding rectangle (parallelogram?)
+
+    Find the smallest bounding rectangle for a set of points.
+    Returns a set of points representing the corners of the bounding box.
+
+    :param points: an nx2 matrix of coordinates
+    :rval: an nx2 matrix of coordinates
+    """
+    from scipy.ndimage.interpolation import rotate
+    pi2 = np.pi / 2.
+
+    # get the convex hull for the points
+    hull_points = points[ConvexHull(points).vertices]
+
+    # calculate edge angles
+    # edges = np.zeros((len(hull_points) - 1, 2))
+    edges = hull_points[1:] - hull_points[:-1]
+
+    # angles = np.zeros((len(edges)))
+    angles = np.arctan2(edges[:, 1], edges[:, 0])
+
+    angles = np.abs(np.mod(angles, pi2))
+    angles = np.unique(angles)
+
+    # find rotation matrices
+    # XXX both work
+    rotations = np.vstack([
+        np.cos(angles),
+        np.cos(angles - pi2),
+        np.cos(angles + pi2),
+        np.cos(angles)]).T
+    #     rotations = np.vstack([
+    #         np.cos(angles),
+    #         -np.sin(angles),
+    #         np.sin(angles),
+    #         np.cos(angles)]).T
+    rotations = rotations.reshape((-1, 2, 2))
+
+    # apply rotations to the hull
+    rot_points = np.dot(rotations, hull_points.T)
+
+    # find the bounding points
+    min_x = np.nanmin(rot_points[:, 0], axis=1)
+    max_x = np.nanmax(rot_points[:, 0], axis=1)
+    min_y = np.nanmin(rot_points[:, 1], axis=1)
+    max_y = np.nanmax(rot_points[:, 1], axis=1)
+
+    # find the box with the best area
+    areas = (max_x - min_x) * (max_y - min_y)
+    best_idx = np.argmin(areas)
+
+    # return the best box
+    x1 = max_x[best_idx]
+    x2 = min_x[best_idx]
+    y1 = max_y[best_idx]
+    y2 = min_y[best_idx]
+    r = rotations[best_idx]
+
+    rval = np.zeros((4, 2))
+    rval[0] = np.dot([x1, y2], r)
+    rval[1] = np.dot([x2, y2], r)
+    rval[2] = np.dot([x2, y1], r)
+    rval[3] = np.dot([x1, y1], r)
+
+    return rval
 
 
 def get_dataset_size(dataset: DataSet):
@@ -68,6 +191,11 @@ def remove_duplicate_regions(dataset: DataSet):
     print(f"######################################\n"
           f"Deleted duplicates: {deleted_duplicates}")
     return
+
+
+def create_keypoints():
+    """Creates rod endpoints as keypoints from segmentation and adds it to
+    the metadata."""
 
 
 if __name__ == "__main__":
