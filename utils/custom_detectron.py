@@ -258,6 +258,9 @@ class CustomTensorboardWriter(EventWriter):
                                     writer.add_scalar("loss/" + new_k, v, iter)
                                 else:
                                     writer.add_scalar(new_k, v, iter)
+                        elif "segm/" in k:
+                            writer.add_scalar(k, v, iter)
+
                     elif id == "train":
                         if "test" not in k:
                             if "loss" in k:
