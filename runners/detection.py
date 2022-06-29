@@ -5,6 +5,7 @@ import cv2
 import random
 from typing import Union, List
 import numpy as np
+import scipy.io as sio
 
 # import detectron2 utilities
 from detectron2.engine import DefaultPredictor
@@ -16,11 +17,6 @@ import utils.datasets as ds
 import utils.helper_funcs as hf
 from runners import visualization
 
-# Matlab output
-from sklearn.cluster import DBSCAN
-from skimage.transform import probabilistic_hough_line
-from collections import Counter
-import scipy.io as sio
 
 SHOW_ORIGINAL = True
 
@@ -81,7 +77,7 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
                 visualization.visualize(outputs, file, output_dir=output_dir,
                                         **kwargs)
         # Saving outputs
-        points = rod_endpoints(outputs, classes)
+        points = hf.rod_endpoints(outputs, classes)
         save_to_mat(os.path.join(output_dir, os.path.basename(file)), points)
 
 
@@ -105,82 +101,3 @@ def save_to_mat(file_name, points: dict):
 
         sio.savemat(file_name + f"_{idx}.mat", {'rod_data_links': arr})
 
-
-def rod_endpoints(prediction, classes: dict):
-    """Calculates the endpoints of rods from the prediction masks."""
-    results = {}
-    with np.errstate(divide='ignore', invalid='ignore'):
-        r = prediction["instances"].to("cpu").get_fields()
-
-        for i_c in classes:  # Loop on colors
-            XY = []
-            i_c_list = np.argwhere(r['pred_classes'] == i_c).flatten()
-            for i_m in i_c_list:
-                segmentation = r['pred_masks'][i_m, :, :].numpy()
-                # Prob hough for line detection
-                lines = probabilistic_hough_line(segmentation, threshold=0,
-                                                 line_length=10,
-                                                 line_gap=30)
-                # If too short
-                if not lines:
-                    lines = probabilistic_hough_line(segmentation,
-                                                     threshold=0,
-                                                     line_length=4,
-                                                     line_gap=30)
-                # Lines to 4 dim array
-                Xl = np.array(lines)
-                X = np.ravel(Xl).reshape(Xl.shape[0], 4)
-                # Clustering with custom metric
-                db = DBSCAN(eps=0.0008, min_samples=4, algorithm='auto',
-                            metric=hf.line_metric_4).fit(X)
-
-                core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-                core_samples_mask[db.core_sample_indices_] = True
-                labels = db.labels_
-
-                cl_count = Counter(labels)
-                k = cl_count.most_common(1)[0][0]
-                class_member_mask = (labels == k)
-
-                xy = X[class_member_mask & core_samples_mask]
-
-                points = xy.reshape(2 * xy.shape[0], 2)
-
-                if points.shape[0] > 2:
-                    bbox = hf.minimum_bounding_rectangle(points)
-                    bord = -1  # Make rods 1 pix shorter
-
-                    # End coordinates
-                    if np.argmin([np.linalg.norm(bbox[0, :] - bbox[1, :]),
-                                  np.linalg.norm(bbox[1, :] - bbox[2, :])]) == 0:
-                        x1 = np.mean(bbox[0:2, 0])
-                        y1 = np.mean(bbox[0:2, 1])
-                        x2 = np.mean(bbox[2:4, 0])
-                        y2 = np.mean(bbox[2:4, 1])
-
-                    else:
-                        x1 = np.mean(bbox[1:3, 0])
-                        y1 = np.mean(bbox[1:3, 1])
-                        x2 = np.mean([bbox[0, 0], bbox[3, 0]])
-                        y2 = np.mean([bbox[0, 1], bbox[3, 1]])
-
-                    vX = x2 - x1
-                    vY = y2 - y1
-                    vN = np.linalg.norm([vX, vY])
-                    nvX = vX / vN
-                    nvY = vY / vN
-                    x1 = x1 - bord * nvX
-                    x2 = x2 + bord * nvX
-                    y1 = y1 - bord * nvY
-                    y2 = y2 + bord * nvY
-                    xy1 = [x1, y1]
-                    xy2 = [x2, y2]
-
-                if points.shape[0] == 2:
-                    print(points)
-                    xy1 = points[0, :]
-                    xy2 = points[1, :]
-                XY.append(np.array([xy1, xy2]))
-
-            results[classes[i_c]] = np.array(XY)
-    return results
