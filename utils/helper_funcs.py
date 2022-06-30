@@ -329,6 +329,7 @@ def create_keypoints(file_name: str):
             try:
                 key_points = rod_endpoints(inst, classes)
                 key_points = key_points[str(category_id)].flatten()
+                key_points = [float(point) for point in key_points]
                 to_insert = [*key_points[0:2], 1, *key_points[2:], 1]
             except UnboundLocalError as e:
                 # no endpoints were found
@@ -348,5 +349,5 @@ if __name__ == "__main__":
     # remove_duplicate_regions(HGS.val)
 
     file = "../datasets/rods_c4m/val/via_export_json.json"
-    file = "../datasets/rods_c4m/train/via_export_json.json"
+    # file = "../datasets/rods_c4m/train/via_export_json.json"
     create_keypoints(file)
