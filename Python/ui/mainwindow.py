@@ -341,8 +341,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             return
         colors = [expand_frame.child(i).text(0)
                   for i in range(expand_frame.childCount())]
-        expand_color = expand_frame.child(
-            colors.index(self.get_selected_color()))
+
+        try:
+            to_expand = colors.index(self.get_selected_color())
+        except ValueError:
+            to_expand = 0
+        expand_color = expand_frame.child(to_expand)
 
         self.ui.tv_rods.expandItem(expand_frame)
         self.ui.tv_rods.expandItem(expand_color)
@@ -549,16 +553,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.df_data, found_colors = f_ops.get_color_data(
                         self.original_data, self.data_files)
 
-                    # Display as a tree
-                    self.rod_info, columns = d_ops.extract_seen_information(
-                        self.df_data)
-                    self.ui.tv_rods.clear()
-                    self.ui.tv_rods.setColumnCount(len(columns) + 1)
-                    headers = [self.ui.tv_rods.headerItem().text(0), *columns]
-                    self.ui.tv_rods.setHeaderLabels(headers)
-                    self.generate_tree()
-                    self.update_tree_folding()
-
                     # Update visual elements
                     rb_colors = [child for child
                                  in self.ui.group_rod_color.children() if
@@ -584,6 +578,18 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                 max_col += 1
                             else:
                                 max_row += 1
+
+                    # Display as a tree
+                    self.rod_info, columns = d_ops.extract_seen_information(
+                        self.df_data)
+                    self.ui.tv_rods.clear()
+                    self.ui.tv_rods.setColumnCount(len(columns) + 1)
+                    headers = [self.ui.tv_rods.headerItem().text(0),
+                               *columns]
+                    self.ui.tv_rods.setHeaderLabels(headers)
+                    self.generate_tree()
+                    self.update_tree_folding()
+
                     # Rod position data was selected correctly
                     self.ui.le_rod_dir.setText(self.original_data[:-1])
                     self.ui.le_save_dir.setText(out_folder)
