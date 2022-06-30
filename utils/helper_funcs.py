@@ -330,7 +330,7 @@ def create_keypoints(file_name: str):
                 key_points = rod_endpoints(inst, classes)
                 key_points = key_points[str(category_id)].flatten()
                 key_points = [float(point) for point in key_points]
-                to_insert = [*key_points[0:2], 1, *key_points[2:], 1]
+                to_insert = [*key_points[0:2], 2, *key_points[2:], 2]
             except UnboundLocalError as e:
                 # no endpoints were found
                 to_insert = 6*[0]

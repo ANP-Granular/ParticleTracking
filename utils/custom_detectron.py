@@ -26,10 +26,22 @@ class CustomTrainer(DefaultTrainer):
     def build_evaluator(cls, cfg: CfgNode, dataset_name: str):
         # TODO: What exactly is max_dets_per_image controlling/ how does it
         #  influence the metrics?
+        try:
+            tasks = cfg.TASKS
+            if "None" in tasks:
+                return DatasetEvaluators([])
+        except AttributeError:
+            tasks = ["segm"]
+
+        if "keypoints" in tasks:
+            sigmas = np.array([0.25, 0.25])/10.0
+        else:
+            sigmas = ()
+
         dataset_evaluators = [
             COCOEvaluator(dataset_name, output_dir=cfg.OUTPUT_DIR,
                           max_dets_per_image=cfg.TEST.DETECTIONS_PER_IMAGE,
-                        tasks=("segm",))
+                          tasks=tuple(tasks), kpt_oks_sigmas=sigmas)
         ]
         return DatasetEvaluators(dataset_evaluators)
 

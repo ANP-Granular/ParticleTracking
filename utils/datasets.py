@@ -54,6 +54,10 @@ def load_custom_data(dataset: DataSet) -> List[dict]:
                 category_id = int(anno["region_attributes"]["rod_col"])
             except KeyError:
                 category_id = 0
+            if "keypoints" in anno:
+                keypoints = anno["keypoints"]
+            else:
+                keypoints = None
 
             anno = anno["shape_attributes"]
             px = anno["all_points_x"]
@@ -68,8 +72,8 @@ def load_custom_data(dataset: DataSet) -> List[dict]:
                 "segmentation": [poly],
                 "category_id": category_id,
             }
-            if "keypoints" in anno:
-                obj["keypoints"] = anno["keypoints"]
+            if keypoints is not None:
+                obj["keypoints"] = keypoints
 
             objs.append(obj)
         record["annotations"] = objs
