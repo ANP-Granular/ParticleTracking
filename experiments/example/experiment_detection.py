@@ -36,5 +36,6 @@ def main():
                             visualize=True, hide_tags=False,
                             vis_random_samples=2, classes=classes)
 
+
 if __name__ == "__main__":
     main()

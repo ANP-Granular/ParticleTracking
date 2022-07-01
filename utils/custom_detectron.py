@@ -6,13 +6,14 @@ from typing import List
 
 import numpy as np
 import torch
-from detectron2.engine.hooks import HookBase, PeriodicWriter
+from detectron2.engine.hooks import HookBase
 from detectron2.config.config import CfgNode
 from detectron2.engine.defaults import DefaultTrainer
 from detectron2.evaluation import COCOEvaluator, DatasetEvaluators
 import detectron2.data.detection_utils as utils
 import detectron2.data.transforms as T
-from detectron2.utils.events import EventWriter, get_event_storage
+from detectron2.utils.events import EventWriter, get_event_storage, \
+    CommonMetricPrinter
 from detectron2.utils.logger import log_every_n_seconds
 from detectron2.data import DatasetMapper, build_detection_test_loader, \
     build_detection_train_loader
@@ -27,16 +28,17 @@ class CustomTrainer(DefaultTrainer):
         # TODO: What exactly is max_dets_per_image controlling/ how does it
         #  influence the metrics?
         try:
-            tasks = cfg.TASKS
+            tasks = [cfg.TASKS]
             if "None" in tasks:
                 return DatasetEvaluators([])
         except AttributeError:
             tasks = ["segm"]
 
         if "keypoints" in tasks:
-            sigmas = np.array([0.25, 0.25])/10.0
+            sigmas = (np.array([0.25, 0.25])/10.0)
+            sigmas = sigmas.tolist()
         else:
-            sigmas = ()
+            sigmas = []
 
         dataset_evaluators = [
             COCOEvaluator(dataset_name, output_dir=cfg.OUTPUT_DIR,
@@ -45,11 +47,14 @@ class CustomTrainer(DefaultTrainer):
         ]
         return DatasetEvaluators(dataset_evaluators)
 
+    def build_writers(self):
+        return [CustomTensorboardWriter(self.cfg.OUTPUT_DIR, window_size=1),
+                CommonMetricPrinter(self.cfg.SOLVER.MAX_ITER)]
+
     def build_hooks(self):
-        cfg = self.cfg.clone()
         hooks = super().build_hooks()
         hooks.insert(-1, EvalLossHook(
-            cfg.TEST.EVAL_PERIOD,   # 1,
+            self.cfg.TEST.EVAL_PERIOD,   # 1,
             self.model,
             build_detection_test_loader(
                 self.cfg,
@@ -57,8 +62,6 @@ class CustomTrainer(DefaultTrainer):
                 DatasetMapper(self.cfg, True)  # TODO: might need to be replaced
             )
         ))
-        hooks.insert(-1, PeriodicWriter([CustomTensorboardWriter(
-            cfg.OUTPUT_DIR, window_size=1)]))
         return hooks
 
     # # TODO: finish this (it worked without it too)
@@ -263,7 +266,7 @@ class CustomTensorboardWriter(EventWriter):
                     if id == "test":
                         if "test" in k:
                             if k == "timetest":
-                                writer.add_scalar("time", v, iter)
+                                writer.add_scalar("time/time", v, iter)
                             else:
                                 new_k = k.split("/")[-1]
                                 if "loss" in new_k:
@@ -272,13 +275,20 @@ class CustomTensorboardWriter(EventWriter):
                                     writer.add_scalar(new_k, v, iter)
                         elif "segm/" in k:
                             writer.add_scalar(k, v, iter)
+                        elif "keypoints/" in k:
+                            writer.add_scalar(k, v, iter)
 
                     elif id == "train":
                         if "test" not in k:
+                            if "segm/" in k:
+                                continue
+                            if "keypoints/" in k:
+                                continue
+                            writer.add_scalar("all/" + k, v, iter)
                             if "loss" in k:
                                 writer.add_scalar("loss/" + k, v, iter)
-                            else:
-                                writer.add_scalar(k, v, iter)
+                            elif "time" in k:
+                                writer.add_scalar("time/" + k, v, iter)
 
                 new_last_write = max(new_last_write, iter)
         self._last_write = new_last_write
