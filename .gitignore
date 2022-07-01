@@ -5,3 +5,4 @@
 /experiments/*
 !/experiments/example/config.yaml
 !/experiments/example/experiment_train.py
+!/experiments/example/experiment_detection.py
