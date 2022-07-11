@@ -114,12 +114,12 @@ class CompleteMapper(DatasetMapper):
     """Provides annotation data in training and testing context."""
     def __call__(self, dataset_dict):
         """
-                Args:
-                    dataset_dict (dict): Metadata of one image, in Detectron2 Dataset format.
+        Args:
+            dataset_dict (dict): Metadata of one image, in Detectron2 Dataset format.
 
-                Returns:
-                    dict: a format that builtin models in detectron2 accept
-                """
+        Returns:
+            dict: a format that builtin models in detectron2 accept
+        """
         dataset_dict = copy.deepcopy(
             dataset_dict)  # it will be modified by code below
         # USER: Write your own image loading if it's not from a file
