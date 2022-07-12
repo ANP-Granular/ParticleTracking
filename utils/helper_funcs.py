@@ -1,6 +1,8 @@
+import sys
 import json
 import os.path
 import pickle
+import logging
 from collections import Counter
 
 import torch
@@ -14,6 +16,17 @@ from detectron2.structures import Instances
 from detectron2.utils.visualizer import GenericMask
 
 import utils.datasets as ds
+
+_logger = logging.getLogger(__name__)
+_logger.setLevel(logging.INFO)
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
+    datefmt="%m/%d %H:%M:%S"
+    )
+ch.setFormatter(formatter)
+_logger.addHandler(ch)
 
 
 def dot_arccos(lineA, lineB):
@@ -157,6 +170,13 @@ def rod_endpoints(prediction, classes: dict):
                                                      threshold=0,
                                                      line_length=4,
                                                      line_gap=30)
+                # No endpoint estimation possible
+                if not lines:
+                    _logger.info(f"No endpoints computed for a rod of class "
+                                 f"{classes[i_c]}.")
+                    XY.append(np.array([[-1, -1], [-1, -1]]))
+                    continue
+
                 # Lines to 4 dim array
                 Xl = np.array(lines)
                 X = np.ravel(Xl).reshape(Xl.shape[0], 4)
@@ -175,7 +195,6 @@ def rod_endpoints(prediction, classes: dict):
                 xy = X[class_member_mask & core_samples_mask]
 
                 points = xy.reshape(2 * xy.shape[0], 2)
-
                 if points.shape[0] > 2:
                     bbox = minimum_bounding_rectangle(points)
                     bord = -1  # Make rods 1 pix shorter
@@ -206,10 +225,15 @@ def rod_endpoints(prediction, classes: dict):
                     xy1 = [x1, y1]
                     xy2 = [x2, y2]
 
-                if points.shape[0] == 2:
-                    print(points)
+                elif points.shape[0] == 2:
                     xy1 = points[0, :]
                     xy2 = points[1, :]
+
+                else:
+                    xy1 = [-1, -1]  # value, if no endpoints are computed
+                    xy2 = [-1, -1]  # value, if no endpoints are computed
+                    _logger.info(f"No endpoints computed for a rod of class "
+                                 f"{classes[i_c]}.")
                 XY.append(np.array([xy1, xy2]))
 
             results[classes[i_c]] = np.array(XY)
