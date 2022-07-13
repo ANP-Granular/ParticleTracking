@@ -27,7 +27,8 @@ def run_training(train_set: ds.DataSet,
                  val_set: ds.DataSet = None,
                  output_dir: str = "./", log_name: str = "training.log",
                  resume: bool = True, visualize: bool = False,
-                 img_augmentations: List[T.Augmentation] = None):
+                 img_augmentations: List[T.Augmentation] = None,
+                 freeze_layers: List[str] = None):
 
     setup_logger(os.path.join(output_dir, log_name))
     if visualize:
@@ -83,5 +84,14 @@ def run_training(train_set: ds.DataSet,
     if img_augmentations:
         custom.CustomTrainer.augmentations = img_augmentations
     trainer = custom.CustomTrainer(configuration)
+
+    # Freeze layers (prevent weight/bias updates, might not work for
+    # decay/momentum)
+    if freeze_layers:
+        for layer, params in trainer.model.named_parameters():
+            for to_freeze in freeze_layers:
+                if to_freeze in layer:
+                    params.requires_grad = False
+
     trainer.resume_or_load(resume=resume)
     trainer.train()
