@@ -27,6 +27,7 @@ from PyQt5.QtGui import QImage, QWheelEvent
 from Python.backend import settings as se, logger as lg, \
     data_operations as d_ops, file_operations as f_ops
 from Python.ui import rodnumberwidget as rn, mainwindow_layout as mw_l, dialogs
+from Python.backend.parallelism import run_in_thread
 
 ICON_PATH = "./resources/icon_main.ico"
 
@@ -111,6 +112,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     tab_has_changes(bool)
 
     """
+    background_tasks = []
     fileList: List[str] = None
     logger_id: str = "main"
     logger: lg.ActionLogger
@@ -580,15 +582,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                 max_row += 1
 
                     # Display as a tree
-                    self.rod_info, columns = d_ops.extract_seen_information(
-                        self.df_data)
-                    self.ui.tv_rods.clear()
-                    self.ui.tv_rods.setColumnCount(len(columns) + 1)
-                    headers = [self.ui.tv_rods.headerItem().text(0),
-                               *columns]
-                    self.ui.tv_rods.setHeaderLabels(headers)
-                    self.generate_tree()
-                    self.update_tree_folding()
+                    thread, worker = run_in_thread(
+                        d_ops.extract_seen_information, {"data": self.df_data})
+                    worker.finished.connect(self.setup_tree)
+                    self.background_tasks.append((thread, worker))
+                    thread.start()
 
                     # Rod position data was selected correctly
                     self.ui.le_rod_dir.setText(self.original_data[:-1])
@@ -605,6 +603,23 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                             btn.hide()
                             btn.deleteLater()
                     return
+
+    @QtCore.pyqtSlot(object)
+    def setup_tree(self, inputs):
+        """Handles the setup of the treeview from extracted rod data."""
+        assert len(inputs) == 2
+        rod_info, columns = inputs[:]
+        assert type(columns) is list
+        assert type(rod_info) is dict
+
+        self.rod_info = rod_info
+        self.ui.tv_rods.clear()
+        self.ui.tv_rods.setColumnCount(len(columns) + 1)
+        headers = [self.ui.tv_rods.headerItem().text(0),
+                   *columns]
+        self.ui.tv_rods.setHeaderLabels(headers)
+        self.generate_tree()
+        self.update_tree_folding()
 
     def show_overlay(self):
         """Tries to load rods and hints the user if that is not possible.

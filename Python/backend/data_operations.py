@@ -19,7 +19,6 @@ import math
 import pandas as pd
 from typing import List, Dict, Tuple
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QTreeWidget
 import Python.ui.rodnumberwidget as rn
 
 
@@ -71,7 +70,6 @@ def extract_rods(data, cam_id: str, frame: int, color: str) -> \
     return new_rods
 
 
-# TODO: move to different Thread
 def extract_seen_information(data: pd.DataFrame) -> \
         Tuple[Dict[int, Dict[str, dict]], list]:
     """Extracts the seen/unseen parameter for all rods in the dataset.
