@@ -116,5 +116,6 @@ def save_to_mat(file_name, points: dict):
         arr[:]['Point1'] = vals[:, 0, :]
         arr[:]['Point2'] = vals[:, 1, :]
 
-        sio.savemat(file_name + f"_{idx}.mat", {'rod_data_links': arr})
+        sio.savemat(os.path.splitext(file_name)[0] +
+                    f"_{idx}.mat", {'rod_data_links': arr})
 
