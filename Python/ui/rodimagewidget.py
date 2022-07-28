@@ -778,11 +778,11 @@ class RodImageWidget(QLabel):
         elif e.key() == QtCore.Qt.Key_S:
             # shorten rod
             amount = -self._rod_incr
-        elif e.key() == QtCore.Qt.Key_T:
+        elif e.key() == QtCore.Qt.Key_R:
             # lengthen all rods
             amount = self._rod_incr
             only_selected = False
-        elif e.key() == QtCore.Qt.Key_R:
+        elif e.key() == QtCore.Qt.Key_T:
             amount = -self._rod_incr
             only_selected = False
         else:
