@@ -97,6 +97,7 @@ class RodImageWidget(QLabel):
     _rod_thickness = 3
     _number_offset = 15
     _position_scaling = 10.0
+    _rod_incr = 1.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -772,12 +773,11 @@ class RodImageWidget(QLabel):
         amount = 0.
         if e.key() == QtCore.Qt.Key_A:
             # lengthen rod
-            amount = 1.0
+            amount = self._rod_incr
         elif e.key() == QtCore.Qt.Key_S:
             # shorten rod
-            amount = -1.0
+            amount = -self._rod_incr
         else:
-            print(e.key())
             return super().keyPressEvent(e)
         # Adjust rod length
         self._logger.add_action(self.adjust_length_activated(amount))
@@ -971,6 +971,9 @@ class RodImageWidget(QLabel):
         if "position_scaling" in settings:
             settings_changed = True
             self._position_scaling = settings["position_scaling"]
+        if "rod_increment" in settings:
+            settings_changed = True
+            self._rod_incr = settings["rod_increment"]
 
         if settings_changed:
             self.draw_rods()

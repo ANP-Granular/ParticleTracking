@@ -226,6 +226,29 @@ class SettingsDialog(QtWidgets.QDialog):
         visual_items_layout.addLayout(inner_layout)
         self.number_rods.valueChanged.connect(self.handle_number_rods)
 
+        # Rod length in-/decrements
+        lbl_rod_incr = QtWidgets.QLabel("Rod length in-/decrements")
+        lbl_rod_incr.setStyleSheet(self.item_style)
+        self.rod_incr = QtWidgets.QLineEdit()
+        self.rod_incr.setInputMask("00.00;0")
+        self.rod_incr.setMaximumWidth(35)
+        try:
+            self.rod_incr.setText(
+                f"{self.tmp_contents['visual']['rod_increment']:05.2f}")
+        except KeyError:
+            self.tmp_contents["visual"]["rod_increment"] = 1.0
+            self.rod_incr.setText(f"1.0")
+        self.rod_incr.setAlignment(QtCore.Qt.AlignRight)
+        inner_layout = QtWidgets.QHBoxLayout()
+        inner_layout.addWidget(lbl_rod_incr)
+        item_spacer_7 = QtWidgets.QSpacerItem(
+            10, 20, hPolicy=QtWidgets.QSizePolicy.Expanding,
+            vPolicy=QtWidgets.QSizePolicy.Fixed)
+        inner_layout.addItem(item_spacer_7)
+        inner_layout.addWidget(self.rod_incr)
+        visual_items_layout.addLayout(inner_layout)
+        self.rod_incr.textChanged.connect(self.handle_rod_increment)
+
         # Control Buttons
         btns = QtWidgets.QDialogButtonBox.Save | \
             QtWidgets.QDialogButtonBox.Cancel
@@ -301,6 +324,14 @@ class SettingsDialog(QtWidgets.QDialog):
             converted_val = 1.0
         self.tmp_contents["visual"]["position_scaling"] = converted_val
         self.update_preview()
+    
+    def handle_rod_increment(self, _:str):
+        """Handles changes of the rod increments by the dialog's controls."""
+        try:
+            converted_val = float(self.rod_incr.displayText())
+        except ValueError:
+            converted_val = 1.0
+        self.tmp_contents["visual"]["rod_increment"] = converted_val
 
     @staticmethod
     def draw_icon(color: QtGui.QColor, target: QtWidgets.QToolButton):
@@ -337,6 +368,7 @@ class SettingsDialog(QtWidgets.QDialog):
                 "number_color"]), self.number_color)
             self.position_scaling.setText(str(self.tmp_contents["visual"]
                                               ["position_scaling"]))
+            self.rod_incr.setText(str(self.tmp_contents["visual"]["rod_increment"]))
             self.update_preview()
 
 
