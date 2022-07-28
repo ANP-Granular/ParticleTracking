@@ -771,32 +771,46 @@ class RodImageWidget(QLabel):
 
     def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
         amount = 0.
+        only_selected = True
         if e.key() == QtCore.Qt.Key_A:
             # lengthen rod
             amount = self._rod_incr
         elif e.key() == QtCore.Qt.Key_S:
             # shorten rod
             amount = -self._rod_incr
+        elif e.key() == QtCore.Qt.Key_T:
+            # lengthen all rods
+            amount = self._rod_incr
+            only_selected = False
+        elif e.key() == QtCore.Qt.Key_R:
+            amount = -self._rod_incr
+            only_selected = False
         else:
             return super().keyPressEvent(e)
         # Adjust rod length
-        self._logger.add_action(self.adjust_length_activated(amount))
+        actions = self.adjust_length_activated(amount, only_selected)
         self.draw_rods()
+        for a in actions:
+            self._logger.add_action(a)
+        
     
-    def adjust_length_activated(self, amount: float = 1.):
+    def adjust_length_activated(self, amount: float = 1., only_selected: bool = True) -> list:
         """Adds the length (in px) given in `amount` to the rod. Negative values shorten the rod."""
-        # Prune rod length
+        actions_performed = []
         for rod in self._edits:
-            if rod.rod_state == RodState.SELECTED:
-                n_p = np.asarray(rod.rod_points)
-                rod_direction = np.array([n_p[0:2]-n_p[2:]])
-                rod_direction = rod_direction/np.sqrt(np.sum(rod_direction**2))
-                rod_direction = amount/2 * rod_direction
-                n_p = n_p + np.concatenate([rod_direction, -rod_direction]).flatten()
-                n_p = list(n_p)
-                action_performed = PruneLength(rod.copy(), n_p)
-                rod.rod_points = n_p
-                return action_performed
+            if only_selected:
+                if rod.rod_state != RodState.SELECTED:
+                    continue
+
+            n_p = np.asarray(rod.rod_points)
+            rod_direction = np.array([n_p[0:2]-n_p[2:]])
+            rod_direction = rod_direction/np.sqrt(np.sum(rod_direction**2))
+            rod_direction = amount/2 * rod_direction
+            n_p = n_p + np.concatenate([rod_direction, -rod_direction]).flatten()
+            n_p = list(n_p)
+            actions_performed.append(PruneLength(rod.copy(), n_p))
+            rod.rod_points = n_p
+        return actions_performed
 
     @staticmethod
     def subtract_offset(point: QtCore.QPoint, offset: [int]) -> QtCore.QPoint:
