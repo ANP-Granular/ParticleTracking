@@ -682,6 +682,37 @@ class PermanentRemoveAction(Action):
         pass
 
 
+class PruneLength(ChangeRodPositionAction):
+    """Class to represent the pruning of a rods length as a loggable action.
+
+    Parameters
+    ----------
+    old_rod : RodNumberWidget
+        A copy of the rod whose position was changed, prior to the change.
+    new_postion : [int]
+        The newly set starting and ending points of the rod, i.e. [x1, y1,
+        x2, y2].
+    *args : iterable
+        Positional arguments for the `QListWidgetItem` superclass.
+    **kwargs : dict
+        Keyword arguments for the `QListWidgetItem` superclass.
+
+    Attributes
+    ----------
+    rod : RodNumberWidget
+        A copy of the rod whose position was changed, prior to the change.
+    new_pos : [int]
+        The newly set starting and ending points of the rod.
+    action : str
+        Default is "Rod length pruned: ".
+    """
+    def __init__(self, old_rod: rn.RodNumberWidget, new_position: [int], 
+                 *args, **kwargs):
+        super().__init__(old_rod, new_position, *args, **kwargs)
+        self.action = "Rod length pruned: "
+        self.setText(str(self))
+    
+
 class ActionLogger(QtCore.QObject):
     """Logs actions performed on its associated GUI object.
 

@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import QLabel, QMessageBox, QInputDialog
 from Python.ui.rodnumberwidget import RodNumberWidget, RodState, RodStateError
 from Python.ui import dialogs
 from Python.backend.logger import ActionLogger, DeleteRodAction, \
-    ChangeRodPositionAction, Action, ChangedRodNumberAction, CreateRodAction
+    ChangeRodPositionAction, Action, ChangedRodNumberAction, CreateRodAction, PruneLength
 
 
 ICON_PATH = "./resources/icon_main.ico"
@@ -693,7 +693,7 @@ class RodImageWidget(QLabel):
             # given action does not require a color to be handled
             pass
 
-        if type(action) == ChangeRodPositionAction:
+        if type(action) == ChangeRodPositionAction or type(action)==PruneLength:
             new_rods = action.undo(rods=self._edits)
             self._edits = new_rods
             self.draw_rods()
@@ -767,6 +767,36 @@ class RodImageWidget(QLabel):
             # Complete version
             for rod in self._edits:
                 self.adjust_rod_position(rod)
+
+    def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
+        amount = 0.
+        if e.key() == QtCore.Qt.Key_A:
+            # lengthen rod
+            amount = 1.0
+        elif e.key() == QtCore.Qt.Key_S:
+            # shorten rod
+            amount = -1.0
+        else:
+            print(e.key())
+            return super().keyPressEvent(e)
+        # Adjust rod length
+        self._logger.add_action(self.adjust_length_activated(amount))
+        self.draw_rods()
+    
+    def adjust_length_activated(self, amount: float = 1.):
+        """Adds the length (in px) given in `amount` to the rod. Negative values shorten the rod."""
+        # Prune rod length
+        for rod in self._edits:
+            if rod.rod_state == RodState.SELECTED:
+                n_p = np.asarray(rod.rod_points)
+                rod_direction = np.array([n_p[0:2]-n_p[2:]])
+                rod_direction = rod_direction/np.sqrt(np.sum(rod_direction**2))
+                rod_direction = amount/2 * rod_direction
+                n_p = n_p + np.concatenate([rod_direction, -rod_direction]).flatten()
+                n_p = list(n_p)
+                action_performed = PruneLength(rod.copy(), n_p)
+                rod.rod_points = n_p
+                return action_performed
 
     @staticmethod
     def subtract_offset(point: QtCore.QPoint, offset: [int]) -> QtCore.QPoint:
