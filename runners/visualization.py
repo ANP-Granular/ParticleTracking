@@ -36,7 +36,7 @@ def visualize(prediction, original: Union[dict, str],
 
     if output_dir:
         plt.savefig(os.path.join(output_dir, fig_title))
-    plt.show()
+    # plt.show(block=False)
 
 
 def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):

@@ -1,6 +1,7 @@
 import json
+from typing import List
 import numpy as np
-import cv2
+import pandas as pd
 
 
 def extract_stereo_params(calibration_params: dict) -> dict:
@@ -70,26 +71,26 @@ def extract_stereo_params(calibration_params: dict) -> dict:
 
 def extract_cam_params(mat_params: dict):
     """
-        OpenCV:             Matlab:
-        [[fx, 0, cx],       [[fx, 0, 0],
-        [0, fy, cy],        [s, fy, 0],
-        [0, 0, 1]]          [cx, cy, 1]]
+    OpenCV:             Matlab:
+    [[fx, 0, cx],       [[fx, 0, 0],
+    [0, fy, cy],        [s, fy, 0],
+    [0, 0, 1]]          [cx, cy, 1]]
 
-        OpenCV:
-        (k1, k2, p1, p2[, k3[, k4, k5, k6[, s1, s2, s3, s4[, tau_x, tau_y]]]])
-        -> 4, 5, 8, 12 or 14 elements
+    OpenCV:
+    (k1, k2, p1, p2[, k3[, k4, k5, k6[, s1, s2, s3, s4[, tau_x, tau_y]]]])
+    -> 4, 5, 8, 12 or 14 elements
 
-        - fx, fy -> focal lengths
-        - cx, cy -> Principal point
-        - k1, k2[, k3, k4, k5, k6] -> Radial (distortion) coefficients
-        - p1, p2 -> Tangential distortion coefficients
-        - s1, s2, s3, s4 -> prism distortion coefficients
-        - τx,τy -> angular parameters (for image sensor tilts)
+    - fx, fy -> focal lengths
+    - cx, cy -> Principal point
+    - k1, k2[, k3, k4, k5, k6] -> Radial (distortion) coefficients
+    - p1, p2 -> Tangential distortion coefficients
+    - s1, s2, s3, s4 -> prism distortion coefficients
+    - τx,τy -> angular parameters (for image sensor tilts)
 
-        see:
-        https://de.mathworks.com/help/vision/ref/cameraintrinsics.html
-        https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
-        """
+    see:
+    https://de.mathworks.com/help/vision/ref/cameraintrinsics.html
+    https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
+    """
     # mat_matrix = camera_parameters["IntrinsicMatrix"]
     fx, fy = mat_params["FocalLength"]
     cx, cy = mat_params["PrincipalPoint"]
@@ -123,15 +124,33 @@ def load_calib_from_json(file_name: str) -> (dict, dict | None, dict | None):
         stereo_params = extract_stereo_params(all_calibs["stereoParams"])
         stereo_params["img_size"] = all_calibs["stereoParams"][
             "CameraParameters2"]["ImageSize"]
-        to_rectify = (
-            cam1["matrix"], cam1["distortions"], cam2["matrix"],
-            cam2["distortions"], stereo_params["img_size"], stereo_params["R"],
-            stereo_params["T"]
-        )
-        r1, r2, p1, p2, _, _, _ = cv2.stereoRectify(*to_rectify)
-        stereo_params.update({"R1": r1, "R2": r2, "P1": p1, "P2": p2})
         return stereo_params, cam1, cam2
 
     elif "transformations" in all_calibs.keys():
         return all_calibs["transformations"]
     return
+
+
+def load_positions_from_txt(base_file_name: str, columns: List[str],
+                            frames: List[int], expected_particles: int =
+                            None) -> pd.DataFrame:
+    """Loads the rod data from point matching and adds a frame column."""
+    if "particle" not in columns:
+        columns.append("particle")
+    data = pd.DataFrame(columns=columns)
+    for f in frames:
+        data_raw = pd.read_csv(base_file_name.format(f), sep=" ", header=None,
+                               names=columns)
+        if expected_particles:
+            # Fill missing rods with "empty" rows
+            missing = expected_particles - len(data_raw)
+            empty_rods = pd.DataFrame(
+                missing * [
+                    [4.5, 5, 5, 5.5, 5, 5, 5, 5, 5, 1.0, 0, 0, 0, 0, 0, 0,
+                     0, 0, f, 0]], columns=columns
+            )
+            data_raw = pd.concat([data_raw, empty_rods], ignore_index=True)
+        data_raw["particle"] = range(0, len(data_raw))
+        data_raw["frame"] = f
+        data = pd.concat([data, data_raw], ignore_index=True)
+    return data
