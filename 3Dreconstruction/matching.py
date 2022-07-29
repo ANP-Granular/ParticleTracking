@@ -7,6 +7,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 import data_loading as dl
+from result_visualizations import matching_results
 
 
 # TODO: Extract method for "triangulation" from match_rods()
@@ -183,9 +184,16 @@ def example_match_rods():
     end_frame = 733
     frame_numbers = list(range(start_frame, end_frame+1))
 
-    match_rods(cam1_folder, cam2_folder, out_folder, colors,
-               frame_numbers, calibration_file, transformation_file,
-               cam1_convention, cam2_convention)
+    errs, lens = match_rods(cam1_folder, cam2_folder, out_folder, colors,
+                            frame_numbers, calibration_file,
+                            transformation_file, cam1_convention,
+                            cam2_convention)
+    err_vis = np.array([])
+    len_vis = np.array([])
+    for err, l in zip(errs, lens):
+        err_vis = np.concatenate([err_vis, err.flatten()])
+        len_vis = np.concatenate([len_vis, l.flatten()])
+    matching_results(err_vis, len_vis)
 
 
 if __name__ == "__main__":
