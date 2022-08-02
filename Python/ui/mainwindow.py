@@ -121,6 +121,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     _current_file_ids: list = []
     _CurrentFileIndex: int = 0
     _allow_overwrite: bool = False
+    _rod_incr: float = 1.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -134,6 +135,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if platform.system() == "Darwin":
             self.ui.action_zoom_in.setShortcut("Ctrl+=")
             self.ui.action_zoom_out.setShortcut("Ctrl+-")
+        
+        self.elongate_rods = QtWidgets.QShortcut(QtGui.QKeySequence("R"), self)
+        self.shorten_rods = QtWidgets.QShortcut(QtGui.QKeySequence("T"), self)
 
         # Set maximum button/checkbox sizes to avoid text clipping
         pb_load_txt = self.ui.pb_load_images.text()
@@ -257,6 +261,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.request_undo.connect(cam.logger.undo_last)
             self.request_redo.connect(cam.logger.redo_last)
             self.settings.settings_changed.connect(cam.update_settings)
+        self.shorten_rods.activated.connect(
+            lambda : self.current_camera.adjust_length_activated(
+                -self._rod_incr, False))
+        self.elongate_rods.activated.connect(
+            lambda: self.current_camera.adjust_length_activated(
+                self._rod_incr, False))
 
         # Help
         self.ui.action_docs.triggered.connect(lambda: dialogs.show_readme(
@@ -386,7 +396,23 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict):
-        pass
+        """Catches updates of the settings from a `Settings` class.
+
+        Checks for the keys relevant to itself and updates the corresponding
+        attributes. Updates itself with the new settings in place.
+
+        Parameters
+        ----------
+        settings : dict
+
+        Returns
+        -------
+        None
+        """
+        settings_changed = False
+        if "rod_increment" in settings:
+            settings_changed = True
+            self._rod_incr = settings["rod_increment"]
 
     def open_image_folder(self):
         """Lets the user select an image folder to show images from.
@@ -1132,6 +1158,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.fileList = self.view_filelists[new_idx]
         self.current_file_ids = self.file_ids[new_idx]
         self.current_camera = self.cameras[new_idx]
+
+        # Connect signals for rod alteration
+        self.shorten_rods.activated.disconnect()
+        self.elongate_rods.activated.disconnect()
+        self.shorten_rods.activated.connect(
+            lambda : self.current_camera.adjust_length_activated(
+                -self._rod_incr, False))
+        self.elongate_rods.activated.connect(
+            lambda: self.current_camera.adjust_length_activated(
+                self._rod_incr, False))
+
         # Loads a new image, if necessary
         self.show_next(index_diff)
         try:

@@ -769,31 +769,8 @@ class RodImageWidget(QLabel):
             for rod in self._edits:
                 self.adjust_rod_position(rod)
 
-    def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
-        amount = 0.
-        only_selected = True
-        if e.key() == QtCore.Qt.Key_A:
-            # lengthen rod
-            amount = self._rod_incr
-        elif e.key() == QtCore.Qt.Key_S:
-            # shorten rod
-            amount = -self._rod_incr
-        elif e.key() == QtCore.Qt.Key_R:
-            # lengthen all rods
-            amount = self._rod_incr
-            only_selected = False
-        elif e.key() == QtCore.Qt.Key_T:
-            amount = -self._rod_incr
-            only_selected = False
-        else:
-            return super().keyPressEvent(e)
-        # Adjust rod length
-        actions = self.adjust_length_activated(amount, only_selected)
-        self.draw_rods()
-        for a in actions:
-            self._logger.add_action(a)
         
-    
+    @QtCore.pyqtSlot()
     def adjust_length_activated(self, amount: float = 1., only_selected: bool = True) -> list:
         """Adds the length (in px) given in `amount` to the rod. Negative values shorten the rod."""
         actions_performed = []
@@ -808,12 +785,16 @@ class RodImageWidget(QLabel):
             rod_direction = amount/2 * rod_direction
             n_p = n_p + np.concatenate([rod_direction, -rod_direction]).flatten()
             n_p = list(n_p)
-            actions_performed.append(PruneLength(rod.copy(), n_p))
+            performed_action = PruneLength(rod.copy(), n_p)
+            actions_performed.append(performed_action)
             rod.rod_points = n_p
+            self._logger.add_action(performed_action)
+        self.draw_rods()
         return actions_performed
 
     @staticmethod
-    def subtract_offset(point: QtCore.QPoint, offset: [int]) -> QtCore.QPoint:
+    def subtract_offset(point: QtCore.QPoint, offset: List[int]) -> \
+        QtCore.QPoint:
         """Subtracts a given offset from a point and returns the new point.
 
         Parameters
@@ -877,7 +858,7 @@ class RodImageWidget(QLabel):
         pos_x += self._offset[0]
         pos_y += self._offset[1]
 
-        rod.move(QtCore.QPoint(pos_x, pos_y))
+        rod.move(QtCore.QPoint(int(pos_x), int(pos_y)))
         return rod_pos
 
     @QtCore.pyqtSlot(RodNumberWidget)
@@ -934,9 +915,9 @@ class RodImageWidget(QLabel):
             False, if the event shall be passed to the next object to be
             handled.
         """
-        if type(event) != QtGui.QKeyEvent:
-            return False
 
+        if event.type() != QtCore.QEvent.KeyPress:
+            return False
         event = QKeyEvent(event)
         if type(source) != RodNumberWidget:
             return False
@@ -953,11 +934,21 @@ class RodImageWidget(QLabel):
             elif event.key() == QtCore.Qt.Key_Left:
                 self.normal_frame_change.emit(-1)
                 return False
+            elif event.key() == QtCore.Qt.Key_A:
+                # lengthen rod
+                amount = self._rod_incr
+            elif event.key() == QtCore.Qt.Key_S:
+                # shorten rod
+                amount = -self._rod_incr
             else:
                 # RodNumberWidget is in the process of rod number changing,
                 # let the widget handle that itself
                 return False
 
+            if "amount" in locals():
+                # Adjust rod length
+                self.adjust_length_activated(amount)
+                return True
         return False
 
     @QtCore.pyqtSlot(dict)
