@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable
+from typing import Callable, Tuple
 from PyQt5 import QtCore
 
 
@@ -16,8 +16,8 @@ class WorkerWrapper(QtCore.QObject):
         self.finished.emit(results)
 
 
-def run_in_thread(func: Callable, inputs: dict) -> (QtCore.QThread,
-                                                    WorkerWrapper):
+def run_in_thread(func: Callable, inputs: dict) -> Tuple[QtCore.QThread,
+                                                         WorkerWrapper]:
     """Wraps a function to be executed in a different thread to avoid GUI
     blocking. Returns the created thread and a worker which is the wrapped
     function."""

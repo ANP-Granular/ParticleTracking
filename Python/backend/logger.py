@@ -233,7 +233,7 @@ class ChangedRodNumberAction(Action):
         to_str = "(" + to_str
         return to_str
 
-    def undo(self, rods: [rn.RodNumberWidget]) -> [rn.RodNumberWidget]:
+    def undo(self, rods: List[rn.RodNumberWidget]) -> List[rn.RodNumberWidget]:
         """Triggers events to revert this action.
 
         Parameters
@@ -357,7 +357,7 @@ class DeleteRodAction(Action):
         to_str = "(" + to_str
         return to_str
 
-    def undo(self, rods: [rn.RodNumberWidget] = None):
+    def undo(self, rods: List[rn.RodNumberWidget] = None):
         """Triggers events to revert this action.
 
         Parameters
@@ -445,8 +445,8 @@ class ChangeRodPositionAction(Action):
         Default is "Rod position updated".
     """
 
-    def __init__(self, old_rod: rn.RodNumberWidget, new_position: [int], *args,
-                 **kwargs):
+    def __init__(self, old_rod: rn.RodNumberWidget, new_position: List[int],
+                 *args, **kwargs):
         self.rod = old_rod
         self.new_pos = new_position
         self.action = "Rod position updated"
@@ -478,7 +478,8 @@ class ChangeRodPositionAction(Action):
         to_str = "(" + to_str
         return to_str
 
-    def undo(self, rods: [rn.RodNumberWidget] = None) -> [rn.RodNumberWidget]:
+    def undo(self, rods: List[rn.RodNumberWidget] = None) \
+        -> List[rn.RodNumberWidget]:
         """Triggers events to revert this action.
 
         Parameters
@@ -706,7 +707,7 @@ class PruneLength(ChangeRodPositionAction):
     action : str
         Default is "Rod length pruned: ".
     """
-    def __init__(self, old_rod: rn.RodNumberWidget, new_position: [int], 
+    def __init__(self, old_rod: rn.RodNumberWidget, new_position: List[int], 
                  *args, **kwargs):
         super().__init__(old_rod, new_position, *args, **kwargs)
         self.action = "Rod length pruned: "
