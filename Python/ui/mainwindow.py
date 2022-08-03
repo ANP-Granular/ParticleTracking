@@ -964,8 +964,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.background_tasks.append((thread, worker))
         thread.start()
 
-        if isinstance(new_data["cam_id"], Iterable):
-            for i in range(len(new_data["cam_id"])):
+        if isinstance(new_data["frame"], Iterable):
+            for i in range(len(new_data["frame"])):
                 tmp_data = {
                     "frame": new_data["frame"][i],
                     "cam_id": new_data["cam_id"][i],
