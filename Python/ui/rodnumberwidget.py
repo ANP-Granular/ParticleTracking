@@ -16,6 +16,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from enum import Enum
+from typing import List
 
 
 class RodStyle(str, Enum):
@@ -105,9 +106,9 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     _boundary_offset: int = 5
     _number_size: int = 12
-    _number_color: [int] = [0, 0, 0]
+    _number_color: List[int] = [0, 0, 0]
     _rod_thickness: int = 3
-    _rod_color: [int] = [0, 255, 255]
+    _rod_color: List[int] = [0, 255, 255]
 
     def __init__(self, color, parent=None, text="", pos=QtCore.QPoint(0, 0)):
         # General setup

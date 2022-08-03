@@ -17,7 +17,7 @@
 import os
 import shutil
 import platform
-from typing import List
+from typing import Iterable, List
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, \
@@ -27,6 +27,7 @@ from PyQt5.QtGui import QImage, QWheelEvent
 from Python.backend import settings as se, logger as lg, \
     data_operations as d_ops, file_operations as f_ops
 from Python.ui import rodnumberwidget as rn, mainwindow_layout as mw_l, dialogs
+from Python.backend.parallelism import run_in_thread
 
 ICON_PATH = "./resources/icon_main.ico"
 
@@ -111,6 +112,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     tab_has_changes(bool)
 
     """
+    background_tasks = []
     fileList: List[str] = None
     logger_id: str = "main"
     logger: lg.ActionLogger
@@ -119,6 +121,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     _current_file_ids: list = []
     _CurrentFileIndex: int = 0
     _allow_overwrite: bool = False
+    _rod_incr: float = 1.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -132,6 +135,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if platform.system() == "Darwin":
             self.ui.action_zoom_in.setShortcut("Ctrl+=")
             self.ui.action_zoom_out.setShortcut("Ctrl+-")
+        
+        self.elongate_rods = QtWidgets.QShortcut(QtGui.QKeySequence("R"), self)
+        self.shorten_rods = QtWidgets.QShortcut(QtGui.QKeySequence("T"), self)
 
         # Set maximum button/checkbox sizes to avoid text clipping
         pb_load_txt = self.ui.pb_load_images.text()
@@ -255,6 +261,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.request_undo.connect(cam.logger.undo_last)
             self.request_redo.connect(cam.logger.redo_last)
             self.settings.settings_changed.connect(cam.update_settings)
+        self.shorten_rods.activated.connect(
+            lambda : self.current_camera.adjust_rod_length(
+                -self._rod_incr, False))
+        self.elongate_rods.activated.connect(
+            lambda: self.current_camera.adjust_rod_length(
+                self._rod_incr, False))
 
         # Help
         self.ui.action_docs.triggered.connect(lambda: dialogs.show_readme(
@@ -310,10 +322,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.current_camera.rod_activated(selected_rod)
         return
 
-    def update_tree(self, new_data: dict):
-        """Update the "seen" status in the displayed rod data tree."""
-        # self.generate_tree()
-        # self.ui.tv_rods.clear()
+    def update_tree(self, new_data: dict, no_gen = False):
+        """Update the "seen" status in the displayed rod data tree.
+        Skip updating of the tree by using no_gen=True."""
         header = self.ui.tv_rods.headerItem()
         headings = []
         for i in range(1, header.columnCount()):
@@ -321,6 +332,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         insert_idx = headings.index(new_data["cam_id"])
         self.rod_info[new_data["frame"]][new_data["color"]][new_data[
             "rod_id"]][insert_idx] = "seen" if new_data["seen"] else "unseen"
+        if no_gen:
+            return
         self.generate_tree()
 
     def update_tree_folding(self):
@@ -355,6 +368,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         return
 
     def generate_tree(self):
+        """(Re)generates the tree for display of loaded rod data."""
         self.ui.tv_rods.clear()
         for frame in self.rod_info.keys():
             current_frame = QTreeWidgetItem(self.ui.tv_rods)
@@ -384,7 +398,23 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict):
-        pass
+        """Catches updates of the settings from a `Settings` class.
+
+        Checks for the keys relevant to itself and updates the corresponding
+        attributes. Updates itself with the new settings in place.
+
+        Parameters
+        ----------
+        settings : dict
+
+        Returns
+        -------
+        None
+        """
+        settings_changed = False
+        if "rod_increment" in settings:
+            settings_changed = True
+            self._rod_incr = settings["rod_increment"]
 
     def open_image_folder(self):
         """Lets the user select an image folder to show images from.
@@ -580,15 +610,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                 max_row += 1
 
                     # Display as a tree
-                    self.rod_info, columns = d_ops.extract_seen_information(
-                        self.df_data)
-                    self.ui.tv_rods.clear()
-                    self.ui.tv_rods.setColumnCount(len(columns) + 1)
-                    headers = [self.ui.tv_rods.headerItem().text(0),
-                               *columns]
-                    self.ui.tv_rods.setHeaderLabels(headers)
-                    self.generate_tree()
-                    self.update_tree_folding()
+                    thread, worker = run_in_thread(
+                        d_ops.extract_seen_information, {"data": self.df_data})
+                    worker.finished.connect(self.setup_tree)
+                    self.background_tasks.append((thread, worker))
+                    thread.start()
 
                     # Rod position data was selected correctly
                     self.ui.le_rod_dir.setText(self.original_data[:-1])
@@ -605,6 +631,23 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                             btn.hide()
                             btn.deleteLater()
                     return
+
+    @QtCore.pyqtSlot(object)
+    def setup_tree(self, inputs):
+        """Handles the setup of the treeview from extracted rod data."""
+        assert len(inputs) == 2
+        rod_info, columns = inputs[:]
+        assert type(columns) is list
+        assert type(rod_info) is dict
+
+        self.rod_info = rod_info
+        self.ui.tv_rods.clear()
+        self.ui.tv_rods.setColumnCount(len(columns) + 1)
+        headers = [self.ui.tv_rods.headerItem().text(0),
+                   *columns]
+        self.ui.tv_rods.setHeaderLabels(headers)
+        self.generate_tree()
+        self.update_tree_folding()
 
     def show_overlay(self):
         """Tries to load rods and hints the user if that is not possible.
@@ -913,9 +956,34 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def catch_data(self, change: lg.Action) -> None:
         """Changes the data stored in RAM according to the Action performed."""
         new_data = change.to_save()
-        if new_data is not None:
-            self.df_data = d_ops.change_data(self.df_data, new_data)
+        if new_data is None:
+            return
+
+        thread, worker = run_in_thread(d_ops.change_data, {"dataset": self.df_data, "new_data": new_data})
+        worker.finished.connect(self.update_changed_data)
+        self.background_tasks.append((thread, worker))
+        thread.start()
+
+        if isinstance(new_data["frame"], Iterable):
+            for i in range(len(new_data["frame"])):
+                tmp_data = {
+                    "frame": new_data["frame"][i],
+                    "cam_id": new_data["cam_id"][i],
+                    "color": new_data["color"][i],
+                    "position": new_data["position"][i],
+                    "rod_id": new_data["rod_id"][i],
+                    "seen": new_data["seen"][i]
+                }
+                self.update_tree(tmp_data, no_gen=True)
+            self.generate_tree()
+        else:
             self.update_tree(new_data)
+
+    @QtCore.pyqtSlot(object)
+    def update_changed_data(self, new_data):
+        """Updates the main data storage in RAM (used for communication with threads)."""
+        self.df_data = new_data
+
 
     def save_changes(self, temp_only=False):
         """Saves unsaved changes to disk temporarily or permanently.
@@ -1117,6 +1185,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.fileList = self.view_filelists[new_idx]
         self.current_file_ids = self.file_ids[new_idx]
         self.current_camera = self.cameras[new_idx]
+
+        # Connect signals for rod alteration
+        self.shorten_rods.activated.disconnect()
+        self.elongate_rods.activated.disconnect()
+        self.shorten_rods.activated.connect(
+            lambda : self.current_camera.adjust_rod_length(
+                -self._rod_incr, False))
+        self.elongate_rods.activated.connect(
+            lambda: self.current_camera.adjust_rod_length(
+                self._rod_incr, False))
+
         # Loads a new image, if necessary
         self.show_next(index_diff)
         try:

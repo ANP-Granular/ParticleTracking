@@ -17,9 +17,8 @@
 import re
 import math
 import pandas as pd
-from typing import List, Dict, Tuple
+from typing import Iterable, List, Dict, Tuple
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QTreeWidget
 import Python.ui.rodnumberwidget as rn
 
 
@@ -71,7 +70,6 @@ def extract_rods(data, cam_id: str, frame: int, color: str) -> \
     return new_rods
 
 
-# TODO: move to different Thread
 def extract_seen_information(data: pd.DataFrame) -> \
         Tuple[Dict[int, Dict[str, dict]], list]:
     """Extracts the seen/unseen parameter for all rods in the dataset.
@@ -165,6 +163,19 @@ def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
     points = new_data["position"]
     rod_id = new_data["rod_id"]
     seen = new_data["seen"]
+    
+    if isinstance(rod_id, Iterable):
+        for i in range(len(rod_id)):
+            tmp_data = {
+                "frame": frame[i],
+                "cam_id": cam_id[i],
+                "color": color[i],
+                "position": points[i],
+                "rod_id": rod_id[i],
+                "seen": seen[i]
+            }
+            dataset = change_data(dataset, tmp_data)
+        return dataset
 
     data_unavailable = dataset.loc[(dataset.frame == frame) & (
             dataset.particle == rod_id) & (dataset.color == color),

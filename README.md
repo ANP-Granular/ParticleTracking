@@ -66,6 +66,7 @@
 | Show in original size        |                  `Ctrl + R`                   |
 | Next/previous image          |                `Right`/`Left`                 |
 | Undo                         |                  `Ctrl + Z`                   |
+| Lengthen/Shorten a rod       |                    `A`/`S`                    |
 
 #### Miscellaneous
 - the visual display properties of rods and their number can be changed 

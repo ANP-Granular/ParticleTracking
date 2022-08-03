@@ -126,7 +126,8 @@ class Settings(Configuration):
             "number_size": 11,
             "boundary_offset": 5,
             "position_scaling": 10.0,
-            "number_rods": 25
+            "number_rods": 25,
+            "rod_increment": 1.0
         },
         "data": {
             "images_root": "./",

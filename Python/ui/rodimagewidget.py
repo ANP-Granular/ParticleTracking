@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import QLabel, QMessageBox, QInputDialog
 from Python.ui.rodnumberwidget import RodNumberWidget, RodState, RodStateError
 from Python.ui import dialogs
 from Python.backend.logger import ActionLogger, DeleteRodAction, \
-    ChangeRodPositionAction, Action, ChangedRodNumberAction, CreateRodAction
+    ChangeRodPositionAction, Action, ChangedRodNumberAction, CreateRodAction, PruneLength
 
 
 ICON_PATH = "./resources/icon_main.ico"
@@ -97,6 +97,7 @@ class RodImageWidget(QLabel):
     _rod_thickness = 3
     _number_offset = 15
     _position_scaling = 10.0
+    _rod_incr = 1.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -693,7 +694,7 @@ class RodImageWidget(QLabel):
             # given action does not require a color to be handled
             pass
 
-        if type(action) == ChangeRodPositionAction:
+        if type(action) == ChangeRodPositionAction or type(action)==PruneLength:
             new_rods = action.undo(rods=self._edits)
             self._edits = new_rods
             self.draw_rods()
@@ -768,8 +769,33 @@ class RodImageWidget(QLabel):
             for rod in self._edits:
                 self.adjust_rod_position(rod)
 
+        
+    @QtCore.pyqtSlot()
+    def adjust_rod_length(self, amount: float = 1., only_selected: bool = True):
+        """Adds the length (in px) given in `amount` to the rod. Negative values shorten the rod."""
+        rods = []
+        new_pos = []
+        for rod in self._edits:
+            if only_selected:
+                if rod.rod_state != RodState.SELECTED:
+                    continue
+
+            n_p = np.asarray(rod.rod_points)
+            rod_direction = np.array([n_p[0:2]-n_p[2:]])
+            rod_direction = rod_direction/np.sqrt(np.sum(rod_direction**2))
+            rod_direction = amount/2 * rod_direction
+            n_p = n_p + np.concatenate([rod_direction, -rod_direction]).flatten()
+            n_p = list(n_p)
+            rod.rod_points = n_p
+            rods.append(rod.copy())
+            new_pos.append(n_p)
+        self._logger.add_action(PruneLength(rods, new_pos, amount))
+        self.draw_rods()
+        return
+
     @staticmethod
-    def subtract_offset(point: QtCore.QPoint, offset: [int]) -> QtCore.QPoint:
+    def subtract_offset(point: QtCore.QPoint, offset: List[int]) -> \
+        QtCore.QPoint:
         """Subtracts a given offset from a point and returns the new point.
 
         Parameters
@@ -833,7 +859,7 @@ class RodImageWidget(QLabel):
         pos_x += self._offset[0]
         pos_y += self._offset[1]
 
-        rod.move(QtCore.QPoint(pos_x, pos_y))
+        rod.move(QtCore.QPoint(int(pos_x), int(pos_y)))
         return rod_pos
 
     @QtCore.pyqtSlot(RodNumberWidget)
@@ -890,9 +916,9 @@ class RodImageWidget(QLabel):
             False, if the event shall be passed to the next object to be
             handled.
         """
-        if type(event) != QtGui.QKeyEvent:
-            return False
 
+        if event.type() != QtCore.QEvent.KeyPress:
+            return False
         event = QKeyEvent(event)
         if type(source) != RodNumberWidget:
             return False
@@ -909,11 +935,21 @@ class RodImageWidget(QLabel):
             elif event.key() == QtCore.Qt.Key_Left:
                 self.normal_frame_change.emit(-1)
                 return False
+            elif event.key() == QtCore.Qt.Key_A:
+                # lengthen rod
+                amount = self._rod_incr
+            elif event.key() == QtCore.Qt.Key_S:
+                # shorten rod
+                amount = -self._rod_incr
             else:
                 # RodNumberWidget is in the process of rod number changing,
                 # let the widget handle that itself
                 return False
 
+            if "amount" in locals():
+                # Adjust rod length
+                self.adjust_rod_length(amount)
+                return True
         return False
 
     @QtCore.pyqtSlot(dict)
@@ -941,6 +977,9 @@ class RodImageWidget(QLabel):
         if "position_scaling" in settings:
             settings_changed = True
             self._position_scaling = settings["position_scaling"]
+        if "rod_increment" in settings:
+            settings_changed = True
+            self._rod_incr = settings["rod_increment"]
 
         if settings_changed:
             self.draw_rods()
