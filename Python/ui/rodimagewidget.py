@@ -771,9 +771,10 @@ class RodImageWidget(QLabel):
 
         
     @QtCore.pyqtSlot()
-    def adjust_length_activated(self, amount: float = 1., only_selected: bool = True) -> list:
+    def adjust_rod_length(self, amount: float = 1., only_selected: bool = True):
         """Adds the length (in px) given in `amount` to the rod. Negative values shorten the rod."""
-        actions_performed = []
+        rods = []
+        new_pos = []
         for rod in self._edits:
             if only_selected:
                 if rod.rod_state != RodState.SELECTED:
@@ -785,12 +786,12 @@ class RodImageWidget(QLabel):
             rod_direction = amount/2 * rod_direction
             n_p = n_p + np.concatenate([rod_direction, -rod_direction]).flatten()
             n_p = list(n_p)
-            performed_action = PruneLength(rod.copy(), n_p)
-            actions_performed.append(performed_action)
             rod.rod_points = n_p
-            self._logger.add_action(performed_action)
+            rods.append(rod.copy())
+            new_pos.append(n_p)
+        self._logger.add_action(PruneLength(rods, new_pos, amount))
         self.draw_rods()
-        return actions_performed
+        return
 
     @staticmethod
     def subtract_offset(point: QtCore.QPoint, offset: List[int]) -> \
@@ -947,7 +948,7 @@ class RodImageWidget(QLabel):
 
             if "amount" in locals():
                 # Adjust rod length
-                self.adjust_length_activated(amount)
+                self.adjust_rod_length(amount)
                 return True
         return False
 

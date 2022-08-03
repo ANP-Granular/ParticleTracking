@@ -17,7 +17,7 @@
 import re
 import math
 import pandas as pd
-from typing import List, Dict, Tuple
+from typing import Iterable, List, Dict, Tuple
 from PyQt5 import QtCore
 import Python.ui.rodnumberwidget as rn
 
@@ -163,6 +163,19 @@ def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
     points = new_data["position"]
     rod_id = new_data["rod_id"]
     seen = new_data["seen"]
+    
+    if isinstance(rod_id, Iterable):
+        for i in range(len(rod_id)):
+            tmp_data = {
+                "frame": frame[i],
+                "cam_id": cam_id[i],
+                "color": color[i],
+                "position": points[i],
+                "rod_id": rod_id[i],
+                "seen": seen[i]
+            }
+            dataset = change_data(dataset, tmp_data)
+        return dataset
 
     data_unavailable = dataset.loc[(dataset.frame == frame) & (
             dataset.particle == rod_id) & (dataset.color == color),

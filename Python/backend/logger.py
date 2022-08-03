@@ -683,7 +683,7 @@ class PermanentRemoveAction(Action):
         pass
 
 
-class PruneLength(ChangeRodPositionAction):
+class PruneLength(Action):
     """Class to represent the pruning of a rods length as a loggable action.
 
     Parameters
@@ -707,11 +707,102 @@ class PruneLength(ChangeRodPositionAction):
     action : str
         Default is "Rod length pruned: ".
     """
-    def __init__(self, old_rod: rn.RodNumberWidget, new_position: List[int], 
+    def __init__(self, old_rods: Union[rn.RodNumberWidget, List[rn.RodNumberWidget]], 
+                 new_positions: List[List[int]], adjustment: float,
                  *args, **kwargs):
-        super().__init__(old_rod, new_position, *args, **kwargs)
-        self.action = "Rod length pruned: "
-        self.setText(str(self))
+        super().__init__(*args, **kwargs)
+        self.rods = old_rods
+        self.new_pos = new_positions
+        self.adjustment = adjustment
+        super().__init__(str(self))
+    
+    def __str__(self):
+        to_str = ") "
+        if len(self.rods) > 1:
+            to_str += f"All rod lengths adjusted by: {self.adjustment}"
+        else:
+            to_str += f"#{self.rods[0].rod_id} length adjusted by: {self.adjustment}"
+
+        if self.rods is not None:
+            to_str = f"{self.rods[0].color}" + to_str
+        if self.frame is not None:
+            to_str = f"{self.frame}, " + to_str
+        if self._parent_id is not None:
+            to_str = f"{self._parent_id}, " + to_str
+        to_str = "(" + to_str
+        return to_str
+        
+
+    def undo(self, rods: List[rn.RodNumberWidget] = None) -> List[rn.RodNumberWidget]:
+        """Triggers events to revert this action.
+
+        Parameters
+        ----------
+        rods : [RodNumberWidget]
+            A list of `RodNumberWidget`s in which should be the originally
+            changed rod(s).
+
+        Returns
+        -------
+        [RodNumberWidget]
+
+        Raises
+        ------
+        Exception
+        """
+        if rods is None:
+            raise Exception("Unable to undo action. No rods supplied.")
+
+        for rod in rods:
+            for rod_s  in self.rods:
+                if rod.rod_id == rod_s.rod_id:
+                    rod.rod_points = self.rod.rod_points
+                    break
+        return rods
+    
+    def to_save(self):
+        """Generates a data representation of this action for saving.
+
+        Returns
+        -------
+        dict
+            Available fields: ("rod_id", "cam_id", "frame", "color",
+            "position")
+        """
+        out = {
+            "rod_id": [rod.rod_id for rod in self.rods],
+            "cam_id": [self.parent_id]*len(self.rods),
+            "frame": [self.frame]*len(self.rods),
+            "color": [rod.color for rod in self.rods],
+            "seen": [rod.seen for rod in self.rods]
+        }
+        if self.revert:
+            # If the action was reverted
+            out["position"] = [rod.rod_points for rod in self.rods]
+        else:
+            # If the action was performed
+            out["position"] = [pos for pos in self.new_pos]
+        return out
+    
+    def invert(self):
+        """Generates an inverted version of the ChangeRodPositionAction (for
+        redoing).
+
+        Returns
+        -------
+        ChangeRodPositionAction
+        """
+        inverted_rods = []
+        inverted_pos = []
+        for rod, pos in zip(self.rods, self.new_pos):
+            inv_rod = rod.copy()
+            inv_rod.rod_points = pos
+            inverted_rods.append(inv_rod)
+            inverted_pos = rod.rod_points
+        inverted = ChangeRodPositionAction(inverted_rods, inverted_pos)
+        inverted.parent_id = self.parent_id
+        inverted.frame = self.frame
+        return inverted
     
 
 class ActionLogger(QtCore.QObject):
