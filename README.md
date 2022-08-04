@@ -6,7 +6,7 @@
 
 ![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/141676583-2f294dec-a505-4b7e-a8b5-484af964ea09.png "RodTracker - GUI")
 ### Notes for users
-1. Run [track_main.py](./Python/track_main.py)
+1. Run [RodTracker.py](./Python/RodTracker.py)
 2. Open images from disk using the `File` dropdown menu or the `Load 
    Images` button.
    - Switch between images in the folder using the `left`/`right` keys or the 
@@ -67,6 +67,7 @@
 | Next/previous image          |                `Right`/`Left`                 |
 | Undo                         |                  `Ctrl + Z`                   |
 | Lengthen/Shorten a rod       |                    `A`/`S`                    |
+| Lengthen/Shorten all rods in current view    |                    `R`/`T`                    |
 
 #### Miscellaneous
 - the visual display properties of rods and their number can be changed 
