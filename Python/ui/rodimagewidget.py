@@ -784,6 +784,8 @@ class RodImageWidget(QLabel):
             rod_direction = np.array([n_p[0:2]-n_p[2:]])
             rod_direction = rod_direction/np.sqrt(np.sum(rod_direction**2))
             rod_direction = amount/2 * rod_direction
+            if np.isnan(rod_direction).any():
+                rod_direction = np.array([0, 0])
             n_p = n_p + np.concatenate([rod_direction, -rod_direction]).flatten()
             n_p = list(n_p)
             rod.rod_points = n_p
