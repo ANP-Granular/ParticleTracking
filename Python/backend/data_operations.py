@@ -196,3 +196,42 @@ def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
     dataset = dataset.astype({"frame": 'int', f"seen_{cam_id}": 'int',
                               "particle": 'int'})
     return dataset
+
+
+def rod_number_swap(dataset: pd.DataFrame, mode: str, previous_id: int, 
+                    new_id: int, color: str, frame: int = None, 
+                    cam_id: str = None) -> pd.DataFrame:
+    """Adjusts a DataFrame according to rod number switching modes.
+    
+    Parameters
+    ----------
+    mode: str
+        Possible values "all", "one_cam", "both_cams".
+    """
+    tmp_set = dataset.copy()
+    if mode == "all":
+        dataset.loc[(tmp_set.color == color) & 
+                    (tmp_set.particle == previous_id), "particle"] = new_id
+        dataset.loc[(tmp_set.color == color) & 
+                    (tmp_set.particle == new_id), "particle"] = previous_id
+    elif mode == "one_cam":
+        assert cam_id is not None
+        cols = dataset.columns
+        mask_previous = (tmp_set.color == color) & \
+                        (tmp_set.particle == previous_id)
+        mask_new = ((tmp_set.color == color) & (tmp_set.particle == new_id))
+        cam_cols = [c for c in cols if cam_id in c] 
+        dataset.loc[mask_previous, cam_cols] = \
+            tmp_set.loc[mask_new, cam_cols].values
+        dataset.loc[mask_new, cam_cols] = \
+            tmp_set.loc[mask_previous, cam_cols].values
+    elif mode == "both_cams":
+        assert frame is not None
+        dataset.loc[(tmp_set.color == color) & (tmp_set.particle == previous_id)
+                    & (tmp_set.frame == frame), "particle"] = new_id
+        dataset.loc[(tmp_set.color == color) & (tmp_set.particle == new_id) & 
+                    (tmp_set.frame == frame), "particle"] = previous_id
+    else:
+        # unknown mode
+        pass
+    return dataset

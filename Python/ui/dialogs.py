@@ -583,3 +583,30 @@ def show_readme(parent: QtWidgets.QWidget):
     readme_md = Path('../README.md').read_text()
     docs_dialog.docs.setMarkdown(readme_md)
     docs_dialog.show()
+
+
+class ConflictDialog(QtWidgets.QMessageBox):
+    """Dialog for switching rod numbers in various modes."""
+    def __init__(self, last_id, new_id, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.setWindowIcon(QtGui.QIcon(ICON_PATH))
+        self.setIcon(QtWidgets.QMessageBox.Warning)
+        self.setWindowTitle("Rod Tracker")
+        self.setText(
+            f"A rod number switching attempt of"
+            f"#{last_id} <---> #{new_id} was detected. \nHow shall "
+            f"this conflict be resolved?")
+        self.btn_switch_all = self.addButton(
+            "Switch in:\nBoth views, all frames", 
+            QtWidgets.QMessageBox.ActionRole)
+        self.btn_one_cam = self.addButton("Switch in:\nThis views, all frames",
+                                         QtWidgets.QMessageBox.ActionRole)
+        self.btn_both_cams = self.addButton(
+            "Switch in:\nBoth views, this frame", 
+            QtWidgets.QMessageBox.ActionRole)
+        self.btn_only_this = self.addButton("Switch in:\nThis view, this frame",
+                                            QtWidgets.QMessageBox.ActionRole)
+        self.btn_cancel = self.addButton(QtWidgets.QMessageBox.Abort)
+        self.setDefaultButton(self.btn_switch_all)
+        self.setEscapeButton(self.btn_cancel)

@@ -92,6 +92,7 @@ class RodImageWidget(QLabel):
     notify_undone = QtCore.pyqtSignal(Action, name="notify_undone")
     request_new_rod = QtCore.pyqtSignal(int, list, name="request_new_rod")
     normal_frame_change = QtCore.pyqtSignal(int, name="normal_frame_change")
+    number_switches = QtCore.pyqtSignal(str, int, int, name="number_switches")
     _logger: ActionLogger = None
     # Settings
     _rod_thickness = 3
@@ -545,30 +546,18 @@ class RodImageWidget(QLabel):
                 rod.rod_state = RodState.CONFLICT
         self.draw_rods()
         if len(conflicting) > 1:
-            msg = QMessageBox()
-            msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
-            msg.setIcon(QMessageBox.Warning)
-            msg.setWindowTitle("Rod Tracker")
-            msg.setText(
-                f"A conflict was encountered with setting Rod"
-                f"#{set_rod.rod_id} (previously Rod#{last_id}). \nHow shall "
-                f"this conflict be resolved?")
-            btn_switch = msg.addButton("Switch numbers",
-                                       QMessageBox.ActionRole)
-            btn_return = msg.addButton("Return state", QMessageBox.ActionRole)
-            btn_disc_old = msg.addButton("Discard old rod",
-                                         QMessageBox.ActionRole)
-            btn_manual = msg.addButton("Resolve manual",
-                                       QMessageBox.ActionRole)
-            btn_manual.setEnabled(False)
-            # The "Discard old rod" feature is currently disabled, as the
-            # redo of the chained operations don't work correctly and need a
-            # larger process refactoring, that does not appear to be worth
-            # the time, as users report they are not using this feature but
-            # rather accomplish the intended operation in another way.
-            btn_disc_old.setEnabled(False)
+            msg = dialogs.ConflictDialog(last_id, set_rod.rod_id)
             msg.exec()
-            if msg.clickedButton() == btn_switch:
+            if msg.clickedButton() == msg.btn_switch_all:
+                self.number_switches.emit("all", last_id, set_rod.rod_id)
+
+            elif msg.clickedButton() == msg.btn_one_cam:
+                self.number_switches.emit("one_cam", last_id, set_rod.rod_id)
+
+            elif msg.clickedButton() == msg.btn_both_cams:
+                self.number_switches.emit("both_cams", last_id, set_rod.rod_id)
+
+            elif msg.clickedButton() == msg.btn_only_this:
                 # Switch the rod numbers
                 first_change = None
                 second_change = None
@@ -586,7 +575,7 @@ class RodImageWidget(QLabel):
                 first_change.coupled_action = second_change
                 second_change.coupled_action = first_change
 
-            elif msg.clickedButton() == btn_return:
+            elif msg.clickedButton() == msg.btn_cancel:
                 # Return to previous state
                 if last_id == -1:
                     set_rod.deleteLater()
@@ -596,25 +585,6 @@ class RodImageWidget(QLabel):
                     set_rod.rod_id = last_id
                 for rod in conflicting:
                     rod.rod_state = RodState.CHANGED
-            elif msg.clickedButton() == btn_disc_old:
-                # Discard old rod
-                delete_action = None
-                change_action = None
-                for rod in conflicting:
-                    if rod is not set_rod:
-                        # Delete old by saving an "empty" rod (0,0)->(0,0)
-                        rod.rod_id = last_id
-                        rod.setText(str(last_id))
-                        delete_action = DeleteRodAction(rod.copy())
-                        rod.rod_points = [0, 0, 0, 0]
-                        rod.seen = False
-                        rod.rod_state = RodState.CHANGED
-                        continue
-                    rod.rod_state = RodState.CHANGED
-                    change_action = self.catch_rodnumber_change(
-                        rod, last_id)
-                delete_action.coupled_action = change_action
-                self._logger.add_action(delete_action)
             self.draw_rods()
         else:
             # No conflicts, inform logger

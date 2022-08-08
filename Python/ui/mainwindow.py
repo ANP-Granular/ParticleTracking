@@ -258,6 +258,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.logger.request_saving.connect(self.save_changes)
             cam.logger.data_changed.connect(self.catch_data)
             cam.request_new_rod.connect(self.create_new_rod)
+            cam.number_switches.connect(self.catch_number_switch)
             self.request_undo.connect(cam.logger.undo_last)
             self.request_redo.connect(cam.logger.redo_last)
             self.settings.settings_changed.connect(cam.update_settings)
@@ -981,8 +982,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(object)
     def update_changed_data(self, new_data):
-        """Updates the main data storage in RAM (used for communication with threads)."""
+        """Updates the main data storage in RAM (used for communication 
+        with threads)."""
         self.df_data = new_data
+        self.current_camera.draw_rods()
 
 
     def save_changes(self, temp_only=False):
@@ -1134,6 +1137,21 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if self.ui.cb_overlay.isChecked():
             # Ensure that rods are loaded
             self.load_rods()
+    
+    @QtCore.pyqtSlot(str, int, int)
+    def catch_number_switch(self, mode: str, old_id: int, new_id: int):
+        """Handles changes of rod numbers for more than the current frame and 
+        camera."""
+        thread, worker = run_in_thread(d_ops.rod_number_swap, 
+                                       {"dataset": self.df_data, "mode": mode, 
+                                       "previous_id": old_id, "new_id": new_id,
+                                       "color": self.get_selected_color(),
+                                       "frame": self.logger.frame,
+                                       "cam_id": self.current_camera.cam_id})
+        worker.finished.connect(self.update_changed_data)
+        self.background_tasks.append((thread, worker))
+        thread.start()
+        return
 
     def change_view(self, direction: int) -> None:
         """Helper method for programmatic changes of the camera tabs."""
