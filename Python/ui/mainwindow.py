@@ -258,7 +258,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.logger.request_saving.connect(self.save_changes)
             cam.logger.data_changed.connect(self.catch_data)
             cam.request_new_rod.connect(self.create_new_rod)
-            cam.number_switches.connect(self.catch_number_switch)
+            cam.number_switches[lg.NumberChangeActions, int, int].connect(
+                self.catch_number_switch)
+            cam.number_switches[
+                lg.NumberChangeActions, int, int, str, int, str, bool].connect(
+                self.catch_number_switch)
             self.request_undo.connect(cam.logger.undo_last)
             self.request_redo.connect(cam.logger.redo_last)
             self.settings.settings_changed.connect(cam.update_settings)
@@ -985,7 +989,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """Updates the main data storage in RAM (used for communication 
         with threads)."""
         self.df_data = new_data
-        self.current_camera.draw_rods()
+        self.load_rods()
 
 
     def save_changes(self, temp_only=False):
@@ -1138,19 +1142,35 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # Ensure that rods are loaded
             self.load_rods()
     
-    @QtCore.pyqtSlot(str, int, int)
-    def catch_number_switch(self, mode: str, old_id: int, new_id: int):
+    @QtCore.pyqtSlot(lg.NumberChangeActions, int, int)
+    @QtCore.pyqtSlot(lg.NumberChangeActions, int, int, str, int, str, bool)
+    def catch_number_switch(self, mode: lg.NumberChangeActions, old_id: int, 
+                            new_id: int, color: str = None, frame: int = None, 
+                            cam_id: str = None, log: bool = True):
         """Handles changes of rod numbers for more than the current frame and 
         camera."""
+        if color is None:
+            color = self.get_selected_color()
+        if frame is None:
+            frame = self.logger.frame
+        if cam_id is None:
+            cam_id = self.current_camera.cam_id
         thread, worker = run_in_thread(d_ops.rod_number_swap, 
                                        {"dataset": self.df_data, "mode": mode, 
                                        "previous_id": old_id, "new_id": new_id,
-                                       "color": self.get_selected_color(),
-                                       "frame": self.logger.frame,
-                                       "cam_id": self.current_camera.cam_id})
+                                       "color": color,
+                                       "frame": frame,
+                                       "cam_id": cam_id})
         worker.finished.connect(self.update_changed_data)
         self.background_tasks.append((thread, worker))
         thread.start()
+
+        if log:
+            self.current_camera.logger.add_action(
+                lg.NumberExchange(mode, old_id, new_id, 
+                                  self.get_selected_color(), self.logger.frame, 
+                                  self.current_camera.cam_id)
+                )
         return
 
     def change_view(self, direction: int) -> None:

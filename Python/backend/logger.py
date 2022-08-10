@@ -16,7 +16,7 @@
 
 import tempfile
 from abc import abstractmethod
-from enum import Enum
+from enum import Enum, auto
 from typing import Optional, Iterable, Union, List
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
@@ -33,6 +33,13 @@ class FileActions(Enum):
     OPEN_IMAGE = "Opened image"
     MODIFY = "Modified file"
     LOAD_RODS = "Loaded rod file(s) from"
+
+class NumberChangeActions(Enum):
+    """Helper class holding valid kinds of rod number changes."""
+    ALL = auto()
+    ALL_ONE_CAM = auto()
+    ONE_BOTH_CAMS = auto()
+    CURRENT = auto()
 
 
 class Action(QListWidgetItem):
@@ -710,11 +717,10 @@ class PruneLength(Action):
     def __init__(self, old_rods: Union[rn.RodNumberWidget, List[rn.RodNumberWidget]], 
                  new_positions: List[List[int]], adjustment: float,
                  *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.rods = old_rods
         self.new_pos = new_positions
         self.adjustment = adjustment
-        super().__init__(str(self))
+        super().__init__(str(self), *args, **kwargs)
     
     def __str__(self):
         to_str = ") "
@@ -785,12 +791,11 @@ class PruneLength(Action):
         return out
     
     def invert(self):
-        """Generates an inverted version of the ChangeRodPositionAction (for
-        redoing).
+        """Generates an inverted version of this action(for redoing).
 
         Returns
         -------
-        ChangeRodPositionAction
+        PruneLength
         """
         inverted_rods = []
         inverted_pos = []
@@ -803,6 +808,71 @@ class PruneLength(Action):
         inverted.parent_id = self.parent_id
         inverted.frame = self.frame
         return inverted
+
+
+class NumberExchange(Action):
+    color: str = None
+    def __init__(self, mode: NumberChangeActions, previous_id: int, new_id: int,
+                 color: str, frame: int=None, cam_id: str = None):
+        self.mode = mode
+        if self.mode == NumberChangeActions.ONE_BOTH_CAMS:
+            if frame is None:
+                raise ValueError("A frame number must be supplied. "
+                                 "It must not be None for mode "
+                                 "NumberChangeActions.ONE_BOTH_CAMS.")
+        elif self.mode == NumberChangeActions.CURRENT:
+            if frame is None or cam_id:
+                raise ValueError("A frame number and camera ID must be "
+                                 "supplied. It must not be None for mode "
+                                 "NumberChangeActions.CURRENT.")
+
+        self.previous_id = previous_id
+        self.new_id = new_id
+        self.cam_id = cam_id
+        self.color = color
+        super().__init__(str(self))
+        self.frame = frame
+    
+    def undo(self, rods: List[rn.RodNumberWidget]):
+        # TODO
+        pass
+        # return rods
+
+    def __str__(self):
+        to_str = f") Changed rod #{self.previous_id} ---> #{self.new_id} "\
+                 f"of color {self.color}"
+        if self.mode == NumberChangeActions.ALL:
+            to_str += " in all frames and cameras."
+        elif self.mode == NumberChangeActions.ALL_ONE_CAM:
+            to_str += f" in all frames of {self.cam_id}."
+        elif self.mode == NumberChangeActions.ONE_BOTH_CAMS:
+            to_str += f" in frame {self.frame} of all cameras."
+        elif self.mode == NumberChangeActions.CURRENT:
+            raise NotImplementedError()
+        
+        if self.color is not None:
+            to_str = f"{self.color}" + to_str
+        if self.frame is not None:
+            to_str = f"{self.frame}, " + to_str
+        if self._parent_id is not None:
+            to_str = f"{self._parent_id}, " + to_str
+        to_str = "(" + to_str
+        return to_str
+
+    def to_save(self):
+        """The operation is already 'saved' as it directly modifies the main 
+        dataframe."""
+        return None
+
+    def invert(self):
+        """Generates an inverted version of this action(for redoing).
+
+        Returns
+        -------
+        NumberExchange
+        """
+        return NumberExchange(self.mode, self.new_id, self.previous_id, 
+                              self.color, self.frame, self.cam_id)
     
 
 class ActionLogger(QtCore.QObject):

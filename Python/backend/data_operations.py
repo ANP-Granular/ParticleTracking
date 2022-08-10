@@ -20,6 +20,7 @@ import pandas as pd
 from typing import Iterable, List, Dict, Tuple
 from PyQt5 import QtCore
 import Python.ui.rodnumberwidget as rn
+import Python.backend.logger as lg
 
 
 def extract_rods(data, cam_id: str, frame: int, color: str) -> \
@@ -198,9 +199,9 @@ def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
     return dataset
 
 
-def rod_number_swap(dataset: pd.DataFrame, mode: str, previous_id: int, 
-                    new_id: int, color: str, frame: int = None, 
-                    cam_id: str = None) -> pd.DataFrame:
+def rod_number_swap(dataset: pd.DataFrame, mode: lg.NumberChangeActions, 
+                    previous_id: int, new_id: int, color: str, 
+                    frame: int = None, cam_id: str = None) -> pd.DataFrame:
     """Adjusts a DataFrame according to rod number switching modes.
     
     Parameters
@@ -209,12 +210,12 @@ def rod_number_swap(dataset: pd.DataFrame, mode: str, previous_id: int,
         Possible values "all", "one_cam", "both_cams".
     """
     tmp_set = dataset.copy()
-    if mode == "all":
+    if mode == lg.NumberChangeActions.ALL:
         dataset.loc[(tmp_set.color == color) & 
                     (tmp_set.particle == previous_id), "particle"] = new_id
         dataset.loc[(tmp_set.color == color) & 
                     (tmp_set.particle == new_id), "particle"] = previous_id
-    elif mode == "one_cam":
+    elif mode == lg.NumberChangeActions.ALL_ONE_CAM:
         assert cam_id is not None
         cols = dataset.columns
         mask_previous = (tmp_set.color == color) & \
@@ -225,7 +226,7 @@ def rod_number_swap(dataset: pd.DataFrame, mode: str, previous_id: int,
             tmp_set.loc[mask_new, cam_cols].values
         dataset.loc[mask_new, cam_cols] = \
             tmp_set.loc[mask_previous, cam_cols].values
-    elif mode == "both_cams":
+    elif mode == lg.NumberChangeActions.ONE_BOTH_CAMS:
         assert frame is not None
         dataset.loc[(tmp_set.color == color) & (tmp_set.particle == previous_id)
                     & (tmp_set.frame == frame), "particle"] = new_id
