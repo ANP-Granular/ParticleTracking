@@ -1,4 +1,10 @@
-"""Script to train a new model."""
+"""
+Script to train a new model.
+
+Author:     Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       10.08.2022
+"""
+
 # import general libraries
 import os
 import cv2
@@ -70,11 +76,13 @@ def run_training(train_set: ds.DataSet,
                 configuration.DATASETS.TEST = (val_set.name,)
                 # Determine the maximum number of instances to predict per image
                 counts = hf.get_object_counts(val_set)
-                configuration.TEST.DETECTIONS_PER_IMAGE = int(np.max(counts))
+                configuration.TEST.DETECTIONS_PER_IMAGE = int(1.5 * np.max(
+                    counts))
             elif not configuration.TEST.DETECTIONS_PER_IMAGE:
                 # Determine the maximum number of instances to predict per image
                 counts = hf.get_object_counts(val_set)
-                configuration.TEST.DETECTIONS_PER_IMAGE = int(np.max(counts))
+                configuration.TEST.DETECTIONS_PER_IMAGE = int(1.5 * np.max(
+                    counts))
 
         # Create output directory and save configuration
         os.makedirs(output_dir, exist_ok=True)
