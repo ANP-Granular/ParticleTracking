@@ -35,6 +35,51 @@ def run_training(train_set: ds.DataSet,
                  resume: bool = True, visualize: bool = False,
                  img_augmentations: List[T.Augmentation] = None,
                  freeze_layers: List[str] = None):
+    """Runs the training of a model with the given training data.
+
+    Runs the training of a model which is defined by the given configuration. 
+    The training can be resumed and further specification of layers to 
+    train/not to train is possible. During training the different model 
+    performance metrics are logged in the Tensorboard format.
+    Additional COCO metrics are available only if a validation dataset is given.
+    These metrics are also logged in the Tensorboard format.
+
+    Parameters
+    ----------
+    train_set : ds.DataSet
+        A DataSet already registered to the Detectron2 framework, that is used 
+        for training the model.
+    configuration : Union[str, CfgNode]
+        Configuration for the Detectron2 model with training settings given as 
+        a CfgNode or path to a *.yaml file in the Detectron2 configuration 
+        format.
+    val_set : ds.DataSet, optional
+        A DataSet already registered to the Detectron2 framework, that is used 
+        for testing the model during training.
+        By default None.
+    output_dir : str, optional
+        Path to the intended output directory. It's parent directory must exist 
+        prior to running this function. 
+        By default "./".
+    log_name : str, optional
+        Filename for logging output in the output directory.
+        By default "training.log".
+    resume : bool, optional
+        Flag to continue with previous training progress in the output folder.
+        By default True.
+    visualize : bool, optional
+        Flag for allowing visualization of one randomly selected image from the 
+        given training dataset with 10 randomly chosen annotations overlaid on 
+        the image.
+        By default False.
+    img_augmentations : List[T.Augmentation], optional
+        Image augmentations to be used during training.
+        By default None.
+    freeze_layers : List[str], optional
+        Layers/layer collections to be frozen during training. The model's layer
+        names are obtained using `model.named_parameters()`.
+        By default None.
+    """
 
     setup_logger(os.path.join(output_dir, log_name))
     if visualize:

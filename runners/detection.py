@@ -1,4 +1,11 @@
-"""Script to run runners experiments with a previously trained network."""
+"""
+Script to run inference with a trained network and save the results for further 
+computations.
+
+Author:     Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       11.08.2022
+"""
+
 # import general libraries
 import os
 import cv2
@@ -39,7 +46,58 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
                   weights: str = None, classes: dict = None,
                   output_dir: str = "./", log_name: str = "detection.log",
                   visualize: bool = True, vis_random_samples: int = -1,
-                  **kwargs):
+                  threshold: float = 0.5, **kwargs) -> list:
+    """Runs inference on a given set of images and can visualize the output.
+
+    In addition to running inference this script also generates rod enpoints 
+    from the generated masks, if the network predicted these.
+
+    Parameters
+    ----------
+    dataset : Union[ds.DataSet, List[str]]
+        Either a DataSet already registered to the Detectron2 framework or a 
+        list of paths to image files intended for running inference on.
+    configuration : Union[CfgNode, str]
+        Configuration for the Detectron2 model and inferences settings given as 
+        a CfgNode or path to a *.yaml file in the Detectron2 configuration 
+        format.
+    weights : str, optional
+        Path to a *.pkl model file. Is optional, if the weights are already 
+        given in the configuration.
+    classes : dict, optional
+        Dictionary of classes detectable by the model with 
+        {key}  ->  Index of class in the model
+        {value} ->  Name of the class
+        By default None.
+    output_dir : str, optional
+        Path to the intended output directory. It's parent directory must exist 
+        prior to running this function.
+        By default "./".
+    log_name : str, optional
+        Filename for logging output in the output directory.
+        By default "detection.log".
+    visualize : bool, optional
+        Flag for allowing visualization.
+        By default True.
+    vis_random_samples : int, optional
+        Specifies the number of randomly chosen visualized samples when 
+        `visualize` is True.
+        -1      ->  All images are viszalized.
+        n > 0   ->  Chooses n images of the given set to be visualized after 
+                    inference.
+        By default -1.
+    threshold : float, optional
+        Threshold for the minimum score of predicted instances.
+        By default 0.5.
+    **kwargs
+        Keyword arguments for `visualization.visualize()`, except for
+        `prediction`, `original`, and `output_dir`.
+    
+    Returns
+    -------
+    list
+        Prediction for each image inference was run on.
+    """
     setup_logger(os.path.join(output_dir, log_name))
 
     # Configuration
@@ -80,6 +138,9 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
         _logger.info(f"Inference on: {file}")
         im = cv2.imread(file)
         outputs = predictor(im)
+        # Thresholding/cleaning results
+        outputs["instances"] = outputs["instances"][
+            outputs["instances"].scores > threshold]
         # Accumulate results
         predictions.append(outputs)
         files.append(os.path.basename(file))
@@ -92,19 +153,28 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
                 visualization.visualize(outputs, file, output_dir=output_dir,
                                         **kwargs)
         # Saving outputs
-        _logger.info("Starting endpoint computation ...")
-        points = hf.rod_endpoints(outputs, classes)
-        save_to_mat(os.path.join(output_dir, os.path.basename(file)), points)
+        if "pred_masks" in outputs["instances"].get_fields():
+            _logger.info("Starting endpoint computation ...")
+            points = hf.rod_endpoints(outputs, classes)
+            save_to_mat(os.path.join(output_dir, os.path.basename(file)), 
+                        points)
         _logger.info(f"Done with: {os.path.basename(file)}")
+    
+    return predictions
 
 
-def save_to_csv(file_name, points: dict):
-    """Saves rod endpoints of one image."""
-    # TODO
+def save_to_mat(file_name: str, points: dict):
+    """Saves rod endpoints of one image to be used in MATLAB for 3D matching.
 
-
-def save_to_mat(file_name, points: dict):
-    """Saves rod endpoints of one image to be used in MATLAB."""
+    Parameters
+    ----------
+    file_name : str
+        Output file name, that will be extended by the colors present in 
+        `points`.
+    points : dict
+        Rod endpoint data in the output format of 
+        `helper_funcs.rod_endpoints()`.
+    """
     for idx, vals in points.items():
         if not vals.size:
             # skip classes without saved points
@@ -118,4 +188,3 @@ def save_to_mat(file_name, points: dict):
 
         sio.savemat(os.path.splitext(file_name)[0] +
                     f"_{idx}.mat", {'rod_data_links': arr})
-
