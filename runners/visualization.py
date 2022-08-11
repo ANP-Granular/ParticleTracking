@@ -1,6 +1,8 @@
 import os
+import sys
 import cv2
 import random
+import logging
 from typing import Union, Iterable
 
 import matplotlib.pyplot as plt
@@ -10,6 +12,17 @@ from detectron2.data import MetadataCatalog
 from detectron2.utils.visualizer import Visualizer, GenericMask
 
 import utils.datasets as ds
+
+_logger = logging.getLogger(__name__)
+_logger.setLevel(logging.INFO)
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
+    datefmt="%m/%d %H:%M:%S"
+    )
+ch.setFormatter(formatter)
+_logger.addHandler(ch)
 
 
 def visualize(prediction, original: Union[dict, str],
@@ -26,17 +39,24 @@ def visualize(prediction, original: Union[dict, str],
         del to_draw._fields["scores"]
         del to_draw._fields["pred_boxes"]
 
+    fig = None
     if isinstance(original, dict):
         # Display original as well
         fig_title = os.path.basename(original["file_name"])
-        create_figure(im, to_draw, original, colors)
+        fig = create_figure(im, to_draw, original, colors)
     else:
         fig_title = os.path.basename(original)
-        create_figure(im, to_draw, None, colors)
+        fig = create_figure(im, to_draw, None, colors)
+
+    if not hide_tags:
+        if "pred_keypoints" in to_draw._fields:
+            # Keypoint visualization
+            ax = fig.axes[0]
+            kps = to_draw.pred_keypoints.numpy()
+            ax.plot(kps[:, 0, 0:2].squeeze().T, kps[:, 1, 0:2].squeeze().T)
 
     if output_dir:
         plt.savefig(os.path.join(output_dir, fig_title))
-    # plt.show(block=False)
 
 
 def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
@@ -44,11 +64,11 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
     if colors is None:
         colors = plt.get_cmap("tab10").colors
 
-    def add_outlines(mask_data, axes, color=None):
+    def add_outlines(mask_data, axes, color=None, confidences=None):
         if isinstance(mask_data, torch.Tensor):
             mask_data = mask_data.numpy()
         masks = [GenericMask(x, height, width) for x in mask_data]
-        for m, c in zip(masks, color):
+        for m, c, s in zip(masks, color, confidences):
             for segment in m.polygons:
                 polygon = mpl.patches.Polygon(
                     segment.reshape(-1, 2),
@@ -56,6 +76,7 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
                     color=c
                 )
                 axes.add_patch(polygon)
+            axes.text(*m.bbox()[0:2], f"{s.numpy():.2f}")
         return axes
 
     def get_colors(len_data, class_data=None):
@@ -63,6 +84,10 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
             return len_data*["black"]
         else:
             return [colors[lbl] for lbl in class_data]
+    try:
+        scores = predictions.scores
+    except KeyError:
+        scores = None
 
     fig = plt.figure(frameon=False)
     dpi = fig.get_dpi()
@@ -77,18 +102,30 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
         ax1 = fig.add_axes([0, .5, 1, .5])
         ax1.imshow(img)
         ax1.axis("off")
-        class_colors = get_colors(len(predictions.pred_classes),
-                                  predictions.pred_classes)
-        add_outlines(predictions.pred_masks, ax1, class_colors)
+        try:
+            class_colors = get_colors(len(predictions.pred_classes),
+                                    predictions.pred_classes)
+            add_outlines(predictions.pred_masks, ax1, class_colors, scores)
+        except AttributeError:
+            # predictions does not have mask data, e.g. because it predicted 
+            # only keypoints
+            _logger.info("Predictions don't have segmentation masks. "
+                         "Skipping mask visualization...")
 
         # Groundtruth axes
         ax2 = fig.add_axes([0, 0, 1, .5])
         ax2.imshow(img)
         ax2.axis("off")
-        gt_masks = [anno["segmentation"] for anno in gt["annotations"]]
-        gt_classes = [anno["category_id"] for anno in gt["annotations"]]
-        class_colors = get_colors(len(gt_classes), gt_classes)
-        add_outlines(gt_masks, ax2, class_colors)
+        try:
+            gt_masks = [anno["segmentation"] for anno in gt["annotations"]]
+            gt_classes = [anno["category_id"] for anno in gt["annotations"]]
+            class_colors = get_colors(len(gt_classes), gt_classes)
+            add_outlines(gt_masks, ax2, class_colors)
+        except IndexError:
+            # annotations don't have the "segmentation" field, e.g. because 
+            # they only have keypoints
+            _logger.info("Ground-truth does not have segmentation masks. "
+                         "Skipping mask visualization...")
 
     else:
         fig.set_size_inches(
@@ -99,9 +136,15 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
         ax1 = fig.add_axes([0, 0, 1, 1])
         ax1.imshow(img)
         ax1.axis("off")
-        class_colors = get_colors(len(predictions.pred_classes),
-                                  predictions.pred_classes)
-        add_outlines(predictions.pred_masks, ax1, class_colors)
+        try:
+            class_colors = get_colors(len(predictions.pred_classes),
+                                    predictions.pred_classes)
+            add_outlines(predictions.pred_masks, ax1, class_colors, scores)
+        except AttributeError:
+            # predictions does not have mask data, e.g. because it predicted 
+            # only keypoints
+            _logger.info("Predictions don't have segmentation masks. "
+                         "Skipping mask visualization...")
 
     return fig
 
