@@ -14,6 +14,10 @@ pip install protobuf==3.20.1
 ```shell
 pip install shapely 
 ```
+- install tensorboard for training metric visualization
+```shell
+pip install tensorboard 
+```
 ## Running Code
 The root directory of this repository must be in the `PYTHONPATH` environment variable for the code to run. 
 In Visual Studio Code this could be achieved by setting the `"env"` variable in a run configuration as shown below. Other IDEs like PyCharm add this by default.
@@ -33,6 +37,12 @@ All scripts also assume, that the current working directory is in their respecti
             }
         }
     ]
+```
+
+## Visualization of training metrics using Tensorboard
+Run the following command for training data visualization with Tensorboard:
+```shell
+tensorboard --logdir "path\to\output\folder(s)"
 ```
 
 
@@ -55,3 +65,28 @@ Instead of the standard mask head, this network uses a PointRend network for the
 ```shell
 pip install pandas scipy scikit-image trackpy filterpy matplotlib
 ```
+
+# Output file format & naming conventions
+Rod Endpoint files after detection:
+- file names: {image name}_{rod color}.mat
+- content:
+  - variables: rod_data_links
+  - dimensions: [color, rod, point, coordinate]
+  - [-1, -1], if no endpoints can be computed for a mask/rod
+
+
+Rod Endpoint files after matching:
+- file names: data3d_{color}/{frame:05d}.txt
+- content:
+  - `' '` separated
+  - {x1} {y1} {z1} {x2} {y2} {z2} {x} {y} {z} {l} {x1_cam1} {y1_cam1} {x2_cam1} 
+    {y2_cam1} {x1_cam2} {y1_cam2} {x2_cam2} {y2_cam2} {frame}\n
+
+
+Rod Endpoint files after tracking:
+- file names: 
+- content:
+  - `','` separated
+  - {idx},{x1},{y1},{z1},{x2},{y2},{z2},{x},{y},{z},{l},{x1_cam1},{y1_cam1},
+    {x2_cam1},{y2_cam1},{x1_cam2},{y1_cam2},{x2_cam2},{y2_cam2},{frame},
+    {seen_cam1},{seen_cam2},{particle}\n
