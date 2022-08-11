@@ -1,8 +1,12 @@
-/venv/
-/venv_linux/
-/.idea/
+# Work directories to be ignored
 /datasets/
 /experiments/*
-!/experiments/example/config.yaml
-!/experiments/example/experiment_train.py
-!/experiments/example/experiment_detection.py
+/3Dreconstruction/testfiles/
+
+# Python related ignores
+/venv/
+*/__pycache__/
+
+# IDE related ignores
+/.idea/
+/.vscode/
