@@ -936,6 +936,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
+        # update information for the tree view
+        self.rod_info[self.logger.frame][self.last_color][number] = \
+            ["unseen", "unseen"]
+
         new_rod = rn.RodNumberWidget(self.last_color, self.current_camera,
                                      str(number))
         new_rod.rod_id = number
