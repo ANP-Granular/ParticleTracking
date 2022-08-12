@@ -994,7 +994,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """Updates the main data storage in RAM (used for communication
         with threads)."""
         self.df_data = new_data
+        previously_selected = self.current_camera.active_rod
         self.load_rods()
+        self.current_camera.rod_activated(previously_selected)
 
     def save_changes(self, temp_only=False):
         """Saves unsaved changes to disk temporarily or permanently.

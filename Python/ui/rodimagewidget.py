@@ -228,6 +228,13 @@ class RodImageWidget(QLabel):
         except AttributeError:
             raise AttributeError("There is no ActionLogger set for this "
                                  "Widget yet.")
+    
+    @property
+    def active_rod(self):
+        for rod in self._edits:
+            if rod.rod_state == RodState.SELECTED:
+                return rod.rod_id
+        return None
 
     # Display manipulation ====================================================
     def _scale_image(self) -> None:
@@ -517,6 +524,7 @@ class RodImageWidget(QLabel):
                 rod.deactivate_rod()
             if rod.rod_id == rod_id:
                 rod.rod_state = RodState.SELECTED
+                rod.setFocus(QtCore.Qt.OtherFocusReason)
         self.draw_rods()
 
     def check_rod_conflicts(self, set_rod: RodNumberWidget, last_id: int) ->\
@@ -758,10 +766,12 @@ class RodImageWidget(QLabel):
         """Adds the length (in px) given in `amount` to the rod. Negative values shorten the rod."""
         rods = []
         new_pos = []
+        previously_selected = None
         for rod in self._edits:
-            if only_selected:
-                if rod.rod_state != RodState.SELECTED:
-                    continue
+            if rod.rod_state == RodState.SELECTED:
+                previously_selected = rod.rod_id
+            elif only_selected:
+                continue
 
             n_p = np.asarray(rod.rod_points)
             rod_direction = np.array([n_p[0:2]-n_p[2:]])
@@ -776,6 +786,7 @@ class RodImageWidget(QLabel):
             new_pos.append(n_p)
         self._logger.add_action(lg.PruneLength(rods, new_pos, amount))
         self.draw_rods()
+        self.rod_activated(previously_selected)
         return
 
     @staticmethod

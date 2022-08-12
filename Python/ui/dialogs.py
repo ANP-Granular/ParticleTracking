@@ -598,10 +598,11 @@ class ConflictDialog(QtWidgets.QMessageBox):
             f"#{last_id} <---> #{new_id} was detected. \nHow shall "
             f"this conflict be resolved?")
         self.btn_switch_all = self.addButton(
-            "Switch in:\nBoth views, all frames", 
+            "Switch in:\nBoth views, following frames", 
             QtWidgets.QMessageBox.ActionRole)
-        self.btn_one_cam = self.addButton("Switch in:\nThis views, all frames",
-                                         QtWidgets.QMessageBox.ActionRole)
+        self.btn_one_cam = self.addButton("Switch in:\nThis views, following "
+                                          "frames",
+                                          QtWidgets.QMessageBox.ActionRole)
         self.btn_both_cams = self.addButton(
             "Switch in:\nBoth views, this frame", 
             QtWidgets.QMessageBox.ActionRole)
