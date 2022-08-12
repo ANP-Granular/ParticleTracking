@@ -125,7 +125,7 @@ class Settings(Configuration):
             "number_color": [0, 0, 0],
             "number_size": 11,
             "boundary_offset": 5,
-            "position_scaling": 10.0,
+            "position_scaling": 1.0,
             "number_rods": 25,
             "rod_increment": 1.0
         },
