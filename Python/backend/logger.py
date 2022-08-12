@@ -813,19 +813,8 @@ class PruneLength(Action):
 class NumberExchange(Action):
     color: str = None
     def __init__(self, mode: NumberChangeActions, previous_id: int, new_id: int,
-                 color: str, frame: int=None, cam_id: str = None):
+                 color: str, frame: int, cam_id: str = None):
         self.mode = mode
-        if self.mode == NumberChangeActions.ONE_BOTH_CAMS:
-            if frame is None:
-                raise ValueError("A frame number must be supplied. "
-                                 "It must not be None for mode "
-                                 "NumberChangeActions.ONE_BOTH_CAMS.")
-        elif self.mode == NumberChangeActions.CURRENT:
-            if frame is None or cam_id:
-                raise ValueError("A frame number and camera ID must be "
-                                 "supplied. It must not be None for mode "
-                                 "NumberChangeActions.CURRENT.")
-
         self.previous_id = previous_id
         self.new_id = new_id
         self.cam_id = cam_id
@@ -842,9 +831,9 @@ class NumberExchange(Action):
         to_str = f") Changed rod #{self.previous_id} ---> #{self.new_id} "\
                  f"of color {self.color}"
         if self.mode == NumberChangeActions.ALL:
-            to_str += " in all frames and cameras."
+            to_str += f" in frames >= {self.frame} and cameras."
         elif self.mode == NumberChangeActions.ALL_ONE_CAM:
-            to_str += f" in all frames of {self.cam_id}."
+            to_str += f" in frames >= {self.frame} of {self.cam_id}."
         elif self.mode == NumberChangeActions.ONE_BOTH_CAMS:
             to_str += f" in frame {self.frame} of all cameras."
         elif self.mode == NumberChangeActions.CURRENT:

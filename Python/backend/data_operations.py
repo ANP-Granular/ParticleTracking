@@ -201,7 +201,7 @@ def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
 
 def rod_number_swap(dataset: pd.DataFrame, mode: lg.NumberChangeActions, 
                     previous_id: int, new_id: int, color: str, 
-                    frame: int = None, cam_id: str = None) -> pd.DataFrame:
+                    frame: int, cam_id: str = None) -> pd.DataFrame:
     """Adjusts a DataFrame according to rod number switching modes.
     
     Parameters
@@ -212,15 +212,20 @@ def rod_number_swap(dataset: pd.DataFrame, mode: lg.NumberChangeActions,
     tmp_set = dataset.copy()
     if mode == lg.NumberChangeActions.ALL:
         dataset.loc[(tmp_set.color == color) & 
-                    (tmp_set.particle == previous_id), "particle"] = new_id
+                    (tmp_set.particle == previous_id) &
+                    (tmp_set.frame >= frame), "particle"] = new_id
         dataset.loc[(tmp_set.color == color) & 
-                    (tmp_set.particle == new_id), "particle"] = previous_id
+                    (tmp_set.particle == new_id) &
+                    (tmp_set.frame >= frame), "particle"] = previous_id
     elif mode == lg.NumberChangeActions.ALL_ONE_CAM:
         assert cam_id is not None
         cols = dataset.columns
         mask_previous = (tmp_set.color == color) & \
-                        (tmp_set.particle == previous_id)
-        mask_new = ((tmp_set.color == color) & (tmp_set.particle == new_id))
+                        (tmp_set.particle == previous_id) & \
+                        (tmp_set.frame >= frame)
+        mask_new = (tmp_set.color == color) & \
+                   (tmp_set.particle == new_id) & \
+                   (tmp_set.frame >= frame)
         cam_cols = [c for c in cols if cam_id in c] 
         dataset.loc[mask_previous, cam_cols] = \
             tmp_set.loc[mask_new, cam_cols].values
