@@ -20,6 +20,7 @@ import pandas as pd
 from typing import Iterable, List, Dict, Tuple
 from PyQt5 import QtCore
 import Python.ui.rodnumberwidget as rn
+import Python.backend.logger as lg
 
 
 def extract_rods(data, cam_id: str, frame: int, color: str) -> \
@@ -195,4 +196,48 @@ def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
             [*points, seen]
     dataset = dataset.astype({"frame": 'int', f"seen_{cam_id}": 'int',
                               "particle": 'int'})
+    return dataset
+
+
+def rod_number_swap(dataset: pd.DataFrame, mode: lg.NumberChangeActions, 
+                    previous_id: int, new_id: int, color: str, 
+                    frame: int, cam_id: str = None) -> pd.DataFrame:
+    """Adjusts a DataFrame according to rod number switching modes.
+    
+    Parameters
+    ----------
+    mode: str
+        Possible values "all", "one_cam", "both_cams".
+    """
+    tmp_set = dataset.copy()
+    if mode == lg.NumberChangeActions.ALL:
+        dataset.loc[(tmp_set.color == color) & 
+                    (tmp_set.particle == previous_id) &
+                    (tmp_set.frame >= frame), "particle"] = new_id
+        dataset.loc[(tmp_set.color == color) & 
+                    (tmp_set.particle == new_id) &
+                    (tmp_set.frame >= frame), "particle"] = previous_id
+    elif mode == lg.NumberChangeActions.ALL_ONE_CAM:
+        assert cam_id is not None
+        cols = dataset.columns
+        mask_previous = (tmp_set.color == color) & \
+                        (tmp_set.particle == previous_id) & \
+                        (tmp_set.frame >= frame)
+        mask_new = (tmp_set.color == color) & \
+                   (tmp_set.particle == new_id) & \
+                   (tmp_set.frame >= frame)
+        cam_cols = [c for c in cols if cam_id in c] 
+        dataset.loc[mask_previous, cam_cols] = \
+            tmp_set.loc[mask_new, cam_cols].values
+        dataset.loc[mask_new, cam_cols] = \
+            tmp_set.loc[mask_previous, cam_cols].values
+    elif mode == lg.NumberChangeActions.ONE_BOTH_CAMS:
+        assert frame is not None
+        dataset.loc[(tmp_set.color == color) & (tmp_set.particle == previous_id)
+                    & (tmp_set.frame == frame), "particle"] = new_id
+        dataset.loc[(tmp_set.color == color) & (tmp_set.particle == new_id) & 
+                    (tmp_set.frame == frame), "particle"] = previous_id
+    else:
+        # unknown mode
+        pass
     return dataset

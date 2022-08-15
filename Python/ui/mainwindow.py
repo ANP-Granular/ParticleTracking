@@ -135,9 +135,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if platform.system() == "Darwin":
             self.ui.action_zoom_in.setShortcut("Ctrl+=")
             self.ui.action_zoom_out.setShortcut("Ctrl+-")
-        
-        self.elongate_rods = QtWidgets.QShortcut(QtGui.QKeySequence("R"), self)
-        self.shorten_rods = QtWidgets.QShortcut(QtGui.QKeySequence("T"), self)
 
         # Set maximum button/checkbox sizes to avoid text clipping
         pb_load_txt = self.ui.pb_load_images.text()
@@ -147,11 +144,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         pb_rod_size = self.ui.pb_load_rods.fontMetrics().width(
             pb_rod_txt)
         max_width = pb_rod_size if pb_rod_size > pb_load_size else pb_load_size
-        self.ui.pb_load_images.setMaximumWidth(int(2*max_width))
-        self.ui.pb_load_rods.setMaximumWidth(int(2*max_width))
+        self.ui.pb_load_images.setMaximumWidth(int(2 * max_width))
+        self.ui.pb_load_rods.setMaximumWidth(int(2 * max_width))
         cb_ov_txt = self.ui.cb_overlay.text()
         cb_ov_size = self.ui.cb_overlay.fontMetrics().width(cb_ov_txt)
-        self.ui.cb_overlay.setMaximumWidth(int(2*cb_ov_size))
+        self.ui.cb_overlay.setMaximumWidth(int(2 * cb_ov_size))
 
         # Set possible inputs for rod selection field
         self.ui.le_disp_one.setInputMask("99")
@@ -258,15 +255,26 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.logger.request_saving.connect(self.save_changes)
             cam.logger.data_changed.connect(self.catch_data)
             cam.request_new_rod.connect(self.create_new_rod)
+            cam.number_switches[lg.NumberChangeActions, int, int].connect(
+                self.catch_number_switch)
+            cam.number_switches[
+                lg.NumberChangeActions, int, int, str, int, str, bool].connect(
+                self.catch_number_switch)
             self.request_undo.connect(cam.logger.undo_last)
             self.request_redo.connect(cam.logger.redo_last)
             self.settings.settings_changed.connect(cam.update_settings)
-        self.shorten_rods.activated.connect(
-            lambda : self.current_camera.adjust_rod_length(
+        self.ui.action_shorten_displayed.triggered.connect(
+            lambda: self.current_camera.adjust_rod_length(
                 -self._rod_incr, False))
-        self.elongate_rods.activated.connect(
+        self.ui.action_lengthen_displayed.triggered.connect(
             lambda: self.current_camera.adjust_rod_length(
                 self._rod_incr, False))
+        self.ui.action_shorten_selected.triggered.connect(
+            lambda: self.current_camera.adjust_rod_length(
+                -self._rod_incr, True))
+        self.ui.action_lengthen_selected.triggered.connect(
+            lambda: self.current_camera.adjust_rod_length(
+                self._rod_incr, True))
 
         # Help
         self.ui.action_docs.triggered.connect(lambda: dialogs.show_readme(
@@ -296,7 +304,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     @current_file_ids.setter
     def current_file_ids(self, new_ids):
         self._current_file_ids = new_ids
-        self.ui.slider_frames.setMaximum(len(new_ids)-1)
+        self.ui.slider_frames.setMaximum(len(new_ids) - 1)
         self.ui.slider_frames.setMinimum(0)
         try:
             self.ui.le_frame_disp.setText(
@@ -322,7 +330,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.current_camera.rod_activated(selected_rod)
         return
 
-    def update_tree(self, new_data: dict, no_gen = False):
+    def update_tree(self, new_data: dict, no_gen=False):
         """Update the "seen" status in the displayed rod data tree.
         Skip updating of the tree by using no_gen=True."""
         header = self.ui.tv_rods.headerItem()
@@ -484,7 +492,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.current_file_ids
 
             # Update slider
-            self.ui.slider_frames.setMaximum(len(self.fileList)-1)
+            self.ui.slider_frames.setMaximum(len(self.fileList) - 1)
             self.ui.slider_frames.setSliderPosition(self.current_file_index)
             current_id = self.current_file_ids[self.current_file_index]
             self.ui.le_frame_disp.setText(f"Frame: {current_id}")
@@ -569,9 +577,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
                         msg.setIcon(QMessageBox.Question)
                         msg.setWindowTitle("Rod Tracker")
-                        msg.setText(f"There seems to be corrected data "
-                                    f"already. Do you want to use that "
-                                    f"instead of the selected data?")
+                        msg.setText("There seems to be corrected data "
+                                    "already. Do you want to use that "
+                                    "instead of the selected data?")
                         msg.setStandardButtons(QMessageBox.Yes |
                                                QMessageBox.No)
                         user_decision = msg.exec()
@@ -827,7 +835,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Update information on last action
                     new_idx = self.current_file_index if \
                         self.current_file_index >= 0 else \
-                        len(self.current_file_ids)+self.current_file_index
+                        len(self.current_file_ids) + self.current_file_index
                     self.ui.slider_frames.setSliderPosition(new_idx)
                     new_frame = self.current_file_ids[self.current_file_index]
                     self.logger.frame = new_frame
@@ -870,7 +878,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                     f"sa_camera_"
                                     f"{self.ui.camera_tabs.currentIndex()}")
         to_size = current_sa.size()
-        to_size = QtCore.QSize(to_size.width()-20, to_size.height()-20)
+        to_size = QtCore.QSize(to_size.width() - 20, to_size.height() - 20)
         self.current_camera.scale_to_size(to_size)
 
     def scale_image(self, factor):
@@ -963,7 +971,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if new_data is None:
             return
 
-        thread, worker = run_in_thread(d_ops.change_data, {"dataset": self.df_data, "new_data": new_data})
+        thread, worker = run_in_thread(d_ops.change_data, 
+                                       {"dataset": self.df_data, 
+                                        "new_data": new_data})
         worker.finished.connect(self.update_changed_data)
         self.background_tasks.append((thread, worker))
         thread.start()
@@ -985,9 +995,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(object)
     def update_changed_data(self, new_data):
-        """Updates the main data storage in RAM (used for communication with threads)."""
+        """Updates the main data storage in RAM (used for communication
+        with threads)."""
         self.df_data = new_data
-
+        previously_selected = self.current_camera.active_rod
+        self.load_rods()
+        self.current_camera.rod_activated(previously_selected)
 
     def save_changes(self, temp_only=False):
         """Saves unsaved changes to disk temporarily or permanently.
@@ -1139,6 +1152,36 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # Ensure that rods are loaded
             self.load_rods()
 
+    @QtCore.pyqtSlot(lg.NumberChangeActions, int, int)
+    @QtCore.pyqtSlot(lg.NumberChangeActions, int, int, str, int, str, bool)
+    def catch_number_switch(self, mode: lg.NumberChangeActions, old_id: int,
+                            new_id: int, color: str = None, frame: int = None,
+                            cam_id: str = None, log: bool = True):
+        """Handles changes of rod numbers for more than the current frame and
+        camera."""
+        if color is None:
+            color = self.get_selected_color()
+        if frame is None:
+            frame = self.logger.frame
+        if cam_id is None:
+            cam_id = self.current_camera.cam_id
+        thread, worker = run_in_thread(d_ops.rod_number_swap,
+                                       {"dataset": self.df_data, "mode": mode,
+                                        "previous_id": old_id,
+                                        "new_id": new_id, "color": color,
+                                        "frame": frame, "cam_id": cam_id})
+        worker.finished.connect(self.update_changed_data)
+        self.background_tasks.append((thread, worker))
+        thread.start()
+
+        if log:
+            self.current_camera.logger.add_action(
+                lg.NumberExchange(mode, old_id, new_id, 
+                                  self.get_selected_color(), self.logger.frame,
+                                  self.current_camera.cam_id)
+                )
+        return
+
     def change_view(self, direction: int) -> None:
         """Helper method for programmatic changes of the camera tabs."""
         old_idx = self.ui.camera_tabs.currentIndex()
@@ -1191,14 +1234,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.current_camera = self.cameras[new_idx]
 
         # Connect signals for rod alteration
-        self.shorten_rods.activated.disconnect()
-        self.elongate_rods.activated.disconnect()
-        self.shorten_rods.activated.connect(
-            lambda : self.current_camera.adjust_rod_length(
+        self.ui.action_shorten_displayed.triggered.disconnect()
+        self.ui.action_lengthen_displayed.triggered.disconnect()
+        self.ui.action_shorten_selected.triggered.disconnect()
+        self.ui.action_lengthen_selected.triggered.disconnect()
+        self.ui.action_shorten_displayed.triggered.connect(
+            lambda: self.current_camera.adjust_rod_length(
                 -self._rod_incr, False))
-        self.elongate_rods.activated.connect(
+        self.ui.action_lengthen_displayed.triggered.connect(
             lambda: self.current_camera.adjust_rod_length(
                 self._rod_incr, False))
+        self.ui.action_shorten_selected.triggered.connect(
+            lambda: self.current_camera.adjust_rod_length(
+                -self._rod_incr, True))
+        self.ui.action_lengthen_selected.triggered.connect(
+            lambda: self.current_camera.adjust_rod_length(
+                self._rod_incr, True))
 
         # Loads a new image, if necessary
         self.show_next(index_diff)
