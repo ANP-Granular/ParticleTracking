@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
@@ -114,7 +114,8 @@ def extract_cam_params(mat_params: dict):
     }
 
 
-def load_calib_from_json(file_name: str) -> (dict, dict | None, dict | None):
+def load_calib_from_json(file_name: str) -> \
+        Tuple(dict, dict | None, dict | None):
     with open(file_name, "r") as f:
         all_calibs = json.load(f)
     if "stereoParams" in all_calibs.keys():

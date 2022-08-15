@@ -6,8 +6,8 @@ import scipy.io as sio
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-import data_loading as dl
-from result_visualizations import matching_results
+import reconstruct_3D.data_loading as dl
+from reconstruct_3D.result_visualizations import matching_results
 
 
 # TODO: Extract method for "triangulation" from match_rods()
@@ -96,6 +96,14 @@ def match_rods(cam1_folder, cam2_folder, output_folder, colors,
                 pairs_all[:, 1, :].squeeze().transpose())
             p_triang = np.asarray([p[0:3]/p[3] for p in p_triang.transpose()])
 
+            rotx = np.asarray(transforms["M_rotate_x"])
+            roty = np.asarray(transforms["M_rotate_y"])
+            rotz = np.asarray(transforms["M_rotate_z"])
+            tw1 = np.asarray(transforms["M_trans"])
+            tw2 = np.asarray(transforms["M_trans2"])
+            rot_trafo = tw1 *rotx*roty*rotz
+
+
             # Reprojection to the image plane for point matching
             # see: https://stackoverflow.com/questions/56500898/why-do-triangulated-points-not-project-back-to-same-image-points-in-opencv
             r1_vec_inv, _ = cv2.Rodrigues(r1.transpose())
@@ -181,7 +189,7 @@ def example_match_rods():
     out_folder = base_folder + "/data3D/"
 
     start_frame = 732
-    end_frame = 733
+    end_frame = 736
     frame_numbers = list(range(start_frame, end_frame+1))
 
     errs, lens = match_rods(cam1_folder, cam2_folder, out_folder, colors,
@@ -199,5 +207,3 @@ def example_match_rods():
 if __name__ == "__main__":
     example_match_rods()
     # match_rods()
-
-
