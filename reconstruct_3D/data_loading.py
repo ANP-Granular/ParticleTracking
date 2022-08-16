@@ -115,7 +115,7 @@ def extract_cam_params(mat_params: dict):
 
 
 def load_calib_from_json(file_name: str) -> \
-        Tuple(dict, dict | None, dict | None):
+        Tuple[dict, dict | None, dict | None]:
     with open(file_name, "r") as f:
         all_calibs = json.load(f)
     if "stereoParams" in all_calibs.keys():
