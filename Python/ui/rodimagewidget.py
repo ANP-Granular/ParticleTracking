@@ -603,7 +603,12 @@ class RodImageWidget(QLabel):
             # No conflicts, inform logger
             if self._logger is None:
                 raise Exception("Logger not set.")
-            self.catch_rodnumber_change(set_rod, last_id)
+            # BUG: This code creates 2 Threads that try to change the same data 
+            #      which breaks the application.
+            new_id = set_rod.rod_id
+            set_rod.rod_id = last_id
+            self.request_new_rod.emit(new_id, set_rod.rod_points)
+            self.delete_rod(set_rod)
 
     def catch_rodnumber_change(self, new_rod: RodNumberWidget, last_id: int)\
             -> lg.ChangedRodNumberAction:
