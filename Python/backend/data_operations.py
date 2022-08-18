@@ -23,17 +23,19 @@ import Python.ui.rodnumberwidget as rn
 import Python.backend.logger as lg
 
 
-def extract_rods(data, cam_id: str, frame: int, color: str) -> \
+rod_data: pd.DataFrame = None
+lock = QtCore.QReadWriteLock(QtCore.QReadWriteLock.Recursive)
+
+
+def extract_rods(cam_id: str, frame: int, color: str) -> \
         List[rn.RodNumberWidget]:
     """Extracts rod data for one color and creates the `RodNumberWidget`s.
 
-    Extracts the rod position data one color in one frame. It creates the
-    `RodNumberWidget` that is associated with each rod.
+    Extracts the rod position data one color in one frame from `rod_data`. It 
+    creates the `RodNumberWidget` that is associated with each rod.
 
     Parameters
     ----------
-    data : DataFrame
-        Dataset from which the rod positions and IDs are extracted.
     cam_id : str
         ID of the camera for selection of the correct columns in `data`.
     frame : int
@@ -45,11 +47,13 @@ def extract_rods(data, cam_id: str, frame: int, color: str) -> \
     -------
     List[RodNumberWidget]
     """
+    global rod_data
+    lock.lockForRead()
     col_list = ["particle", "frame", f"x1_{cam_id}",
                 f"x2_{cam_id}", f"y1_{cam_id}",
                 f"y2_{cam_id}", f"seen_{cam_id}"]
 
-    df_part = data.loc[data.color == color, col_list]
+    df_part = rod_data.loc[rod_data.color == color, col_list]
     df_part2 = df_part[df_part["frame"] == frame].reset_index().fillna(0)
 
     new_rods = []
@@ -68,17 +72,12 @@ def extract_rods(data, cam_id: str, frame: int, color: str) -> \
         ident.setObjectName(f"rn_{ind_rod}")
         ident.seen = seen
         new_rods.append(ident)
+    lock.unlock()
     return new_rods
 
 
-def extract_seen_information(data: pd.DataFrame) -> \
-        Tuple[Dict[int, Dict[str, dict]], list]:
-    """Extracts the seen/unseen parameter for all rods in the dataset.
-
-    Parameters
-    ----------
-    data : DataFrame
-        (Complete) dataset of rods.
+def extract_seen_information() -> Tuple[Dict[int, Dict[str, dict]], list]:
+    """Extracts the seen/unseen parameter for all rods in `rod_data`.
 
     Returns
     -------
@@ -87,16 +86,18 @@ def extract_seen_information(data: pd.DataFrame) -> \
     list
         out_list = ["gp1_seen", "gp2_seen"]
     """
+    global rod_data
+    lock.lockForRead()
     seen_data = {}
     col_list = ["particle", "frame", "color"]
     cam_regex = re.compile('seen_gp\d+')
     to_include = []
-    for col in data.columns:
+    for col in rod_data.columns:
         if re.fullmatch(cam_regex, col):
             to_include.append(col)
     col_list.extend(to_include)
 
-    df_part = data[col_list]
+    df_part = rod_data[col_list]
     for item in df_part.iterrows():
         item = item[1]
         current_seen = ['seen' if item[gp] else 'unseen' for gp in
@@ -110,54 +111,48 @@ def extract_seen_information(data: pd.DataFrame) -> \
         else:
             seen_data[item.frame] = \
                 {item.color: {item.particle: current_seen}}
+    lock.unlock()
     return seen_data, [cam.split("_")[-1] for cam in to_include]
 
 
-def find_unused_rods(data: pd.DataFrame) -> pd.DataFrame:
-    """Searches for unused rods in the given dataset.
+def find_unused_rods() -> pd.DataFrame:
+    """Searches for unused rods in the `rod_data` dataset.
 
     Marks and returns unused rods by verifying that the columns "\*_gp\*" in
     the dataset contain only 0 or NaN.
-
-    Parameters
-    ----------
-    data : DataFrame
-        Dataset of rods.
 
     Returns
     -------
     DataFrame
         The rows from the given dataset that were identified as not being used.
     """
+    global rod_data
+    lock.lockForRead()
     cam_regex = re.compile('[xy][12]_gp\d+')
     to_include = []
-    for col in data.columns:
+    for col in rod_data.columns:
         if re.fullmatch(cam_regex, col):
             to_include.append(col)
 
-    has_nans = data[data.isna().any(axis=1)]
+    has_nans = rod_data[rod_data.isna().any(axis=1)]
     has_data = has_nans.loc[:, has_nans.columns.isin(to_include)].any(
         axis=1)
     unused = has_nans.loc[has_data == False]
+    lock.unlock()
     return unused
 
 
-def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
-    """Changes or extends the rod dataset with the given new data.
+def change_data(new_data: dict) -> None:
+    """Changes or extends the `rod_data` dataset with the given new data.
 
     Parameters
     ----------
-    dataset : DataFrame
-        Dataset of rods.
     new_data : dict
         Dictionary describing the new/changed rod data. Must contain the fields
         ["frame", "cam_id", "color", "position", "rod_id"]
-
-    Returns
-    -------
-    DataFrame
-        The changed/extended dataset.
     """
+    global rod_data
+    lock.lockForWrite()
     frame = new_data["frame"]
     cam_id = new_data["cam_id"]
     color = new_data["color"]
@@ -175,33 +170,35 @@ def change_data(dataset: pd.DataFrame, new_data: dict) -> pd.DataFrame:
                 "rod_id": rod_id[i],
                 "seen": seen[i]
             }
-            dataset = change_data(dataset, tmp_data)
-        return dataset
+            rod_data = change_data(rod_data, tmp_data)
+        lock.unlock()
+        return
 
-    data_unavailable = dataset.loc[(dataset.frame == frame) & (
-            dataset.particle == rod_id) & (dataset.color == color),
+    data_unavailable = rod_data.loc[(rod_data.frame == frame) & (
+            rod_data.particle == rod_id) & (rod_data.color == color),
         [f"x1_{cam_id}", f"y1_{cam_id}", f"x2_{cam_id}", f"y2_{cam_id}"]].empty
     if data_unavailable:
-        new_idx = dataset.index.max() + 1
-        dataset.loc[new_idx] = len(dataset.columns) * [math.nan]
-        dataset.loc[new_idx, [f"x1_{cam_id}", f"y1_{cam_id}",
+        new_idx = rod_data.index.max() + 1
+        rod_data.loc[new_idx] = len(rod_data.columns) * [math.nan]
+        rod_data.loc[new_idx, [f"x1_{cam_id}", f"y1_{cam_id}",
                               f"x2_{cam_id}", f"y2_{cam_id}", "frame",
                               f"seen_{cam_id}", "particle", "color"]] \
             = [*points, frame, seen, rod_id, color]
     else:
-        dataset.loc[(dataset.frame == frame) & (dataset.particle == rod_id)
-                    & (dataset.color == color),
+        rod_data.loc[(rod_data.frame == frame) & (rod_data.particle == rod_id)
+                    & (rod_data.color == color),
                     [f"x1_{cam_id}", f"y1_{cam_id}",
                      f"x2_{cam_id}", f"y2_{cam_id}", f"seen_{cam_id}"]] = \
             [*points, seen]
-    dataset = dataset.astype({"frame": 'int', f"seen_{cam_id}": 'int',
+    rod_data = rod_data.astype({"frame": 'int', f"seen_{cam_id}": 'int',
                               "particle": 'int'})
-    return dataset
+    lock.unlock()
+    return
 
 
-def rod_number_swap(dataset: pd.DataFrame, mode: lg.NumberChangeActions, 
-                    previous_id: int, new_id: int, color: str, 
-                    frame: int, cam_id: str = None) -> pd.DataFrame:
+def rod_number_swap(mode: lg.NumberChangeActions, previous_id: int, 
+                    new_id: int, color: str, frame: int, 
+                    cam_id: str = None) -> pd.DataFrame:
     """Adjusts a DataFrame according to rod number switching modes.
     
     Parameters
@@ -209,17 +206,18 @@ def rod_number_swap(dataset: pd.DataFrame, mode: lg.NumberChangeActions,
     mode: str
         Possible values "all", "one_cam", "both_cams".
     """
-    tmp_set = dataset.copy()
+    global rod_data
+    lock.lockForWrite()
+    tmp_set = rod_data.copy()
     if mode == lg.NumberChangeActions.ALL:
-        dataset.loc[(tmp_set.color == color) & 
+        rod_data.loc[(tmp_set.color == color) & 
                     (tmp_set.particle == previous_id) &
                     (tmp_set.frame >= frame), "particle"] = new_id
-        dataset.loc[(tmp_set.color == color) & 
+        rod_data.loc[(tmp_set.color == color) & 
                     (tmp_set.particle == new_id) &
                     (tmp_set.frame >= frame), "particle"] = previous_id
     elif mode == lg.NumberChangeActions.ALL_ONE_CAM:
-        assert cam_id is not None
-        cols = dataset.columns
+        cols = rod_data.columns
         mask_previous = (tmp_set.color == color) & \
                         (tmp_set.particle == previous_id) & \
                         (tmp_set.frame >= frame)
@@ -227,17 +225,17 @@ def rod_number_swap(dataset: pd.DataFrame, mode: lg.NumberChangeActions,
                    (tmp_set.particle == new_id) & \
                    (tmp_set.frame >= frame)
         cam_cols = [c for c in cols if cam_id in c] 
-        dataset.loc[mask_previous, cam_cols] = \
+        rod_data.loc[mask_previous, cam_cols] = \
             tmp_set.loc[mask_new, cam_cols].values
-        dataset.loc[mask_new, cam_cols] = \
+        rod_data.loc[mask_new, cam_cols] = \
             tmp_set.loc[mask_previous, cam_cols].values
     elif mode == lg.NumberChangeActions.ONE_BOTH_CAMS:
-        assert frame is not None
-        dataset.loc[(tmp_set.color == color) & (tmp_set.particle == previous_id)
+        rod_data.loc[(tmp_set.color == color) & (tmp_set.particle == previous_id)
                     & (tmp_set.frame == frame), "particle"] = new_id
-        dataset.loc[(tmp_set.color == color) & (tmp_set.particle == new_id) & 
+        rod_data.loc[(tmp_set.color == color) & (tmp_set.particle == new_id) & 
                     (tmp_set.frame == frame), "particle"] = previous_id
     else:
         # unknown mode
         pass
-    return dataset
+    lock.unlock()
+    return
