@@ -1405,6 +1405,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     d_ops.lock.unlock()
                     performed_action = lg.PermanentRemoveAction(len(delete_idx))
                     self.logger.add_action(performed_action)
+                    # Update rods and tree display
+                    thread, worker = pl.run_in_thread(
+                        d_ops.extract_seen_information, {})
+                    worker.finished.connect(self.setup_tree)
+                    self.background_tasks.append((thread, worker))
+                    thread.start()
                     self.load_rods()
                 else:
                     self.ui.statusbar.showMessage("No rods confirmed for "
