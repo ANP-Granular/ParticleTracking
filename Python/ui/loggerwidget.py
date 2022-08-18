@@ -66,6 +66,7 @@ class LoggerWidget(QtWidgets.QListWidget):
         super().__init__(*args, **kwargs)
         self.temp_manager = tempfile.TemporaryDirectory(
             prefix="Session_", dir=lg.TEMP_DIR)
+        lg._logger.info(self.temp_manager.name)
 
     @property
     def unsaved_changes(self) -> List[lg.Action]:
@@ -123,12 +124,14 @@ class LoggerWidget(QtWidgets.QListWidget):
             return
         self.insertItem(self.count(), new_action)
         self.scrollToBottom()
+        lg._logger.info(str(new_action))
 
     @QtCore.pyqtSlot(lg.Action)
     def remove_action(self, undo_action: lg.Action) -> None:
         """Removes an Action from the displayed list and deletes it."""
         item_pos = self.row(undo_action)
         undo_item = self.takeItem(item_pos)
+        lg._logger.warning(f"Removed action: {undo_action}")
         del undo_item
         self.scrollToBottom()
 
