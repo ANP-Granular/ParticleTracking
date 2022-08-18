@@ -18,6 +18,7 @@ import logging
 import sys
 import subprocess
 import tempfile
+import traceback
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Optional, Iterable, Union, List
@@ -37,6 +38,12 @@ formatter = logging.Formatter(
     )
 f_handle.setFormatter(formatter)
 _logger.addHandler(f_handle)
+
+
+def exception_logger(e_type, e_value, e_tb):
+    """Handler for logging uncaught exceptions during the program flow."""
+    tb_str = "".join(traceback.format_exception(e_type, e_value, e_tb))
+    _logger.exception(f"Uncaught exception:\n{tb_str}")
 
 
 def open_logs():
