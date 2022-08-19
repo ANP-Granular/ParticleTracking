@@ -17,7 +17,7 @@
 import tempfile
 from typing import List
 from PyQt5 import QtCore, QtWidgets
-from Python.backend import logger as lg
+import RodTracker.backend.logger as lg
 
 
 class LoggerWidget(QtWidgets.QListWidget):

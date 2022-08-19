@@ -17,8 +17,8 @@
 import json
 from abc import abstractmethod
 from PyQt5 import QtWidgets, QtCore
-from Python.ui.dialogs import SettingsDialog
-from Python.backend.logger import TEMP_DIR
+from RodTracker.ui.dialogs import SettingsDialog
+from RodTracker.backend.logger import TEMP_DIR
 
 
 class Configuration(QtCore.QObject):

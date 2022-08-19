@@ -587,5 +587,5 @@ class Ui_MainWindow(object):
         self.action_lengthen_displayed.setText(_translate("MainWindow", "Lengthen Displayed Rods"))
         self.action_lengthen_displayed.setShortcut(_translate("MainWindow", "R"))
         self.action_logs.setText(_translate("MainWindow", "Show Logs"))
-from Python.ui.loggerwidget import LoggerWidget
-from Python.ui.rodimagewidget import RodImageWidget
+from RodTracker.ui.loggerwidget import LoggerWidget
+from RodTracker.ui.rodimagewidget import RodImageWidget

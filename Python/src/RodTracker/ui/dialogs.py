@@ -18,9 +18,10 @@ import copy
 from pathlib import Path
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
-from Python.ui import rodnumberwidget as rn, rodimagewidget as ri
+import RodTracker.ui.rodnumberwidget as rn
+import RodTracker.ui.rodimagewidget as ri
 
-ICON_PATH = "./resources/icon_main.ico"
+ICON_PATH = "../resources/icon_main.ico"
 
 
 class SettingsDialog(QtWidgets.QDialog):

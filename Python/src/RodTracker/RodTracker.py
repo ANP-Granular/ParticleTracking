@@ -25,8 +25,8 @@ sys.path.insert(0, parentdir)
 
 from PyQt5 import QtWidgets
 
-from Python.backend import logger as lg
-from Python.ui import mainwindow as mw
+from RodTracker.backend import logger as lg
+from RodTracker.ui import mainwindow as mw
 
 sys.excepthook = lg.exception_logger
 ICON_PATH = "./resources/icon_main.ico"

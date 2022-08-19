@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import logging
 import sys
 import subprocess
@@ -24,7 +25,7 @@ from enum import Enum, auto
 from typing import Optional, Iterable, Union, List
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
-from Python.ui import rodnumberwidget as rn
+import RodTracker.ui.rodnumberwidget as rn
 
 TEMP_DIR = tempfile.gettempdir() + "/RodTracker"
 LOG_PATH = f"{TEMP_DIR}/RodTracker.log"

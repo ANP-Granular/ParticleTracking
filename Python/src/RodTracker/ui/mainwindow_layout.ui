@@ -1145,12 +1145,12 @@
   <customwidget>
    <class>RodImageWidget</class>
    <extends>QLabel</extends>
-   <header>Python.ui.rodimagewidget.h</header>
+   <header>RodTracker.ui.rodimagewidget.h</header>
   </customwidget>
   <customwidget>
    <class>LoggerWidget</class>
    <extends>QListWidget</extends>
-   <header>Python.ui.loggerwidget.h</header>
+   <header>RodTracker.ui.loggerwidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
