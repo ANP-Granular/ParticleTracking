@@ -53,7 +53,6 @@ def open_logs():
         os.startfile(LOG_PATH)
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
-        # subprocess.call([opener, LOG_PATH])
         subprocess.run([opener, LOG_PATH])
 
 
