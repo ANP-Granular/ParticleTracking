@@ -83,7 +83,7 @@ def visualize(prediction, original: Union[dict, str],
             # Keypoint visualization
             ax = fig.axes[0]
             kps = to_draw.pred_keypoints.numpy()
-            ax.plot(kps[:, 0, 0:2].squeeze().T, kps[:, 1, 0:2].squeeze().T)
+            ax.plot(kps[:, :, 0].squeeze().T, kps[:, :, 1].squeeze().T)
 
     if output_dir:
         plt.savefig(os.path.join(output_dir, fig_title))
