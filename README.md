@@ -90,6 +90,27 @@
   containing the GUI-Layout manually as all changes will be lost when 
   generating it automatically again.
   
+### Using the source code
+Requirements:
+- Python 3.8 is installed
+- run `pip install -r requirements.txt` to install the required packages
+
+Build the project into an executable using the building script:
+```shell
+YOUR/PROJECT/PATH/Python/build-files> build_app.bat
+```
+There are two command line options `-onedir`(default)/`-onefile`. 
+Both will generate a `.\Python\build` and a `.\Python\dist` folder. 
+The generated executables are located in the `.\Python\dist` folder.
+
+In the first case everything is bundled into one folder named `RodTracker` 
+which can be copied or moved as a whole. Run the executable
+`dist\RodTracker\RodTracker.exe` inside this folder to start the program.
+
+The second script on the other hand generates only one file, i.e. 
+`dist\RodTracker.exe`, that holds all necessary files to run the program 
+and unpacks those during run-time.
+
 ---
 
 ## Rod tracking using MATLAB
