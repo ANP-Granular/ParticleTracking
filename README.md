@@ -6,7 +6,7 @@
 
 ![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/141676583-2f294dec-a505-4b7e-a8b5-484af964ea09.png "RodTracker - GUI")
 ### Notes for users
-1. Run [RodTracker.py](./Python/RodTracker.py)
+1. Run [RodTracker.py](./Python/src/RodTracker/RodTracker.py)
 2. Open images from disk using the `File` dropdown menu or the `Load 
    Images` button.
    - Switch between images in the folder using the `left`/`right` keys or the 
@@ -79,14 +79,14 @@
 
 ### Notes for developers
 - The main GUI-layout is modeled in 
-  [mainwindow_layout.ui](Python/ui/mainwindow_layout.ui) and can be changed 
+  [mainwindow_layout.ui](Python/src/RodTracker/ui/mainwindow_layout.ui) and can be changed 
   using QtDesigner. 
-- Generate the [Python file](Python/ui/mainwindow_layout.py) after changing the
-  [UI-File](Python/ui/mainwindow_layout.ui) using:
+- Generate the [Python file](Python/src/RodTracker/ui/mainwindow_layout.py) after changing the
+  [UI-File](Python/src/RodTracker/ui/mainwindow_layout.ui) using:
   ```shell
     pyuic5 -x path/to/track_ui.ui -o path/to/track_ui.py
     ```
-- Do **not** change the [Python file](Python/ui/mainwindow_layout.py) 
+- Do **not** change the [Python file](Python/src/RodTracker/ui/mainwindow_layout.py) 
   containing the GUI-Layout manually as all changes will be lost when 
   generating it automatically again.
   
