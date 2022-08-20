@@ -27,9 +27,6 @@ from RodTracker.ui import dialogs
 import RodTracker.backend.logger as lg
 
 
-ICON_PATH = "./resources/icon_main.ico"
-
-
 class RodImageWidget(QLabel):
     """A custom QLabel that displays an image and can overlay rods.
 

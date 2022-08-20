@@ -20,8 +20,7 @@ import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 import RodTracker.ui.rodnumberwidget as rn
 import RodTracker.ui.rodimagewidget as ri
-
-ICON_PATH = "../resources/icon_main.ico"
+import RodTracker.backend.file_locations as fl
 
 
 class SettingsDialog(QtWidgets.QDialog):
@@ -480,7 +479,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
 def show_warning(text: str):
     """Display a warning with custom text and Ok button."""
     msg = QtWidgets.QMessageBox()
-    msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+    msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
     msg.setIcon(QtWidgets.QMessageBox.Warning)
     msg.setWindowTitle("Rod Tracker")
     msg.setText(text)
@@ -502,7 +501,7 @@ def show_about(parent: QtWidgets.QWidget):
         </tr>
         <tr>
             <td width="200", colspan="2"> <h3>Date:</h3> </td>
-            <td width="200"> <p> 25.11.2021 </p> </td>
+            <td width="200"> <p> 20.08.2022 </p> </td>
         </tr>
         <tr>
             <td width="200", colspan="2"> <h3><br>Developers:<br></h3> </td>
@@ -558,11 +557,18 @@ def show_about(parent: QtWidgets.QWidget):
             <td width="150">2</td>
             <td width="200"><p> Apache-2.0 </p></td>
         </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://www.pyinstaller.org/">PyInstaller</a>:</p>
+            </td>
+            <td width="150">5.3</td>
+            <td width="200"><p> GPLv2+ </p></td>
+        </tr>
     </table>
     <br>
     <br>
     <p>
-        Copyright © 2021 Otto-von-Guericke University Magdeburg
+        Copyright © 2022 Otto-von-Guericke University Magdeburg
     </p>"""
     QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
 
@@ -581,7 +587,7 @@ def show_readme(parent: QtWidgets.QWidget):
     docs_dialog.layout.addWidget(docs_dialog.docs)
     docs_dialog.setLayout(docs_dialog.layout)
 
-    readme_md = Path('../README.md').read_text()
+    readme_md = Path(fl.readme_path()).read_text()
     docs_dialog.docs.setMarkdown(readme_md)
     docs_dialog.show()
 
@@ -591,7 +597,7 @@ class ConflictDialog(QtWidgets.QMessageBox):
     def __init__(self, last_id, new_id, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.setWindowIcon(QtGui.QIcon(ICON_PATH))
+        self.setWindowIcon(QtGui.QIcon(fl.icon_path()))
         self.setIcon(QtWidgets.QMessageBox.Warning)
         self.setWindowTitle("Rod Tracker")
         self.setText(

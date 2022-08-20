@@ -16,7 +16,6 @@
 
 import os
 import sys
-
 import inspect
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -24,12 +23,10 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir) 
 
 from PyQt5 import QtWidgets
-
-from RodTracker.backend import logger as lg
-from RodTracker.ui import mainwindow as mw
+import RodTracker.backend.logger as lg
+import RodTracker.ui.mainwindow as mw
 
 sys.excepthook = lg.exception_logger
-ICON_PATH = "./resources/icon_main.ico"
 
 HAS_SPLASH = False
 try:
@@ -56,4 +53,6 @@ if __name__ == "__main__":
         pyi_splash.close()
 
     main_window.show()
+    main_window.raise_()
+    main_window.activateWindow()
     sys.exit(app.exec_())

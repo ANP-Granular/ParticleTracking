@@ -29,11 +29,10 @@ import RodTracker.backend.logger as lg
 import RodTracker.backend.data_operations as d_ops
 import RodTracker.backend.file_operations as f_ops
 import RodTracker.backend.parallelism as pl
+import RodTracker.backend.file_locations as fl
 import RodTracker.ui.rodnumberwidget as rn
 import RodTracker.ui.mainwindow_layout as mw_l
 from RodTracker.ui import dialogs
-
-ICON_PATH = "../resources/icon_main.ico"
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
@@ -131,6 +130,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
 
         # Adaptations of the UI
+        self.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+        self.ui.pb_undo.setIcon(QtGui.QIcon(fl.undo_icon_path()))
         self.ui.tv_rods.header().setDefaultSectionSize(150)
         self.ui.tv_rods.header().setMinimumSectionSize(125)
         # Adapt menu action shortcuts for Mac
@@ -552,7 +553,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 if not eligible_files:
                     # No matching file was found
                     msg = QMessageBox()
-                    msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+                    msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
                     msg.setIcon(QMessageBox.Warning)
                     msg.setWindowTitle("Rod Tracker")
                     msg.setText(f"There were no useful files found in: "
@@ -578,7 +579,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     corrected_files = f_ops.folder_has_data(out_folder)
                     if corrected_files:
                         msg = QMessageBox()
-                        msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+                        msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
                         msg.setIcon(QMessageBox.Question)
                         msg.setWindowTitle("Rod Tracker")
                         msg.setText("There seems to be corrected data "
@@ -1054,7 +1055,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         save_dir = self.ui.le_save_dir.text()
         if save_dir == self.ui.le_rod_dir.text() and not self._allow_overwrite:
             msg = QMessageBox()
-            msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+            msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
             msg.setIcon(QMessageBox.Warning)
             msg.setWindowTitle("Rod Tracker")
             msg.setText("The saving path points to the original data!"
@@ -1094,7 +1095,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             False, if the user aborted.
         """
         msg = QMessageBox()
-        msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+        msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
         msg.setIcon(QMessageBox.Warning)
         msg.setWindowTitle("Rod Tracker")
         msg.setText("There are unsaved changes!")
@@ -1148,7 +1149,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             idx_diff = new_idx - self.current_file_index
         except ValueError:
             # Image not found
-            self.current_camera.setPixmap(QtGui.QPixmap(ICON_PATH))
+            self.current_camera.setPixmap(QtGui.QPixmap(fl.icon_path()))
             self.ui.statusbar.showMessage(f"No image with ID"
                                           f":{to_frame} found.", 4000)
             return
@@ -1228,7 +1229,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     index_diff = new_id_idx - self.file_indexes[new_idx]
                 except ValueError:
                     # Image not found
-                    self.cameras[new_idx].setPixmap(QtGui.QPixmap(ICON_PATH))
+                    self.cameras[new_idx].setPixmap(QtGui.QPixmap(fl.icon_path()))
                     self.ui.statusbar.showMessage(f"No image with ID"
                                                   f":{current_id} found for "
                                                   f"this view.", 4000)
@@ -1357,7 +1358,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Unsaved changes handling
         if not self.ui.lv_actions_list.unsaved_changes == []:
             msg = QMessageBox()
-            msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+            msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
             msg.setIcon(QMessageBox.Warning)
             msg.setWindowTitle("Rod Tracker")
             msg.setText("There are unsaved changes!")
