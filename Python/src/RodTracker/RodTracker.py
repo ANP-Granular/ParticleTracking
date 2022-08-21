@@ -37,7 +37,7 @@ except ModuleNotFoundError:
     HAS_SPLASH = False
 
 
-if __name__ == "__main__":
+def main():
     if HAS_SPLASH:
         pyi_splash.update_text("Updating environment...")
     if not os.path.exists(lg.TEMP_DIR):
@@ -56,3 +56,7 @@ if __name__ == "__main__":
     main_window.raise_()
     main_window.activateWindow()
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()
