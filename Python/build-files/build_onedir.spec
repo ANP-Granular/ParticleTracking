@@ -7,10 +7,10 @@ block_cipher = None
 a = Analysis(['../src/RodTracker/RodTracker.py'],
              pathex=['.'],
              binaries=[],
-             datas=[('../src/RodTracker/ui/*', './ui'),
-             ('../src/RodTracker/backend/*', './backend'),
-             ('../resources/*', './resources'),
-             ('../../README.md', '.')],
+             datas=[('../src/RodTracker/ui/*', './RodTracker/ui'),
+             ('../src/RodTracker/backend/*', './RodTracker/backend'),
+             ('../src/RodTracker/resources/*', './RodTracker/resources'),
+             ('../README.md', '.')],
              hiddenimports=[],
              hookspath=[],
              hooksconfig={},
@@ -25,7 +25,7 @@ pyz = PYZ(a.pure,
           a.zipped_data,
           cipher=block_cipher)
 
-splash = Splash('../resources/splash.png',
+splash = Splash('../src/RodTracker/resources/splash.png',
                 binaries=a.binaries,
                 datas=a.datas,
                 text_pos=(250, 450),
@@ -49,7 +49,7 @@ exe = EXE(pyz,
           target_arch=None,
           codesign_identity=None,
           entitlements_file=None ,
-          icon='../resources/icon_main.ico')
+          icon='../src/RodTracker/resources/icon_main.ico')
 
 coll = COLLECT(exe,
                a.binaries,

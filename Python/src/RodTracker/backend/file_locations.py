@@ -15,10 +15,15 @@
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+if sys.version_info < (3, 9):
+    # importlib.resources either doesn't exist or lacks the path()
+    # function, so use the PyPI version:
+    import importlib_resources
+else:
+    # importlib.resources has path(), so use that:
+    import importlib.resources as importlib_resources
 
-_icon_path = "/resources/icon_main.ico"
 _readme_path = "/README.md"
-_undo_icon_path = "/resources/left-arrow-96.png"
 try:
     _base_path = sys._MEIPASS
 except AttributeError:
@@ -26,8 +31,8 @@ except AttributeError:
 
 
 def icon_path() -> str:
-    return _base_path + _icon_path
-
+    return str(importlib_resources.path("RodTracker.resources", 
+                                        "icon_main.ico"))
 
 def readme_path() -> str:
     if hasattr(sys, "_MEIPASS"):
@@ -36,4 +41,5 @@ def readme_path() -> str:
 
 
 def undo_icon_path() -> str:
-    return _base_path + _undo_icon_path
+    return str(importlib_resources.path("RodTracker.resources", 
+                                        "left-arrow-96.png"))
