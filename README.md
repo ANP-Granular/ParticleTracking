@@ -1,12 +1,35 @@
 # Track_Gui
 
----
 ## Python GUI for image tracking task
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/141676583-2f294dec-a505-4b7e-a8b5-484af964ea09.png "RodTracker - GUI")
+
+### Installation
+- Requirements: Python >= 3.8 is installed
+
+- install from *.whl
+  ```shell
+  pip install *.whl
+  ```
+- install from source
+  - clone this repository
+  - install it using pip 
+    ```shell
+    YOUR/REPO/PATH/Python$ pip install .
+    ```
+
 ### Notes for users
-1. Run [RodTracker.py](./Python/src/RodTracker/RodTracker.py)
+1. Run the **RodTracker** GUI using one of possibilities
+  - Run [RodTracker.py](./Python/src/RodTracker/RodTracker.py) manually
+    ```shell
+    YOUR/REPO/PATH/Python/src$ python RodTracker.py
+    ```
+  - Use the registered command (requires installation)
+    ```shell
+    ARBITRARY/PATH$ RodTracker
+    ```
+
 2. Open images from disk using the `File` dropdown menu or the `Load 
    Images` button.
    - Switch between images in the folder using the `left`/`right` keys or the 
@@ -78,6 +101,15 @@
   window's status bar
 
 ### Notes for developers
+#### Installation
+- install from source using the *extras* feature of pip
+  ```shell
+  YOUR/REPO/PATH/Python$ pip install -e .[dev,test]
+  ```
+  This installs the `RodTracker` package in *editable* mode.
+  It will also install packages necessary for bundling, testing, and visual `*.ui` file editing.
+
+#### PyQt specificities
 - The main GUI-layout is modeled in 
   [mainwindow_layout.ui](Python/src/RodTracker/ui/mainwindow_layout.ui) and can be changed 
   using QtDesigner. 
@@ -90,11 +122,7 @@
   containing the GUI-Layout manually as all changes will be lost when 
   generating it automatically again.
   
-### Using the source code
-Requirements:
-- Python 3.8 is installed
-- run `pip install -r requirements.txt` to install the required packages
-
+#### Building
 Build the project into an executable using the building script:
 ```shell
 YOUR/PROJECT/PATH/Python/build-files> build_app.bat
@@ -110,6 +138,12 @@ which can be copied or moved as a whole. Run the executable
 The second script on the other hand generates only one file, i.e. 
 `dist\RodTracker.exe`, that holds all necessary files to run the program 
 and unpacks those during run-time.
+
+Generate a `*.whl` file for distribution:
+```shell
+YOUR/PROJECT/PATH/Python$ python setup.py bdist_wheel
+```
+The created `*.whl` file is located in `Python/dist`.
 
 ---
 
