@@ -31,8 +31,8 @@ except AttributeError:
 
 
 def icon_path() -> str:
-    return str(importlib_resources.files(
-        "RodTracker.resources").joinpath("icon_main.ico"))
+    return str(importlib_resources.path("RodTracker.resources",
+                                        "icon_main.ico"))
 
 
 def readme_path() -> str:
@@ -42,5 +42,5 @@ def readme_path() -> str:
 
 
 def undo_icon_path() -> str:
-    return str(importlib_resources.files(
-        "RodTracker.resources").joinpath("left-arrow-96.png"))
+    return str(importlib_resources.path("RodTracker.resources",
+                                        "left-arrow-96.png"))
