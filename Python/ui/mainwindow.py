@@ -27,7 +27,7 @@ from PyQt5.QtGui import QImage, QWheelEvent
 from Python.backend import settings as se, logger as lg, \
     data_operations as d_ops, file_operations as f_ops
 from Python.ui import rodnumberwidget as rn, mainwindow_layout as mw_l, dialogs
-from Python.backend.parallelism import run_in_thread
+import Python.backend.parallelism as pl
 
 ICON_PATH = "./resources/icon_main.ico"
 
@@ -81,8 +81,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     data_file_name : str
         The template string to match file names of data file candidates in a
         user-selected folder.
-    df_data : DataFrame
-        The loaded rod position data.
     last_color : str
         The color that is currently selected in the GUI and therefore used
         for data display.
@@ -170,7 +168,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.original_data = None   # Holds the original data directory
         self.data_files = self.ui.lv_actions_list.temp_manager.name
         self.data_file_name = 'rods_df_{:s}.csv'
-        self.df_data = None
         self.last_color = None
         self.rod_info = None
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
@@ -541,8 +538,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 # delete old stored files
                 for file in os.listdir(self.data_files):
                     os.remove(self.data_files + "/" + file)
-                self.df_data = None
-
+                d_ops.lock.lockForWrite()
+                d_ops.rod_data = None
+                d_ops.lock.unlock()
+                
                 # Check for eligible files and de-/activate radio buttons
                 eligible_files = f_ops.folder_has_data(self.original_data)
                 if not eligible_files:
@@ -588,8 +587,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                             self._allow_overwrite = True
 
                     # Load data
-                    self.df_data, found_colors = f_ops.get_color_data(
+                    d_ops.lock.lockForWrite()
+                    d_ops.rod_data, found_colors = f_ops.get_color_data(
                         self.original_data, self.data_files)
+                    d_ops.lock.unlock()
 
                     # Update visual elements
                     rb_colors = [child for child
@@ -618,8 +619,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                 max_row += 1
 
                     # Display as a tree
-                    thread, worker = run_in_thread(
-                        d_ops.extract_seen_information, {"data": self.df_data})
+                    thread, worker = pl.run_in_thread(
+                        d_ops.extract_seen_information, {})
                     worker.finished.connect(self.setup_tree)
                     self.background_tasks.append((thread, worker))
                     thread.start()
@@ -706,7 +707,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         file_name = os.path.split(file_name)[-1]
         file_name = file_name[1:4]
         color = self.get_selected_color()
-        new_rods = d_ops.extract_rods(self.df_data, self.current_camera.cam_id,
+        new_rods = d_ops.extract_rods(self.current_camera.cam_id,
                                       int(file_name), color)
         for rod in new_rods:
             self.settings.settings_changed.connect(rod.update_settings)
@@ -971,9 +972,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if new_data is None:
             return
 
-        thread, worker = run_in_thread(d_ops.change_data, 
-                                       {"dataset": self.df_data, 
-                                        "new_data": new_data})
+        thread, worker = pl.run_in_thread(d_ops.change_data, 
+                                          {"new_data": new_data})
         worker.finished.connect(self.update_changed_data)
         self.background_tasks.append((thread, worker))
         thread.start()
@@ -994,10 +994,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.update_tree(new_data)
 
     @QtCore.pyqtSlot(object)
-    def update_changed_data(self, new_data):
+    def update_changed_data(self, _):
         """Updates the main data storage in RAM (used for communication
         with threads)."""
-        self.df_data = new_data
         previously_selected = self.current_camera.active_rod
         self.load_rods()
         self.current_camera.rod_activated(previously_selected)
@@ -1022,7 +1021,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         None
         """
         # TODO: move saving to different Thread(, if it still takes too long)
-        if self.df_data is None:
+        if d_ops.rod_data is None:
             return
         # Skip, if there are no changes
         if not self.ui.lv_actions_list.unsaved_changes:
@@ -1033,13 +1032,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.clean_data()
 
         # Update temporary files
+        d_ops.lock.lockForRead()
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             color = rb.objectName()[3:]
             tmp_file = self.data_files + "/" + self.data_file_name.format(
                 color)
-            df_current = self.df_data.loc[self.df_data.color == color].copy()
+            df_current = d_ops.rod_data.loc[d_ops.rod_data.color == color].copy()
             df_current = df_current.astype({"frame": 'int', "particle": 'int'})
             df_current.to_csv(tmp_file, index_label="")
+        d_ops.lock.unlock()
 
         if temp_only:
             # skip permanent saving
@@ -1165,11 +1166,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             frame = self.logger.frame
         if cam_id is None:
             cam_id = self.current_camera.cam_id
-        thread, worker = run_in_thread(d_ops.rod_number_swap,
-                                       {"dataset": self.df_data, "mode": mode,
-                                        "previous_id": old_id,
-                                        "new_id": new_id, "color": color,
-                                        "frame": frame, "cam_id": cam_id})
+        thread, worker = pl.run_in_thread(d_ops.rod_number_swap,
+                                          {"mode": mode, "previous_id": old_id,
+                                          "new_id": new_id, "color": color,
+                                          "frame": frame, "cam_id": cam_id})
         worker.finished.connect(self.update_changed_data)
         self.background_tasks.append((thread, worker))
         thread.start()
@@ -1389,20 +1389,28 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        if self.df_data is None:
+        if d_ops.rod_data is None:
             self.ui.statusbar.showMessage("No position data loaded. Unable "
                                           "to clean unused rods.", 4000)
             return
-        to_delete = d_ops.find_unused_rods(self.df_data)
+        to_delete = d_ops.find_unused_rods()
         if len(to_delete):
             confirm = dialogs.ConfirmDeleteDialog(to_delete, parent=self)
             if confirm.exec():
                 delete_idx = to_delete.index[confirm.confirmed_delete]
                 if len(delete_idx):
-                    deleted_rows = self.df_data.loc[delete_idx].copy()
-                    self.df_data = self.df_data.drop(index=delete_idx)
+                    d_ops.lock.lockForWrite()
+                    deleted_rows = d_ops.rod_data.loc[delete_idx].copy()
+                    d_ops.rod_data = d_ops.rod_data.drop(index=delete_idx)
+                    d_ops.lock.unlock()
                     performed_action = lg.PermanentRemoveAction(len(delete_idx))
                     self.logger.add_action(performed_action)
+                    # Update rods and tree display
+                    thread, worker = pl.run_in_thread(
+                        d_ops.extract_seen_information, {})
+                    worker.finished.connect(self.setup_tree)
+                    self.background_tasks.append((thread, worker))
+                    thread.start()
                     self.load_rods()
                 else:
                     self.ui.statusbar.showMessage("No rods confirmed for "

@@ -600,10 +600,15 @@ class RodImageWidget(QLabel):
                     rod.rod_state = RodState.CHANGED
             self.draw_rods()
         else:
+            if set_rod.rod_id == last_id:
+                return
             # No conflicts, inform logger
             if self._logger is None:
                 raise Exception("Logger not set.")
-            self.catch_rodnumber_change(set_rod, last_id)
+            new_id = set_rod.rod_id
+            set_rod.rod_id = last_id
+            self.request_new_rod.emit(new_id, set_rod.rod_points)
+            self.delete_rod(set_rod)
 
     def catch_rodnumber_change(self, new_rod: RodNumberWidget, last_id: int)\
             -> lg.ChangedRodNumberAction:
