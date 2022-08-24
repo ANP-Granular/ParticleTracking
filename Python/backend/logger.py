@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import logging
 import sys
 import subprocess
@@ -52,7 +53,6 @@ def open_logs():
         os.startfile(LOG_PATH)
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
-        # subprocess.call([opener, LOG_PATH])
         subprocess.run([opener, LOG_PATH])
 
 
