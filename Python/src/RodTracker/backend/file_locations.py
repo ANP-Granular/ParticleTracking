@@ -16,11 +16,11 @@
 
 import sys
 if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the path()
+    # importlib.resources either doesn't exist or lacks the files()
     # function, so use the PyPI version:
     import importlib_resources
 else:
-    # importlib.resources has path(), so use that:
+    # importlib.resources has files(), so use that:
     import importlib.resources as importlib_resources
 
 _readme_path = "/README.md"
@@ -31,8 +31,9 @@ except AttributeError:
 
 
 def icon_path() -> str:
-    return str(importlib_resources.path("RodTracker.resources", 
-                                        "icon_main.ico"))
+    return str(importlib_resources.files(
+        "RodTracker.resources").joinpath("icon_main.ico"))
+
 
 def readme_path() -> str:
     if hasattr(sys, "_MEIPASS"):
@@ -41,5 +42,10 @@ def readme_path() -> str:
 
 
 def undo_icon_path() -> str:
-    return str(importlib_resources.path("RodTracker.resources", 
-                                        "left-arrow-96.png"))
+    return str(importlib_resources.files(
+        "RodTracker.resources").joinpath("left-arrow-96.png"))
+
+
+def cam1_image1_path() -> str:
+    return str(importlib_resources.files(
+        "RodTracker.resources.example_data.images.gp3").joinpath("00500.jpg"))
