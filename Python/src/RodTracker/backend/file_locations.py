@@ -44,8 +44,3 @@ def readme_path() -> str:
 def undo_icon_path() -> str:
     return str(importlib_resources.files(
         "RodTracker.resources").joinpath("left-arrow-96.png"))
-
-
-def cam1_image1_path() -> str:
-    return str(importlib_resources.files(
-        "RodTracker.resources.example_data.images.gp3").joinpath("00500.jpg"))
