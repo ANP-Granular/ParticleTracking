@@ -195,12 +195,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def connect_signals(self):
         # Opening files
-        self.ui.pb_load_images.clicked.connect(self.open_image_folder)
-        self.ui.action_open.triggered.connect(self.open_image_folder)
-        self.ui.le_image_dir.returnPressed.connect(self.open_image_folder)
-        self.ui.action_open_rods.triggered.connect(self.open_rod_folder)
-        self.ui.pb_load_rods.clicked.connect(self.open_rod_folder)
-        self.ui.le_rod_dir.returnPressed.connect(self.open_rod_folder)
+        self.ui.pb_load_images.clicked.connect(self.get_image_selection)
+        self.ui.action_open.triggered.connect(self.get_image_selection)
+        self.ui.le_image_dir.returnPressed.connect(self.get_image_selection)
+        self.ui.action_open_rods.triggered.connect(self.get_rod_selection)
+        self.ui.pb_load_rods.clicked.connect(self.get_rod_selection)
+        self.ui.le_rod_dir.returnPressed.connect(self.get_rod_selection)
 
         # Saving
         self.ui.pb_save_rods.clicked.connect(self.save_changes)
@@ -428,13 +428,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # settings_changed = True
             self._rod_incr = settings["rod_increment"]
 
-    def open_image_folder(self):
+    def get_image_selection(self):
         """Lets the user select an image folder to show images from.
 
         Lets the user select an image from folder out of which all images
         are marked for later display. The selected image is opened
-        immediately. It tries to extract a camera id from
-        the selected folder and logs the opening action.
+        immediately.
 
         Returns
         -------
@@ -451,6 +450,20 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                                      ui_dir,
                                                      'Images (*.png *.jpeg '
                                                      '*.jpg)', **kwargs)
+        self.open_image_folder(chosen_file)
+
+    def open_image_folder(self, chosen_file: str):
+        """Tries to open an image folder to show the given image.
+
+        All images of the folder from the chosen file's folder are marked for 
+        later display. The selected image is opened immediately. It tries to 
+        extract a camera id from the selected folder and logs the 
+        opening action.
+
+        Returns
+        -------
+        None
+        """
         file_name = os.path.split(chosen_file)[-1]
         file_name = os.path.splitext(file_name)[0]
         if chosen_file:
@@ -514,7 +527,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
             self.update_tree_folding()
 
-    def open_rod_folder(self):
+    def get_rod_selection(self):
         """Lets the user select a folder with rod position data.
 
         Lets the user select a folder with rod position data. It is
@@ -530,7 +543,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """
         # check for a directory
         ui_dir = self.ui.le_rod_dir.text()
-        while True:
+        try_again = True
+        while try_again:
             old_original_data = self.original_data
             self.original_data = QFileDialog.getExistingDirectory(
                 self, 'Choose Folder with position data', ui_dir) + '/'
@@ -540,114 +554,128 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 else:
                     self.original_data = old_original_data
                 return
+            try_again = self.open_rod_folder()
 
-            if self.original_data is not None:
-                # delete old stored files
-                for file in os.listdir(self.data_files):
-                    os.remove(self.data_files + "/" + file)
-                d_ops.lock.lockForWrite()
-                d_ops.rod_data = None
-                d_ops.lock.unlock()
+    def open_rod_folder(self) -> bool:
+        """Tries to open the selected folder with potential rod position data.
 
-                # Check for eligible files and de-/activate radio buttons
-                eligible_files = f_ops.folder_has_data(self.original_data)
-                if not eligible_files:
-                    # No matching file was found
+        It is evaluated which files in the folder are valid data files and what
+        colors they describe. The GUI is updated accordingly to the found 
+        files. The original files are copied to a temporary location for
+        storage of temporary changes. The data is opened immediately, if 
+        applicable by the GUI state. The data discovery/loading is logged.
+
+        Returns
+        -------
+        None
+        """
+        if self.original_data is not None:
+            # delete old stored files
+            for file in os.listdir(self.data_files):
+                os.remove(self.data_files + "/" + file)
+            d_ops.lock.lockForWrite()
+            d_ops.rod_data = None
+            d_ops.lock.unlock()
+
+            # Check for eligible files and de-/activate radio buttons
+            eligible_files = f_ops.folder_has_data(self.original_data)
+            if not eligible_files:
+                # No matching file was found
+                msg = QMessageBox()
+                msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+                msg.setIcon(QMessageBox.Warning)
+                msg.setWindowTitle("Rod Tracker")
+                msg.setText(f"There were no useful files found in: "
+                            f"'{self.original_data}'")
+                msg.setStandardButtons(
+                    QMessageBox.Retry | QMessageBox.Cancel)
+                user_decision = msg.exec()
+                self.original_data = None
+                if user_decision == QMessageBox.Cancel:
+                    # Stop overlaying
+                    self.ui.le_rod_dir.setText("")
+                    self.clear_screen()
+                    self._allow_overwrite = False
+                    return False
+                else:
+                    # Retry folder selection
+                    return True
+
+            else:
+                self._allow_overwrite = False
+                # Check whether there is already corrected data
+                out_folder = self.original_data[:-1] + "_corrected"
+                corrected_files = f_ops.folder_has_data(out_folder)
+                if corrected_files:
                     msg = QMessageBox()
                     msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-                    msg.setIcon(QMessageBox.Warning)
+                    msg.setIcon(QMessageBox.Question)
                     msg.setWindowTitle("Rod Tracker")
-                    msg.setText(f"There were no useful files found in: "
-                                f"'{self.original_data}'")
-                    msg.setStandardButtons(
-                        QMessageBox.Retry | QMessageBox.Cancel)
+                    msg.setText("There seems to be corrected data "
+                                "already. Do you want to use that "
+                                "instead of the selected data?")
+                    msg.setStandardButtons(QMessageBox.Yes |
+                                            QMessageBox.No)
                     user_decision = msg.exec()
-                    self.original_data = None
-                    if user_decision == QMessageBox.Cancel:
-                        # Stop overlaying
-                        self.ui.le_rod_dir.setText("")
-                        self.clear_screen()
-                        self._allow_overwrite = False
-                        return
-                    else:
-                        # Retry folder selection
-                        continue
+                    if user_decision == QMessageBox.Yes:
+                        self.original_data = out_folder + "/"
+                        self._allow_overwrite = True
 
-                else:
-                    self._allow_overwrite = False
-                    # Check whether there is already corrected data
-                    out_folder = self.original_data[:-1] + "_corrected"
-                    corrected_files = f_ops.folder_has_data(out_folder)
-                    if corrected_files:
-                        msg = QMessageBox()
-                        msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-                        msg.setIcon(QMessageBox.Question)
-                        msg.setWindowTitle("Rod Tracker")
-                        msg.setText("There seems to be corrected data "
-                                    "already. Do you want to use that "
-                                    "instead of the selected data?")
-                        msg.setStandardButtons(QMessageBox.Yes |
-                                               QMessageBox.No)
-                        user_decision = msg.exec()
-                        if user_decision == QMessageBox.Yes:
-                            self.original_data = out_folder + "/"
-                            self._allow_overwrite = True
+                # Load data
+                d_ops.lock.lockForWrite()
+                d_ops.rod_data, found_colors = f_ops.get_color_data(
+                    self.original_data, self.data_files)
+                d_ops.lock.unlock()
 
-                    # Load data
-                    d_ops.lock.lockForWrite()
-                    d_ops.rod_data, found_colors = f_ops.get_color_data(
-                        self.original_data, self.data_files)
-                    d_ops.lock.unlock()
+                # Update visual elements
+                rb_colors = [child for child
+                                in self.ui.group_rod_color.children() if
+                                type(child) is QRadioButton]
+                rb_color_texts = [btn.text().lower() for btn in rb_colors]
+                group_layout = self.ui.group_rod_color.layout()
+                max_col = group_layout.columnCount() - 1
+                max_row = 1
+                if group_layout.itemAtPosition(1, max_col) is not None:
+                    # 'Add' a new column as current layout is full
+                    max_col += 1
+                    max_row = 0
+                for color in found_colors:
+                    if color not in rb_color_texts:
+                        # Create new QRadioButton for this color
+                        new_btn = QRadioButton(text=color.capitalize())
+                        new_btn.setObjectName(f"rb_{color}")
+                        new_btn.toggled.connect(self.color_change)
+                        # retain only 2 rows
+                        group_layout.addWidget(new_btn, max_row, max_col)
+                        if max_row == 1:
+                            max_row = 0
+                            max_col += 1
+                        else:
+                            max_row += 1
 
-                    # Update visual elements
-                    rb_colors = [child for child
-                                 in self.ui.group_rod_color.children() if
-                                 type(child) is QRadioButton]
-                    rb_color_texts = [btn.text().lower() for btn in rb_colors]
-                    group_layout = self.ui.group_rod_color.layout()
-                    max_col = group_layout.columnCount() - 1
-                    max_row = 1
-                    if group_layout.itemAtPosition(1, max_col) is not None:
-                        # 'Add' a new column as current layout is full
-                        max_col += 1
-                        max_row = 0
-                    for color in found_colors:
-                        if color not in rb_color_texts:
-                            # Create new QRadioButton for this color
-                            new_btn = QRadioButton(text=color.capitalize())
-                            new_btn.setObjectName(f"rb_{color}")
-                            new_btn.toggled.connect(self.color_change)
-                            # retain only 2 rows
-                            group_layout.addWidget(new_btn, max_row, max_col)
-                            if max_row == 1:
-                                max_row = 0
-                                max_col += 1
-                            else:
-                                max_row += 1
+                # Display as a tree
+                thread, worker = pl.run_in_thread(
+                    d_ops.extract_seen_information, {})
+                worker.finished.connect(self.setup_tree)
+                self.background_tasks.append((thread, worker))
+                thread.start()
 
-                    # Display as a tree
-                    thread, worker = pl.run_in_thread(
-                        d_ops.extract_seen_information, {})
-                    worker.finished.connect(self.setup_tree)
-                    self.background_tasks.append((thread, worker))
-                    thread.start()
-
-                    # Rod position data was selected correctly
-                    self.ui.le_rod_dir.setText(self.original_data[:-1])
-                    self.ui.le_save_dir.setText(out_folder)
-                    this_action = lg.FileAction(self.original_data[:-1],
-                                                lg.FileActions.LOAD_RODS)
-                    this_action.parent_id = self.logger_id
-                    self.ui.lv_actions_list.add_action(
-                        this_action)
-                    self.show_overlay()
-                    for btn in rb_colors:
-                        if btn.text().lower() not in found_colors:
-                            group_layout.removeWidget(btn)
-                            btn.hide()
-                            btn.deleteLater()
-                    return
-
+                # Rod position data was selected correctly
+                self.ui.le_rod_dir.setText(self.original_data[:-1])
+                self.ui.le_save_dir.setText(out_folder)
+                this_action = lg.FileAction(self.original_data[:-1],
+                                            lg.FileActions.LOAD_RODS)
+                this_action.parent_id = self.logger_id
+                self.ui.lv_actions_list.add_action(
+                    this_action)
+                self.show_overlay()
+                for btn in rb_colors:
+                    if btn.text().lower() not in found_colors:
+                        group_layout.removeWidget(btn)
+                        btn.hide()
+                        btn.deleteLater()
+                return False
+        return True
     @QtCore.pyqtSlot(object)
     def setup_tree(self, inputs):
         """Handles the setup of the treeview from extracted rod data."""
@@ -691,7 +719,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         else:
             dialogs.show_warning("There are no rod position files selected "
                                  "yet. Please select files!")
-            self.open_rod_folder()
+            self.get_rod_selection()
 
     def load_rods(self):
         """Loads rod data for one color and creates the `RodNumberWidget`s.
@@ -857,7 +885,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.show_next(direction)
         else:
             # no file list found, load an image
-            self.open_image_folder()
+            self.get_image_selection()
 
     def original_size(self):
         """Displays the currently loaded image in its native size.
