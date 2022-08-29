@@ -28,6 +28,8 @@ from PyQt5 import QtCore
 import RodTracker.ui.rodnumberwidget as rn
 
 TEMP_DIR = tempfile.gettempdir() + "/RodTracker"
+if not os.path.exists(TEMP_DIR):
+        os.mkdir(TEMP_DIR)
 LOG_PATH = f"{TEMP_DIR}/RodTracker.log"
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
