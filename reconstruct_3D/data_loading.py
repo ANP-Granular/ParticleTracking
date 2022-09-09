@@ -131,6 +131,31 @@ def load_calib_from_json(file_name: str) -> \
         return all_calibs["transformations"]
     return
 
+def load_camera_calibration(file_name: str) -> dict:
+    """Loads camera calibration data from *.json files.
+
+    Loads calibration data from a stereo camera calibration, in the format 
+    given in ./calibration_data.
+
+    Parameters
+    ----------
+    file_name : str
+        Path to the *.json file containing the calibration data.
+
+    Returns
+    -------
+    dict
+        Loaded calibration data.
+    """
+    with open(file_name, "r") as f:
+        f_calib = json.load(f)
+    calibration = {}
+    for key, val in f_calib.items():
+        if not (type(val) is list):
+            continue
+        calibration[key] = np.asarray(val)
+    return calibration
+
 
 def load_positions_from_txt(base_file_name: str, columns: List[str],
                             frames: List[int], expected_particles: int =

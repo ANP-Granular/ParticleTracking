@@ -5,13 +5,12 @@ import cv2
 import scipy.io as sio
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
 
 import reconstruct_3D.data_loading as dl
 from reconstruct_3D.result_visualizations import matching_results
 
-
+# FIXME: remove before commiting
 debug = True
 
 def project_to_world(points, transforms: dict):
@@ -46,41 +45,79 @@ def project_from_world(points, transforms: dict):
     return np.reshape(points, old_shape)
 
 
+def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors, 
+                      frame_numbers, calibration_file=None,
+                      transformation_file=None,
+                      cam1_convention="{idx:05d}_{color:s}.mat",
+                      cam2_convention="{idx:05d}_{color:s}.mat"):
+    """Ported Matlab script from `match_rods_2020mix_gp12_cl1.m`.
+    This function takes the same input file format and outputs the same file 
+    formats as the previous implementation in MATLAB. Use this function for a 
+    consistent behaviour to previous data processings.
 
-# TODO: Extract method for "triangulation" from match_rods()
-#  The new method shall take cam1rods, cam2rods, stereo_params.
-#  The new method shall compute undistorted points, triangulated points and
-#  reprojection errors.
-def match_rods(cam1_folder, cam2_folder, output_folder, colors,
-               frame_numbers, calibration_file=None,
-               transformation_file=None,
-               cam1_convention="{idx:05d}_{color:s}.mat",
-               cam2_convention="{idx:05d}_{color:s}.mat"):
-    """Ported from `match_rods_2020mix_gp12_cl1.m`.
+    Note
+    ----
+    This function does NOT convert the 3D points to the "box coordinates".
     """
+
     if not cam1_convention.endswith(".mat"):
         cam1_convention += ".mat"
     if not cam2_convention.endswith(".mat"):
         cam2_convention += ".mat"
     if calibration_file is None:
-        calibration_file = "/calibrations/gp12_calib_matlab.json"
+        calibration_file = "./calibration_data/Matlab/gp12.json"
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
-    stereo_params, cam1, cam2 = dl.load_calib_from_json(calibration_file)
+    # Load Matlab exported calibrations
+    calibration = dl.load_camera_calibration(calibration_file)
     transforms = dl.load_calib_from_json(transformation_file)
+
+    # Derive projection matrices from the calibration
+    r1 = np.eye(3)
+    t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+    P1 = np.vstack((r1.T, t1.T)) @ calibration["CM1"].T
+    P1 = P1.T
+
+    r2 = calibration["R"]
+    t2 = calibration["T"]
+    P2 = np.vstack((r2.T, t2.T)) @ calibration["CM2"].T
+    P2 = P2.T
+
+    # Setup the triangulation function with the loaded calibration
+    def triangulate(point1, point2, sampson=False):
+        orig1 = point1
+        orig2 = point2
+        point1 = cv2.undistortImagePoints(point1, calibration["CM1"], 
+                                        calibration["dist1"]).squeeze()
+        point2 = cv2.undistortImagePoints(point2, calibration["CM2"], 
+                                        calibration["dist2"]).squeeze()
+        if sampson:
+            # Use Sampson distance as an additional correction
+            Fn=calibration["F"]/np.linalg.norm(calibration["F"])
+            r = np.append(point2.T, 1) @ Fn @ np.append(point1, 1)
+            fd0 = Fn[0:2, 0:2].T @ point2 + Fn[2, 0:2].T
+            fd1 = Fn[0:2, 0:2].T @ point1 + Fn[2, 0:2].T
+            g = fd0.T @ fd0 + fd1.T @ fd1
+            e = r/g
+            point1 = point1 - e*fd0
+            point2 = point2 - e*fd1
+
+        wp = cv2.triangulatePoints(P1, P2, point1, point2)
+        wp = wp[0:3]/wp[3]
+        rp1 = cv2.projectPoints(wp, r1, t1, calibration["CM1"], 
+                                distCoeffs=calibration["dist1"])[0]
+        rp2 = cv2.projectPoints(wp, r2, t2, calibration["CM2"], 
+                                distCoeffs=calibration["dist2"])[0]
+        rep_errs = [np.linalg.norm(orig1 - rp1), np.linalg.norm(orig2 - rp2)]
+        return wp, rep_errs
 
     all_repr_errs = []
     all_rod_lengths = []
-    if debug:
-        all_reprs = {}
     for color in colors:
         f_out = output_folder + f"data3d_{color}/"
         if not os.path.exists(f_out):
             os.mkdir(f_out)
-
-        if debug:
-            tmp_reprs = []
         for idx in frame_numbers:
             # Load data
             cam1_file = cam1_folder + cam1_convention.format(idx=idx,
@@ -95,165 +132,61 @@ def match_rods(cam1_folder, cam2_folder, output_folder, colors,
             rods_cam2 = np.asarray([np.asarray([rod[0], rod[1]]) for rod in
                                 rods_cam2]).squeeze()
 
-            # Undistort points using the camera calibration
-            tmp_points = cv2.undistortImagePoints(
-                rods_cam1.reshape(2, -1), cam1["matrix"],
-                cam1["distortions"]).squeeze()
-            undist_cam1 = np.zeros(tmp_points.shape)
-            tmp_points = np.concatenate([tmp_points[:, 0], tmp_points[:, 1]])
-            for i in range(len(tmp_points)):
-                undist_cam1[i // 2][i % 2] = tmp_points[i]
-            undist_cam1 = undist_cam1.reshape((-1, 2, 2))
+            lengths = np.zeros((len(rods_cam1), len(rods_cam2), 2))
+            rep_errs = np.zeros((len(rods_cam1), len(rods_cam2), 2, 2, 2))
+            for i in range(len(rods_cam1)):
+                for j in range(len(rods_cam2)):
+                    c1_p1 = rods_cam1[i, 0]
+                    c1_p2 = rods_cam1[i, 1]
+                    c2_p1 = rods_cam2[j, 0]
+                    c2_p2 = rods_cam2[j, 1]
+                    wp1_1, rep_e1 = triangulate(c1_p1, c2_p1)
+                    wp1_2, rep_e2 = triangulate(c1_p2, c2_p2)
+                    wp2_1, rep_e3 = triangulate(c1_p2, c2_p1)
+                    wp2_2, rep_e4 = triangulate(c1_p1, c2_p2)
+                    rep_errs[i, j] = np.asarray([[rep_e1, rep_e2], [rep_e3, rep_e4]])
+                    lengths[i, j, 0] = np.linalg.norm(wp1_1 - wp1_2)
+                    lengths[i, j, 1] = np.linalg.norm(wp2_1 - wp2_2)
 
-            tmp_points = cv2.undistortImagePoints(
-                rods_cam2.reshape(2, -1), cam2["matrix"],
-                cam2["distortions"]).squeeze()
-            undist_cam2 = np.zeros(tmp_points.shape)
-            tmp_points = np.concatenate([tmp_points[:, 0], tmp_points[:, 1]])
-            for i in range(len(tmp_points)):
-                undist_cam2[i // 2][i % 2] = tmp_points[i]
-            undist_cam2 = undist_cam2.reshape((-1, 2, 2))
-
-            # Triangulation of all possible point-pairs to 3D
-            pairs_all = [list(itertools.product(p[0], p[1])) for p in
-                         itertools.product(undist_cam1, undist_cam2)]
-            pairs_all = np.reshape(pairs_all, (-1, 2, 2))
-            # projection matrix generation taken from triangulate.m
-            r1 = np.eye(3)
-            t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
-            P1 = np.hstack([r1.transpose(), -r1.transpose().dot(t1)])
-            P1_f = cam1["matrix"].dot(P1)
-
-            r2 = stereo_params["R"]
-            t2 = np.expand_dims(stereo_params["T"], 1)
-            P2 = np.hstack([r2.transpose(), -r2.transpose().dot(t2)])
-            P2_f = cam2["matrix"].dot(P2)
-            # FIXME: currently yields points in the first cameras coordinate
-            #  system (i.e. "gp3")
-            p_triang = cv2.triangulatePoints(
-                P1_f, P2_f,
-                pairs_all[:, 0, :].squeeze().transpose(),
-                pairs_all[:, 1, :].squeeze().transpose())
-            p_triang = np.asarray([p[0:3]/p[3] for p in p_triang.transpose()])
-
-            # world_rot = R.from_matrix([
-            #     transforms["M_trans"],
-            #     transforms["M_rotate_x"],
-            #     transforms["M_rotate_y"],
-            #     transforms["M_rotate_z"],
-            #     transforms["M_trans2"]
-            # ])
-
-            # print(p_triang.shape)
-            # p_triang = np.append(p_triang, np.ones((len(p_triang),1)), axis=1)
-            # rotx = np.asarray(transforms["M_rotate_x"])
-            # roty = np.asarray(transforms["M_rotate_y"])
-            # rotz = np.asarray(transforms["M_rotate_z"])
-            # tw1 = np.asarray(transforms["M_trans"])
-            # tw2 = np.asarray(transforms["M_trans2"])
-            # for i in range(len(p_triang)):
-            #     # p_triang[i,:] = tw2.dot(rotx.dot(rotz.dot(roty.dot(tw1.dot(p_triang[i,:])))))
-            #     p_triang[i,:] = tw1.dot(p_triang[i,:])
-            # p_triang = p_triang[:,0:3].T
-            # print(p_triang.shape)
-
-            # p_triang = project_to_world(p_triang, transforms)
-            # p_triang = project_from_world(p_triang, transforms)
-
-
-
-            # Reprojection to the image plane for point matching
-            # see: https://stackoverflow.com/questions/56500898/why-do-triangulated-points-not-project-back-to-same-image-points-in-opencv
-            r1_vec_inv, _ = cv2.Rodrigues(r1.transpose())
-            r2_vec_inv, _ = cv2.Rodrigues(r2.transpose())
-            repr_cam1 = cv2.projectPoints(
-                p_triang, r1_vec_inv, -t1.transpose(), cam1["matrix"],
-                cam1["distortions"])[0].squeeze()
-            repr_cam2 = cv2.projectPoints(
-                p_triang, r2_vec_inv, -t2.transpose(), cam2["matrix"],
-                cam2["distortions"])[0].squeeze()
-
-            p_repr = np.stack([repr_cam1, repr_cam2], axis=2)
-            p_repr = np.swapaxes(p_repr, 1, 2)
-            repr_errs = np.mean(np.linalg.norm(p_repr, axis=2), axis=1)
-
-            # Consolidate data
-            # Caution: the data order is different form the MATLAB script
-            #   ---> Matlab: (p11, p21), (p12, p21), (p11, p22), (p12, p22)
-            #   ---> Python: (p11, p21), (p11, p22), (p12, p21), (p12, p22)
-            # repr_errs desired shape:[block x err(p)] with
-            #   block: re11, re12, re21, re22
-            repr_errs = np.reshape(repr_errs, (-1, 4))
-            costs = np.reshape(
-                    np.min(
-                        [np.sum(repr_errs[:, 0::3], axis=1),
-                         np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
-                    (len(undist_cam1), len(undist_cam2))
-                )
-            all_repr_errs.append(costs)
-
-            cam1_ind, cam2_ind = linear_sum_assignment(costs)
-            assignment_cost = costs[cam1_ind, cam2_ind].sum()
-
-            point_choices = np.asarray(np.sum(repr_errs[:, 0::3], axis=1) <=
-                                       np.sum(repr_errs[:, 1:3], axis=1))
-
-            point_choices = point_choices.reshape((len(rods_cam1), len(rods_cam2)))
-            p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2), 4, 3))
-
-            # TODO: transformation to world coordinates of the 3D point
-            # p_triang = project_to_world(p_triang, transforms)
+            cam1_ind, cam2_ind = linear_sum_assignment(np.min(np.sum(rep_errs, (-2, -1)),2))
+            summed_errs = np.min(np.sum(rep_errs, (3,4)),2)
+            all_repr_errs.append(summed_errs[cam1_ind, cam2_ind])
             out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
-            if debug:
-                debug_out = np.zeros((len(cam1_ind), 8))
-                repr_cam1 = np.reshape(repr_cam1, (len(rods_cam1), len(rods_cam2), 4, 2))
-                repr_cam2 = np.reshape(repr_cam2, (len(rods_cam1), len(rods_cam2), 4, 2))
-            idx_out = 0
-            for m in range(len(cam1_ind)):
-                k = cam1_ind[m]
-                j = cam2_ind[m]
-                if point_choices[k, j]:
-                    # use point matching of (p11,p21) and (p12,p22)
-                    out[idx_out, 0:6] = p_triang[k, j, 0::3, :].flatten()
-                    out[idx_out, 6:9] = p_triang[k, j, 0::3, :].sum(axis=0)/2
-                    out[idx_out, 9] = np.linalg.norm(
-                        np.diff(p_triang[k, j, 0::3, :], axis=0))
-                    out[idx_out, 10:14] = rods_cam1[k, :].flatten()
-                    out[idx_out, 14:] = rods_cam2[j, :].flatten()
-                    if debug:
-                        debug_out[idx_out, 0:4] = repr_cam1[k, j, 0::3, :].flatten()
-                        debug_out[idx_out, 4:] = repr_cam2[k, j, 0::3, :].flatten()
-
+            for i, j in zip(cam1_ind, cam2_ind):
+                c1_p1 = rods_cam1[i, 0]
+                c1_p2 = rods_cam1[i, 1]
+                c2_p1 = rods_cam2[j, 0]
+                c2_p2 = rods_cam2[j, 1]
+                wp1_1, rep_e1 = triangulate(c1_p1, c2_p1)
+                wp1_2, rep_e2 = triangulate(c1_p2, c2_p2)
+                wp2_1, rep_e3 = triangulate(c1_p2, c2_p1)
+                wp2_2, rep_e4 = triangulate(c1_p1, c2_p2)
+                rep_errs[i, j] = np.asarray([[rep_e1, rep_e2], [rep_e3, rep_e4]])
+                lengths[i, j, 0] = np.linalg.norm(wp1_1 - wp1_2)
+                lengths[i, j, 1] = np.linalg.norm(wp2_1 - wp2_2)
+                if rep_e1+rep_e2 < rep_e3+rep_e4:
+                    out[i, 0:6] = np.concatenate((wp1_1, wp1_2), axis=0).squeeze()
+                    out[i, 6:9] = ((wp1_1 + wp1_2) / 2).squeeze()
+                    out[i, 9] = lengths[i, j, 0]
+                    out[i, 10:14] = rods_cam1[i].flatten()
+                    out[i, 14:] = rods_cam2[j].flatten()
                 else:
-                    # use point matching of (p11,p22) and (p12,p21)
-                    out[idx_out, 0:6] = p_triang[k, j, 1:3, :].flatten()
-                    out[idx_out, 6:9] = p_triang[k, j, 1:3, :].sum(axis=0) / 2
-                    out[idx_out, 9] = np.linalg.norm(
-                        np.diff(p_triang[k, j, 1:3, :], axis=0))
-                    out[idx_out, 10:14] = rods_cam1[k, -1::-1].flatten()
-                    out[idx_out, 14:] = rods_cam2[j, -1::-1].flatten()
-                    if debug:
-                        debug_out[idx_out, 0:4] = repr_cam1[k, j, 1:3, :].flatten()
-                        debug_out[idx_out, 4:] = repr_cam2[k, j, 1:3, :].flatten()
-                idx_out += 1
-            if debug:
-                to_plot = cam1_convention.format(idx=idx, color=color)
-                plot_rods(file=to_plot, rods=debug_out, color=color,save=True)
-                tmp_reprs.append(debug_out) 
+                    out[i, 0:6] = np.concatenate((wp2_1, wp2_2), axis=0).squeeze()
+                    out[i, 6:9] = ((wp2_1 + wp2_2) / 2).squeeze()
+                    out[i, 9] = lengths[i, j, 1]
+                    out[i, 10:14] = rods_cam1[i].flatten()
+                    out[i, 14:] = rods_cam2[j, ::-1].flatten()
             all_rod_lengths.append(out[:, 9])
-
             file_out = f"{f_out}{idx:05d}.txt"
             np.savetxt(file_out, out, fmt="%.18f", delimiter=" ")
-        if debug:
-                all_reprs[color] = tmp_reprs
-    if debug:
-        return np.array(all_repr_errs), np.array(all_rod_lengths), all_reprs
-    return np.array(all_repr_errs), np.array(all_rod_lengths)
+    return all_repr_errs, all_rod_lengths
+
+
 
 def plot_rods(file: str, rods, color:str, save=False):
-    base_folder = "/home/niemann/Documents/ParticleDetection/reconstruct_3D" \
-                  "/testfiles"
-    img_file = base_folder + "/" + os.path.splitext(file)[0].split(f"_{color}")[0] + ".jpg"
+    base_folder = "./testfiles"
+    img_file = base_folder + "/FT2015_shot1_gp1_00732.jpg"
+    # img_file = base_folder + "/" + os.path.splitext(file)[0].split(f"_{color}")[0] + ".jpg"
     img = cv2.imread(img_file)
     width, height = img.shape[1], img.shape[0]
     fig = plt.figure(frameon=False)
@@ -271,14 +204,12 @@ def plot_rods(file: str, rods, color:str, save=False):
 
 
 def example_match_rods():
-    """Shows the preparations and usage of `match_rods()`."""
-    calibration_file = "/home/niemann/Documents/TrackingScripts/software" \
-                       "/calib_matlab_09_2020/gp12_calib_matlab.json"
-    transformation_file = "/home/niemann/Documents/TrackingScripts/software" \
-                          "/calib_matlab_05_2017/transformations.json"
+    """Shows the preparations and usage of `match_matlab_simple()`."""
+    calibration_file = "./calibration_data/Matlab/gp12.json"
+    transformation_file = "./calibration_data/Matlab/" \
+                          "world_transformation.json"
     colors = ["blue", "green", "red", "yellow", "brown"]
-    base_folder = "/home/niemann/Documents/ParticleDetection/reconstruct_3D" \
-                  "/testfiles"
+    base_folder = "./testfiles"
     cam1_folder = base_folder + "/gp1/"
     cam1_convention = "FT2015_shot1_gp1_{idx:05d}_{color:s}.mat"
     cam2_folder = base_folder + "/gp2/"
@@ -289,9 +220,9 @@ def example_match_rods():
     end_frame = 736
     frame_numbers = list(range(start_frame, end_frame+1))
     if debug:
+        calibration_file = "./calibration_data/Matlab/gp12.json"
         colors = ["blue",]
-        base_folder = "/home/niemann/Documents/ParticleDetection"\
-                      "/reconstruct_3D/debug_files"
+        base_folder = "./debug_files"
         cam1_folder = base_folder + "/gp3/"
         cam1_convention = "{idx:05d}_{color:s}.mat"
         cam2_folder = base_folder + "/gp4/"
@@ -302,14 +233,7 @@ def example_match_rods():
         frame_numbers = list(range(start_frame, end_frame+1))
 
     if debug:
-        _, _, reprs = match_rods(cam1_folder, cam2_folder, out_folder, colors,
-                                frame_numbers, calibration_file,
-                                transformation_file, cam1_convention,
-                                cam2_convention)
-
-        
-    else:
-        errs, lens = match_rods(cam1_folder, cam2_folder, out_folder, colors,
+        errs, lens = match_matlab_simple(cam1_folder, cam2_folder, out_folder, colors,
                                 frame_numbers, calibration_file,
                                 transformation_file, cam1_convention,
                                 cam2_convention)
@@ -320,7 +244,20 @@ def example_match_rods():
             len_vis = np.concatenate([len_vis, l.flatten()])
         matching_results(err_vis, len_vis)
 
-def debug_matching():
+    else:
+        errs, lens = match_matlab_simple(cam1_folder, cam2_folder, out_folder, colors,
+                                frame_numbers, calibration_file,
+                                transformation_file, cam1_convention,
+                                cam2_convention)
+        err_vis = np.array([])
+        len_vis = np.array([])
+        for err, l in zip(errs, lens):
+            err_vis = np.concatenate([err_vis, err.flatten()])
+            len_vis = np.concatenate([len_vis, l.flatten()])
+        matching_results(err_vis, len_vis)
+
+
+def extract_mat_from_txt():
     import scipy.io as sio
     col_names = ['x1_r', 'y1_r', 'z1_r', 'x2_r', 'y2_r', 'z2_r', 
                  'x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
@@ -345,13 +282,10 @@ def debug_matching():
                     {'rod_data_links': arr})
         arr2 = np.zeros((rods_exp,), dtype=dt)
         arr2[:]['Point1'] = r_c2[:, 0:2]
-        arr2[:]['Point2'] = r_c2[1, 2:]
+        arr2[:]['Point2'] = r_c2[:, 2:]
         sio.savemat(f"./debug_files/gp4/{fr:05d}_blue.mat", 
                     {'rod_data_links': arr2})
 
 
 if __name__ == "__main__":
-    # debug_matching()
     example_match_rods()
-    # match_rods()
-    pass

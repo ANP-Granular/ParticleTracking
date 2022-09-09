@@ -3,8 +3,15 @@ import matplotlib.pyplot as plt
 
 
 def matching_results(reprojetion_errors: np.ndarray, rod_lengths: np.ndarray):
-    rep_norm = (112/1082)   # scaling constant taken from MATLAB script
-    reprojetion_errors *= rep_norm
+    """Plot the key performances for the matching process.
+
+    Parameters
+    ----------
+    reprojetion_errors : np.ndarray
+    rod_lengths : np.ndarray
+    """
+    # rep_norm = (112/1082)   # scaling constant taken from MATLAB script
+    # reprojetion_errors *= rep_norm
 
     plt.figure()
     hist = plt.hist(reprojetion_errors, alpha=.3)
