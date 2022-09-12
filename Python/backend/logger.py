@@ -14,7 +14,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import logging
+import sys
+import subprocess
 import tempfile
+import traceback
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Optional, Iterable, Union, List
@@ -23,6 +28,32 @@ from PyQt5 import QtCore
 from Python.ui import rodnumberwidget as rn
 
 TEMP_DIR = tempfile.gettempdir() + "/RodTracker"
+LOG_PATH = f"{TEMP_DIR}/RodTracker.log"
+_logger = logging.getLogger(__name__)
+_logger.setLevel(logging.INFO)
+f_handle = logging.FileHandler(LOG_PATH, mode="a")
+f_handle.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
+    datefmt="%m/%d %H:%M:%S"
+    )
+f_handle.setFormatter(formatter)
+_logger.addHandler(f_handle)
+
+
+def exception_logger(e_type, e_value, e_tb):
+    """Handler for logging uncaught exceptions during the program flow."""
+    tb_str = "".join(traceback.format_exception(e_type, e_value, e_tb))
+    _logger.exception(f"Uncaught exception:\n{tb_str}")
+
+
+def open_logs():
+    """Opens the log file."""
+    if sys.platform == "win32":
+        os.startfile(LOG_PATH)
+    else:
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.run([opener, LOG_PATH])
 
 
 class FileActions(Enum):

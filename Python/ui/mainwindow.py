@@ -280,6 +280,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self))
         self.ui.action_about_qt.triggered.connect(
             lambda: QMessageBox.aboutQt(self, "RodTracker"))
+        self.ui.action_logs.triggered.connect(lg.open_logs)
 
     @property
     def current_file_index(self):

@@ -25,10 +25,10 @@ sys.path.insert(0, parentdir)
 
 from PyQt5 import QtWidgets
 
-from Python.backend import logger as al
+from Python.backend import logger as lg
 from Python.ui import mainwindow as mw
 
-
+sys.excepthook = lg.exception_logger
 ICON_PATH = "./resources/icon_main.ico"
 
 HAS_SPLASH = False
@@ -43,8 +43,8 @@ except ModuleNotFoundError:
 if __name__ == "__main__":
     if HAS_SPLASH:
         pyi_splash.update_text("Updating environment...")
-    if not os.path.exists(al.TEMP_DIR):
-        os.mkdir(al.TEMP_DIR)
+    if not os.path.exists(lg.TEMP_DIR):
+        os.mkdir(lg.TEMP_DIR)
     if HAS_SPLASH:
         pyi_splash.update_text("Loading UI...")
 

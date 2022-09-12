@@ -343,7 +343,7 @@ class Ui_MainWindow(object):
         self.sa_camera_1.setWidgetResizable(True)
         self.sa_camera_1.setObjectName("sa_camera_1")
         self.scrollAreaWidgetContents_8 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 766, 226))
+        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 98, 32))
         self.scrollAreaWidgetContents_8.setObjectName("scrollAreaWidgetContents_8")
         self.verticalLayout_18 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_8)
         self.verticalLayout_18.setObjectName("verticalLayout_18")
@@ -490,6 +490,8 @@ class Ui_MainWindow(object):
         self.action_shorten_displayed.setObjectName("action_shorten_displayed")
         self.action_lengthen_displayed = QtWidgets.QAction(MainWindow)
         self.action_lengthen_displayed.setObjectName("action_lengthen_displayed")
+        self.action_logs = QtWidgets.QAction(MainWindow)
+        self.action_logs.setObjectName("action_logs")
         self.menuFile.addAction(self.action_open)
         self.menuFile.addAction(self.action_open_rods)
         self.menuFile.addAction(self.action_save)
@@ -510,6 +512,7 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.action_docs)
         self.menuHelp.addAction(self.action_about)
         self.menuHelp.addAction(self.action_about_qt)
+        self.menuHelp.addAction(self.action_logs)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuEdit.menuAction())
         self.menubar.addAction(self.menuView.menuAction())
@@ -583,5 +586,6 @@ class Ui_MainWindow(object):
         self.action_shorten_displayed.setShortcut(_translate("MainWindow", "T"))
         self.action_lengthen_displayed.setText(_translate("MainWindow", "Lengthen Displayed Rods"))
         self.action_lengthen_displayed.setShortcut(_translate("MainWindow", "R"))
+        self.action_logs.setText(_translate("MainWindow", "Show Logs"))
 from Python.ui.loggerwidget import LoggerWidget
 from Python.ui.rodimagewidget import RodImageWidget
