@@ -12,8 +12,9 @@ import cv2
 import random
 import logging
 import sys
-from typing import Union, List
+from typing import Union, List, Dict
 import numpy as np
+import pandas as pd
 import scipy.io as sio
 
 # import detectron2 utilities
@@ -162,6 +163,153 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
     
     return predictions
 
+
+def run_detection_csv(dataset_format: str,
+                  configuration: Union[CfgNode, str],
+                  weights: str = None, classes: dict = None,
+                  output_dir: str = "./", log_name: str = "detection.log",
+                  threshold: float = 0.5,
+                  frames: List[int] = [], cam1_name: str = "gp1", 
+                  cam2_name: str = "gp2"):
+    """Runs inference on a given set of images and saves the output to a .csv.
+
+    This function runs a rod detection on images and generates rod enpoints 
+    from the generated masks, if the network predicted these. Finally, these 
+    endpoints are saved to a single `rods_df.csv` file in the specified output
+    folder.
+
+    Parameters
+    ----------
+    dataset_format : str
+        String that can be formatted to specify the file locations of images, 
+        that shall be used for inference.
+        For this the string must contain a `frame` and a `cam_id` field that 
+        can be formatted.
+        Example:
+        `"my/dataset/path/{cam_id:s}/experiment_{frame:05d}.png"`
+    configuration : Union[CfgNode, str]
+        See `run_detection()`.
+    weights : str, optional
+        See `run_detection()`.
+    classes : dict, optional
+        See `run_detection()`.
+    output_dir : str, optional
+        See `run_detection()`.
+    log_name : str, optional
+        See `run_detection()`.
+    threshold : float, optional
+        See `run_detection()`.
+    frames : List[int], optional
+        A list of frames, that shall be used for rod detection.
+        By default [].
+    cam1_name : str, optional
+        The name/ID of the first camera in the experiment. This name will be 
+        used for image discovery (see `dataset_format`) and naming of the
+        output *.csv file's columns.
+        By default "gp1".
+    cam2_name : str, optional
+        The name/ID of the second camera in the experiment. This name will be 
+        used for image discovery (see `dataset_format`) and naming of the
+        output *.csv file's columns.
+        By default "gp2".
+
+    Returns
+    -------
+    list
+        Prediction for each image inference was run on.
+    """
+    
+    setup_logger(os.path.join(output_dir, log_name))
+    # Configuration
+    if isinstance(configuration, str):
+        cfg = CfgNode(CfgNode.load_yaml_with_base(configuration))
+    else:
+        cfg = configuration
+    if weights is not None:
+        cfg.MODEL.WEIGHTS = os.path.abspath(weights)
+    cfg.MODEL.DEVICE = "cpu"  # to run predictions/visualizations while gpu in use
+    hf.write_configs(cfg, output_dir)
+
+    predictor = DefaultPredictor(cfg)
+    if classes is None:
+        classes = {i: str(i) for i in range(0, cfg.MODEL.ROI_HEADS.NUM_CLASSES)}
+
+    _logger.info(f"Starting rod detection ...")
+    predictions = []
+    files = []
+    cols = [col.format(id1=cam1_name, id2=cam2_name) for col in ds.DEFAULT_COLUMNS]
+    cols.append("color")
+    data = pd.DataFrame(columns=cols)
+    for frame in frames:
+        frame_data = {color: [] for color in classes}
+        for cam in [cam1_name, cam2_name]:
+            file = dataset_format.format(frame=frame, cam_id=cam)
+            _logger.info(f"Inference on: {file}")
+            im = cv2.imread(file)
+            outputs = predictor(im)
+            # Thresholding/cleaning results
+            outputs["instances"] = outputs["instances"][
+                outputs["instances"].scores > threshold]
+            # Accumulate results
+            predictions.append(outputs)
+            files.append(os.path.basename(file))
+            
+            # Prepare outputs for saving
+            if "pred_masks" in outputs["instances"].get_fields():
+                _logger.info("Starting endpoint computation ...")
+                points = hf.rod_endpoints(outputs, classes)
+                data = add_points(points, data, cam, frame)
+            _logger.info(f"Done with: {os.path.basename(file)}")
+    # Save rod data
+    if len(data) > 0:
+        data.to_csv(os.path.join(output_dir, "rods_df.csv"), ",")    
+    return predictions
+
+
+def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame, 
+               cam_id: str, frame: int):
+    """Updates a dataframe with new rod endpoint data for one camera and frame.
+
+    Parameters
+    ----------
+    points : Dict[str, np.ndarray]
+        Rod endpoints in the format obtained from 
+        `utils.helper_funcs.rod_endpoints`.
+    data : pd.DataFrame
+        Dataframe for the rods to be saved in.
+    cam_id : str
+        ID/Name of the camera, that produced the image the rod endpoints were 
+        computed on.
+    frame : int
+        Frame number in the dataset.
+
+    Returns
+    -------
+    pd.DataFrame
+        Returns the updated `data` dataframe.
+    """
+    cols = [col for col in data.columns if cam_id in col]
+    for color, v in points.items():
+        if np.size(v) == 0:
+            continue
+        v = np.reshape(v, (len(v), -1))
+        seen = np.ones((len(v), 1))
+        to_df = np.concatenate((v, seen), axis=1)
+        temp_df = pd.DataFrame(to_df, columns=cols)
+        if len(data.loc[(data.frame == frame) & (data.color == color)]) == 0:
+            temp_df["frame"] = frame
+            temp_df["color"] = color
+            data = pd.concat((data, temp_df))
+        else:
+            previous_data = data.loc[(data.frame == frame) & (data.color == color)]
+            new_data = data.loc[(data.frame == frame) & (data.color == color)].fillna(temp_df)
+            data.loc[(data.frame == frame) & (data.color == color)] = new_data
+            if len(previous_data) < len(temp_df):
+                temp_df["frame"] = frame
+                temp_df["color"] = color
+                idx_to_add = np.arange(len(previous_data), len(temp_df))
+                data = pd.concat((data, temp_df.iloc[idx_to_add]))
+    return data
 
 def save_to_mat(file_name: str, points: dict):
     """Saves rod endpoints of one image to be used in MATLAB for 3D matching.

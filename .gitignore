@@ -1,7 +1,6 @@
 # Work directories to be ignored
 /datasets/
 /experiments/*
-/reconstruct_3D/testfiles/
 
 # Python related ignores
 /venv/

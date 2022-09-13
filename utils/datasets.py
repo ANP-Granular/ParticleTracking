@@ -11,6 +11,11 @@ from detectron2.structures import BoxMode
 from detectron2.data import DatasetCatalog, MetadataCatalog
 
 
+DEFAULT_COLUMNS = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
+                   'x1_{id1:s}', 'y1_{id1:s}', 'x2_{id1:s}', 'y2_{id1:s}', 
+                   'x1_{id2:s}', 'y1_{id2:s}', 'x2_{id2:s}', 'y2_{id2:s}', 
+                   'frame', 'seen_{id1:s}', 'seen_{id2:s}']
+
 class DataSet:
     folder: str
     annotation: str
