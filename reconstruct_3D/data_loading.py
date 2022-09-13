@@ -131,10 +131,11 @@ def load_calib_from_json(file_name: str) -> \
         return all_calibs["transformations"]
     return
 
+
 def load_camera_calibration(file_name: str) -> dict:
     """Loads camera calibration data from *.json files.
 
-    Loads calibration data from a stereo camera calibration, in the format 
+    Loads calibration data from a stereo camera calibration, in the format
     given in ./calibration_data.
 
     Parameters
