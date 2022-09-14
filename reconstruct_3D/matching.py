@@ -7,42 +7,11 @@ import scipy.io as sio
 import pandas as pd
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
 
 import reconstruct_3D.data_loading as dl
 from reconstruct_3D.result_visualizations import matching_results
-
-
-def project_to_world(points, transforms: dict):
-    rotx = np.asarray(transforms["M_rotate_x"])
-    roty = np.asarray(transforms["M_rotate_y"])
-    rotz = np.asarray(transforms["M_rotate_z"])
-    tw1 = np.asarray(transforms["M_trans"])
-    tw2 = np.asarray(transforms["M_trans2"])
-    old_shape = points.shape
-    points = np.reshape(points, (-1, 3))
-    points = np.append(points, np.ones((len(points),1)), axis=1)
-    for i in range(len(points)):
-        points[i,:] = tw2.dot(rotx.dot(rotz.dot(roty.dot(
-            tw1.dot(points[i,:])))))
-    points = points[:,0:3].T
-    return np.reshape(points, old_shape)
-
-
-def project_from_world(points, transforms: dict):
-    rotx = np.asarray(transforms["M_rotate_x"])
-    roty = np.asarray(transforms["M_rotate_y"])
-    rotz = np.asarray(transforms["M_rotate_z"])
-    tw1 = np.asarray(transforms["M_trans"])
-    tw2 = np.asarray(transforms["M_trans2"])
-    old_shape = points.shape
-    points = np.reshape(points, (-1, 3))
-    points = np.append(points, np.ones((len(points),1)), axis=1)
-    for i in range(len(points)):
-        points[i,:] = tw1.dot(roty.dot(rotz.dot(rotx.dot(
-            tw2.dot(points[i,:])))))
-    points = points[:,0:3].T
-    return np.reshape(points, old_shape)
 
 
 def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors, 
@@ -468,6 +437,14 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
     P2 = np.vstack((r2.T, t2.T)) @ calibration["CM2"].T
     P2 = P2.T
 
+    # Preparation of world transformations
+    rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
+    roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
+    rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
+    rot_comb = roty*rotz*rotx
+    tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
+    tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
+
     all_repr_errs = []
     all_rod_lengths = []
     for color in colors:
@@ -566,12 +543,13 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
 
             point_choices = np.asarray(np.sum(repr_errs[:, 0::3], axis=1) <=
                                        np.sum(repr_errs[:, 1:3], axis=1))
-
             point_choices = point_choices.reshape((len(rods_cam1), len(rods_cam2)))
+           
+            # Transformation to world coordinates
+            p_triang = rot_comb.apply((p_triang + tw1))+ tw2
             p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2), 4, 3))
 
-            # TODO: transformation to world coordinates of the 3D point
-            # p_triang = project_to_world(p_triang, transforms)
+            # Accumulation of the data for saving
             out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
             for i1 in range(len(cam1_ind)):
                 i2 = cam2_ind[i1]
