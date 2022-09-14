@@ -471,13 +471,9 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
     all_repr_errs = []
     all_rod_lengths = []
     for color in colors:
-        f_out = output_folder + f"data3d_{color}/"
-        if not os.path.exists(f_out):
-            os.mkdir(f_out)
-        
         f_in = input_folder + f"/rods_df_{color}.csv"
-        data = pd.read_csv(f_in)
-
+        data = pd.read_csv(f_in, sep=",", index_col=0)
+        df_out = pd.DataFrame()
         for idx in frame_numbers:
             # Load data
             cols_cam1 = [f'x1_{cam1_name}', f'y1_{cam1_name}', 
@@ -602,8 +598,15 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
                 idx_out += 1 # TODO: remove the use of idx_out
             all_rod_lengths.append(out[:, 9])
 
-            file_out = f"{f_out}{idx:05d}.txt"
-            np.savetxt(file_out, out, fmt="%.18f", delimiter=" ")
+            # Data preparation for saving as *.csv
+            tmp_df = pd.DataFrame(out, columns=data.columns[:out.shape[1]])
+            tmp_df["frame"] = idx
+            tmp_df["color"] = color
+            seen_cols = [col for col in data.columns if "seen" in col]
+            tmp_df[seen_cols] = 1
+            df_out = pd.concat([df_out, tmp_df])
+        df_out.reset_index(drop=True, inplace=True)
+        df_out.to_csv(os.path.join(output_folder, f"rods_df_{color}.csv"), sep=",")
     
     return np.array(all_repr_errs), np.array(all_rod_lengths)
 
