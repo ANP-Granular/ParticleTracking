@@ -16,11 +16,14 @@ formatter = logging.Formatter(
 ch.setFormatter(formatter)
 _logger.addHandler(ch)
 
+
 def mat2csv(input_folders: str, output_file: str):
     pass
 
+
 def csv2mat(input_file: str, output_folders: List[str]):
     pass
+
 
 def csv_extract_colors(input_file: str) -> List[str]:
     """Extract the rod position data into one file per color.
@@ -51,6 +54,7 @@ def csv_extract_colors(input_file: str) -> List[str]:
         colored_data.to_csv(new_file, sep=",")
         written.append(new_file)
     return written
+
 
 def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
         -> str:
@@ -92,6 +96,56 @@ def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
         combined.to_csv(output_file, sep=",")
         written = output_file
     return written
+
+
+def csv_split_by_frames(input_file: str, cut_frames: List[int]) -> List[str]:
+    """Splits the rod data at the given frames.
+
+    Splits the given *.csv file into individual files at the given frame 
+    numbers.
+    Example:
+    The data has frames from 0 to 33.
+    cut_frames = [15, 20, 25] -> out_0_14.csv, out_15_19.csv, out_20_24.csv, 
+                                 out_25_33.csv
+
+    Parameters
+    ----------
+    input_file : str
+        Path to a *.csv file containing rod position data.
+    cut_frames : List[int]
+        Frames at which to partition the data. All frames in the original data
+        are perserved.
+        The lower bound is inclusive, while the upper bound is exclusive.
+
+    Returns
+    -------
+    List[str]
+        List of paths to the written files. This list is empty, if no files 
+        were written.
+    """
+    written = []
+    data_main = pd.read_csv(input_file, sep=",", index_col=0)
+    base_path = os.path.splitext(input_file)[0]
+    for i in range(0, len(cut_frames)+1):
+        if (i-1) >= 0:
+            next_min = cut_frames[i-1]
+        else:
+            next_min = data_main.frame.min()
+        try:
+            next_max = cut_frames[i]
+        except IndexError:
+            next_max = data_main.frame.max() + 1
+
+        next_slice = data_main.loc[
+            (data_main.frame >= next_min) & (data_main.frame < next_max)]
+        if len(next_slice) == 0:
+            continue
+        next_slice.reset_index(drop=True, inplace=True)
+        new_path = base_path + f"_{next_min}_{next_max-1}.csv"
+        next_slice.to_csv(new_path, sep=",")
+        written.append(new_path)
+    return written
+
 
 if __name__ == "__main__":
     pass
