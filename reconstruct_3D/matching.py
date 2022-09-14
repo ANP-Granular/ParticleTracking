@@ -573,29 +573,24 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
             # TODO: transformation to world coordinates of the 3D point
             # p_triang = project_to_world(p_triang, transforms)
             out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
-            idx_out = 0     # TODO: remove the use of idx_out
-            for m in range(len(cam1_ind)):
-                k = cam1_ind[m]
-                j = cam2_ind[m]
-                if point_choices[k, j]:
+            for i1 in range(len(cam1_ind)):
+                i2 = cam2_ind[i1]
+                if point_choices[i1, i2]:
                     # use point matching of (p11,p21) and (p12,p22)
-                    out[idx_out, 0:6] = p_triang[k, j, 0::3, :].flatten()
-                    out[idx_out, 6:9] = p_triang[k, j, 0::3, :].sum(axis=0)/2
-                    out[idx_out, 9] = np.linalg.norm(
-                        np.diff(p_triang[k, j, 0::3, :], axis=0))
-                    out[idx_out, 10:14] = rods_cam1[k, :].flatten()
-                    out[idx_out, 14:] = rods_cam2[j, :].flatten()
-
+                    out[i1, 0:6] = p_triang[i1, i2, 0::3, :].flatten()
+                    out[i1, 6:9] = p_triang[i1, i2, 0::3, :].sum(axis=0)/2
+                    out[i1, 9] = np.linalg.norm(
+                        np.diff(p_triang[i1, i2, 0::3, :], axis=0))
+                    out[i1, 10:14] = rods_cam1[i1, :].flatten()
+                    out[i1, 14:] = rods_cam2[i2, :].flatten()
                 else:
                     # use point matching of (p11,p22) and (p12,p21)
-                    out[idx_out, 0:6] = p_triang[k, j, 1:3, :].flatten()
-                    out[idx_out, 6:9] = p_triang[k, j, 1:3, :].sum(axis=0) / 2
-                    out[idx_out, 9] = np.linalg.norm(
-                        np.diff(p_triang[k, j, 1:3, :], axis=0))
-                    out[idx_out, 10:14] = rods_cam1[k, -1::-1].flatten()
-                    out[idx_out, 14:] = rods_cam2[j, -1::-1].flatten()
-
-                idx_out += 1 # TODO: remove the use of idx_out
+                    out[i1, 0:6] = p_triang[i1, i2, 1:3, :].flatten()
+                    out[i1, 6:9] = p_triang[i1, i2, 1:3, :].sum(axis=0) / 2
+                    out[i1, 9] = np.linalg.norm(
+                        np.diff(p_triang[i1, i2, 1:3, :], axis=0))
+                    out[i1, 10:14] = rods_cam1[i1, -1::-1].flatten()
+                    out[i1, 14:] = rods_cam2[i2, -1::-1].flatten()
             all_rod_lengths.append(out[:, 9])
 
             # Data preparation for saving as *.csv
