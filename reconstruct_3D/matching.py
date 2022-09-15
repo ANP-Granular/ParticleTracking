@@ -378,7 +378,8 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
 
 def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1", 
                       cam2_name="gp2", frame_numbers=None, 
-                      calibration_file=None, transformation_file=None):
+                      calibration_file=None, transformation_file=None, 
+                      rematching=True):
     """Matches and triangulates rods from *.csv data files.
 
     Parameters
@@ -491,18 +492,22 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
                 undist_cam2[i // 2][i % 2] = tmp_points[i]
             undist_cam2 = undist_cam2.reshape((-1, 2, 2))
 
-            # Triangulation of all possible point-pairs to 3D
-            pairs_all = [list(itertools.product(p[0], p[1])) for p in
-                         itertools.product(undist_cam1, undist_cam2)]
-            pairs_all = np.reshape(pairs_all, (-1, 2, 2))
+            if rematching:
+                # Triangulation of all possible point-pairs to 3D
+                pairs_all = [list(itertools.product(p[0], p[1])) for p in
+                            itertools.product(undist_cam1, undist_cam2)]
+                pairs_original = [list(itertools.product(p[0], p[1])) for p in
+                            itertools.product(rods_cam1, rods_cam2)]
+               
+            else:
+                pairs_all = [list(itertools.product(p[0], p[1])) for p in 
+                             zip(undist_cam1, undist_cam2)]
+                pairs_original = [list(itertools.product(p[0], p[1])) for p in 
+                                  zip(rods_cam1, rods_cam2)]
 
-            pairs_original = [list(itertools.product(p[0], p[1])) for p in
-                         itertools.product(rods_cam1, rods_cam2)]
+            pairs_all = np.reshape(pairs_all, (-1, 2, 2))
             pairs_original = np.reshape(pairs_original, (-1, 2, 2))
             
-            # FIXME: currently yields points in the first cameras coordinate
-            #  system (i.e. "gp3")
-            # TODO: transformation to "world"-coordinates
             p_triang = cv2.triangulatePoints(
                 P1, P2,
                 pairs_all[:, 0, :].squeeze().transpose(),
@@ -523,6 +528,9 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
             p_repr = np.swapaxes(p_repr, 1, 2)                # [combo, cam, err_point]
             repr_errs = np.mean(np.linalg.norm(p_repr, axis=2), axis=1)
 
+            # Transformation to world coordinates
+            p_triang = rot_comb.apply((p_triang + tw1))+ tw2
+
             # Consolidate data
             # Caution: the data order is different form the MATLAB script
             #   ---> Matlab: (p11, p21), (p12, p21), (p11, p22), (p12, p22)
@@ -530,23 +538,33 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
             # repr_errs desired shape:[block x err(p)] with
             #   block: re11, re12, re21, re22
             repr_errs = np.reshape(repr_errs, (-1, 4))
-            costs = np.reshape(
-                    np.min(
-                        [np.sum(repr_errs[:, 0::3], axis=1),
-                         np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
-                    (len(undist_cam1), len(undist_cam2))
-                )
+            if rematching:
+                costs = np.reshape(
+                        np.min(
+                            [np.sum(repr_errs[:, 0::3], axis=1),
+                            np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
+                        (len(undist_cam1), len(undist_cam2))
+                    )
 
-            cam1_ind, cam2_ind = linear_sum_assignment(costs)
-            assignment_cost = costs[cam1_ind, cam2_ind]
-            all_repr_errs.append(assignment_cost)
+                cam1_ind, cam2_ind = linear_sum_assignment(costs)
+                assignment_cost = costs[cam1_ind, cam2_ind]
+                all_repr_errs.append(assignment_cost)
 
-            point_choices = np.asarray(np.sum(repr_errs[:, 0::3], axis=1) <=
-                                       np.sum(repr_errs[:, 1:3], axis=1))
-            point_choices = point_choices.reshape((len(rods_cam1), len(rods_cam2)))
-           
-            # Transformation to world coordinates
-            p_triang = rot_comb.apply((p_triang + tw1))+ tw2
+                point_choices = np.asarray(np.sum(repr_errs[:, 0::3], axis=1) <=
+                                        np.sum(repr_errs[:, 1:3], axis=1))
+                point_choices = point_choices.reshape((len(rods_cam1), len(rods_cam2)))
+            else:
+                costs = np.min([np.sum(repr_errs[:, 0::3], axis=1),
+                                np.sum(repr_errs[:, 1:3], axis=1)], axis=0)
+                cam1_ind = np.arange(0, len(undist_cam1))
+                cam2_ind = np.arange(0, len(undist_cam2))
+                all_repr_errs.append(costs)
+                point_choices = (np.sum(repr_errs[:, 0::3], axis=1) <=
+                                 np.sum(repr_errs[:, 1:3], axis=1))
+                point_choices = np.eye(len(point_choices)) * point_choices
+                p_triang = p_triang.reshape(-1, 4, 3)
+                p_triang = np.tile(p_triang, (len(p_triang),1,1))
+
             p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2), 4, 3))
 
             # Accumulation of the data for saving
