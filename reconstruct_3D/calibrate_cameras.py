@@ -1,6 +1,5 @@
 import os
 import cv2
-import json
 import numpy as np
 
 
@@ -66,27 +65,5 @@ def stereo_calibrate(cam1_path: str, cam2_path: str):
     return ret, CM1, dist1, CM2, dist2, R, T, E, F
 
 
-def main():
-    """Stereocalibrate two cameras and save the results to a *.json file."""
-
-    gp1 = "../datasets/calibration_imgs/gp1"
-    gp2 = "../datasets/calibration_imgs/gp2"
-    results = stereo_calibrate(gp1, gp2)
-    to_json = {
-        "CM1": results[1].tolist(),
-        "dist1": results[2].tolist(),
-        "CM2": results[3].tolist(),
-        "dist2": results[4].tolist(),
-        "R": results[5].tolist(),
-        "T": results[6].tolist(),
-        "E": results[7].tolist(),
-        "F": results[8].tolist(),
-    }
-
-    with open("OpenCV_calibration_gp12.json", "w") as f:
-        json.dump(to_json, f, indent=2)
-    print(results)
-    
-
 if __name__ == "__main__":
-    main()
+    pass
