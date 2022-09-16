@@ -169,6 +169,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         for cam in self.cameras:
             cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
+            cam.setPixmap(QtGui.QPixmap(fl.icon_path()))
 
         self.original_data = None   # Holds the original data directory
         self.data_files = self.ui.lv_actions_list.temp_manager.name
