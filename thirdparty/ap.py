@@ -13,16 +13,11 @@ import networkx as nx
 import numpy as np
 import pulp
 
-# number of people (or items) per group (or dimension)
-dims = [8, 4, 12]
+# BUG: the minimization does not work yet
 
-# dummy weight array
-# (one weight for each combination of people, with one from each group)
-np.random.seed(0)
-weights = np.random.rand(*dims)
 
 # implement and solve problem
-def maximum_npartite_matching(weights):
+def npartite_matching(weights, maximize: bool = True):
 
     # get dimensions from weights array
     dims = weights.shape
@@ -35,7 +30,10 @@ def maximum_npartite_matching(weights):
     xxx = pulp.LpVariable.dicts('xxx', varx, cat=pulp.LpBinary)
 
     # initialize optimization problem
-    problem = pulp.LpProblem('nD matching', pulp.LpMaximize)
+    if maximize:
+        problem = pulp.LpProblem('nD matching', pulp.LpMaximize)
+    else:
+        problem = pulp.LpProblem('nD matching', pulp.LpMinimize)
 
     # set objective
     # sum_ijk... c_ijk... x_ijk...
@@ -71,11 +69,10 @@ def maximum_npartite_matching(weights):
 
     return whr
 
-# run matching
-whr = maximum_npartite_matching(weights)
 
 # define function for plotting results as network
-def plot_results(weights, whr):
+def plot_results(weights: np.ndarray, whr):
+    dims = weights.shape
 
     # create list of node positions for plotting and labeling
     pon = [(idi, idv) for idi, dim in enumerate(dims) for idv in range(dim)]
@@ -109,8 +106,25 @@ def plot_results(weights, whr):
     plt.title('total matching weight = %.2f' % obj)
     nx.draw_networkx(graph, pos=pos, width=width, node_color='orange', node_size=700)
     plt.axis('off')
+    return graph, pos, fig
 
-    return graph, pos
 
-# run plotting
-graph, pos = plot_results(weights, whr)
+if __name__ == "__main__":
+    # number of people (or items) per group (or dimension)
+    dims = [8, 4, 12]
+    dims = [12, 12, 12]
+
+
+    figs = []
+    for _ in range(3):
+        # dummy weight array
+        # (one weight for each combination of people, with one from each group)
+        # np.random.seed(0)
+        weights = np.random.rand(*dims)
+
+        # run matching
+        whr = npartite_matching(weights, maximize=True)
+        # run plotting
+        graph, pos, fig = plot_results(weights, whr)
+        figs.append(fig)
+    plt.show()
