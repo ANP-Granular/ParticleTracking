@@ -170,7 +170,7 @@ def change_data(new_data: dict) -> None:
                 "rod_id": rod_id[i],
                 "seen": seen[i]
             }
-            rod_data = change_data(rod_data, tmp_data)
+            change_data(tmp_data)
         lock.unlock()
         return
 
