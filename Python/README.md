@@ -16,9 +16,25 @@
     ```shell
     YOUR/REPO/PATH/Python$ pip install .
     ```
+### Installation in conda environments
+- create a fresh environment with Python >= 3.8 and activate it
+  ```shell
+  (base) YOUR/CURRENT/DIRECTORY$ conda create -n RodTracker python=3.10
+          ...
+  (base) YOUR/CURRENT/DIRECTORY$ conda activate RodTracker
+  (RodTracker) YOUR/CURRENT/DIRECTORY$ 
+  ```
+- install the RodTracker software using pip as mentioned above
+
+
+>## Important
+> 
+>Do **NOT** use conda to install/upgrade any packages that the RodTracker software uses. Make sure, that any packages additionally installed with conda have no interaction with the RodTracker software.
+>
+>Refer to conda's [interoperatbility feature](https://docs.conda.io/projects/conda/en/latest/user-guide/configuration/pip-interoperability.html?highlight=conda%20pip), this [Anaconda blog post](https://www.anaconda.com/blog/using-pip-in-a-conda-environment) and issue [#59](https://github.com/ANP-Granular/Track_Gui/issues/59) for more information on this topic.
 
 ### Notes for users
-1. Run the **RodTracker** GUI using one of possibilities
+1. Run the **RodTracker** GUI using one of two possibilities
   - Run [RodTracker.py](./Python/src/RodTracker/RodTracker.py) manually
     ```shell
     YOUR/REPO/PATH/Python/src$ python RodTracker.py
