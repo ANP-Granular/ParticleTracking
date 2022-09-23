@@ -1,10 +1,11 @@
 # Work directories to be ignored
 /datasets/
 /experiments/*
+!/experiments/scripts/
 
 # Python related ignores
 /venv/
-*/__pycache__/
+__pycache__/
 
 # IDE related ignores
 /.idea/
