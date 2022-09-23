@@ -13,9 +13,8 @@ import networkx as nx
 import numpy as np
 import pulp
 
+
 # BUG: the minimization does not work yet
-
-
 # implement and solve problem
 def npartite_matching(weights, maximize: bool = True):
 
@@ -31,10 +30,9 @@ def npartite_matching(weights, maximize: bool = True):
 
     # initialize optimization problem
     if maximize:
-        problem = pulp.LpProblem('nD matching', pulp.LpMaximize)
+        problem = pulp.LpProblem('RodMatching_max', pulp.LpMaximize)
     else:
-        problem = pulp.LpProblem('nD matching', pulp.LpMinimize)
-
+        problem = pulp.LpProblem('RodMatching_min', pulp.LpMinimize)
     # set objective
     # sum_ijk... c_ijk... x_ijk...
     problem += pulp.lpSum([weights[iii] * xxx[iii] for iii in xxx])
@@ -51,7 +49,12 @@ def npartite_matching(weights, maximize: bool = True):
             problem += pulp.lpSum(xxx[iii] for iii in vary) <= 1
 
     # solve problem
-    problem.solve()
+    # Option to suppress output of the default solver
+    solver = pulp.PULP_CBC_CMD(msg=0)
+    # solver = pulp.GUROBI(path="/home/niemann/gurobi952/linux64/bin/gurobi", 
+    #                      msg=1)
+
+    problem.solve(solver)
 
     # write binary variables to array
     rex = weights.copy() * 0
@@ -60,12 +63,12 @@ def npartite_matching(weights, maximize: bool = True):
 
     # find optimal matching = path and path weights
     whr = np.where(rex)
-    paths = np.array(whr).T
-    pathw = weights[whr]
 
     # print paths (n columns) and corresponding weights (last column)
-    result = np.vstack([paths.T, pathw]).T
-    print(result)
+    # paths = np.array(whr).T
+    # pathw = weights[whr]
+    # result = np.vstack([paths.T, pathw]).T
+    # print(result)
 
     return whr
 
@@ -112,7 +115,7 @@ def plot_results(weights: np.ndarray, whr):
 if __name__ == "__main__":
     # number of people (or items) per group (or dimension)
     dims = [8, 4, 12]
-    dims = [12, 12, 12]
+    # dims = [12, 12, 12]
 
 
     figs = []
