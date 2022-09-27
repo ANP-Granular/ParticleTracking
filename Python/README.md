@@ -136,10 +136,15 @@
   generating it automatically again.
   
 #### Building
-Build the project into an executable using the building script:
+**On Windows**: Build the project into an executable using the building script:
 ```shell
 YOUR/PROJECT/PATH/Python/build-files> build_app.bat
 ```
+**On Linux**: Refer to the [PyInstaller documentation](https://pyinstaller.org/en/stable/requirements.html#gnu-linux) for any requirements before running the build script:
+```shell
+YOUR/PROJECT/PATH/Python/build-files$ build_app.sh
+```
+
 There are two command line options `-onedir`(default)/`-onefile`. 
 Both will generate a `.\Python\build` and a `.\Python\dist` folder. 
 The generated executables are located in the `.\Python\dist` folder.
