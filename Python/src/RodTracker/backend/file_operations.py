@@ -20,7 +20,7 @@ from typing import Tuple, List
 import shutil
 import pandas as pd
 
-COLOR_DATA_REGEX = re.compile('rods_df_\w+\.csv')
+COLOR_DATA_REGEX = re.compile('rods_df_\w+\.csv')               # noqa: W605
 
 
 def get_images(read_dir: str) -> Tuple[List[str], List[int]]:

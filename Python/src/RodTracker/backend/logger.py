@@ -29,7 +29,7 @@ import RodTracker.ui.rodnumberwidget as rn
 
 TEMP_DIR = tempfile.gettempdir() + "/RodTracker"
 if not os.path.exists(TEMP_DIR):
-        os.mkdir(TEMP_DIR)
+    os.mkdir(TEMP_DIR)
 LOG_PATH = f"{TEMP_DIR}/RodTracker.log"
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -38,7 +38,7 @@ f_handle.setLevel(logging.INFO)
 formatter = logging.Formatter(
     "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
     datefmt="%m/%d %H:%M:%S"
-    )
+)
 f_handle.setFormatter(formatter)
 _logger.addHandler(f_handle)
 
@@ -66,6 +66,7 @@ class FileActions(Enum):
     OPEN_IMAGE = "Opened image"
     MODIFY = "Modified file"
     LOAD_RODS = "Loaded rod file(s) from"
+
 
 class NumberChangeActions(Enum):
     """Helper class holding valid kinds of rod number changes."""
@@ -370,8 +371,8 @@ class DeleteRodAction(Action):
         this and must be reverted as well, if this `Action` is reverted.
 
     """
-    def __init__(self, old_rod: rn.RodNumberWidget, coupled_action: Union[
-        Action, ChangedRodNumberAction] = None,
+    def __init__(self, old_rod: rn.RodNumberWidget,
+                 coupled_action: Union[Action, ChangedRodNumberAction] = None,
                  *args, **kwargs):
         self.rod = old_rod
         self.action = "Deleted rod"
@@ -519,7 +520,7 @@ class ChangeRodPositionAction(Action):
         return to_str
 
     def undo(self, rods: List[rn.RodNumberWidget] = None) \
-        -> List[rn.RodNumberWidget]:
+            -> List[rn.RodNumberWidget]:
         """Triggers events to revert this action.
 
         Parameters
@@ -747,20 +748,22 @@ class PruneLength(Action):
     action : str
         Default is "Rod length pruned: ".
     """
-    def __init__(self, old_rods: Union[rn.RodNumberWidget, List[rn.RodNumberWidget]], 
+    def __init__(self,
+                 old_rods: Union[rn.RodNumberWidget, List[rn.RodNumberWidget]],
                  new_positions: List[List[int]], adjustment: float,
                  *args, **kwargs):
         self.rods = old_rods
         self.new_pos = new_positions
         self.adjustment = adjustment
         super().__init__(str(self), *args, **kwargs)
-    
+
     def __str__(self):
         to_str = ") "
         if len(self.rods) > 1:
             to_str += f"All rod lengths adjusted by: {self.adjustment}"
         else:
-            to_str += f"#{self.rods[0].rod_id} length adjusted by: {self.adjustment}"
+            to_str += (f"#{self.rods[0].rod_id} length adjusted"
+                       f"by: {self.adjustment}")
 
         if self.rods is not None:
             to_str = f"{self.rods[0].color}" + to_str
@@ -770,9 +773,9 @@ class PruneLength(Action):
             to_str = f"{self._parent_id}, " + to_str
         to_str = "(" + to_str
         return to_str
-        
 
-    def undo(self, rods: List[rn.RodNumberWidget] = None) -> List[rn.RodNumberWidget]:
+    def undo(self, rods: List[rn.RodNumberWidget] = None) -> \
+            List[rn.RodNumberWidget]:
         """Triggers events to revert this action.
 
         Parameters
@@ -793,12 +796,12 @@ class PruneLength(Action):
             raise Exception("Unable to undo action. No rods supplied.")
 
         for rod in rods:
-            for rod_s  in self.rods:
+            for rod_s in self.rods:
                 if rod.rod_id == rod_s.rod_id:
                     rod.rod_points = self.rod.rod_points
                     break
         return rods
-    
+
     def to_save(self):
         """Generates a data representation of this action for saving.
 
@@ -810,8 +813,8 @@ class PruneLength(Action):
         """
         out = {
             "rod_id": [rod.rod_id for rod in self.rods],
-            "cam_id": [self.parent_id]*len(self.rods),
-            "frame": [self.frame]*len(self.rods),
+            "cam_id": [self.parent_id] * len(self.rods),
+            "frame": [self.frame] * len(self.rods),
             "color": [rod.color for rod in self.rods],
             "seen": [rod.seen for rod in self.rods]
         }
@@ -822,7 +825,7 @@ class PruneLength(Action):
             # If the action was performed
             out["position"] = [pos for pos in self.new_pos]
         return out
-    
+
     def invert(self):
         """Generates an inverted version of this action(for redoing).
 
@@ -845,8 +848,9 @@ class PruneLength(Action):
 
 class NumberExchange(Action):
     color: str = None
-    def __init__(self, mode: NumberChangeActions, previous_id: int, new_id: int,
-                 color: str, frame: int, cam_id: str = None):
+
+    def __init__(self, mode: NumberChangeActions, previous_id: int,
+                 new_id: int, color: str, frame: int, cam_id: str = None):
         self.mode = mode
         self.previous_id = previous_id
         self.new_id = new_id
@@ -854,7 +858,7 @@ class NumberExchange(Action):
         self.color = color
         super().__init__(str(self))
         self.frame = frame
-    
+
     def undo(self, rods: List[rn.RodNumberWidget]):
         # TODO
         pass
@@ -871,7 +875,7 @@ class NumberExchange(Action):
             to_str += f" in frame {self.frame} of all cameras."
         elif self.mode == NumberChangeActions.CURRENT:
             raise NotImplementedError()
-        
+
         if self.color is not None:
             to_str = f"{self.color}" + to_str
         if self.frame is not None:
@@ -882,7 +886,7 @@ class NumberExchange(Action):
         return to_str
 
     def to_save(self):
-        """The operation is already 'saved' as it directly modifies the main 
+        """The operation is already 'saved' as it directly modifies the main
         dataframe."""
         return None
 
@@ -893,9 +897,9 @@ class NumberExchange(Action):
         -------
         NumberExchange
         """
-        return NumberExchange(self.mode, self.new_id, self.previous_id, 
+        return NumberExchange(self.mode, self.new_id, self.previous_id,
                               self.color, self.frame, self.cam_id)
-    
+
 
 class ActionLogger(QtCore.QObject):
     """Logs actions performed on its associated GUI object.

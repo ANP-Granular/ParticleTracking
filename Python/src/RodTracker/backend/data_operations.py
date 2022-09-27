@@ -31,7 +31,7 @@ def extract_rods(cam_id: str, frame: int, color: str) -> \
         List[rn.RodNumberWidget]:
     """Extracts rod data for one color and creates the `RodNumberWidget`s.
 
-    Extracts the rod position data one color in one frame from `rod_data`. It 
+    Extracts the rod position data one color in one frame from `rod_data`. It
     creates the `RodNumberWidget` that is associated with each rod.
 
     Parameters
@@ -137,7 +137,7 @@ def find_unused_rods() -> pd.DataFrame:
     has_nans = rod_data[rod_data.isna().any(axis=1)]
     has_data = has_nans.loc[:, has_nans.columns.isin(to_include)].any(
         axis=1)
-    unused = has_nans.loc[has_data == False]
+    unused = has_nans.loc[has_data == False]                    # noqa: E712
     lock.unlock()
     return unused
 
@@ -159,7 +159,7 @@ def change_data(new_data: dict) -> None:
     points = new_data["position"]
     rod_id = new_data["rod_id"]
     seen = new_data["seen"]
-    
+
     if isinstance(rod_id, Iterable):
         for i in range(len(rod_id)):
             tmp_data = {
@@ -175,32 +175,33 @@ def change_data(new_data: dict) -> None:
         return
 
     data_unavailable = rod_data.loc[(rod_data.frame == frame) & (
-            rod_data.particle == rod_id) & (rod_data.color == color),
+        rod_data.particle == rod_id) & (rod_data.color == color),
         [f"x1_{cam_id}", f"y1_{cam_id}", f"x2_{cam_id}", f"y2_{cam_id}"]].empty
     if data_unavailable:
         new_idx = rod_data.index.max() + 1
         rod_data.loc[new_idx] = len(rod_data.columns) * [math.nan]
         rod_data.loc[new_idx, [f"x1_{cam_id}", f"y1_{cam_id}",
-                              f"x2_{cam_id}", f"y2_{cam_id}", "frame",
-                              f"seen_{cam_id}", "particle", "color"]] \
+                               f"x2_{cam_id}", f"y2_{cam_id}", "frame",
+                               f"seen_{cam_id}", "particle", "color"]] \
             = [*points, frame, seen, rod_id, color]
     else:
-        rod_data.loc[(rod_data.frame == frame) & (rod_data.particle == rod_id)
-                    & (rod_data.color == color),
-                    [f"x1_{cam_id}", f"y1_{cam_id}",
+        rod_data.loc[(rod_data.frame == frame) &
+                     (rod_data.particle == rod_id) &
+                     (rod_data.color == color),
+                     [f"x1_{cam_id}", f"y1_{cam_id}",
                      f"x2_{cam_id}", f"y2_{cam_id}", f"seen_{cam_id}"]] = \
             [*points, seen]
     rod_data = rod_data.astype({"frame": 'int', f"seen_{cam_id}": 'int',
-                              "particle": 'int'})
+                                "particle": 'int'})
     lock.unlock()
     return
 
 
-def rod_number_swap(mode: lg.NumberChangeActions, previous_id: int, 
-                    new_id: int, color: str, frame: int, 
+def rod_number_swap(mode: lg.NumberChangeActions, previous_id: int,
+                    new_id: int, color: str, frame: int,
                     cam_id: str = None) -> pd.DataFrame:
     """Adjusts a DataFrame according to rod number switching modes.
-    
+
     Parameters
     ----------
     mode: str
@@ -210,12 +211,12 @@ def rod_number_swap(mode: lg.NumberChangeActions, previous_id: int,
     lock.lockForWrite()
     tmp_set = rod_data.copy()
     if mode == lg.NumberChangeActions.ALL:
-        rod_data.loc[(tmp_set.color == color) & 
-                    (tmp_set.particle == previous_id) &
-                    (tmp_set.frame >= frame), "particle"] = new_id
-        rod_data.loc[(tmp_set.color == color) & 
-                    (tmp_set.particle == new_id) &
-                    (tmp_set.frame >= frame), "particle"] = previous_id
+        rod_data.loc[(tmp_set.color == color) &
+                     (tmp_set.particle == previous_id) &
+                     (tmp_set.frame >= frame), "particle"] = new_id
+        rod_data.loc[(tmp_set.color == color) &
+                     (tmp_set.particle == new_id) &
+                     (tmp_set.frame >= frame), "particle"] = previous_id
     elif mode == lg.NumberChangeActions.ALL_ONE_CAM:
         cols = rod_data.columns
         mask_previous = (tmp_set.color == color) & \
@@ -224,16 +225,18 @@ def rod_number_swap(mode: lg.NumberChangeActions, previous_id: int,
         mask_new = (tmp_set.color == color) & \
                    (tmp_set.particle == new_id) & \
                    (tmp_set.frame >= frame)
-        cam_cols = [c for c in cols if cam_id in c] 
+        cam_cols = [c for c in cols if cam_id in c]
         rod_data.loc[mask_previous, cam_cols] = \
             tmp_set.loc[mask_new, cam_cols].values
         rod_data.loc[mask_new, cam_cols] = \
             tmp_set.loc[mask_previous, cam_cols].values
     elif mode == lg.NumberChangeActions.ONE_BOTH_CAMS:
-        rod_data.loc[(tmp_set.color == color) & (tmp_set.particle == previous_id)
-                    & (tmp_set.frame == frame), "particle"] = new_id
-        rod_data.loc[(tmp_set.color == color) & (tmp_set.particle == new_id) & 
-                    (tmp_set.frame == frame), "particle"] = previous_id
+        rod_data.loc[(tmp_set.color == color) &
+                     (tmp_set.particle == previous_id) &
+                     (tmp_set.frame == frame), "particle"] = new_id
+        rod_data.loc[(tmp_set.color == color) &
+                     (tmp_set.particle == new_id) &
+                     (tmp_set.frame == frame), "particle"] = previous_id
     else:
         # unknown mode
         pass

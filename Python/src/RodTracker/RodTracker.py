@@ -18,13 +18,14 @@ import os
 import sys
 import inspect
 
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+currentdir = os.path.dirname(os.path.abspath(
+    inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir) 
+sys.path.insert(0, parentdir)
 
-from PyQt5 import QtWidgets
-import RodTracker.backend.logger as lg
-import RodTracker.ui.mainwindow as mw
+from PyQt5 import QtWidgets                                     # noqa: E402
+import RodTracker.backend.logger as lg                          # noqa: E402
+import RodTracker.ui.mainwindow as mw                           # noqa: E402
 
 sys.excepthook = lg.exception_logger
 

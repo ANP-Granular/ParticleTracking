@@ -458,4 +458,3 @@ class RodNumberWidget(QtWidgets.QLineEdit):
             cls._rod_thickness = settings["rod_thickness"]
         if "rod_color" in settings:
             cls._rod_color = settings["rod_color"]
-

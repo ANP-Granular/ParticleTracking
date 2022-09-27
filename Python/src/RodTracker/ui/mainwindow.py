@@ -423,9 +423,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        settings_changed = False
+        # settings_changed = False
         if "rod_increment" in settings:
-            settings_changed = True
+            # settings_changed = True
             self._rod_incr = settings["rod_increment"]
 
     def open_image_folder(self):
@@ -548,7 +548,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 d_ops.lock.lockForWrite()
                 d_ops.rod_data = None
                 d_ops.lock.unlock()
-                
+
                 # Check for eligible files and de-/activate radio buttons
                 eligible_files = f_ops.folder_has_data(self.original_data)
                 if not eligible_files:
@@ -689,8 +689,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             else:
                 self.load_rods()
         else:
-            dialogs.show_warning(f"There are no rod position files selected "
-                                 f"yet. Please select files!")
+            dialogs.show_warning("There are no rod position files selected "
+                                 "yet. Please select files!")
             self.open_rod_folder()
 
     def load_rods(self):
@@ -979,7 +979,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if new_data is None:
             return
 
-        thread, worker = pl.run_in_thread(d_ops.change_data, 
+        thread, worker = pl.run_in_thread(d_ops.change_data,
                                           {"new_data": new_data})
         worker.finished.connect(self.update_changed_data)
         self.background_tasks.append((thread, worker))
@@ -1044,7 +1044,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             color = rb.objectName()[3:]
             tmp_file = self.data_files + "/" + self.data_file_name.format(
                 color)
-            df_current = d_ops.rod_data.loc[d_ops.rod_data.color == color].copy()
+            df_current = d_ops.rod_data.loc[
+                d_ops.rod_data.color == color].copy()
             df_current = df_current.astype({"frame": 'int', "particle": 'int'})
             df_current.to_csv(tmp_file, index_label="")
         d_ops.lock.unlock()
@@ -1175,18 +1176,18 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam_id = self.current_camera.cam_id
         thread, worker = pl.run_in_thread(d_ops.rod_number_swap,
                                           {"mode": mode, "previous_id": old_id,
-                                          "new_id": new_id, "color": color,
-                                          "frame": frame, "cam_id": cam_id})
+                                           "new_id": new_id, "color": color,
+                                           "frame": frame, "cam_id": cam_id})
         worker.finished.connect(self.update_changed_data)
         self.background_tasks.append((thread, worker))
         thread.start()
 
         if log:
             self.current_camera.logger.add_action(
-                lg.NumberExchange(mode, old_id, new_id, 
+                lg.NumberExchange(mode, old_id, new_id,
                                   self.get_selected_color(), self.logger.frame,
                                   self.current_camera.cam_id)
-                )
+            )
         return
 
     def change_view(self, direction: int) -> None:
@@ -1230,7 +1231,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     index_diff = new_id_idx - self.file_indexes[new_idx]
                 except ValueError:
                     # Image not found
-                    self.cameras[new_idx].setPixmap(QtGui.QPixmap(fl.icon_path()))
+                    self.cameras[new_idx].setPixmap(
+                        QtGui.QPixmap(fl.icon_path()))
                     self.ui.statusbar.showMessage(f"No image with ID"
                                                   f":{current_id} found for "
                                                   f"this view.", 4000)
@@ -1407,10 +1409,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 delete_idx = to_delete.index[confirm.confirmed_delete]
                 if len(delete_idx):
                     d_ops.lock.lockForWrite()
-                    deleted_rows = d_ops.rod_data.loc[delete_idx].copy()
+                    # deleted_rows = d_ops.rod_data.loc[delete_idx].copy()
                     d_ops.rod_data = d_ops.rod_data.drop(index=delete_idx)
                     d_ops.lock.unlock()
-                    performed_action = lg.PermanentRemoveAction(len(delete_idx))
+                    performed_action = lg.PermanentRemoveAction(
+                        len(delete_idx))
                     self.logger.add_action(performed_action)
                     # Update rods and tree display
                     thread, worker = pl.run_in_thread(

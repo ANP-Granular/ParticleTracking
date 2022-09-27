@@ -208,7 +208,7 @@ class SettingsDialog(QtWidgets.QDialog):
         inner_layout.addWidget(self.position_scaling)
         visual_items_layout.addLayout(inner_layout)
         self.position_scaling.textChanged.connect(self.handle_scaled_position)
-        
+
         # True number of rods (each color)
         lbl_number_rods = QtWidgets.QLabel("True number of rods")
         lbl_number_rods.setStyleSheet(self.item_style)
@@ -237,7 +237,7 @@ class SettingsDialog(QtWidgets.QDialog):
                 f"{self.tmp_contents['visual']['rod_increment']:05.2f}")
         except KeyError:
             self.tmp_contents["visual"]["rod_increment"] = 1.0
-            self.rod_incr.setText(f"1.0")
+            self.rod_incr.setText("1.0")
         self.rod_incr.setAlignment(QtCore.Qt.AlignRight)
         inner_layout = QtWidgets.QHBoxLayout()
         inner_layout.addWidget(lbl_rod_incr)
@@ -299,7 +299,7 @@ class SettingsDialog(QtWidgets.QDialog):
         """Handles changes of the number size by the dialog's controls."""
         self.tmp_contents["visual"]["number_size"] = new_val
         self.update_preview()
-        
+
     def handle_number_rods(self, new_val: int):
         """Handles changes of the number or rods by the dialog's controls."""
         self.tmp_contents["visual"]["number_rods"] = new_val
@@ -324,8 +324,8 @@ class SettingsDialog(QtWidgets.QDialog):
             converted_val = 1.0
         self.tmp_contents["visual"]["position_scaling"] = converted_val
         self.update_preview()
-    
-    def handle_rod_increment(self, _:str):
+
+    def handle_rod_increment(self, _: str):
         """Handles changes of the rod increments by the dialog's controls."""
         try:
             converted_val = float(self.rod_incr.displayText())
@@ -361,14 +361,15 @@ class SettingsDialog(QtWidgets.QDialog):
                 self.tmp_contents["visual"]["number_size"])
             self.number_size.setValue(
                 self.tmp_contents["visual"]["number_rods"])
-            
+
             self.draw_icon(QtGui.QColor(*self.tmp_contents["visual"][
                 "rod_color"]), self.rod_color)
             self.draw_icon(QtGui.QColor(*self.tmp_contents["visual"][
                 "number_color"]), self.number_color)
             self.position_scaling.setText(str(self.tmp_contents["visual"]
                                               ["position_scaling"]))
-            self.rod_incr.setText(str(self.tmp_contents["visual"]["rod_increment"]))
+            self.rod_incr.setText(
+                str(self.tmp_contents["visual"]["rod_increment"]))
             self.update_preview()
 
 
@@ -396,7 +397,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
     def __init__(self, to_delete: pd.DataFrame, parent: QtWidgets.QWidget):
         super().__init__(parent=parent)
         self.to_delete = to_delete
-        self.confirmed_delete = len(to_delete)*[True]
+        self.confirmed_delete = len(to_delete) * [True]
 
         # Create visual elements
         self.description = QtWidgets.QLabel("")
@@ -411,10 +412,10 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.setWindowTitle("Confirm deletions")
 
         description_text = """
-            <p>Please review the rods that were marked for complete deletion 
-            from the output files. <br><br>
-            <b>Caution: The changes made after clicking OK cannot be 
-            reverted.</b></p>
+            <p>Please review the rods that were marked for complete deletion
+             from the output files. <br><br>
+            <b>Caution: The changes made after clicking OK cannot be
+             reverted.</b></p>
             """
         self.description.setText(description_text)
 
@@ -493,8 +494,8 @@ def show_about(parent: QtWidgets.QWidget):
         table { background-color: transparent; }
         a { text-decoration:none; font-weight:bold; }
     </style>
-    <table border="0" cellpadding="0" cellspacing="5" width="400" 
-    align="left" style="margin-top:0px;">
+    <table border="0" cellpadding="0" cellspacing="5" width="400"
+     align="left" style="margin-top:0px;">
         <tr>
             <td width="200", colspan="2"> <h3>Version:</h3> </td>
             <td width="200"> <p> 0.0.1 - beta </p> </td>
@@ -505,27 +506,27 @@ def show_about(parent: QtWidgets.QWidget):
         </tr>
         <tr>
             <td width="200", colspan="2"> <h3><br>Developers:<br></h3> </td>
-            <td width="200"> 
+            <td width="200">
                 <p> Adrian Niemann <br>
-                    Dmitry Puzyrev <br> 
+                    Dmitry Puzyrev <br>
                     Meera Subramanian <br>
                     Adithya Viswanathan
-                </p> 
-            </td>
-        </tr>
-        <tr>
-            <td width="200", colspan="2"> <h3>License:</h3> </td>
-            <td width="200"> 
-                <p><a href="https://www.gnu.org/licenses/gpl-3.0.en.html">
-                GPLv3</a> 
                 </p>
             </td>
         </tr>
         <tr>
-            <td width="400", colspan="3"> <br><h3>3rd Party Software:</h3> 
-            <p> This application either uses code and tools from the 
-                following projects in part or in their entirety as deemed 
-                permissible by each project's open-source license.</p>
+            <td width="200", colspan="2"> <h3>License:</h3> </td>
+            <td width="200">
+                <p><a href="https://www.gnu.org/licenses/gpl-3.0.en.html">
+                GPLv3</a>
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td width="400", colspan="3"> <br><h3>3rd Party Software:</h3>
+            <p> This application either uses code and tools from the
+                 following projects in part or in their entirety as deemed
+                 permissible by each project's open-source license.</p>
             </td>
         </tr>
         <tr>
@@ -605,16 +606,17 @@ class ConflictDialog(QtWidgets.QMessageBox):
             f"#{last_id} <---> #{new_id} was detected. \nHow shall "
             f"this conflict be resolved?")
         self.btn_switch_all = self.addButton(
-            "Switch in:\nBoth views, following frames", 
+            "Switch in:\nBoth views, following frames",
             QtWidgets.QMessageBox.ActionRole)
         self.btn_one_cam = self.addButton("Switch in:\nThis views, following "
                                           "frames",
                                           QtWidgets.QMessageBox.ActionRole)
         self.btn_both_cams = self.addButton(
-            "Switch in:\nBoth views, this frame", 
+            "Switch in:\nBoth views, this frame",
             QtWidgets.QMessageBox.ActionRole)
-        self.btn_only_this = self.addButton("Switch in:\nThis view, this frame",
-                                            QtWidgets.QMessageBox.ActionRole)
+        self.btn_only_this = self.addButton(
+            "Switch in:\nThis view, this frame",
+            QtWidgets.QMessageBox.ActionRole)
         self.btn_cancel = self.addButton(QtWidgets.QMessageBox.Abort)
         self.setDefaultButton(self.btn_switch_all)
         self.setEscapeButton(self.btn_cancel)

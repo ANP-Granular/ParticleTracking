@@ -89,8 +89,8 @@ class RodImageWidget(QLabel):
     request_new_rod = QtCore.pyqtSignal(int, list, name="request_new_rod")
     normal_frame_change = QtCore.pyqtSignal(int, name="normal_frame_change")
     number_switches = QtCore.pyqtSignal(
-        [lg.NumberChangeActions, int, int], 
-        [lg.NumberChangeActions, int, int, str, int, str, bool], 
+        [lg.NumberChangeActions, int, int],
+        [lg.NumberChangeActions, int, int, str, int, str, bool],
         name="number_switches")
     _logger: lg.ActionLogger = None
     # Settings
@@ -216,7 +216,7 @@ class RodImageWidget(QLabel):
 
     @cam_id.setter
     def cam_id(self, cam_id: str):
-        id_regex = re.compile('gp\d+')
+        id_regex = re.compile('gp\d+')                          # noqa: W605
         if re.fullmatch(id_regex, cam_id) is None:
             cam_id = "gp3"
         self._cam_id = cam_id
@@ -225,7 +225,7 @@ class RodImageWidget(QLabel):
         except AttributeError:
             raise AttributeError("There is no ActionLogger set for this "
                                  "Widget yet.")
-    
+
     @property
     def active_rod(self):
         for rod in self._edits:
@@ -246,8 +246,8 @@ class RodImageWidget(QLabel):
 
         # Handle the pixmap's shift to the center of the widget, in cases
         # the surrounding scrollArea is larger than the pixmap
-        x_off = (self.width() - self.base_pixmap.width())//2
-        y_off = (self.height() - self.base_pixmap.height())//2
+        x_off = (self.width() - self.base_pixmap.width()) // 2
+        y_off = (self.height() - self.base_pixmap.height()) // 2
         self._offset = [x_off if x_off > 0 else 0,
                         y_off if y_off > 0 else 0]
 
@@ -315,8 +315,8 @@ class RodImageWidget(QLabel):
         if self._image is None:
             return
         old_pixmap = QtGui.QPixmap.fromImage(self._image)
-        height_ratio = new_size.height()/old_pixmap.height()
-        width_ratio = new_size.width()/old_pixmap.width()
+        height_ratio = new_size.height() / old_pixmap.height()
+        width_ratio = new_size.width() / old_pixmap.width()
         if height_ratio > width_ratio:
             # use width
             self.scale_factor = width_ratio
@@ -446,7 +446,7 @@ class RodImageWidget(QLabel):
                 rod.rod_state = rn.RodState.SELECTED
                 send_rod = rod
                 break
-        
+
         if send_rod is None:
             # Find out which rods are unseen
             rods_unseen = []
@@ -457,17 +457,17 @@ class RodImageWidget(QLabel):
 
             # Get intended rod number from user
             if rods_unseen:
-                dialog_rodnum = f"Unseen rods: {rods_unseen}\nEnter rod number:"
-                # dialog_rodnum = 'Unseen rods: ' + str(rods_unseen) + '\n Enter rod number:'
+                dialog_rodnum = (f"Unseen rods: {rods_unseen}\n"
+                                 f"Enter rod number:")
                 selected_rod, ok = QInputDialog.getInt(
                     self, 'Choose a rod to replace', dialog_rodnum,
                     value=rods_unseen[0], min=0, max=99)
-            else:    
+            else:
                 dialog_rodnum = 'No unseen rods. Enter rod number: '
                 selected_rod, ok = QInputDialog.getInt(
                     self, 'Choose a rod to replace', dialog_rodnum, min=0,
                     max=99)
-            
+
             if not ok:
                 return
             # Check whether the rod already exists
@@ -525,7 +525,7 @@ class RodImageWidget(QLabel):
         self.draw_rods()
 
     def check_rod_conflicts(self, set_rod: rn.RodNumberWidget, last_id: int) \
-        -> None:
+            -> None:
         """Checks whether a new/changed rod has a number conflict with others.
 
         Checks whether a new/changed rod has an ID that conflicts with is
@@ -556,11 +556,11 @@ class RodImageWidget(QLabel):
             msg = dialogs.ConflictDialog(last_id, set_rod.rod_id)
             msg.exec()
             if msg.clickedButton() == msg.btn_switch_all:
-                self.number_switches.emit(lg.NumberChangeActions.ALL, 
+                self.number_switches.emit(lg.NumberChangeActions.ALL,
                                           last_id, set_rod.rod_id)
 
             elif msg.clickedButton() == msg.btn_one_cam:
-                self.number_switches.emit(lg.NumberChangeActions.ALL_ONE_CAM, 
+                self.number_switches.emit(lg.NumberChangeActions.ALL_ONE_CAM,
                                           last_id, set_rod.rod_id)
 
             elif msg.clickedButton() == msg.btn_both_cams:
@@ -607,7 +607,7 @@ class RodImageWidget(QLabel):
             self.request_new_rod.emit(new_id, set_rod.rod_points)
             self.delete_rod(set_rod)
 
-    def catch_rodnumber_change(self, new_rod: rn.RodNumberWidget, 
+    def catch_rodnumber_change(self, new_rod: rn.RodNumberWidget,
                                last_id: int) -> lg.ChangedRodNumberAction:
         """Handles the number/ID change of rods for logging.
 
@@ -657,7 +657,8 @@ class RodImageWidget(QLabel):
 
         Parameters
         ----------
-        action : Union[Action, ChangeRodPositionAction, ChangedRodNumberAction, DeleteRodAction]
+        action : Union[Action, ChangeRodPositionAction, ChangedRodNumberAction,
+                       DeleteRodAction]
             An `Action` that was logged previously. It will only be
             reverted, if it associated with this object.
 
@@ -680,7 +681,7 @@ class RodImageWidget(QLabel):
             pass
 
         if type(action) == lg.ChangeRodPositionAction or \
-            type(action) == lg.PruneLength:
+                type(action) == lg.PruneLength:
             new_rods = action.undo(rods=self._edits)
             self._edits = new_rods
             self.draw_rods()
@@ -723,12 +724,12 @@ class RodImageWidget(QLabel):
                 new_rods = action.coupled_action.undo(rods=new_rods)
             self._edits = new_rods
             self.draw_rods()
-        
+
         elif type(action) == lg.NumberExchange:
             self.number_switches[
-                    lg.NumberChangeActions, int, int, str, int, str, bool
-                ].emit(action.mode, action.new_id, action.previous_id, 
-                       action.color, action.frame, action.cam_id, False)
+                lg.NumberChangeActions, int, int, str, int, str, bool
+            ].emit(action.mode, action.new_id, action.previous_id,
+                   action.color, action.frame, action.cam_id, False)
 
         else:
             # Cannot handle this action
@@ -762,10 +763,11 @@ class RodImageWidget(QLabel):
             for rod in self._edits:
                 self.adjust_rod_position(rod)
 
-        
     @QtCore.pyqtSlot()
-    def adjust_rod_length(self, amount: float = 1., only_selected: bool = True):
-        """Adds the length (in px) given in `amount` to the rod. Negative values shorten the rod."""
+    def adjust_rod_length(self, amount: float = 1.,
+                          only_selected: bool = True):
+        """Adds the length (in px) given in `amount` to the rod.
+        Negative values shorten the rod."""
         rods = []
         new_pos = []
         previously_selected = None
@@ -776,12 +778,12 @@ class RodImageWidget(QLabel):
                 continue
 
             n_p = np.asarray(rod.rod_points)
-            rod_direction = np.array([n_p[0:2]-n_p[2:]])
-            rod_direction = rod_direction/np.sqrt(np.sum(rod_direction**2))
-            rod_direction = amount/2 * rod_direction
+            rod_direction = np.array([n_p[0:2] - n_p[2:]])
+            rod_direction = rod_direction / np.sqrt(np.sum(rod_direction**2))
+            rod_direction = amount / 2 * rod_direction
             if np.isnan(rod_direction).any():
                 rod_direction = np.array([0, 0])
-            n_p = n_p + np.concatenate([rod_direction, -rod_direction]).flatten()
+            n_p += np.concatenate([rod_direction, -rod_direction]).flatten()
             n_p = list(n_p)
             rod.rod_points = n_p
             rods.append(rod.copy())
@@ -793,7 +795,7 @@ class RodImageWidget(QLabel):
 
     @staticmethod
     def subtract_offset(point: QtCore.QPoint, offset: List[int]) -> \
-        QtCore.QPoint:
+            QtCore.QPoint:
         """Subtracts a given offset from a point and returns the new point.
 
         Parameters
