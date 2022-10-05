@@ -1307,19 +1307,23 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """Helper method to emit a request for repeating the last action."""
         self.request_redo.emit(self.current_camera.cam_id)
 
-    @QtCore.pyqtSlot(bool)
-    def tab_has_changes(self, has_changes: bool) -> None:
+    @QtCore.pyqtSlot(bool, str)
+    def tab_has_changes(self, has_changes: bool, cam_id: str) -> None:
         """Changes the current tabs text to indicate it has (no) changes."""
-        tab_idx = self.ui.camera_tabs.currentIndex()
-        if has_changes:
-            if self.ui.camera_tabs.tabText(tab_idx)[-1] == "*":
-                return
-            new_text = self.ui.camera_tabs.tabText(tab_idx) + "*"
-        else:
-            if self.ui.camera_tabs.tabText(tab_idx)[-1] != "*":
-                return
-            new_text = self.ui.camera_tabs.tabText(tab_idx)[0:-1]
-        self.ui.camera_tabs.setTabText(tab_idx, new_text)
+        for i in range(self.ui.camera_tabs.count()):
+            tab_txt = self.ui.camera_tabs.tabText(i)
+            if cam_id not in tab_txt:
+                continue
+
+            if has_changes:
+                if tab_txt[-1] == "*":
+                    return
+                new_text = tab_txt + "*"
+            else:
+                if tab_txt[-1] != "*":
+                    return
+                new_text = tab_txt[0:-1]
+            self.ui.camera_tabs.setTabText(i, new_text)
 
     def eventFilter(self, source: QtCore.QObject, event: QtCore.QEvent)\
             -> bool:

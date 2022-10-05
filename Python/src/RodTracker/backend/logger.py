@@ -942,10 +942,10 @@ class ActionLogger(QtCore.QObject):
         Notifies that the `Action` in the payload has been reverted.
     added_action(Action)
         Notifies that this object logged the `Action` from the payload.
-    notify_unsaved(bool)
+    notify_unsaved(bool, str)
         Notifies, if this objects attribute `unsaved_changes` changes from
         empty to being filled with one or more items (True) or from filled to
-        being empty (False).
+        being empty (False). The `parent_id` is added to the payload.
     request_saving(bool)
         Requests the saving of any unsaved changes.
         True    ->  permanent saving
@@ -966,7 +966,7 @@ class ActionLogger(QtCore.QObject):
     undo_action = QtCore.pyqtSignal(Action, name="undoAction")
     undone_action = QtCore.pyqtSignal(Action, name="undone_action")
     added_action = QtCore.pyqtSignal(Action, name="added_action")
-    notify_unsaved = QtCore.pyqtSignal(bool, name="notify_unsaved")
+    notify_unsaved = QtCore.pyqtSignal((bool, str), name="notify_unsaved")
     request_saving = QtCore.pyqtSignal(bool, name="request_saving")
     data_changed = QtCore.pyqtSignal(Action, name="data_changed")
     unsaved_changes: List[Action]
@@ -990,12 +990,12 @@ class ActionLogger(QtCore.QObject):
             self.repeatable_changes = []
         if type(last_action) is not FileAction:
             if not self.unsaved_changes:
-                self.notify_unsaved.emit(True)
+                self.notify_unsaved.emit(True, self.parent_id)
             self.unsaved_changes.append(last_action)
         elif type(last_action) is FileAction:
             if last_action.action == FileActions.SAVE:
                 self.unsaved_changes = []
-                self.notify_unsaved.emit(False)
+                self.notify_unsaved.emit(False, self.parent_id)
         self.added_action.emit(last_action)
         self.data_changed.emit(last_action)
 
@@ -1013,14 +1013,14 @@ class ActionLogger(QtCore.QObject):
         self.repeatable_changes.append(inv_undo_item)
         if undo_item not in self.unsaved_changes:
             if not self.unsaved_changes:
-                self.notify_unsaved.emit(True)
+                self.notify_unsaved.emit(True, self.parent_id)
             self.unsaved_changes.append(inv_undo_item)
         else:
             # Remove & Delete action
             self.unsaved_changes.pop()
             if not self.unsaved_changes:
                 # No more unsaved changes present
-                self.notify_unsaved.emit(False)
+                self.notify_unsaved.emit(False, self.parent_id)
         undo_item.revert = True
         self.undo_action.emit(undo_item)
         self.data_changed.emit(undo_item)
@@ -1042,7 +1042,7 @@ class ActionLogger(QtCore.QObject):
             self.undone_action.emit(undone_action)
             if not self.unsaved_changes:
                 # No more unsaved changes present
-                self.notify_unsaved.emit(False)
+                self.notify_unsaved.emit(False, self.parent_id)
 
     def discard_changes(self):
         """Discards and reverts all unsaved changes made."""
@@ -1055,14 +1055,14 @@ class ActionLogger(QtCore.QObject):
             del item
         # Save changes only in the temp location
         self.unsaved_changes = []
-        self.notify_unsaved.emit(False)
+        self.notify_unsaved.emit(False, self.parent_id)
 
     @QtCore.pyqtSlot()
     def actions_saved(self):
         """All unsaved actions were saved"""
         if self.unsaved_changes:
             self.unsaved_changes = []
-            self.notify_unsaved.emit(False)
+            self.notify_unsaved.emit(False, self.parent_id)
 
     @QtCore.pyqtSlot(str)
     def redo_last(self, parent_id: str) -> None:
@@ -1081,7 +1081,7 @@ class ActionLogger(QtCore.QObject):
                 self.unsaved_changes.pop()
                 if not self.unsaved_changes:
                     # No more unsaved changes present
-                    self.notify_unsaved.emit(False)
+                    self.notify_unsaved.emit(False, self.parent_id)
         except IndexError:
             try:
                 if inv_rep_item.coupled_action is not None:
@@ -1089,7 +1089,7 @@ class ActionLogger(QtCore.QObject):
             except AttributeError:
                 pass
             self.unsaved_changes.append(inv_rep_item)
-            self.notify_unsaved.emit(True)
+            self.notify_unsaved.emit(True, self.parent_id)
 
         # Insert the coupled action before its parent to keep the correct
         # order for undoing
