@@ -458,6 +458,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                                      ui_dir,
                                                      'Images (*.png *.jpeg '
                                                      '*.jpg)', **kwargs)
+        if chosen_file == "":
+            # File selection was aborted
+            return
         chosen_file = pathlib.Path(chosen_file).resolve()
         self.open_image_folder(chosen_file)
 
