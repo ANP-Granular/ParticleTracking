@@ -1,5 +1,3 @@
-# Track_Gui
-
 ## Python GUI for image tracking task
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
@@ -29,8 +27,14 @@
 - install the RodTracker software using pip as mentioned above
 
 
+>## Important
+> 
+>Do **NOT** use conda to install/upgrade any packages that the RodTracker software uses. Make sure, that any packages additionally installed with conda have no interaction with the RodTracker software.
+>
+>Refer to conda's [interoperatbility feature](https://docs.conda.io/projects/conda/en/latest/user-guide/configuration/pip-interoperability.html?highlight=conda%20pip), this [Anaconda blog post](https://www.anaconda.com/blog/using-pip-in-a-conda-environment) and issue [#59](https://github.com/ANP-Granular/Track_Gui/issues/59) for more information on this topic.
+
 ### Notes for users
-1. Run the **RodTracker** GUI using one of possibilities
+1. Run the **RodTracker** GUI using one of two possibilities
   - Run [RodTracker.py](./Python/src/RodTracker/RodTracker.py) manually
     ```shell
     YOUR/REPO/PATH/Python/src$ python RodTracker.py
@@ -116,8 +120,7 @@
   ```shell
   YOUR/REPO/PATH/Python$ pip install -e .[dev,test]
   ```
-  This installs the `RodTracker` package in *editable* mode.
-  It will also install packages necessary for bundling, testing, and visual `*.ui` file editing.
+  This will also install packages necessary for bundling, testing, and visual `*.ui` file editing.
 
 #### PyQt specificities
 - The main GUI-layout is modeled in 
@@ -159,20 +162,3 @@ Generate a `*.whl` file for distribution:
 YOUR/PROJECT/PATH/Python$ python setup.py bdist_wheel
 ```
 The created `*.whl` file is located in `Python/dist`.
-
----
-
-## Rod tracking using MATLAB
-- [`track_manual_gp4.m`](./Matlab/track_manual_gp4.m):
-  
-  MATLAB script to read image data in continuous order (501,502,503, etc.), 
-  track rods using computer vision in Image processing toolbox and save track 
-  data as images and mat files.
-
-- [`track_manual_gp5.m`](./Matlab/track_manual_gp5.m): 
-  
-  MATLAB script to read image data in random order (106 ,230, 460, etc.), 
-  track rods using computer vision in Image processing toolbox and save track 
-  data as images and mat files.
-
-

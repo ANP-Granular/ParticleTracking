@@ -1,0 +1,4 @@
+PyQt5>=5.15.4
+pandas>=1.2.5
+numpy>=1.21.0
+importlib-resources>=1.4; python_version < '3.9'
