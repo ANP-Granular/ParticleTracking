@@ -50,9 +50,9 @@ def npartite_matching(weights, maximize: bool = True):
 
     # solve problem
     # Option to suppress output of the default solver
-    solver = pulp.PULP_CBC_CMD(msg=0)
-    # solver = pulp.GUROBI(path="/home/niemann/gurobi952/linux64/bin/gurobi", 
-    #                      msg=1)
+    # solver = pulp.PULP_CBC_CMD(msg=0)
+    solver = pulp.GUROBI(path="/home/niemann/gurobi952/linux64/bin/gurobi",
+                         msg=0)
 
     problem.solve(solver)
 
@@ -100,14 +100,16 @@ def plot_results(weights: np.ndarray, whr):
     graph.add_edges_from(edges)
 
     # set path weights as edge widths for plotting
-    width = np.array([edge['weight'] for id0, id1, edge in graph.edges(data=True)])
+    width = np.array([edge['weight'] for id0, id1, edge in
+                      graph.edges(data=True)])
     width = 3.0*width/max(width)
 
-    #plot network
+    # plot network
     fig = plt.figure(figsize=(16, 9))
     obj = weights[whr].sum()
     plt.title('total matching weight = %.2f' % obj)
-    nx.draw_networkx(graph, pos=pos, width=width, node_color='orange', node_size=700)
+    nx.draw_networkx(graph, pos=pos, width=width, node_color='orange',
+                     node_size=700)
     plt.axis('off')
     return graph, pos, fig
 
@@ -116,7 +118,6 @@ if __name__ == "__main__":
     # number of people (or items) per group (or dimension)
     dims = [8, 4, 12]
     # dims = [12, 12, 12]
-
 
     figs = []
     for _ in range(3):
