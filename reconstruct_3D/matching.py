@@ -14,14 +14,14 @@ import reconstruct_3D.data_loading as dl
 from reconstruct_3D.result_visualizations import matching_results
 
 
-def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors, 
-                      frame_numbers, calibration_file=None,
-                      transformation_file=None,
-                      cam1_convention="{idx:05d}_{color:s}.mat",
-                      cam2_convention="{idx:05d}_{color:s}.mat"):
+def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
+                        frame_numbers, calibration_file=None,
+                        transformation_file=None,
+                        cam1_convention="{idx:05d}_{color:s}.mat",
+                        cam2_convention="{idx:05d}_{color:s}.mat"):
     """Ported Matlab script from `match_rods_2020mix_gp12_cl1.m`.
-    This function takes the same input file format and outputs the same file 
-    formats as the previous implementation in MATLAB. Use this function for a 
+    This function takes the same input file format and outputs the same file
+    formats as the previous implementation in MATLAB. Use this function for a
     consistent behaviour to previous data processings.
 
     Parameters
@@ -34,7 +34,7 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
 
     Note
     ----
-    This function currently saves the 3D points in the first camera's 
+    This function currently saves the 3D points in the first camera's
     coordinate system, NOT the world/box coordinate system.
     """
 
@@ -55,7 +55,7 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
 
     # Load Matlab exported calibrations
     calibration = dl.load_camera_calibration(str(calibration_file))
-    transforms = dl.load_calib_from_json(transformation_file)
+    # transforms = dl.load_calib_from_json(transformation_file)
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
@@ -72,13 +72,13 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
     def triangulate(point1, point2, sampson=False):
         orig1 = point1
         orig2 = point2
-        point1 = cv2.undistortImagePoints(point1, calibration["CM1"], 
-                                        calibration["dist1"]).squeeze()
-        point2 = cv2.undistortImagePoints(point2, calibration["CM2"], 
-                                        calibration["dist2"]).squeeze()
+        point1 = cv2.undistortImagePoints(point1, calibration["CM1"],
+                                          calibration["dist1"]).squeeze()
+        point2 = cv2.undistortImagePoints(point2, calibration["CM2"],
+                                          calibration["dist2"]).squeeze()
         if sampson:
             # Use Sampson distance as an additional correction
-            Fn=calibration["F"]/np.linalg.norm(calibration["F"])
+            Fn = calibration["F"]/np.linalg.norm(calibration["F"])
             r = np.append(point2.T, 1) @ Fn @ np.append(point1, 1)
             fd0 = Fn[0:2, 0:2].T @ point2 + Fn[2, 0:2].T
             fd1 = Fn[0:2, 0:2].T @ point1 + Fn[2, 0:2].T
@@ -89,9 +89,9 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
 
         wp = cv2.triangulatePoints(P1, P2, point1, point2)
         wp = wp[0:3]/wp[3]
-        rp1 = cv2.projectPoints(wp, r1, t1, calibration["CM1"], 
+        rp1 = cv2.projectPoints(wp, r1, t1, calibration["CM1"],
                                 distCoeffs=calibration["dist1"])[0]
-        rp2 = cv2.projectPoints(wp, r2, t2, calibration["CM2"], 
+        rp2 = cv2.projectPoints(wp, r2, t2, calibration["CM2"],
                                 distCoeffs=calibration["dist2"])[0]
         rep_errs = [np.linalg.norm(orig1 - rp1), np.linalg.norm(orig2 - rp2)]
         return wp, rep_errs
@@ -112,9 +112,9 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
             rods_cam2 = sio.loadmat(cam2_file)["rod_data_links"][0]
             # format of rods_camX: [rod, point, coordinate(x/y)]
             rods_cam1 = np.asarray([np.asarray([rod[0], rod[1]]) for rod in
-                                rods_cam1]).squeeze()
+                                    rods_cam1]).squeeze()
             rods_cam2 = np.asarray([np.asarray([rod[0], rod[1]]) for rod in
-                                rods_cam2]).squeeze()
+                                    rods_cam2]).squeeze()
 
             lengths = np.zeros((len(rods_cam1), len(rods_cam2), 2))
             rep_errs = np.zeros((len(rods_cam1), len(rods_cam2), 2, 2, 2))
@@ -128,12 +128,14 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
                     wp1_2, rep_e2 = triangulate(c1_p2, c2_p2)
                     wp2_1, rep_e3 = triangulate(c1_p2, c2_p1)
                     wp2_2, rep_e4 = triangulate(c1_p1, c2_p2)
-                    rep_errs[i, j] = np.asarray([[rep_e1, rep_e2], [rep_e3, rep_e4]])
+                    rep_errs[i, j] = np.asarray([[rep_e1, rep_e2],
+                                                 [rep_e3, rep_e4]])
                     lengths[i, j, 0] = np.linalg.norm(wp1_1 - wp1_2)
                     lengths[i, j, 1] = np.linalg.norm(wp2_1 - wp2_2)
 
-            cam1_ind, cam2_ind = linear_sum_assignment(np.min(np.sum(rep_errs, (-2, -1)),2))
-            summed_errs = np.min(np.sum(rep_errs, (3,4)),2)
+            cam1_ind, cam2_ind = linear_sum_assignment(
+                np.min(np.sum(rep_errs, (-2, -1)), 2))
+            summed_errs = np.min(np.sum(rep_errs, (3, 4)), 2)
             all_repr_errs.append(summed_errs[cam1_ind, cam2_ind])
             out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
             for i, j in zip(cam1_ind, cam2_ind):
@@ -145,17 +147,20 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
                 wp1_2, rep_e2 = triangulate(c1_p2, c2_p2)
                 wp2_1, rep_e3 = triangulate(c1_p2, c2_p1)
                 wp2_2, rep_e4 = triangulate(c1_p1, c2_p2)
-                rep_errs[i, j] = np.asarray([[rep_e1, rep_e2], [rep_e3, rep_e4]])
+                rep_errs[i, j] = np.asarray([[rep_e1, rep_e2],
+                                             [rep_e3, rep_e4]])
                 lengths[i, j, 0] = np.linalg.norm(wp1_1 - wp1_2)
                 lengths[i, j, 1] = np.linalg.norm(wp2_1 - wp2_2)
                 if rep_e1+rep_e2 < rep_e3+rep_e4:
-                    out[i, 0:6] = np.concatenate((wp1_1, wp1_2), axis=0).squeeze()
+                    out[i, 0:6] = np.concatenate((wp1_1, wp1_2),
+                                                 axis=0).squeeze()
                     out[i, 6:9] = ((wp1_1 + wp1_2) / 2).squeeze()
                     out[i, 9] = lengths[i, j, 0]
                     out[i, 10:14] = rods_cam1[i].flatten()
                     out[i, 14:] = rods_cam2[j].flatten()
                 else:
-                    out[i, 0:6] = np.concatenate((wp2_1, wp2_2), axis=0).squeeze()
+                    out[i, 0:6] = np.concatenate((wp2_1, wp2_2),
+                                                 axis=0).squeeze()
                     out[i, 6:9] = ((wp2_1 + wp2_2) / 2).squeeze()
                     out[i, 9] = lengths[i, j, 1]
                     out[i, 10:14] = rods_cam1[i].flatten()
@@ -167,10 +172,10 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
 
 
 def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
-               frame_numbers, calibration_file=None,
-               transformation_file=None,
-               cam1_convention="{idx:05d}_{color:s}.mat",
-               cam2_convention="{idx:05d}_{color:s}.mat"):
+                         frame_numbers, calibration_file=None,
+                         transformation_file=None,
+                         cam1_convention="{idx:05d}_{color:s}.mat",
+                         cam2_convention="{idx:05d}_{color:s}.mat"):
     """_summary_
 
     Parameters
@@ -180,7 +185,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
     cam2_folder : str
         Folder with rod data of the second camera
     output_folder : str
-        Folder to write the output to. The parent folder of this must exist 
+        Folder to write the output to. The parent folder of this must exist
         already.
     colors : List[str]
         Names of the colors present in the dataset.
@@ -188,33 +193,33 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
         An iterable of frame numbers present in the data.
     calibration_file : str, optional
         Path to a *.json file with stereocalibration data for the cameras which
-        produced the images for the rod position data. 
-        By default the calibration constructed with Matlab for GP1 and GP2 is 
+        produced the images for the rod position data.
+        By default the calibration constructed with Matlab for GP1 and GP2 is
         used.
     transformation_file : str, optional
-        Path to a *.json file with transformation matrices expressing the 
-        transformation from the first camera's coordinate system to the 
-        world/box coordinate system. 
+        Path to a *.json file with transformation matrices expressing the
+        transformation from the first camera's coordinate system to the
+        world/box coordinate system.
         By default the transformation constructed with Matlab is used.
     cam1_convention : str, optional
-        Naming convention for the first camera's position data files defined 
-        by a formattable string, that accepts some of the following 
+        Naming convention for the first camera's position data files defined
+        by a formattable string, that accepts some of the following
         variables: {idx, color}.
         By default "{idx:05d}_{color:s}.mat"
     cam2_convention : str, optional
-        Naming convention for the second camera's position data files defined 
-        by a formattable string, that accepts some of the following 
-        variables: {idx, color}. 
+        Naming convention for the second camera's position data files defined
+        by a formattable string, that accepts some of the following
+        variables: {idx, color}.
         By default "{idx:05d}_{color:s}.mat"
 
     Returns
     -------
     np.ndarray, np.ndarray
         Reprojection errors, rod lengths of the matched rod endpoints.
-    
+
     Note
     ----
-    This function currently saves the 3D points in the first camera's 
+    This function currently saves the 3D points in the first camera's
     coordinate system, NOT the world/box coordinate system.
     """
     if not cam1_convention.endswith(".mat"):
@@ -233,7 +238,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
         os.mkdir(output_folder)
 
     calibration = dl.load_camera_calibration(str(calibration_file))
-    transforms = dl.load_calib_from_json(str(transformation_file))
+    # transforms = dl.load_calib_from_json(str(transformation_file))
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
@@ -264,9 +269,9 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
 
             # format of rods_camX: [rod, point, coordinate(x/y)]
             rods_cam1 = np.asarray([np.asarray([rod[0], rod[1]]) for rod in
-                                rods_cam1]).squeeze()
+                                    rods_cam1]).squeeze()
             rods_cam2 = np.asarray([np.asarray([rod[0], rod[1]]) for rod in
-                                rods_cam2]).squeeze()
+                                    rods_cam2]).squeeze()
 
             # Undistort points using the camera calibration
             tmp_points = cv2.undistortImagePoints(
@@ -293,9 +298,9 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
             pairs_all = np.reshape(pairs_all, (-1, 2, 2))
 
             pairs_original = [list(itertools.product(p[0], p[1])) for p in
-                         itertools.product(rods_cam1, rods_cam2)]
+                              itertools.product(rods_cam1, rods_cam2)]
             pairs_original = np.reshape(pairs_original, (-1, 2, 2))
-            
+
             # FIXME: currently yields points in the first cameras coordinate
             #  system (i.e. "gp3")
             # TODO: transformation to "world"-coordinates
@@ -312,11 +317,12 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
             repr_cam2 = cv2.projectPoints(
                 p_triang, r2, t2, calibration["CM2"],
                 calibration["dist2"])[0].squeeze()
-           
+
             repr_cam1 = pairs_original[:, 0, :] - repr_cam1
             repr_cam2 = pairs_original[:, 1, :] - repr_cam2
-            p_repr = np.stack([repr_cam1, repr_cam2], axis=2) # [combo, err_point, cam]
-            p_repr = np.swapaxes(p_repr, 1, 2)                # [combo, cam, err_point]
+            # Dimensions p_repr: [combo, err_point, cam]
+            p_repr = np.stack([repr_cam1, repr_cam2], axis=2)
+            p_repr = np.swapaxes(p_repr, 1, 2)  # [combo, cam, err_point]
             repr_errs = np.mean(np.linalg.norm(p_repr, axis=2), axis=1)
 
             # Consolidate data
@@ -340,7 +346,8 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
             point_choices = np.asarray(np.sum(repr_errs[:, 0::3], axis=1) <=
                                        np.sum(repr_errs[:, 1:3], axis=1))
 
-            point_choices = point_choices.reshape((len(rods_cam1), len(rods_cam2)))
+            point_choices = point_choices.reshape((len(rods_cam1),
+                                                   len(rods_cam2)))
             p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2), 4, 3))
 
             # TODO: transformation to world coordinates of the 3D point
@@ -368,7 +375,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
                     out[idx_out, 10:14] = rods_cam1[k, -1::-1].flatten()
                     out[idx_out, 14:] = rods_cam2[j, -1::-1].flatten()
 
-                idx_out += 1 # TODO: remove the use of idx_out
+                idx_out += 1    # TODO: remove the use of idx_out
             all_rod_lengths.append(out[:, 9])
 
             file_out = f"{f_out}{idx:05d}.txt"
@@ -376,9 +383,9 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
     return np.array(all_repr_errs), np.array(all_rod_lengths)
 
 
-def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1", 
-                      cam2_name="gp2", frame_numbers=None, 
-                      calibration_file=None, transformation_file=None, 
+def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
+                      cam2_name="gp2", frame_numbers=None,
+                      calibration_file=None, transformation_file=None,
                       rematching=True):
     """Matches and triangulates rods from *.csv data files.
 
@@ -407,10 +414,10 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
     -------
     np.ndarray, np.ndarray
         Reprojection errors, rod lengths of the matched rod endpoints.
-    
+
     Note
     ----
-    This function currently saves the 3D points in the first camera's 
+    This function currently saves the 3D points in the first camera's
     coordinate system, NOT the world/box coordinate system.
     """
     if calibration_file is None:
@@ -454,18 +461,18 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
         df_out = pd.DataFrame()
         for idx in frame_numbers:
             # Load data
-            cols_cam1 = [f'x1_{cam1_name}', f'y1_{cam1_name}', 
-                        f'x2_{cam1_name}', f'y2_{cam1_name}']
+            cols_cam1 = [f'x1_{cam1_name}', f'y1_{cam1_name}',
+                         f'x2_{cam1_name}', f'y2_{cam1_name}']
             cols_cam2 = [f'x1_{cam2_name}', f'y1_{cam2_name}',
-                        f'x2_{cam2_name}', f'y2_{cam2_name}']
-            _data_cam1 = data.loc[data.frame==idx, cols_cam1]
-            _data_cam2 = data.loc[data.frame==idx, cols_cam2]
-             # remove rows with NaNs or only 0s
+                         f'x2_{cam2_name}', f'y2_{cam2_name}']
+            _data_cam1 = data.loc[data.frame == idx, cols_cam1]
+            _data_cam2 = data.loc[data.frame == idx, cols_cam2]
+            # remove rows with NaNs or only 0s
             _data_cam1.dropna(how="all", inplace=True)
             _data_cam2.dropna(how="all", inplace=True)
-            _data_cam1 = _data_cam1.loc[(_data_cam1!=0).any(axis=1)]
-            _data_cam2 = _data_cam2.loc[(_data_cam2!=0).any(axis=1)]
-            if len(_data_cam1.index)==0 or len(_data_cam2.index)==0:
+            _data_cam1 = _data_cam1.loc[(_data_cam1 != 0).any(axis=1)]
+            _data_cam2 = _data_cam2.loc[(_data_cam2 != 0).any(axis=1)]
+            if len(_data_cam1.index) == 0 or len(_data_cam2.index) == 0:
                 # no rod data available for matching
                 continue
 
@@ -495,19 +502,19 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
             if rematching:
                 # Triangulation of all possible point-pairs to 3D
                 pairs_all = [list(itertools.product(p[0], p[1])) for p in
-                            itertools.product(undist_cam1, undist_cam2)]
+                             itertools.product(undist_cam1, undist_cam2)]
                 pairs_original = [list(itertools.product(p[0], p[1])) for p in
-                            itertools.product(rods_cam1, rods_cam2)]
-               
+                                  itertools.product(rods_cam1, rods_cam2)]
+
             else:
-                pairs_all = [list(itertools.product(p[0], p[1])) for p in 
+                pairs_all = [list(itertools.product(p[0], p[1])) for p in
                              zip(undist_cam1, undist_cam2)]
-                pairs_original = [list(itertools.product(p[0], p[1])) for p in 
+                pairs_original = [list(itertools.product(p[0], p[1])) for p in
                                   zip(rods_cam1, rods_cam2)]
 
             pairs_all = np.reshape(pairs_all, (-1, 2, 2))
             pairs_original = np.reshape(pairs_original, (-1, 2, 2))
-            
+
             p_triang = cv2.triangulatePoints(
                 P1, P2,
                 pairs_all[:, 0, :].squeeze().transpose(),
@@ -521,15 +528,16 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
             repr_cam2 = cv2.projectPoints(
                 p_triang, r2, t2, calibration["CM2"],
                 calibration["dist2"])[0].squeeze()
-           
+
             repr_cam1 = pairs_original[:, 0, :] - repr_cam1
             repr_cam2 = pairs_original[:, 1, :] - repr_cam2
-            p_repr = np.stack([repr_cam1, repr_cam2], axis=2) # [combo, err_point, cam]
-            p_repr = np.swapaxes(p_repr, 1, 2)                # [combo, cam, err_point]
+            # Dimensions p_repr: [combo, err_point, cam]
+            p_repr = np.stack([repr_cam1, repr_cam2], axis=2)
+            p_repr = np.swapaxes(p_repr, 1, 2)  # [combo, cam, err_point]
             repr_errs = np.mean(np.linalg.norm(p_repr, axis=2), axis=1)
 
             # Transformation to world coordinates
-            p_triang = rot_comb.apply((p_triang + tw1))+ tw2
+            p_triang = rot_comb.apply((p_triang + tw1)) + tw2
 
             # Consolidate data
             # Caution: the data order is different form the MATLAB script
@@ -542,7 +550,7 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
                 costs = np.reshape(
                         np.min(
                             [np.sum(repr_errs[:, 0::3], axis=1),
-                            np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
+                             np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
                         (len(undist_cam1), len(undist_cam2))
                     )
 
@@ -550,9 +558,11 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
                 assignment_cost = costs[cam1_ind, cam2_ind]
                 all_repr_errs.append(assignment_cost)
 
-                point_choices = np.asarray(np.sum(repr_errs[:, 0::3], axis=1) <=
-                                        np.sum(repr_errs[:, 1:3], axis=1))
-                point_choices = point_choices.reshape((len(rods_cam1), len(rods_cam2)))
+                point_choices = np.asarray(
+                    np.sum(repr_errs[:, 0::3], axis=1) <=
+                    np.sum(repr_errs[:, 1:3], axis=1))
+                point_choices = point_choices.reshape(
+                    (len(rods_cam1), len(rods_cam2)))
             else:
                 costs = np.min([np.sum(repr_errs[:, 0::3], axis=1),
                                 np.sum(repr_errs[:, 1:3], axis=1)], axis=0)
@@ -563,7 +573,7 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
                                  np.sum(repr_errs[:, 1:3], axis=1))
                 point_choices = np.eye(len(point_choices)) * point_choices
                 p_triang = p_triang.reshape(-1, 4, 3)
-                p_triang = np.tile(p_triang, (len(p_triang),1,1))
+                p_triang = np.tile(p_triang, (len(p_triang), 1, 1))
 
             p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2), 4, 3))
 
@@ -597,14 +607,17 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
             tmp_df[seen_cols] = 1
             df_out = pd.concat([df_out, tmp_df])
         df_out.reset_index(drop=True, inplace=True)
-        df_out.to_csv(os.path.join(output_folder, f"rods_df_{color}.csv"), sep=",")
-    
+        df_out.to_csv(os.path.join(output_folder, f"rods_df_{color}.csv"),
+                      sep=",")
+
     return np.array(all_repr_errs), np.array(all_rod_lengths)
 
-def plot_rods(file: str, rods, color:str, save=False):
+
+def plot_rods(file: str, rods, color: str, save=False):
     base_folder = "./testfiles"
     img_file = base_folder + "/FT2015_shot1_gp1_00732.jpg"
-    # img_file = base_folder + "/" + os.path.splitext(file)[0].split(f"_{color}")[0] + ".jpg"
+    # img_file = base_folder + "/" + \
+    #     os.path.splitext(file)[0].split(f"_{color}")[0] + ".jpg"
     img = cv2.imread(img_file)
     width, height = img.shape[1], img.shape[0]
     fig = plt.figure(frameon=False)
@@ -641,7 +654,7 @@ def example_match_rods():
     frame_numbers = list(range(start_frame, end_frame+1))
     if debug:
         calibration_file = "./calibration_data/Matlab/gp12.json"
-        colors = ["blue",]
+        colors = ["blue", ]
         base_folder = "./debug_files"
         cam1_folder = base_folder + "/gp3/"
         cam1_convention = "{idx:05d}_{color:s}.mat"
@@ -655,19 +668,20 @@ def example_match_rods():
     if debug:
         from time import perf_counter
         start = perf_counter()
-        errs, lens = match_matlab_simple(cam1_folder, cam2_folder, out_folder, colors,
-                                frame_numbers, calibration_file,
-                                transformation_file, cam1_convention,
-                                cam2_convention)
+        errs, lens = match_matlab_simple(cam1_folder, cam2_folder, out_folder,
+                                         colors, frame_numbers,
+                                         calibration_file, transformation_file,
+                                         cam1_convention, cam2_convention)
         end_simple = perf_counter()
-        errs, lens = match_matlab_complex(cam1_folder, cam2_folder, out_folder, colors,
-                                frame_numbers, calibration_file,
-                                transformation_file, cam1_convention,
-                                cam2_convention)
+        errs, lens = match_matlab_complex(cam1_folder, cam2_folder, out_folder,
+                                          colors, frame_numbers,
+                                          calibration_file,
+                                          transformation_file, cam1_convention,
+                                          cam2_convention)
         end_complex = perf_counter()
         print(f"Durations\nSimple: {end_simple-start} s"
               f"\tComplex: {end_complex-end_simple} s")
-        
+
         err_vis = np.array([])
         len_vis = np.array([])
         for err, l in zip(errs, lens):
@@ -676,10 +690,10 @@ def example_match_rods():
         matching_results(err_vis, len_vis)
 
     else:
-        errs, lens = match_matlab_simple(cam1_folder, cam2_folder, out_folder, colors,
-                                frame_numbers, calibration_file,
-                                transformation_file, cam1_convention,
-                                cam2_convention)
+        errs, lens = match_matlab_simple(cam1_folder, cam2_folder, out_folder,
+                                         colors, frame_numbers,
+                                         calibration_file, transformation_file,
+                                         cam1_convention, cam2_convention)
         err_vis = np.array([])
         len_vis = np.array([])
         for err, l in zip(errs, lens):
@@ -690,15 +704,16 @@ def example_match_rods():
 
 def extract_mat_from_txt():
     import scipy.io as sio
-    col_names = ['x1_r', 'y1_r', 'z1_r', 'x2_r', 'y2_r', 'z2_r', 
+    col_names = ['x1_r', 'y1_r', 'z1_r', 'x2_r', 'y2_r', 'z2_r',
                  'x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
-                 'x1_gp3', 'y1_gp3', 'x2_gp3', 'y2_gp3', 'x1_gp4', 'y1_gp4', 
+                 'x1_gp3', 'y1_gp3', 'x2_gp3', 'y2_gp3', 'x1_gp4', 'y1_gp4',
                  'x2_gp4', 'y2_gp4', 'particle', 'frame']
     dbg_data_format = "./debug_files/data3d_blueT/{:05d}.txt"
     rods_exp = 12
     frames = list(range(100, 905))
     dbg_data = dl.load_positions_from_txt(dbg_data_format, col_names, frames)
-    raw_3d = dbg_data[['x1_r', 'y1_r', 'z1_r', 'x2_r', 'y2_r', 'z2_r']].to_numpy()
+    # raw_3d = dbg_data[['x1_r', 'y1_r', 'z1_r', 'x2_r',
+    #                    'y2_r', 'z2_r']].to_numpy()
     rods_cam1 = dbg_data[['x1_gp3', 'y1_gp3', 'x2_gp3', 'y2_gp3']].to_numpy()
     rods_cam2 = dbg_data[['x1_gp4', 'y1_gp4', 'x2_gp4', 'y2_gp4']].to_numpy()
     rods_cam1 = rods_cam1.reshape((-1, rods_exp, 4))
@@ -709,12 +724,12 @@ def extract_mat_from_txt():
         arr = np.zeros((rods_exp,), dtype=dt)
         arr[:]['Point1'] = r_c1[:, 0:2]
         arr[:]['Point2'] = r_c1[:, 2:]
-        sio.savemat(f"./debug_files/gp3/{fr:05d}_blue.mat", 
+        sio.savemat(f"./debug_files/gp3/{fr:05d}_blue.mat",
                     {'rod_data_links': arr})
         arr2 = np.zeros((rods_exp,), dtype=dt)
         arr2[:]['Point1'] = r_c2[:, 0:2]
         arr2[:]['Point2'] = r_c2[:, 2:]
-        sio.savemat(f"./debug_files/gp4/{fr:05d}_blue.mat", 
+        sio.savemat(f"./debug_files/gp4/{fr:05d}_blue.mat",
                     {'rod_data_links': arr2})
 
 
