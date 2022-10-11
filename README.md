@@ -3,7 +3,7 @@
 ## Python GUI for image tracking task
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/141676583-2f294dec-a505-4b7e-a8b5-484af964ea09.png "RodTracker - GUI")
+![RodTracker - GUI](https://user-images.githubusercontent.com/34780470/195089012-c50e8772-3232-4b94-aea1-164fea768d11.png "RodTracker - GUI")
 
 ### Installation
 - Requirements: Python >= 3.8 is installed
@@ -107,8 +107,6 @@
   using the `Preferences` menu
   - `(right-)click` anywhere in the image to show the rod numbers again 
     after the settings were changed
-- in some cases there is a notification/information displayed in the main 
-  window's status bar
 
 ### Notes for developers
 #### Installation
