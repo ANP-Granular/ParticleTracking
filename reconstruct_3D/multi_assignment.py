@@ -5,18 +5,15 @@ import itertools
 import cv2
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 from scipy.optimize import linear_sum_assignment
 
 import reconstruct_3D.data_loading as dl
 from thirdparty import ap
 
-def compute_weights():
-    pass
 
-def assign(input_folder, output_folder, colors, cam1_name="gp1", 
-           cam2_name="gp2", frame_numbers=None, calibration_file=None, 
+def assign(input_folder, output_folder, colors, cam1_name="gp1",
+           cam2_name="gp2", frame_numbers=None, calibration_file=None,
            transformation_file=None):
     if calibration_file is None:
         this_dir = pathlib.Path(__file__).parent.resolve()
@@ -60,18 +57,18 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
         for fn in range(len(frame_numbers)):
             idx = frame_numbers[fn]
             # Load data
-            cols_cam1 = [f'x1_{cam1_name}', f'y1_{cam1_name}', 
-                        f'x2_{cam1_name}', f'y2_{cam1_name}']
+            cols_cam1 = [f'x1_{cam1_name}', f'y1_{cam1_name}',
+                         f'x2_{cam1_name}', f'y2_{cam1_name}']
             cols_cam2 = [f'x1_{cam2_name}', f'y1_{cam2_name}',
-                        f'x2_{cam2_name}', f'y2_{cam2_name}']
-            _data_cam1 = data.loc[data.frame==idx, cols_cam1]
-            _data_cam2 = data.loc[data.frame==idx, cols_cam2]
-             # remove rows with NaNs or only 0s
+                         f'x2_{cam2_name}', f'y2_{cam2_name}']
+            _data_cam1 = data.loc[data.frame == idx, cols_cam1]
+            _data_cam2 = data.loc[data.frame == idx, cols_cam2]
+            # remove rows with NaNs or only 0s
             _data_cam1.dropna(how="all", inplace=True)
             _data_cam2.dropna(how="all", inplace=True)
-            _data_cam1 = _data_cam1.loc[(_data_cam1!=0).any(axis=1)]
-            _data_cam2 = _data_cam2.loc[(_data_cam2!=0).any(axis=1)]
-            if len(_data_cam1.index)==0 or len(_data_cam2.index)==0:
+            _data_cam1 = _data_cam1.loc[(_data_cam1 != 0).any(axis=1)]
+            _data_cam2 = _data_cam2.loc[(_data_cam2 != 0).any(axis=1)]
+            if len(_data_cam1.index) == 0 or len(_data_cam2.index) == 0:
                 # no rod data available for matching
                 continue
 
@@ -102,18 +99,19 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
             if fn == 0:
                 # Triangulation of all possible point-pairs to 3D
                 pairs_all = [list(itertools.product(p[0], p[1])) for p in
-                            itertools.product(undist_cam1, undist_cam2)]
+                             itertools.product(undist_cam1, undist_cam2)]
                 pairs_original = [list(itertools.product(p[0], p[1])) for p in
-                            itertools.product(rods_cam1, rods_cam2)]
-                
+                                  itertools.product(rods_cam1, rods_cam2)]
+
                 pairs_all = np.reshape(pairs_all, (-1, 2, 2))
                 pairs_original = np.reshape(pairs_original, (-1, 2, 2))
-                
+
                 p_triang = cv2.triangulatePoints(
                     P1, P2,
                     pairs_all[:, 0, :].squeeze().transpose(),
                     pairs_all[:, 1, :].squeeze().transpose())
-                p_triang = np.asarray([p[0:3]/p[3] for p in p_triang.transpose()])
+                p_triang = np.asarray([p[0:3]/p[3] for p in
+                                       p_triang.transpose()])
 
                 # Reprojection to the image plane for point matching
                 repr_cam1 = cv2.projectPoints(
@@ -122,15 +120,16 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
                 repr_cam2 = cv2.projectPoints(
                     p_triang, r2, t2, calibration["CM2"],
                     calibration["dist2"])[0].squeeze()
-            
+
                 repr_cam1 = pairs_original[:, 0, :] - repr_cam1
                 repr_cam2 = pairs_original[:, 1, :] - repr_cam2
-                p_repr = np.stack([repr_cam1, repr_cam2], axis=2) # [combo, err_point, cam]
-                p_repr = np.swapaxes(p_repr, 1, 2)                # [combo, cam, err_point]
+                # p_repr: [combo, err_point, cam]
+                p_repr = np.stack([repr_cam1, repr_cam2], axis=2)
+                p_repr = np.swapaxes(p_repr, 1, 2)  # [combo, cam, err_point]
                 repr_errs = np.mean(np.linalg.norm(p_repr, axis=2), axis=1)
 
                 # Transformation to world coordinates
-                p_triang = rot_comb.apply((p_triang + tw1))+ tw2
+                p_triang = rot_comb.apply((p_triang + tw1)) + tw2
 
                 # Consolidate data
                 # Caution: the data order is different form the MATLAB script
@@ -142,7 +141,7 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
                 costs = np.reshape(
                         np.min(
                             [np.sum(repr_errs[:, 0::3], axis=1),
-                            np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
+                             np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
                         (len(undist_cam1), len(undist_cam2))
                     )
 
@@ -150,11 +149,14 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
                 assignment_cost = costs[cam1_ind, cam2_ind]
                 all_repr_errs.append(assignment_cost)
 
-                point_choices = np.asarray(np.sum(repr_errs[:, 0::3], axis=1) <=
-                                        np.sum(repr_errs[:, 1:3], axis=1))
-                point_choices = point_choices.reshape((len(rods_cam1), len(rods_cam2)))
+                point_choices = np.asarray(
+                    np.sum(repr_errs[:, 0::3], axis=1) <=
+                    np.sum(repr_errs[:, 1:3], axis=1))
+                point_choices = point_choices.reshape((len(rods_cam1),
+                                                       len(rods_cam2)))
 
-                p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2), 4, 3))
+                p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2),
+                                             4, 3))
 
                 # Accumulation of the data for saving
                 out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
@@ -162,8 +164,10 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
                     i2 = cam2_ind[idx_r]
                     if point_choices[idx_r, i2]:
                         # use point matching of (p11,p21) and (p12,p22)
-                        out[idx_r, 0:6] = p_triang[idx_r, i2, 0::3, :].flatten()
-                        out[idx_r, 6:9] = p_triang[idx_r, i2, 0::3, :].sum(axis=0)/2
+                        out[idx_r, 0:6] = p_triang[
+                            idx_r, i2, 0::3, :].flatten()
+                        out[idx_r, 6:9] = p_triang[
+                            idx_r, i2, 0::3, :].sum(axis=0)/2
                         out[idx_r, 9] = np.linalg.norm(
                             np.diff(p_triang[idx_r, i2, 0::3, :], axis=0))
                         out[idx_r, 10:14] = rods_cam1[idx_r, :].flatten()
@@ -171,7 +175,8 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
                     else:
                         # use point matching of (p11,p22) and (p12,p21)
                         out[idx_r, 0:6] = p_triang[idx_r, i2, 1:3, :].flatten()
-                        out[idx_r, 6:9] = p_triang[idx_r, i2, 1:3, :].sum(axis=0) / 2
+                        out[idx_r, 6:9] = p_triang[
+                            idx_r, i2, 1:3, :].sum(axis=0) / 2
                         out[idx_r, 9] = np.linalg.norm(
                             np.diff(p_triang[idx_r, i2, 1:3, :], axis=0))
                         out[idx_r, 10:14] = rods_cam1[idx_r, -1::-1].flatten()
@@ -182,30 +187,32 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
                 tmp_df = pd.DataFrame(out, columns=data.columns[:out.shape[1]])
                 tmp_df["frame"] = idx
                 tmp_df["color"] = color
+                tmp_df["particle"] = list(range(len(cam1_ind)))
                 seen_cols = [col for col in data.columns if "seen" in col]
                 tmp_df[seen_cols] = 1
                 df_out = pd.concat([df_out, tmp_df])
-            
+
             else:
                 # 3-assignment matching
-                last_points = df_out.loc[df_out.frame==frame_numbers[fn-1], 
+                last_points = df_out.loc[df_out.frame == frame_numbers[fn-1],
                                          ["x1", "y1", "z1", "x2", "y2", "z2"]]
                 last_points = last_points.to_numpy()
-                
+
                 # Triangulation of all possible point-pairs to 3D
                 pairs_all = [list(itertools.product(p[0], p[1])) for p in
-                            itertools.product(undist_cam1, undist_cam2)]
+                             itertools.product(undist_cam1, undist_cam2)]
                 pairs_original = [list(itertools.product(p[0], p[1])) for p in
-                            itertools.product(rods_cam1, rods_cam2)]
-                
+                                  itertools.product(rods_cam1, rods_cam2)]
+
                 pairs_all = np.reshape(pairs_all, (-1, 2, 2))
                 pairs_original = np.reshape(pairs_original, (-1, 2, 2))
-                
+
                 p_triang = cv2.triangulatePoints(
                     P1, P2,
                     pairs_all[:, 0, :].squeeze().transpose(),
                     pairs_all[:, 1, :].squeeze().transpose())
-                p_triang = np.asarray([p[0:3]/p[3] for p in p_triang.transpose()])
+                p_triang = np.asarray([p[0:3]/p[3] for p in
+                                       p_triang.transpose()])
 
                 # Reprojection to the image plane for point matching
                 repr_cam1 = cv2.projectPoints(
@@ -214,15 +221,16 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
                 repr_cam2 = cv2.projectPoints(
                     p_triang, r2, t2, calibration["CM2"],
                     calibration["dist2"])[0].squeeze()
-            
+
                 repr_cam1 = pairs_original[:, 0, :] - repr_cam1
                 repr_cam2 = pairs_original[:, 1, :] - repr_cam2
-                p_repr = np.stack([repr_cam1, repr_cam2], axis=2) # [combo, err_point, cam]
-                p_repr = np.swapaxes(p_repr, 1, 2)                # [combo, cam, err_point]
+                # p_repr: [combo, err_point, cam]
+                p_repr = np.stack([repr_cam1, repr_cam2], axis=2)
+                p_repr = np.swapaxes(p_repr, 1, 2)  # [combo, cam, err_point]
                 repr_errs = np.mean(np.linalg.norm(p_repr, axis=2), axis=1)
 
                 # Transformation to world coordinates
-                p_triang = rot_comb.apply((p_triang + tw1))+ tw2
+                p_triang = rot_comb.apply((p_triang + tw1)) + tw2
 
                 # Consolidate data
                 # Caution: the data order is different form the MATLAB script
@@ -234,115 +242,142 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
                 costs = np.reshape(
                         np.min(
                             [np.sum(repr_errs[:, 0::3], axis=1),
-                            np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
-                        (len(undist_cam1), len(undist_cam2))
-                    )
-                
-                p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2), 4, 3))
-                p_triang_c1 = p_triang[:, :, 0::3, :].reshape((len(rods_cam1), len(rods_cam2),6))  # 11, 22
-                p_triang_c2 = p_triang[:, :, 1:3, :].reshape((len(rods_cam1), len(rods_cam2),6))   # 12, 21
-
-                costs_combo1 = np.reshape(
-                        np.sum(repr_errs[:, 0::3], axis=1),
+                             np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
                         (len(undist_cam1), len(undist_cam2))
                     )
 
-                # Resulting shape: 
+                p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2),
+                                             4, 3))
+                p_triang_c1 = p_triang[:, :, 0::3, :].reshape((len(rods_cam1),
+                                                               len(rods_cam2),
+                                                               6))  # 11, 22
+                p_triang_c2 = p_triang[:, :, 1:3, :].reshape((len(rods_cam1),
+                                                              len(rods_cam2),
+                                                              6))   # 12, 21
+                # Resulting shape:
                 # [rod_prev_frame, rod_cam1, rod_cam2, end_point, coordinates]
                 dp_c1 = np.asarray([p_triang_c1 - p for p in last_points])
-                dp_c1 = dp_c1.reshape(((-1, len(rods_cam1), len(rods_cam2), 2, 3)))
+                dp_c1 = dp_c1.reshape(((-1, len(rods_cam1), len(rods_cam2), 2,
+                                        3)))
 
                 dp_c2 = np.asarray([p_triang_c2 - p for p in last_points])
-                dp_c2 = dp_c2.reshape(((-1, len(rods_cam1), len(rods_cam2), 2, 3)))
-                
-                # TODO: finish implementation
-                # Weights' shape:
-                # [rod_frame-1, rod_cam1, rod_cam2]
+                dp_c2 = dp_c2.reshape(((-1, len(rods_cam1), len(rods_cam2), 2,
+                                        3)))
 
                 # # Attempt 1: for maximization, just 3D diff
-                # weights_c1 = 1/np.mean(np.linalg.norm(dp_c1, axis=-1), axis=-1)
+                # weights_c1 = 1/np.mean(np.linalg.norm(dp_c1, axis=-1),
+                #                        axis=-1)
 
                 # # Attempt 2: for maximization, just 3D diff
-                # weights_c1 = -np.mean(np.linalg.norm(dp_c1, axis=-1), axis=-1)
+                # weights_c1 = -np.mean(np.linalg.norm(dp_c1, axis=-1),
+                #                       axis=-1)
                 # weights_c1 = weights_c1 + (-weights_c1.min())
 
                 # # for maximization, 3D diff * rod length
-                # lens_c1 = np.linalg.norm(np.diff(dp_c1, axis=-2), axis=-1).squeeze()
+                # lens_c1 = np.linalg.norm(np.diff(dp_c1, axis=-2),
+                #                          axis=-1).squeeze()
                 # weights_c1 = np.mean(np.linalg.norm(dp_c1, axis=-1), axis=-1)
                 # weights_c1 = 1/(weights_c1*np.abs(lens_c1-10))
-                
+
                 # for maximization, 3D diff * reprojection error
-                weights_c1 = np.mean(np.linalg.norm(dp_c1, axis=-1), axis=-1)
-                w_tmp = np.repeat(np.expand_dims(costs_combo1, axis=0), len(last_points), axis=0)
-                w_tmp = np.concatenate([w_tmp[i]*all_repr_errs[fn-1][i] for i in range(len(all_repr_errs[fn-1]))]).reshape((len(last_points), len(rods_cam1), len(rods_cam2)))
-                weights_c1 = weights_c1 * w_tmp
-                weights_c1 = 1/weights_c1
-                
-                # weights_c2 = 1/np.mean(np.linalg.norm(dp_c2, axis=-1), axis=-1)
-                weights_c2 = np.mean(np.linalg.norm(dp_c2, axis=-1), axis=-1)
+                # costs_combo1 = np.reshape(
+                #         np.sum(repr_errs[:, 0::3], axis=1),
+                #         (len(undist_cam1), len(undist_cam2))
+                #     )
+                # Weights' shape:
+                # [rod_frame-1, rod_cam1, rod_cam2]
+                # weights_c1 = np.mean(np.linalg.norm(dp_c1, axis=-1), axis=-1)
+                # w_tmp = np.repeat(np.expand_dims(costs_combo1, axis=0),
+                #                   len(last_points), axis=0)
+                # w_tmp = np.concatenate(
+                #     [w_tmp[i]*all_repr_errs[fn-1][i] for i in
+                #      range(len(all_repr_errs[fn-1]))]
+                #     ).reshape((len(last_points), len(rods_cam1),
+                #                len(rods_cam2)))
+                # weights_c1 = weights_c1 * w_tmp
+                # weights_c1 = 1/weights_c1
 
+                # use for that specific rod
+                sel = np.sum(repr_errs[:, 0::3], axis=1) < \
+                    np.sum(repr_errs[:, 1:3], axis=1)
+                sel = sel.reshape((len(rods_cam1), len(rods_cam2)))
+                test_out = np.zeros((len(rods_cam1), len(rods_cam2), 2, 3))
+                not_sel = np.logical_not(sel)
+                test_out[sel] = p_triang[sel, 0::3, :]
+                test_out[not_sel] = p_triang[not_sel, 1:3, :]
+                test_out = test_out.reshape((len(rods_cam1), len(rods_cam2),
+                                             6))
+                dp_c = np.asarray([test_out - p for p in last_points])
+                dp_c = dp_c.reshape(((-1, len(rods_cam1), len(rods_cam2), 2,
+                                      3)))
+                costs_combo = np.reshape(
+                        np.min(
+                            [np.sum(repr_errs[:, 0::3], axis=1),
+                             np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
+                        (len(undist_cam1), len(undist_cam2))
+                    )
+                # Weights' shape:
+                # [rod_frame-1, rod_cam1, rod_cam2]
+                weights_c = np.mean(np.linalg.norm(dp_c, axis=-1), axis=-1)
+                w_tmp = np.repeat(np.expand_dims(costs_combo, axis=0),
+                                  len(last_points), axis=0)
+                w_tmp = np.concatenate(
+                    [w_tmp[i]*all_repr_errs[fn-1][i] for i in
+                     range(len(all_repr_errs[fn-1]))]
+                    ).reshape((len(last_points), len(rods_cam1),
+                               len(rods_cam2)))
+                weights_c = weights_c * w_tmp
+                weights_c = 1/weights_c
                 rod, cam1_ind, cam2_ind = ap.npartite_matching(
-                    weights_c1, maximize=True)
-                # rod, cam1_ind, cam2_ind = ap.npartite_matching(
-                    # weights_c2, maximize=True)
+                    weights_c, maximize=True)
 
-                # rod, cam1_ind, cam2_ind = ap.npartite_matching(
-                #     weights_c1, maximize=False)
-
-                # graph, pos, fig = ap.plot_results(weights_c1, 
-                #                                   (rod, cam1_ind, cam2_ind))
-                # graph2, pos2, fig2 = ap.plot_results(weights_c2, whr2)
-                # plt.show()
-
-                
                 # Accumulation of the data for saving
                 out = np.zeros((len(rod), 2*3+3+1+4+4))
                 for idx_r in range(len(rod)):
                     i1 = cam1_ind[idx_r]
                     i2 = cam2_ind[idx_r]
 
-                    out[idx_r, 0:6] = p_triang[i1, i2, 0::3, :].flatten()
-                    out[idx_r, 6:9] = p_triang[i1, i2, 0::3, :].sum(axis=0)/2
-                    out[idx_r, 9] = np.linalg.norm(
-                        np.diff(p_triang[i1, i2, 0::3, :], axis=0))
-                    out[idx_r, 10:14] = rods_cam1[i1, :].flatten()
-                    out[idx_r, 14:] = rods_cam2[i2, :].flatten()
+                    if sel[i1, i2]:
+                        # use point matching of (p11,p21) and (p12,p22)
+                        out[idx_r, 0:6] = p_triang[i1, i2, 0::3, :].flatten()
+                        out[idx_r, 6:9] = \
+                            p_triang[i1, i2, 0::3, :].sum(axis=0) / 2
+                        out[idx_r, 9] = np.linalg.norm(
+                            np.diff(p_triang[i1, i2, 0::3, :], axis=0))
+                        out[idx_r, 10:14] = rods_cam1[i1, :].flatten()
+                        out[idx_r, 14:] = rods_cam2[i2, :].flatten()
+                    else:
+                        # use point matching of (p11,p22) and (p12,p21)
+                        out[idx_r, 0:6] = p_triang[i1, i2, 1:3, :].flatten()
+                        out[idx_r, 6:9] = \
+                            p_triang[i1, i2, 1:3, :].sum(axis=0) / 2
+                        out[idx_r, 9] = np.linalg.norm(
+                            np.diff(p_triang[i1, i2, 1:3, :], axis=0))
+                        out[idx_r, 10:14] = rods_cam1[i1, -1::-1].flatten()
+                        out[idx_r, 14:] = rods_cam2[i2, -1::-1].flatten()
 
-                    # TODO: add point to point assignment again
-                    # if point_choices[idx_r, i2]:
-                    #     # use point matching of (p11,p21) and (p12,p22)
-                    #     out[idx_r, 0:6] = p_triang[i1, i2, 0::3, :].flatten()
-                    #     out[idx_r, 6:9] = p_triang[i1, i2, 0::3, :].sum(axis=0)/2
-                    #     out[idx_r, 9] = np.linalg.norm(
-                    #         np.diff(p_triang[i1, i2, 0::3, :], axis=0))
-                    #     out[idx_r, 10:14] = rods_cam1[i1, :].flatten()
-                    #     out[idx_r, 14:] = rods_cam2[i2, :].flatten()
-                    # else:
-                    #     # use point matching of (p11,p22) and (p12,p21)
-                    #     out[idx_r, 0:6] = p_triang[i1, i2, 1:3, :].flatten()
-                    #     out[idx_r, 6:9] = p_triang[i1, i2, 1:3, :].sum(axis=0) / 2
-                    #     out[idx_r, 9] = np.linalg.norm(
-                    #         np.diff(p_triang[i1, i2, 1:3, :], axis=0))
-                    #     out[idx_r, 10:14] = rods_cam1[i1, -1::-1].flatten()
-                    #     out[idx_r, 14:] = rods_cam2[i2, -1::-1].flatten()
                 all_rod_lengths.append(out[:, 9])
-                all_repr_errs.append(costs_combo1[cam1_ind, cam2_ind])
+                # all_repr_errs.append(costs_combo1[cam1_ind, cam2_ind])
+                all_repr_errs.append(costs_combo[cam1_ind, cam2_ind])
 
                 # Data preparation for saving as *.csv
                 tmp_df = pd.DataFrame(out, columns=data.columns[:out.shape[1]])
                 tmp_df["frame"] = idx
                 tmp_df["color"] = color
+                tmp_df["particle"] = list(range(len(rod)))
                 seen_cols = [col for col in data.columns if "seen" in col]
                 tmp_df[seen_cols] = 1
                 df_out = pd.concat([df_out, tmp_df])
-                if fn%25==0:
+                if fn % 25 == 0:
                     print(f"{fn}/{len(frame_numbers)} frames done.")
-        
+
         # Save results to disk
         df_out.reset_index(drop=True, inplace=True)
-        df_out.to_csv(os.path.join(output_folder, f"rods_df_{color}.csv"), sep=",")
+        df_out.to_csv(os.path.join(output_folder, f"rods_df_{color}.csv"),
+                      sep=",")
 
     return np.asarray(all_repr_errs), np.asarray(all_rod_lengths)
+
 
 if __name__ == "__main__":
     pass
