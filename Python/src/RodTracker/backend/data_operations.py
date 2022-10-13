@@ -191,8 +191,7 @@ def change_data(new_data: dict) -> None:
                      [f"x1_{cam_id}", f"y1_{cam_id}",
                      f"x2_{cam_id}", f"y2_{cam_id}", f"seen_{cam_id}"]] = \
             [*points, seen]
-    rod_data = rod_data.astype({"frame": 'int', f"seen_{cam_id}": 'int',
-                                "particle": 'int'})
+    rod_data = rod_data.astype({"frame": 'int', "particle": 'int'})
     lock.unlock()
     return
 
