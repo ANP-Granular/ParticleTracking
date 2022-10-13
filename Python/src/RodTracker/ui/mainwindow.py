@@ -698,8 +698,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         Loads the rod position data for the selected color in the GUI. It
         creates the `RodNumberWidget` that is associated with each rod. A
-        message is displayed in the main window's statusbar, if there is no
-        data available for this frame in the loaded files.
+        message is logged, if there is no data available for this frame in the
+        loaded files.
 
         Returns
         -------
@@ -740,20 +740,18 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     rod_present = True
                     break
             if not rod_present:
-                self.statusBar().showMessage("This rod is not available in "
-                                             "the currently loaded data.",
-                                             5000)
+                lg._logger.info(f"Rod #{rod_id} is not available in the "
+                                f"currently loaded data.")
                 self.current_camera.edits = []
 
         else:
             # something went wrong/no display selected notification
             self.current_camera.edits = []
-            self.statusBar().showMessage("Display method not selected.", 5000)
+            lg._logger.warning("Display method is not selected.")
 
         self.ui.le_rod_disp.setText(f"Loaded Rods: {len(new_rods)}")
         if not new_rods:
-            self.statusBar().showMessage("No rod data available for this "
-                                         "image.", 5000)
+            lg._logger.info("No rod position data available for this image.")
 
     @QtCore.pyqtSlot(bool)
     def display_method_change(self, state: bool) -> None:
@@ -826,9 +824,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 if image_next.isNull():
                     # The file is not a valid image, remove it from the list
                     # and try to load the next one
-                    self.ui.statusbar.showMessage(f"The image {file_name} is "
-                                                  f"corrupted and therefore "
-                                                  f"excluded.", 4000)
+                    lg._logger.warning(f"The image {file_name} is "
+                                       f"corrupted and therefore "
+                                       f"excluded.")
                     self.fileList.remove(filename)
                     self.show_next(direction)
                 else:
@@ -1152,8 +1150,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         except ValueError:
             # Image not found
             self.current_camera.setPixmap(QtGui.QPixmap(fl.icon_path()))
-            self.ui.statusbar.showMessage(f"No image with ID"
-                                          f":{to_frame} found.", 4000)
+            lg._logger.warning(f"No image with ID:{to_frame} found.")
             return
         # Loads a new image
         self.show_next(idx_diff)
@@ -1207,8 +1204,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         Handles the switches between the camera tabs and depending on the
         GUI state tries to load the same frame for the newly displayed tab
         as in the old one. If no frame is available in the new tab it
-        displays a dummy graphic and shows a message in the main window's
-        statusbar.
+        displays a dummy graphic and logs a warning message.
 
         Parameters
         ----------
@@ -1233,9 +1229,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     # Image not found
                     self.cameras[new_idx].setPixmap(
                         QtGui.QPixmap(fl.icon_path()))
-                    self.ui.statusbar.showMessage(f"No image with ID"
-                                                  f":{current_id} found for "
-                                                  f"this view.", 4000)
+                    lg._logger.warning(f"No image with ID:{current_id} found "
+                                       f"for this view.")
 
         self.current_file_index = self.file_indexes[new_idx]
         self.fileList = self.view_filelists[new_idx]
@@ -1399,8 +1394,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         None
         """
         if d_ops.rod_data is None:
-            self.ui.statusbar.showMessage("No position data loaded. Unable "
-                                          "to clean unused rods.", 4000)
+            # No position data loaded
             return
         to_delete = d_ops.find_unused_rods()
         if len(to_delete):
@@ -1423,13 +1417,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     thread.start()
                     self.load_rods()
                 else:
-                    self.ui.statusbar.showMessage("No rods confirmed for "
-                                                  "permanent deletion.", 4000)
+                    lg._logger.info("No rods confirmed for permanent "
+                                    "deletion.")
             else:
-                self.ui.statusbar.showMessage("Aborted data cleaning.",
-                                              4000)
+                # Aborted data cleaning
                 return
         else:
-            self.ui.statusbar.showMessage("No unused rods found for "
-                                          "deletion.", 4000)
+            # No unused rods found for deletion
             return

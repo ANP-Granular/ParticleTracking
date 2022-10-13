@@ -18,14 +18,14 @@ import json
 from abc import abstractmethod
 from PyQt5 import QtWidgets, QtCore
 from RodTracker.ui.dialogs import SettingsDialog
-from RodTracker.backend.logger import TEMP_DIR
+import RodTracker.backend.logger as lg
 
 
 class Configuration(QtCore.QObject):
     """Generic class that shall hold configurations/settings."""
     _default: dict
     _contents: dict
-    path: str = TEMP_DIR + "/configurations.json"
+    path: str = lg.TEMP_DIR + "/configurations.json"
 
     def read(self, path: str = None):
         """Reads configurations from a file and saves them in this object.
@@ -116,7 +116,7 @@ class Settings(Configuration):
     -------
     settings_changed(dict)
     """
-    path = TEMP_DIR + "/settings.json"
+    path = lg.TEMP_DIR + "/settings.json"
     _default = {
         "visual": {
             "rod_thickness": 3,
@@ -172,14 +172,10 @@ class Settings(Configuration):
         settings_dialog = SettingsDialog(self._contents, parent,
                                          self._default)
         if settings_dialog.exec():
-            self.parent.statusBar().showMessage("Saved settings changes. "
-                                                "Right click to see rod "
-                                                "numbers.",
-                                                4000)
+            lg._logger.info("Saved changed settings.")
             self._contents = settings_dialog.tmp_contents
             self.save(new_data=self._contents)
             self.send_settings()
         else:
-            self.parent.statusBar().showMessage("Discarded settings "
-                                                "changes.", 4000)
+            lg._logger.info("Discarded changed settings.")
             return
