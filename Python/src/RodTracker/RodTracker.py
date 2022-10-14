@@ -41,6 +41,8 @@ except ModuleNotFoundError:
 def main():
     if HAS_SPLASH:
         pyi_splash.update_text("Updating environment...")
+    if not os.path.exists(lg.TEMP_DIR):
+        os.mkdir(lg.TEMP_DIR)
     if HAS_SPLASH:
         pyi_splash.update_text("Loading UI...")
 
