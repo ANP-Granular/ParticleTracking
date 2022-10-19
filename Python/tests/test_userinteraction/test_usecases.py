@@ -128,12 +128,23 @@ def test_undo_after_save(both_cams: RodTrackWindow, qtbot: QtBot,
 # =============================================================================
 
 
-@pytest.mark.xfail(reason="Not (fully) implemented.")
-def test_save_on_unloaded_img():
+def test_save_on_unloaded_img(one_cam: RodTrackWindow, qtbot: QtBot,
+                              monkeypatch: MonkeyPatch,
+                              tmp_path: pathlib.Path):
     """
     Attempt saveing changes from 2nd view without having images loaded
     there.
     """
-    raise NotImplementedError
+    scenario = [
+        ga.ChangeRodPosition(12),
+        ga.SwitchCamera(),
+        ga.SaveChanges()
+    ]
+    try:
+        for action in scenario:
+            one_cam = action.run(one_cam, qtbot, monkeypatch, tmp_path)
+    finally:
+        # teardown
+        teardown_replacements(monkeypatch)
 # =============================================================================
 # =============================================================================
