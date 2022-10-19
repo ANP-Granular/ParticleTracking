@@ -50,6 +50,23 @@ def exception_logger(e_type, e_value, e_tb):
     _logger.exception(f"Uncaught exception:\n{tb_str}")
 
 
+def qt_error_handler(mode, context, msg):
+    """Handler for logging uncaught Qt exceptions during the program flow."""
+    if mode == QtCore.QtInfoMsg:
+        _logger.info(f"{msg}")
+    elif mode == QtCore.QtWarningMsg:
+        _logger.warning(f"{msg}")
+    elif mode == QtCore.QtCriticalMsg:
+        _logger.critical(f"{msg}")
+    elif mode == QtCore.QtFatalMsg:
+        _logger.error(f"{msg}")
+    else:
+        _logger.debug(f"{msg}")
+
+
+QtCore.qInstallMessageHandler(qt_error_handler)
+
+
 def open_logs():
     """Opens the log file."""
     if sys.platform == "win32":
