@@ -1039,6 +1039,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """Updates the main data storage in RAM (used for communication
         with threads)."""
         previously_selected = self.current_camera.active_rod
+        if not previously_selected:
+            return
         self.load_rods()
         self.current_camera.rod_activated(previously_selected)
 

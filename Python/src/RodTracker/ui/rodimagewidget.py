@@ -228,6 +228,8 @@ class RodImageWidget(QLabel):
 
     @property
     def active_rod(self):
+        if not self._edits:
+            return None
         for rod in self._edits:
             if rod.rod_state == rn.RodState.SELECTED:
                 return rod.rod_id
