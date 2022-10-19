@@ -102,9 +102,19 @@ def test_save_wo_changes(both_cams: RodTrackWindow, qtbot: QtBot,
 # =============================================================================
 
 
-@pytest.mark.xfail(reason="Not (fully) implemented.")
-def test_open_rod_after_changes():
-    raise NotImplementedError
+@pytest.mark.xpass(reason="Warning not implemented.", strict=True)
+def test_open_rod_after_changes(both_cams: RodTrackWindow, qtbot: QtBot,
+                                monkeypatch: MonkeyPatch,
+                                tmp_path: pathlib.Path):
+    try:
+        both_cams = ga.ChangeRodPosition(12).run(both_cams, qtbot, monkeypatch,
+                                                 tmp_path)
+        # TODO: assert a warning is issued, that usaved changes are available
+        both_cams = ga.OpenData(conftest.csv_data).run(both_cams, qtbot,
+                                                       monkeypatch, tmp_path)
+    finally:
+        # teardown
+        teardown_replacements(monkeypatch)
 # =============================================================================
 # =============================================================================
 
