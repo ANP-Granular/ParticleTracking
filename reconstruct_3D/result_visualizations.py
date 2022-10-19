@@ -1,6 +1,8 @@
 from typing import List
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
+from mpl_toolkits.mplot3d.art3d import Line3D
 
 
 def matching_results(reprojetion_errors: np.ndarray, rod_lengths: np.ndarray):
@@ -87,6 +89,32 @@ def compare_diplacements(data: List[np.ndarray], labels: List[str] = None):
     plt.xlabel("Frame")
     plt.ylabel("Displacement [mm]")
     plt.legend(labels)
+    plt.show()
+
+
+def show_3D(data: np.ndarray):
+
+    f1 = data[0]
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d")
+    rod_lines: List[Line3D] = []
+    for rod in f1:
+        l_curr = ax.plot(*rod, color="blue")
+        rod_lines.append(l_curr)
+
+    ax_frame = fig.add_axes([0.25, 0.1, 0.65, 0.03])
+    sframe = Slider(
+        ax_frame, "Frame", 0, len(data), 0, valstep=list(range(0, len(data))),
+        color="green"
+    )
+
+    def update(val):
+        curr_data = data[val]
+        for line, rod in zip(rod_lines, curr_data):
+            line[0].set_data_3d(*rod)
+        fig.canvas.draw_idle()
+
+    sframe.on_changed(update)
     plt.show()
 
 
