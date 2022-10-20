@@ -92,8 +92,7 @@ def compare_diplacements(data: List[np.ndarray], labels: List[str] = None):
     plt.show()
 
 
-def show_3D(data: np.ndarray):
-
+def show_3D(data: np.ndarray, comparison: np.ndarray = None):
     f1 = data[0]
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
@@ -108,13 +107,42 @@ def show_3D(data: np.ndarray):
         color="green"
     )
 
+    orig_lines: List[Line3D] = []
+    if comparison is not None:
+        for rod in comparison[0]:
+            l_orig = ax.plot(*rod, color="green")
+            orig_lines.append(l_orig)
+
     def update(val):
         curr_data = data[val]
         for line, rod in zip(rod_lines, curr_data):
             line[0].set_data_3d(*rod)
+
+        if comparison is not None:
+            for line, rod in zip(orig_lines, comparison[val]):
+                line[0].set_data_3d(*rod)
+
         fig.canvas.draw_idle()
 
+    def arrow_key_image_control(event):
+        if event.key == 'left':
+            new_val = sframe.val - 1
+            if new_val < 0:
+                return
+            sframe.set_val(new_val)
+        elif event.key == 'right':
+            new_val = sframe.val + 1
+            if new_val >= len(data):
+                return
+            sframe.set_val(new_val)
+        else:
+            pass
+
     sframe.on_changed(update)
+    fig.canvas.mpl_connect('key_press_event', arrow_key_image_control)
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
     plt.show()
 
 
