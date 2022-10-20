@@ -603,6 +603,9 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
             tmp_df = pd.DataFrame(out, columns=data.columns[:out.shape[1]])
             tmp_df["frame"] = idx
             tmp_df["color"] = color
+            if (not rematching) and ("particle" in data.columns):
+                tmp_df["particle"] = data.loc[
+                    data.frame == idx, "particle"].values
             seen_cols = [col for col in data.columns if "seen" in col]
             tmp_df[seen_cols] = 1
             df_out = pd.concat([df_out, tmp_df])
