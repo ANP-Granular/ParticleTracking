@@ -624,18 +624,38 @@ def assign3(input_folder, output_folder, colors, cam1_name="gp1",
                 last_points_tmp = np.concatenate(
                     (last_points_tmp, np.flip(last_points_tmp, axis=1)),
                     axis=1)
+                # last_points_tmp = np.concatenate(
+                #     (last_points_tmp, last_points_tmp),
+                #     axis=1)
+
                 # last_points_tmp: (rod_id, end-combos{ab, ab, ba, ba}, 3D-coordinates) # noqa: E501
                 # a: "start" point, b: "end" point
+
                 p_triang_tmp = np.concatenate((p_triang, p_triang), axis=2)
+                # p_triang_tmp = np.concatenate(
+                #     (p_triang, np.flip(p_triang, axis=1)), axis=2)
+
                 # p_triang: (rod_id(cam1), rod_id(cam2), 2*{end-combo}, 3D-coordinates) # noqa: E501
                 p_triang_tmp = p_triang_tmp.reshape(
                     (len(rods_cam1), len(rods_cam2), -1, 6))
                 last_points_tmp = last_points_tmp.reshape(
                     (len(last_points), -1, 6))
 
+                len_diff = np.linalg.norm(
+                    np.diff(
+                        p_triang_tmp.reshape((*p_triang_tmp.shape[0:3], 2, 3)),
+                        axis=-2
+                    ),
+                    axis=-1)
+                len_diff = np.abs(10-len_diff)
+
                 delta_s = np.asarray(
                     [p_triang_tmp - p for p in last_points_tmp])
+                # delta_s = np.asarray(
+                #     [(p_triang_tmp - p)*len_diff for p in last_points_tmp])
+                delta_s = delta_s.reshape((*delta_s.shape[0:4], 2, 3))
                 delta_s = np.linalg.norm(delta_s, axis=-1)
+                delta_s = np.sum(delta_s, axis=-1)
 
                 weights = delta_s.reshape(
                     (len(last_points), len(rods_cam1), -1))
@@ -653,12 +673,14 @@ def assign3(input_folder, output_folder, colors, cam1_name="gp1",
                 )
                 w_tmp = w_tmp.reshape((len(last_points), len(rods_cam1), -1))
                 weights = weights * w_tmp
+                # weights = weights * len_diff.reshape((12, 48))
 
                 weights = 1/weights
                 rod, cam1_ind, cam2_ind = ap.npartite_matching(
                     weights, maximize=True)
 
-                p_out = p_triang_tmp.reshape((len(rods_cam1), -1, 6))
+                p_out = p_triang_tmp.reshape((len(rods_cam1), -1, 2, 3))
+                out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
                 for idx_r in range(len(rod)):
                     i1 = cam1_ind[idx_r]
                     i2 = cam2_ind[idx_r]
