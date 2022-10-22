@@ -117,7 +117,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     tab_has_changes(bool)
 
     """
-    background_tasks = []
     fileList: List[pathlib.Path] = None
     logger_id: str = "main"
     logger: lg.ActionLogger
@@ -131,6 +130,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.threads = QtCore.QThreadPool()
         self.ui = mw_l.Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -666,11 +666,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                             max_row += 1
 
                 # Display as a tree
-                thread, worker = pl.run_in_thread(
-                    d_ops.extract_seen_information, {})
-                worker.finished.connect(self.setup_tree)
-                self.background_tasks.append((thread, worker))
-                thread.start()
+                worker = pl.Worker(d_ops.extract_seen_information)
+                worker.signals.result.connect(self.setup_tree)
+                self.threads.start(worker)
 
                 # Rod position data was selected correctly
                 self.ui.le_rod_dir.setText(str(self.original_data.parent))
@@ -1014,11 +1012,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if new_data is None:
             return
 
-        thread, worker = pl.run_in_thread(d_ops.change_data,
-                                          {"new_data": new_data})
-        worker.finished.connect(self.update_changed_data)
-        self.background_tasks.append((thread, worker))
-        thread.start()
+        worker = pl.Worker(d_ops.change_data, new_data=new_data)
+        worker.signals.result.connect(self.update_changed_data)
+        self.threads.start(worker)
 
         if isinstance(new_data["frame"], Iterable):
             for i in range(len(new_data["frame"])):
@@ -1205,13 +1201,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             frame = self.logger.frame
         if cam_id is None:
             cam_id = self.current_camera.cam_id
-        thread, worker = pl.run_in_thread(d_ops.rod_number_swap,
-                                          {"mode": mode, "previous_id": old_id,
-                                           "new_id": new_id, "color": color,
-                                           "frame": frame, "cam_id": cam_id})
-        worker.finished.connect(self.update_changed_data)
-        self.background_tasks.append((thread, worker))
-        thread.start()
+
+        worker = pl.Worker(d_ops.rod_number_swap, mode=mode,
+                           previous_id=old_id, new_id=new_id, color=color,
+                           frame=frame, cam_id=cam_id)
+        worker.signals.result.connect(self.update_changed_data)
+        self.threads.start(worker)
 
         if log:
             self.current_camera.logger.add_action(
@@ -1444,11 +1439,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         len(delete_idx))
                     self.logger.add_action(performed_action)
                     # Update rods and tree display
-                    thread, worker = pl.run_in_thread(
-                        d_ops.extract_seen_information, {})
-                    worker.finished.connect(self.setup_tree)
-                    self.background_tasks.append((thread, worker))
-                    thread.start()
+                    worker = pl.Worker(d_ops.extract_seen_information)
+                    worker.signals.result.connect(self.setup_tree)
+                    self.threads.start(worker)
+
                     self.load_rods()
                 else:
                     lg._logger.info("No rods confirmed for permanent "
