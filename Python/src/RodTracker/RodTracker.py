@@ -14,14 +14,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import pathlib
 import sys
 import inspect
 
-currentdir = os.path.dirname(os.path.abspath(
-    inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
+currentdir = pathlib.Path(
+    inspect.getfile(inspect.currentframe())).resolve().parent
+parentdir = currentdir.parent
+sys.path.insert(0, str(parentdir))
 
 from PyQt5 import QtWidgets                                     # noqa: E402
 import RodTracker.backend.logger as lg                          # noqa: E402
@@ -41,8 +41,8 @@ except ModuleNotFoundError:
 def main():
     if HAS_SPLASH:
         pyi_splash.update_text("Updating environment...")
-    if not os.path.exists(lg.TEMP_DIR):
-        os.mkdir(lg.TEMP_DIR)
+    if not lg.TEMP_DIR.exists():
+        lg.TEMP_DIR.mkdir()
     if HAS_SPLASH:
         pyi_splash.update_text("Loading UI...")
 

@@ -16,6 +16,7 @@
 
 import os
 import shutil
+import pathlib
 import platform
 from typing import Iterable, List
 
@@ -60,9 +61,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         The currently selected/displayed image display object. This is
         automatically updated when the user switches between the different
         tabs.
-    view_filelists : List[List[str]]
+    view_filelists : List[List[pathlib.Path]]
         A list of all selected image files for all camera views.
-    fileList : List[str]
+    fileList : List[pathlib.Path]
         A list of all selected image files for the `current_camera` view.
     file_ids : List[List[int]]
         A list of all selected image/frame numbers for all camera views.
@@ -114,7 +115,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     """
     background_tasks = []
-    fileList: List[str] = None
+    fileList: List[pathlib.Path] = None
     logger_id: str = "main"
     logger: lg.ActionLogger
     request_undo = QtCore.pyqtSignal(str, name="request_undo")
@@ -172,7 +173,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.setPixmap(QtGui.QPixmap(fl.icon_path()))
 
         self.original_data = None   # Holds the original data directory
-        self.data_files = self.ui.lv_actions_list.temp_manager.name
+        self.data_files = pathlib.Path(
+            self.ui.lv_actions_list.temp_manager.name)
         self.data_file_name = 'rods_df_{:s}.csv'
         self.last_color = None
         self.rod_info = None
@@ -450,9 +452,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                                      ui_dir,
                                                      'Images (*.png *.jpeg '
                                                      '*.jpg)', **kwargs)
+        chosen_file = pathlib.Path(chosen_file).resolve()
         self.open_image_folder(chosen_file)
 
-    def open_image_folder(self, chosen_file: str):
+    def open_image_folder(self, chosen_file: pathlib.Path):
         """Tries to open an image folder to show the given image.
 
         All images of the folder from the chosen file's folder are marked for 
@@ -464,17 +467,16 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        file_name = os.path.split(chosen_file)[-1]
-        file_name = os.path.splitext(file_name)[0]
+        file_name = chosen_file.stem
         if chosen_file:
             # open file as image
-            loaded_image = QImage(chosen_file)
+            loaded_image = QImage(str(chosen_file))
             if loaded_image.isNull():
                 QMessageBox.information(self, "Image Viewer",
                                         "Cannot load %s." % chosen_file)
                 return
             # Directory
-            read_dir = os.path.dirname(chosen_file)
+            read_dir = chosen_file.parent
             self.fileList, self.current_file_ids = f_ops.get_images(read_dir)
             self.current_file_index = self.current_file_ids.index(
                 int(file_name))
@@ -488,7 +490,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 loaded_image
 
             # Get camera id for data display
-            self.current_camera.cam_id = chosen_file.split("/")[-2]
+            self.current_camera.cam_id = chosen_file.parent.name
             curr_idx = self.ui.camera_tabs.currentIndex()
             tab_text = self.ui.camera_tabs.tabText(curr_idx)
             front_text = tab_text.split("(")[0]
@@ -498,7 +500,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.camera_tabs.setTabText(curr_idx, new_text)
 
             self.fit_to_window()
-            self.ui.le_image_dir.setText(read_dir)
+            self.ui.le_image_dir.setText(str(read_dir))
             if self.original_data is not None:
                 self.show_overlay()
 
@@ -546,14 +548,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         try_again = True
         while try_again:
             old_original_data = self.original_data
+            # self.original_data = QFileDialog.getExistingDirectory(
+            #     self, 'Choose Folder with position data', ui_dir) + '/'
             self.original_data = QFileDialog.getExistingDirectory(
-                self, 'Choose Folder with position data', ui_dir) + '/'
-            if self.original_data == '/':
+                self, 'Choose Folder with position data', ui_dir)
+            if self.original_data == '':
                 if old_original_data is None:
                     self.original_data = None
                 else:
                     self.original_data = old_original_data
                 return
+            self.original_data = pathlib.Path(self.original_data).resolve()
             try_again = self.open_rod_folder()
 
     def open_rod_folder(self) -> bool:
@@ -571,8 +576,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """
         if self.original_data is not None:
             # delete old stored files
-            for file in os.listdir(self.data_files):
-                os.remove(self.data_files + "/" + file)
+            for file in self.data_files.iterdir():
+                file.unlink()   # deletes the file
             d_ops.lock.lockForWrite()
             d_ops.rod_data = None
             d_ops.lock.unlock()
@@ -604,7 +609,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             else:
                 self._allow_overwrite = False
                 # Check whether there is already corrected data
-                out_folder = self.original_data[:-1] + "_corrected"
+                out_folder = self.original_data.stem + "_corrected"
+                out_folder = self.original_data.parent / out_folder
                 corrected_files = f_ops.folder_has_data(out_folder)
                 if corrected_files:
                     msg = QMessageBox()
@@ -661,9 +667,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 thread.start()
 
                 # Rod position data was selected correctly
-                self.ui.le_rod_dir.setText(self.original_data[:-1])
-                self.ui.le_save_dir.setText(out_folder)
-                this_action = lg.FileAction(self.original_data[:-1],
+                self.ui.le_rod_dir.setText(str(self.original_data.parent))
+                self.ui.le_save_dir.setText(str(out_folder))
+                this_action = lg.FileAction(self.original_data.parent,
                                             lg.FileActions.LOAD_RODS)
                 this_action.parent_id = self.logger_id
                 self.ui.lv_actions_list.add_action(
@@ -738,9 +744,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             return
         if self.current_camera.image is None:
             return
-        file_name = (self.fileList[self.current_file_index])
-        file_name = os.path.split(file_name)[-1]
-        file_name = file_name[1:4]
+        file_name = self.fileList[self.current_file_index].stem
         color = self.get_selected_color()
         new_rods = d_ops.extract_rods(self.current_camera.cam_id,
                                       int(file_name), color)
@@ -844,11 +848,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             try:
                 self.current_file_index += direction
                 # Chooses next image with specified extension
-                filename = (self.fileList[self.current_file_index])
-                file_name = os.path.split(filename)[-1]
-                file_name = os.path.splitext(file_name)[0]
+                filename = self.fileList[self.current_file_index]
+                file_name = filename.stem
                 # Create Pixmap operator to display image
-                image_next = QImage(filename)
+                image_next = QImage(str(filename))
                 if image_next.isNull():
                     # The file is not a valid image, remove it from the list
                     # and try to load the next one
@@ -1068,8 +1071,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         d_ops.lock.lockForRead()
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             color = rb.objectName()[3:]
-            tmp_file = self.data_files + "/" + self.data_file_name.format(
-                color)
+            tmp_file = self.data_files / self.data_file_name.format(color)
             df_current = d_ops.rod_data.loc[
                 d_ops.rod_data.color == color].copy()
             df_current = df_current.astype({"frame": 'int', "particle": 'int'})
@@ -1094,13 +1096,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             msg.exec()
             if msg.clickedButton() == btn_cancel:
                 return
+        save_dir = pathlib.Path(save_dir)
+        if not save_dir.exists():
+            save_dir.mkdir()
 
-        if not os.path.exists(save_dir):
-            os.mkdir(save_dir)
-
-        for file in os.listdir(self.data_files):
-            shutil.copy2(self.data_files + "/" + file, save_dir + "/" + file)
-            save_file = save_dir + "/" + file
+        for file in self.data_files.iterdir():
+            save_file = save_dir / file.name
+            shutil.copy2(file, save_file)
             this_action = lg.FileAction(save_file, lg.FileActions.SAVE)
             this_action.parent_id = self.logger_id
             self.ui.lv_actions_list.add_action(this_action)
@@ -1286,10 +1288,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Loads a new image, if necessary
         self.show_next(index_diff)
         try:
-            new_path = os.path.split(self.fileList[0])[0]
+            new_path = self.fileList[0].parent
         except IndexError:
             new_path = ""
-        self.ui.le_image_dir.setText(new_path)
+        self.ui.le_image_dir.setText(str(new_path))
 
         if self.ui.cb_overlay.isChecked():
             # ensure that rods are loaded

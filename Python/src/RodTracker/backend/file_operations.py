@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import pathlib
 import re
 from typing import Tuple, List
 import shutil
@@ -23,7 +23,7 @@ import pandas as pd
 COLOR_DATA_REGEX = re.compile('rods_df_\w+\.csv')               # noqa: W605
 
 
-def get_images(read_dir: str) -> Tuple[List[str], List[int]]:
+def get_images(read_dir: pathlib.Path) -> Tuple[List[pathlib.Path], List[int]]:
     """Reads image files from a directory.
 
     Checks all files for naming convention according to the selected file
@@ -43,18 +43,15 @@ def get_images(read_dir: str) -> Tuple[List[str], List[int]]:
 
     files = []
     file_ids = []
-    for idx, f in enumerate(os.listdir(read_dir)):
-        f_id = os.path.splitext(f)[0]
-        fpath = os.path.join(read_dir, f)
-        if os.path.isfile(fpath) and f.endswith(('.png', '.jpg',
-                                                 '.jpeg')):
+    for f in read_dir.iterdir():
+        if f.is_file() and f.suffix in ['.png', '.jpg', '.jpeg']:
             # Add all image files to a list
-            files.append(fpath)
-            file_ids.append(int(f_id))
+            files.append(f)
+            file_ids.append(int(f.stem))
     return files, file_ids
 
 
-def get_color_data(read_dir: str, write_dir: str) -> \
+def get_color_data(read_dir: pathlib.Path, write_dir: pathlib.Path) -> \
         Tuple[pd.DataFrame, List[str]]:
     """Reads rod data files from a directory.
 
@@ -76,16 +73,14 @@ def get_color_data(read_dir: str, write_dir: str) -> \
     """
     found_colors = []
     dataset = None
-    for file in os.listdir(read_dir):
-        whole_path = os.path.join(read_dir, file)
-        if not os.path.isfile(whole_path):
+    for src_file in read_dir.iterdir():
+        if not src_file.is_file():
             continue
-        if re.fullmatch(COLOR_DATA_REGEX, file) is not None:
-            found_color = os.path.splitext(file)[0].split("_")[-1]
+        if re.fullmatch(COLOR_DATA_REGEX, src_file.name) is not None:
+            found_color = src_file.stem.split("_")[-1]
             found_colors.append(found_color)
             # Copy file to temporary storage
-            src_file = os.path.join(read_dir, file)
-            dst_file = os.path.join(write_dir, file)
+            dst_file = write_dir / src_file.name
             shutil.copy2(src=src_file, dst=dst_file)
 
             data_chunk = pd.read_csv(src_file, index_col=0)
@@ -97,7 +92,7 @@ def get_color_data(read_dir: str, write_dir: str) -> \
     return dataset, found_colors
 
 
-def folder_has_data(path) -> bool:
+def folder_has_data(path: pathlib.Path) -> bool:
     """Checks a folder for file(s) that match the rod position data naming.
 
     Parameters
@@ -117,14 +112,13 @@ def folder_has_data(path) -> bool:
     NotADirectoryError
         Is raised if the given path exists but is not a directory.
     """
-    if not os.path.exists(path):
+    if not path.exists():
         return False
-    if not os.path.isdir(path):
+    if not path.is_dir():
         raise NotADirectoryError
-    for file in os.listdir(path):
-        whole_path = os.path.join(path, file)
-        if not os.path.isfile(whole_path):
+    for file in path.iterdir():
+        if not file.is_file():
             continue
-        if re.fullmatch(COLOR_DATA_REGEX, file) is not None:
+        if re.fullmatch(COLOR_DATA_REGEX, file.name) is not None:
             return True
     return False

@@ -23,9 +23,9 @@ import RodTracker.backend.logger as lg
 
 class Configuration(QtCore.QObject):
     """Generic class that shall hold configurations/settings."""
-    _default: dict
-    _contents: dict
-    path: str = lg.TEMP_DIR + "/configurations.json"
+    _default: dict = {}
+    _contents: dict = {}
+    path: str = str(lg.TEMP_DIR / "configurations.json")
 
     def read(self, path: str = None):
         """Reads configurations from a file and saves them in this object.
@@ -116,7 +116,7 @@ class Settings(Configuration):
     -------
     settings_changed(dict)
     """
-    path = lg.TEMP_DIR + "/settings.json"
+    path = str(lg.TEMP_DIR / "settings.json")
     _default = {
         "visual": {
             "rod_thickness": 3,

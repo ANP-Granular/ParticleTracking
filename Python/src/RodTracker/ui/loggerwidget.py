@@ -65,7 +65,7 @@ class LoggerWidget(QtWidgets.QListWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.temp_manager = tempfile.TemporaryDirectory(
-            prefix="Session_", dir=lg.TEMP_DIR)
+            prefix="Session_", dir=str(lg.TEMP_DIR))
         lg._logger.info(self.temp_manager.name)
 
     @property

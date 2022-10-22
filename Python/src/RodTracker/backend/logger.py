@@ -16,6 +16,7 @@
 
 import os
 import logging
+import pathlib
 import sys
 import subprocess
 import tempfile
@@ -27,10 +28,10 @@ from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
 import RodTracker.ui.rodnumberwidget as rn
 
-TEMP_DIR = tempfile.gettempdir() + "/RodTracker"
-if not os.path.exists(TEMP_DIR):
-    os.mkdir(TEMP_DIR)
-LOG_PATH = f"{TEMP_DIR}/RodTracker.log"
+TEMP_DIR: pathlib.Path = pathlib.Path(tempfile.gettempdir()) / "RodTracker"
+if not TEMP_DIR.exists():
+    TEMP_DIR.mkdir()
+LOG_PATH = TEMP_DIR / "RodTracker.log"
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
 f_handle = logging.FileHandler(LOG_PATH, mode="a")
@@ -169,7 +170,7 @@ class FileAction(Action):
 
     action: FileActions
 
-    def __init__(self, path: str, action: FileActions, file_num=None,
+    def __init__(self, path: pathlib.Path, action: FileActions, file_num=None,
                  cam_id=None, parent_id: str = None, *args, **kwargs):
 
         self._parent_id = parent_id
