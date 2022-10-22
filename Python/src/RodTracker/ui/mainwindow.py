@@ -104,6 +104,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         Is emitted when the user wants to redo a previously reverted action.
         The payload is the ID of the widget on which the last action shall
         be redone.
+    saving_finished()
+        Is emitted after saving to trigger all loggers to reset their list of
+        unsaved actions.
 
     Slots
     -----
@@ -120,6 +123,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     logger: lg.ActionLogger
     request_undo = QtCore.pyqtSignal(str, name="request_undo")
     request_redo = QtCore.pyqtSignal(str, name="request_redo")
+    saving_finished = QtCore.pyqtSignal()
     _current_file_ids: list = []
     _CurrentFileIndex: int = 0
     _allow_overwrite: bool = False
@@ -207,6 +211,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Saving
         self.ui.pb_save_rods.clicked.connect(self.save_changes)
         self.ui.action_save.triggered.connect(self.save_changes)
+        self.saving_finished.connect(self.logger.actions_saved)
 
         # Undo/Redo
         self.ui.action_revert.triggered.connect(self.requesting_undo)
@@ -259,6 +264,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.logger.notify_unsaved.connect(self.tab_has_changes)
             cam.logger.request_saving.connect(self.save_changes)
             cam.logger.data_changed.connect(self.catch_data)
+            self.saving_finished.connect(cam.logger.actions_saved)
             cam.request_new_rod.connect(self.create_new_rod)
             cam.number_switches[lg.NumberChangeActions, int, int].connect(
                 self.catch_number_switch)
@@ -1107,9 +1113,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             this_action.parent_id = self.logger_id
             self.ui.lv_actions_list.add_action(this_action)
         # notify loggers that everything was saved
-        self.logger.actions_saved()
-        for cam in self.cameras:
-            cam.logger.actions_saved()
+        self.saving_finished.emit()
 
     @staticmethod
     def warning_unsaved() -> bool:
