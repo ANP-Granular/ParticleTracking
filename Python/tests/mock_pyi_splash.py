@@ -1,0 +1,6 @@
+def update_text(text: str):
+    ...
+
+
+def close():
+    ...
