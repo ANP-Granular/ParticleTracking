@@ -2,7 +2,6 @@ import os
 import sys
 import logging
 from typing import List
-import numpy as np
 import pandas as pd
 
 _logger = logging.getLogger(__name__)
@@ -29,15 +28,15 @@ def csv_extract_colors(input_file: str) -> List[str]:
     """Extract the rod position data into one file per color.
 
     This functions saves a new file for each color that is present in the given
-    data. The original file name is thereby extended by the name of the 
+    data. The original file name is thereby extended by the name of the
     respective color, i.e. "old_name_foundcolor.csv"
 
     Parameters
     ----------
     input_file : str
-        *.csv file that contains rod position data for multiple colors, i.e. 
+        *.csv file that contains rod position data for multiple colors, i.e.
         has a column "color".
-    
+
     Returns
     -------
     List[str]
@@ -49,8 +48,9 @@ def csv_extract_colors(input_file: str) -> List[str]:
     written = []
     for color in colors:
         new_file = file_base + f"_{color}.csv"
-        colored_data = data_main.loc[data_main.color==color]
+        colored_data = data_main.loc[data_main.color == color]
         colored_data.reset_index(drop=True, inplace=True)
+        colored_data = colored_data.astype({"frame": 'int', "particle": 'int'})
         colored_data.to_csv(new_file, sep=",")
         written.append(new_file)
     return written
@@ -60,7 +60,7 @@ def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
         -> str:
     """Concatenates multiple *.csv files to a single one.
 
-    The given input files are combined into a single one. The function does not 
+    The given input files are combined into a single one. The function does not
     distinguish what data it is given and might fail, if it is not rod position
     data in all given files. The function does NOT check for duplicates.
 
@@ -69,11 +69,11 @@ def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
     input_files : List[str]
         *.csv files that contains rod position data.
     output_file : str, optional
-        Path to the output file. If this is just a file name without a path, 
-        the parent directory of the first input file is taken as the intended 
+        Path to the output file. If this is just a file name without a path,
+        the parent directory of the first input file is taken as the intended
         file location.
         By default "rods_df.csv"
-    
+
     Returns
     -------
     str
@@ -91,7 +91,7 @@ def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
     if len(combined) > 0:
         if not os.path.dirname(output_file):
             output_file = os.path.join(os.path.dirname(input_files[0]),
-                                        output_file)
+                                       output_file)
         combined.reset_index(drop=True, inplace=True)
         combined.to_csv(output_file, sep=",")
         written = output_file
@@ -101,11 +101,11 @@ def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
 def csv_split_by_frames(input_file: str, cut_frames: List[int]) -> List[str]:
     """Splits the rod data at the given frames.
 
-    Splits the given *.csv file into individual files at the given frame 
+    Splits the given *.csv file into individual files at the given frame
     numbers.
     Example:
     The data has frames from 0 to 33.
-    cut_frames = [15, 20, 25] -> out_0_14.csv, out_15_19.csv, out_20_24.csv, 
+    cut_frames = [15, 20, 25] -> out_0_14.csv, out_15_19.csv, out_20_24.csv,
                                  out_25_33.csv
 
     Parameters
@@ -120,7 +120,7 @@ def csv_split_by_frames(input_file: str, cut_frames: List[int]) -> List[str]:
     Returns
     -------
     List[str]
-        List of paths to the written files. This list is empty, if no files 
+        List of paths to the written files. This list is empty, if no files
         were written.
     """
     written = []

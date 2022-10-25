@@ -1,5 +1,5 @@
 """
-Script to run inference with a trained network and save the results for further 
+Script to run inference with a trained network and save the results for further
 computations.
 
 Author:     Adrian Niemann (adrian.niemann@ovgu.de)
@@ -25,6 +25,7 @@ from detectron2.config import CfgNode
 # import custom code
 import utils.datasets as ds
 import utils.helper_funcs as hf
+import utils.data_conversions as d_conv
 from runners import visualization
 
 _logger = logging.getLogger(__name__)
@@ -50,28 +51,28 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
                   threshold: float = 0.5, **kwargs) -> list:
     """Runs inference on a given set of images and can visualize the output.
 
-    In addition to running inference this script also generates rod enpoints 
+    In addition to running inference this script also generates rod enpoints
     from the generated masks, if the network predicted these.
 
     Parameters
     ----------
     dataset : Union[ds.DataSet, List[str]]
-        Either a DataSet already registered to the Detectron2 framework or a 
+        Either a DataSet already registered to the Detectron2 framework or a
         list of paths to image files intended for running inference on.
     configuration : Union[CfgNode, str]
-        Configuration for the Detectron2 model and inferences settings given as 
-        a CfgNode or path to a *.yaml file in the Detectron2 configuration 
+        Configuration for the Detectron2 model and inferences settings given as
+        a CfgNode or path to a *.yaml file in the Detectron2 configuration
         format.
     weights : str, optional
-        Path to a *.pkl model file. Is optional, if the weights are already 
+        Path to a *.pkl model file. Is optional, if the weights are already
         given in the configuration.
     classes : dict, optional
-        Dictionary of classes detectable by the model with 
+        Dictionary of classes detectable by the model with
         {key}  ->  Index of class in the model
         {value} ->  Name of the class
         By default None.
     output_dir : str, optional
-        Path to the intended output directory. It's parent directory must exist 
+        Path to the intended output directory. It's parent directory must exist
         prior to running this function.
         By default "./".
     log_name : str, optional
@@ -81,10 +82,10 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
         Flag for allowing visualization.
         By default True.
     vis_random_samples : int, optional
-        Specifies the number of randomly chosen visualized samples when 
+        Specifies the number of randomly chosen visualized samples when
         `visualize` is True.
         -1      ->  All images are viszalized.
-        n > 0   ->  Chooses n images of the given set to be visualized after 
+        n > 0   ->  Chooses n images of the given set to be visualized after
                     inference.
         By default -1.
     threshold : float, optional
@@ -93,7 +94,7 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
     **kwargs
         Keyword arguments for `visualization.visualize()`, except for
         `prediction`, `original`, and `output_dir`.
-    
+
     Returns
     -------
     list
@@ -108,12 +109,13 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
         cfg = configuration
     if weights is not None:
         cfg.MODEL.WEIGHTS = os.path.abspath(weights)
-    cfg.MODEL.DEVICE = "cpu"  # to run predictions/visualizations while gpu in use
+    cfg.MODEL.DEVICE = "cpu"  # to run predictions while gpu in use
     hf.write_configs(cfg, output_dir)
 
     predictor = DefaultPredictor(cfg)
     if classes is None:
-        classes = {i: str(i) for i in range(0, cfg.MODEL.ROI_HEADS.NUM_CLASSES)}
+        classes = {i: str(i)
+                   for i in range(0, cfg.MODEL.ROI_HEADS.NUM_CLASSES)}
     # Handling the ds.DataSet, List[str] ambiguity
     if isinstance(dataset, ds.DataSet):
         dataset = ds.load_custom_data(dataset)
@@ -157,33 +159,33 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
         if "pred_masks" in outputs["instances"].get_fields():
             _logger.info("Starting endpoint computation ...")
             points = hf.rod_endpoints(outputs, classes)
-            save_to_mat(os.path.join(output_dir, os.path.basename(file)), 
+            save_to_mat(os.path.join(output_dir, os.path.basename(file)),
                         points)
         _logger.info(f"Done with: {os.path.basename(file)}")
-    
+
     return predictions
 
 
 def run_detection_csv(dataset_format: str,
-                  configuration: Union[CfgNode, str],
-                  weights: str = None, classes: dict = None,
-                  output_dir: str = "./", log_name: str = "detection.log",
-                  threshold: float = 0.5,
-                  frames: List[int] = [], cam1_name: str = "gp1", 
-                  cam2_name: str = "gp2"):
+                      configuration: Union[CfgNode, str],
+                      weights: str = None, classes: dict = None,
+                      output_dir: str = "./", log_name: str = "detection.log",
+                      threshold: float = 0.5,
+                      frames: List[int] = [], cam1_name: str = "gp1",
+                      cam2_name: str = "gp2"):
     """Runs inference on a given set of images and saves the output to a .csv.
 
-    This function runs a rod detection on images and generates rod enpoints 
-    from the generated masks, if the network predicted these. Finally, these 
+    This function runs a rod detection on images and generates rod enpoints
+    from the generated masks, if the network predicted these. Finally, these
     endpoints are saved to a single `rods_df.csv` file in the specified output
     folder.
 
     Parameters
     ----------
     dataset_format : str
-        String that can be formatted to specify the file locations of images, 
+        String that can be formatted to specify the file locations of images,
         that shall be used for inference.
-        For this the string must contain a `frame` and a `cam_id` field that 
+        For this the string must contain a `frame` and a `cam_id` field that
         can be formatted.
         Example:
         `"my/dataset/path/{cam_id:s}/experiment_{frame:05d}.png"`
@@ -203,12 +205,12 @@ def run_detection_csv(dataset_format: str,
         A list of frames, that shall be used for rod detection.
         By default [].
     cam1_name : str, optional
-        The name/ID of the first camera in the experiment. This name will be 
+        The name/ID of the first camera in the experiment. This name will be
         used for image discovery (see `dataset_format`) and naming of the
         output *.csv file's columns.
         By default "gp1".
     cam2_name : str, optional
-        The name/ID of the second camera in the experiment. This name will be 
+        The name/ID of the second camera in the experiment. This name will be
         used for image discovery (see `dataset_format`) and naming of the
         output *.csv file's columns.
         By default "gp2".
@@ -218,7 +220,7 @@ def run_detection_csv(dataset_format: str,
     list
         Prediction for each image inference was run on.
     """
-    
+
     setup_logger(os.path.join(output_dir, log_name))
     # Configuration
     if isinstance(configuration, str):
@@ -227,21 +229,23 @@ def run_detection_csv(dataset_format: str,
         cfg = configuration
     if weights is not None:
         cfg.MODEL.WEIGHTS = os.path.abspath(weights)
-    cfg.MODEL.DEVICE = "cpu"  # to run predictions/visualizations while gpu in use
+    cfg.MODEL.DEVICE = "cpu"  # to run predictions while gpu in use
     hf.write_configs(cfg, output_dir)
 
     predictor = DefaultPredictor(cfg)
     if classes is None:
-        classes = {i: str(i) for i in range(0, cfg.MODEL.ROI_HEADS.NUM_CLASSES)}
+        classes = {i: str(i)
+                   for i in range(0, cfg.MODEL.ROI_HEADS.NUM_CLASSES)}
 
-    _logger.info(f"Starting rod detection ...")
+    _logger.info("Starting rod detection ...")
     predictions = []
     files = []
-    cols = [col.format(id1=cam1_name, id2=cam2_name) for col in ds.DEFAULT_COLUMNS]
+    cols = [col.format(id1=cam1_name, id2=cam2_name)
+            for col in ds.DEFAULT_COLUMNS]
     cols.append("color")
     data = pd.DataFrame(columns=cols)
     for frame in frames:
-        frame_data = {color: [] for color in classes}
+        frame_data = {color: [] for color in classes}           # noqa: F841
         for cam in [cam1_name, cam2_name]:
             file = dataset_format.format(frame=frame, cam_id=cam)
             _logger.info(f"Inference on: {file}")
@@ -253,7 +257,7 @@ def run_detection_csv(dataset_format: str,
             # Accumulate results
             predictions.append(outputs)
             files.append(os.path.basename(file))
-            
+
             # Prepare outputs for saving
             if "pred_masks" in outputs["instances"].get_fields():
                 _logger.info("Starting endpoint computation ...")
@@ -262,23 +266,26 @@ def run_detection_csv(dataset_format: str,
             _logger.info(f"Done with: {os.path.basename(file)}")
     # Save rod data
     if len(data) > 0:
-        data.to_csv(os.path.join(output_dir, "rods_df.csv"), ",")    
+        current_output = os.path.join(output_dir, "rods_df.csv")
+        data.reset_index(drop=True, inplace=True)
+        data.to_csv(current_output, ",")
+        d_conv.csv_extract_colors(current_output)
     return predictions
 
 
-def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame, 
+def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
                cam_id: str, frame: int):
     """Updates a dataframe with new rod endpoint data for one camera and frame.
 
     Parameters
     ----------
     points : Dict[str, np.ndarray]
-        Rod endpoints in the format obtained from 
+        Rod endpoints in the format obtained from
         `utils.helper_funcs.rod_endpoints`.
     data : pd.DataFrame
         Dataframe for the rods to be saved in.
     cam_id : str
-        ID/Name of the camera, that produced the image the rod endpoints were 
+        ID/Name of the camera, that produced the image the rod endpoints were
         computed on.
     frame : int
         Frame number in the dataset.
@@ -299,17 +306,23 @@ def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
         if len(data.loc[(data.frame == frame) & (data.color == color)]) == 0:
             temp_df["frame"] = frame
             temp_df["color"] = color
+            temp_df["particle"] = np.arange(0, len(temp_df), dtype=int)
             data = pd.concat((data, temp_df))
         else:
-            previous_data = data.loc[(data.frame == frame) & (data.color == color)]
-            new_data = data.loc[(data.frame == frame) & (data.color == color)].fillna(temp_df)
+            previous_data = data.loc[
+                (data.frame == frame) & (data.color == color)]
+            new_data = data.loc[
+                (data.frame == frame) & (data.color == color)].fillna(temp_df)
             data.loc[(data.frame == frame) & (data.color == color)] = new_data
             if len(previous_data) < len(temp_df):
                 temp_df["frame"] = frame
                 temp_df["color"] = color
+                temp_df["particle"] = np.arange(0, len(temp_df), dtype=int)
                 idx_to_add = np.arange(len(previous_data), len(temp_df))
                 data = pd.concat((data, temp_df.iloc[idx_to_add]))
+    data = data.astype({"frame": 'int', "particle": 'int'})
     return data
+
 
 def save_to_mat(file_name: str, points: dict):
     """Saves rod endpoints of one image to be used in MATLAB for 3D matching.
@@ -317,10 +330,10 @@ def save_to_mat(file_name: str, points: dict):
     Parameters
     ----------
     file_name : str
-        Output file name, that will be extended by the colors present in 
+        Output file name, that will be extended by the colors present in
         `points`.
     points : dict
-        Rod endpoint data in the output format of 
+        Rod endpoint data in the output format of
         `helper_funcs.rod_endpoints()`.
     """
     for idx, vals in points.items():
