@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from mpl_toolkits.mplot3d.art3d import Line3D
+import matplotlib.animation as animation
 
 
 def matching_results(reprojetion_errors: np.ndarray, rod_lengths: np.ndarray):
@@ -71,6 +72,7 @@ def displacement_fwise(data_3d: np.ndarray):
 
 def compare_diplacements(data: List[np.ndarray], labels: List[str] = None):
     plt.figure()
+    frames = len(data[0])
     for data_3d in data:
         combo1 = np.linalg.norm(
             np.diff(data_3d, axis=0).squeeze(), axis=2).squeeze()
@@ -85,7 +87,8 @@ def compare_diplacements(data: List[np.ndarray], labels: List[str] = None):
         plt.plot(np.mean(min_disp, axis=-1), alpha=0.5)
     # plt.yscale("log")
     # plt.xscale("log")
-    # plt.ylim((0, 50))
+    plt.ylim((0, 25))
+    plt.xlim((0, frames))
     plt.xlabel("Frame")
     plt.ylabel("Displacement [mm]")
     plt.legend(labels)
@@ -114,6 +117,7 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None):
             orig_lines.append(l_orig)
 
     def update(val):
+        ax.set_title(f"Frame: {val}")
         curr_data = data[val]
         for line, rod in zip(rod_lines, curr_data):
             line[0].set_data_3d(*rod)
@@ -143,6 +147,43 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None):
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
+    plt.show()
+
+
+def animate_3D(data: np.ndarray, comparison: np.ndarray = None):
+    f1 = data[0]
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d")
+
+    def update_lines(num, walks, lines, orig_lines):
+        ax.set_title(f"Frame: {num}")
+        rods = walks[num]
+        if orig_lines is not None:
+            rods_orig = comparison[num]
+            for line, orig_line, rod, rod_orig in \
+                    zip(lines, orig_lines, rods, rods_orig):
+                line.set_data_3d(*rod)
+                orig_line.set_data_3d(*rod_orig)
+
+        for line, rod in zip(lines, rods):
+            line.set_data_3d(*rod)
+        return lines
+
+    # Create lines initially without data
+    lines = [ax.plot([], [], [], color="blue")[0] for _ in f1]
+    orig_lines = None
+    if comparison is not None:
+        orig_lines = [ax.plot([], [], [], color="green")[0] for _ in f1]
+
+    # Setting the axes properties
+    ax.set(xlim3d=(data[:, :, 0, :].min(), data[:, :, 0, :].max()), xlabel='X')
+    ax.set(ylim3d=(data[:, :, 1, :].min(), data[:, :, 1, :].max()), ylabel='Y')
+    ax.set(zlim3d=(data[:, :, 2, :].min(), data[:, :, 2, :].max()), zlabel='Z')
+
+    # Creating the Animation object
+    anim = animation.FuncAnimation(                             # noqa: F841
+        fig, update_lines, len(data), fargs=(data, lines, orig_lines),
+        interval=50)
     plt.show()
 
 
