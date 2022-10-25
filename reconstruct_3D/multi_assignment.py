@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation as R
 from scipy.optimize import linear_sum_assignment
+from tqdm import tqdm
 
 import reconstruct_3D.data_loading as dl
 from thirdparty import ap
@@ -119,13 +120,18 @@ def create_weights_2(p_3D: np.ndarray, p_3D_prev: np.ndarray,
         Dimension explanations:
         (rod_id, end-combo, err{cam1, cam2})
     """
-    rods1, rods2 = p_3D.shape[0:2]
-    rods_prev = p_3D_prev.shape[0]
-
-    weights = create_weights_0(p_3D, p_3D_prev)
-
-    # TODO: implement
-    raise NotImplementedError
+    weights = create_weights_1(p_3D, p_3D_prev, repr_errs, repr_errs_prev)
+    p_3D = np.concatenate((p_3D, p_3D), axis=2)
+    len_diff = np.linalg.norm(
+        np.diff(
+            p_3D.reshape((*p_3D.shape[0:2], -1, 2, 3)),
+            axis=-2
+        ),
+        axis=-1)
+    len_diff = np.abs(10-len_diff)
+    # FIXME: remove hard-coded shape
+    # weights = weights * (1 / len_diff.reshape(12, 48))
+    weights = weights * len_diff.reshape(12, 48)
 
     return weights
 
@@ -1138,8 +1144,6 @@ def assign4(input_folder, output_folder, colors, cam1_name="gp1",
                 # weights = delta_s.reshape(
                 #     (len(last_points), len(rods_cam1), -1))
 
-                # TODO: EVAL
-                # weights = np.concatenate([delta_s, delta_s, delta_s], axis=-1)
                 weights = np.concatenate(12*[delta_s, ], axis=-1)
 
                 costs = np.sum(rep_errs, axis=-1)
@@ -1287,7 +1291,7 @@ def assign5(input_folder, output_folder, colors, cam1_name="gp1",
         f_in = input_folder + f"/rods_df_{color}.csv"
         data = pd.read_csv(f_in, sep=",", index_col=0)
         df_out = pd.DataFrame()
-        for fn in range(len(frame_numbers)):
+        for fn in tqdm(range(len(frame_numbers)), colour="green"):
             idx = frame_numbers[fn]
             # Load data
             cols_cam1 = [f'x1_{cam1_name}', f'y1_{cam1_name}',
@@ -1444,6 +1448,8 @@ def assign5(input_folder, output_folder, colors, cam1_name="gp1",
                 prev_repr_errs = all_repr_errs[fn-1]
                 weights = create_weights_1(p_triang, last_points, rep_errs,
                                            prev_repr_errs)
+                # weights = create_weights_2(p_triang, last_points, rep_errs,
+                #                            prev_repr_errs)
 
                 rod, cam1_ind, cam2_ind, combo_idx = ap.npartite_matching(
                     weights, maximize=True)
@@ -1496,8 +1502,6 @@ def assign5(input_folder, output_folder, colors, cam1_name="gp1",
                 seen_cols = [col for col in data.columns if "seen" in col]
                 tmp_df[seen_cols] = 1
                 df_out = pd.concat([df_out, tmp_df])
-                if fn % 25 == 0:
-                    print(f"{fn}/{len(frame_numbers)} frames done.")
 
         # Save results to disk
         df_out.reset_index(drop=True, inplace=True)
