@@ -41,8 +41,7 @@ def create_weights_0(p_3D: np.ndarray, p_3D_prev: np.ndarray):
     delta_s = np.linalg.norm(delta_s, axis=-1)
     delta_s = np.sum(delta_s, axis=-1)
 
-    # FIXME: exchange hardcoded 12 with numbers of rods
-    weights = np.concatenate(12*[delta_s, ], axis=-1)
+    weights = np.concatenate(rods_prev*[delta_s, ], axis=-1)
     weights = 1/weights
 
     return weights
@@ -90,8 +89,7 @@ def create_weights_1(p_3D: np.ndarray, p_3D_prev: np.ndarray,
     )
     costs = costs.reshape((rods_prev, rods1, rods2, -1))
 
-    # FIXME: exchange hardcoded 12 with numbers of rods
-    costs = np.concatenate(12*[costs, ], axis=-1)
+    costs = np.concatenate(rods_prev*[costs, ], axis=-1)
 
     weights = weights * (1 / costs)
     return weights
