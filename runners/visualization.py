@@ -38,10 +38,10 @@ def visualize(prediction, original: Union[dict, str],
     Parameters
     ----------
     prediction
-        Predictions of a one image, for details see the Detectron2 
+        Predictions of a one image, for details see the Detectron2
         documentation.
     original : Union[dict, str]
-        Is either the full dataset entry with all metadata or just the path to 
+        Is either the full dataset entry with all metadata or just the path to
         the image file used during inference.
         dict    --->    full dataset entry
         str     --->    path to image
@@ -49,12 +49,12 @@ def visualize(prediction, original: Union[dict, str],
         Flag to remove the "scores" field, such that it is not visualized.
         By default True.
     output_dir : str, optional
-        Path to the intended output directory. This directory must exist prior 
+        Path to the intended output directory. This directory must exist prior
         to running this function.
         By default "".
     colors : Iterable, optional
-        Specifies the color used during plotting for each class that is 
-        predictable by the model. The colors of the "tab10" colormap will be 
+        Specifies the color used during plotting for each class that is
+        predictable by the model. The colors of the "tab10" colormap will be
         used by default.
         By default None.
     """
@@ -92,24 +92,24 @@ def visualize(prediction, original: Union[dict, str],
 def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
     """Plots an image with the predictions from a model overlayed.
 
-    Can plot either just the image with the given predictions, e.g. segmentation
-    masks, or together with the ground-truth data. The latter produces a figure 
-    of vertically two stacked images, where the lower one shows the ground-truth
-    data.
+    Can plot either just the image with the given predictions, e.g.
+    segmentation masks, or together with the ground-truth data. The latter
+    produces a figure of vertically two stacked images, where the lower one
+    shows the ground-truth data.
 
     Parameters
     ----------
     img : ndarray
         Loaded image file with dimensions [h, w, c].
     predictions
-        Predictions of a one image, for details see the Detectron2 
+        Predictions of a one image, for details see the Detectron2
         documentation.
     gt : dict, optional
         A full ground-truth dataset entry with all metadata, e.g. keypoints.
         By default None.
     colors : Iterable, optional
-        Specifies the color used during plotting for each class that is 
-        predictable by the model. The colors of the "tab10" colormap will be 
+        Specifies the color used during plotting for each class that is
+        predictable by the model. The colors of the "tab10" colormap will be
         used by default.
         By default None.
 
@@ -162,10 +162,10 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
         ax1.axis("off")
         try:
             class_colors = get_colors(len(predictions.pred_classes),
-                                    predictions.pred_classes)
+                                      predictions.pred_classes)
             add_outlines(predictions.pred_masks, ax1, class_colors, scores)
         except AttributeError:
-            # predictions does not have mask data, e.g. because it predicted 
+            # predictions does not have mask data, e.g. because it predicted
             # only keypoints
             _logger.info("Predictions don't have segmentation masks. "
                          "Skipping mask visualization...")
@@ -180,7 +180,7 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
             class_colors = get_colors(len(gt_classes), gt_classes)
             add_outlines(gt_masks, ax2, class_colors)
         except IndexError:
-            # annotations don't have the "segmentation" field, e.g. because 
+            # annotations don't have the "segmentation" field, e.g. because
             # they only have keypoints
             _logger.info("Ground-truth does not have segmentation masks. "
                          "Skipping mask visualization...")
@@ -196,10 +196,10 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
         ax1.axis("off")
         try:
             class_colors = get_colors(len(predictions.pred_classes),
-                                    predictions.pred_classes)
+                                      predictions.pred_classes)
             add_outlines(predictions.pred_masks, ax1, class_colors, scores)
         except AttributeError:
-            # predictions does not have mask data, e.g. because it predicted 
+            # predictions does not have mask data, e.g. because it predicted
             # only keypoints
             _logger.info("Predictions don't have segmentation masks. "
                          "Skipping mask visualization...")
@@ -208,7 +208,7 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
 
 
 def vis_single(dataset, filenames):
-    filename = "FT2015_shot2_gp2_00750.jpg"
+    filename = "FT2015_shot2_gp2_00750.jpg"                     # noqa: F841
     dataset_dicts = ds.load_custom_data(dataset)
     meta_data = MetadataCatalog.get(dataset.name)
 

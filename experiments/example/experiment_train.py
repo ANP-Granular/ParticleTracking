@@ -6,7 +6,7 @@ from utils.configs import PORTED_AUGMENTATIONS
 
 def main():
     """Set up the experiment and invoke the training procedure."""
-    # Set up known dataset(s) for use with Detectron2 ##########################
+    # Set up known dataset(s) for use with Detectron2 #########################
     data_folder = "../../datasets/hgs"
     metadata_file = "/via_export_json.json"
     train_data = ds.DataSet("hgs_train", data_folder + "/train", metadata_file)
@@ -15,17 +15,17 @@ def main():
     ds.register_dataset(train_data, classes=["sphere"])
     ds.register_dataset(val_data, classes=["sphere"])
 
-    # Set up training configuration ############################################
+    # Set up training configuration ###########################################
     # Load a *.yaml file with static configurations
     cfg = CfgNode(CfgNode.load_yaml_with_base("config.yaml"))
 
     # add computed values to the configuration,
     # e.g. cfg.SOLVER.STEPS = int(5.2*number_of_images)
 
-    # create a list of image augmentations to use ##############################
+    # create a list of image augmentations to use #############################
     augmentations = PORTED_AUGMENTATIONS
 
-    # Hand over configurations and start training a model ######################
+    # Hand over configurations and start training a model #####################
     training.run_training(
         train_set=train_data,
         val_set=val_data,
@@ -37,7 +37,7 @@ def main():
         img_augmentations=augmentations
     )
 
-    # Clean up #################################################################
+    # Clean up ################################################################
     # clean up after the training is over, e.g. remove unused generated files
 
 

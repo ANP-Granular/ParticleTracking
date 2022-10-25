@@ -46,8 +46,9 @@ def extract_stereo_params(calibration_params: dict) -> dict:
     camera where the relative position and orientation between the two cameras
     are fixed, then those poses definitely relate to each other.
     This means, if the relative position and orientation (R, T) of the two
-    cameras is known, it is possible to compute (R2, T2) when (R1, T1) is given.
-    This is what the described function does. It computes (R, T) such that:
+    cameras is known, it is possible to compute (R2, T2) when (R1, T1) is
+    given. This is what the described function does.
+    It computes (R, T) such that:
         R2=R*R1
         T2=R*T1+T.
 
@@ -121,7 +122,8 @@ def load_calib_from_json(file_name: str) -> \
     if "stereoParams" in all_calibs.keys():
         cam1 = extract_cam_params(all_calibs["stereoParams"][
                                          "CameraParameters1"])
-        cam2 = extract_cam_params(all_calibs["stereoParams"]["CameraParameters2"])
+        cam2 = extract_cam_params(
+            all_calibs["stereoParams"]["CameraParameters2"])
         stereo_params = extract_stereo_params(all_calibs["stereoParams"])
         stereo_params["img_size"] = all_calibs["stereoParams"][
             "CameraParameters2"]["ImageSize"]

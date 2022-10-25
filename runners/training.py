@@ -37,29 +37,29 @@ def run_training(train_set: ds.DataSet,
                  freeze_layers: List[str] = None):
     """Runs the training of a model with the given training data.
 
-    Runs the training of a model which is defined by the given configuration. 
-    The training can be resumed and further specification of layers to 
-    train/not to train is possible. During training the different model 
+    Runs the training of a model which is defined by the given configuration.
+    The training can be resumed and further specification of layers to
+    train/not to train is possible. During training the different model
     performance metrics are logged in the Tensorboard format.
-    Additional COCO metrics are available only if a validation dataset is given.
-    These metrics are also logged in the Tensorboard format.
+    Additional COCO metrics are available only if a validation dataset is
+    given. These metrics are also logged in the Tensorboard format.
 
     Parameters
     ----------
     train_set : ds.DataSet
-        A DataSet already registered to the Detectron2 framework, that is used 
+        A DataSet already registered to the Detectron2 framework, that is used
         for training the model.
     configuration : Union[str, CfgNode]
-        Configuration for the Detectron2 model with training settings given as 
-        a CfgNode or path to a *.yaml file in the Detectron2 configuration 
+        Configuration for the Detectron2 model with training settings given as
+        a CfgNode or path to a *.yaml file in the Detectron2 configuration
         format.
     val_set : ds.DataSet, optional
-        A DataSet already registered to the Detectron2 framework, that is used 
+        A DataSet already registered to the Detectron2 framework, that is used
         for testing the model during training.
         By default None.
     output_dir : str, optional
-        Path to the intended output directory. It's parent directory must exist 
-        prior to running this function. 
+        Path to the intended output directory. It's parent directory must exist
+        prior to running this function.
         By default "./".
     log_name : str, optional
         Filename for logging output in the output directory.
@@ -68,27 +68,29 @@ def run_training(train_set: ds.DataSet,
         Flag to continue with previous training progress in the output folder.
         By default True.
     visualize : bool, optional
-        Flag for allowing visualization of one randomly selected image from the 
-        given training dataset with 10 randomly chosen annotations overlaid on 
+        Flag for allowing visualization of one randomly selected image from the
+        given training dataset with 10 randomly chosen annotations overlaid on
         the image.
         By default False.
     img_augmentations : List[T.Augmentation], optional
         Image augmentations to be used during training.
         By default None.
     freeze_layers : List[str], optional
-        Layers/layer collections to be frozen during training. The model's layer
-        names are obtained using `model.named_parameters()`.
+        Layers/layer collections to be frozen during training. The model's
+        layer names are obtained using `model.named_parameters()`.
         By default None.
     """
 
     setup_logger(os.path.join(output_dir, log_name))
     if visualize:
-        # visualize annotations of randomly selected samples in the training set
+        # visualize annotations of randomly selected samples in the
+        # training set
         meta_data = MetadataCatalog.get(train_set.name)
         dataset_dicts = load_custom_data(train_set)
         for d in random.sample(dataset_dicts, 1):
             img = cv2.imread(d["file_name"])
-            visualizer = Visualizer(img[:, :, ::-1], metadata=meta_data, scale=0.5)
+            visualizer = Visualizer(img[:, :, ::-1], metadata=meta_data,
+                                    scale=0.5)
             d["annotations"] = random.sample(d["annotations"], 10)
             out = visualizer.draw_dataset_dict(d)
             plt.figure()
@@ -119,12 +121,14 @@ def run_training(train_set: ds.DataSet,
         if val_set:
             if not configuration.DATASETS.TEST:
                 configuration.DATASETS.TEST = (val_set.name,)
-                # Determine the maximum number of instances to predict per image
+                # Determine the maximum number of instances to predict per
+                # image
                 counts = hf.get_object_counts(val_set)
                 configuration.TEST.DETECTIONS_PER_IMAGE = int(1.5 * np.max(
                     counts))
             elif not configuration.TEST.DETECTIONS_PER_IMAGE:
-                # Determine the maximum number of instances to predict per image
+                # Determine the maximum number of instances to predict per
+                # image
                 counts = hf.get_object_counts(val_set)
                 configuration.TEST.DETECTIONS_PER_IMAGE = int(1.5 * np.max(
                     counts))

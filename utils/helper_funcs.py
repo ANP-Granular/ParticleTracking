@@ -195,8 +195,9 @@ def rod_endpoints(prediction, classes: dict):
                     bord = -1  # Make rods 1 pix shorter
 
                     # End coordinates
-                    if np.argmin([np.linalg.norm(bbox[0, :] - bbox[1, :]),
-                                  np.linalg.norm(bbox[1, :] - bbox[2, :])]) == 0:
+                    if np.argmin(
+                        [np.linalg.norm(bbox[0, :] - bbox[1, :]),
+                         np.linalg.norm(bbox[1, :] - bbox[2, :])]) == 0:
                         x1 = np.mean(bbox[0:2, 0])
                         y1 = np.mean(bbox[0:2, 1])
                         x2 = np.mean(bbox[2:4, 0])
@@ -256,7 +257,9 @@ def get_epochs(cfg: CfgNode, image_count: int) -> float:
 
 
 def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
-    """Computes the necessary iterations to achieve a given number of epochs."""
+    """Computes the necessary iterations to achieve a given number of
+    epochs.
+    """
     batch_size = cfg.SOLVER.IMS_PER_BATCH
     return desired_epochs*(image_count/batch_size)
 

@@ -23,7 +23,9 @@ PORTED_AUGMENTATIONS = [
 
 
 def run_test_config(dataset: DataSet) -> CfgNode:
-    """Creates a configuration with only few iterations for testing new code."""
+    """Creates a configuration with only few iterations for testing new
+    code.
+    """
     cfg = old_ported_config(dataset)
     cfg.SOLVER.MAX_ITER = 1000
     return cfg
@@ -37,8 +39,7 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
         "COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
 
-    cfg.NAME = "hgs"    # Todo: check, if there's adverse effects by
-                        #  introducing it
+    cfg.NAME = "hgs"    # Todo: check, if there's adverse effects by introducing it     # noqa: E501
     cfg.DATASETS.TRAIN = ()
     cfg.DATASETS.TEST = ()
     cfg.DATALOADER.NUM_WORKERS = 2
@@ -51,8 +52,8 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     #  _
     #  Here it might be necessary to keep the MIN_SIZE higher than CROP.SIZE
     #  to achieve the same data augmentation effect!
-    cfg.INPUT.MIN_SIZE_TRAIN = (512,) #(256,)
-    cfg.INPUT.MAX_SIZE_TRAIN = (768,) #(256,)
+    cfg.INPUT.MIN_SIZE_TRAIN = (512,)   # (256,)
+    cfg.INPUT.MAX_SIZE_TRAIN = (768,)   # (256,)
     # cfg.INPUT.MIN_SIZE_TEST = (512,)
     # cfg.INPUT.MAX_SIZE_TEST = (768,)
     cfg.INPUT.CROP.ENABLED = True
@@ -87,8 +88,7 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     cfg.MODEL.ROI_HEADS.POSITIVE_FRACTION = 0.3     # default: 0.25
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 200  # default: 512
     cfg.SOLVER.CLIP_GRADIENTS.CLIP_VALUE = 5.0      # default: 1.0
-    cfg.MODEL.PIXEL_MEAN = [62., 75., 60.]          # default: [103.53, 116.28,
-                                                    #           123.675]
+    cfg.MODEL.PIXEL_MEAN = [62., 75., 60.]          # default: [103.53, 116.28, 123.675]    # noqa: E501
 
     if dataset is None:
         warn("No DataSet was given and the constructed configuration is "
@@ -100,7 +100,7 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     image_count = hf.get_dataset_size(dataset)
     iter_25ep = int(hf.get_iters(cfg, image_count, desired_epochs=25))
     iter_75ep = 3 * iter_25ep  # 2nd training period duration
-    iter_125ep = 5 * iter_25ep  # 3rd training period duration
+    iter_125ep = 5 * iter_25ep  # 3rd training period duration  # noqa: F841
     cfg.SOLVER.MAX_ITER = 9 * iter_25ep
 
     # Construct the 1st learning period

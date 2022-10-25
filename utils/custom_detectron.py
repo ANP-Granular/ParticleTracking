@@ -59,7 +59,7 @@ class CustomTrainer(DefaultTrainer):
             build_detection_test_loader(
                 self.cfg,
                 self.cfg.DATASETS.TEST[0],
-                DatasetMapper(self.cfg, True)  # TODO: might need to be replaced
+                DatasetMapper(self.cfg, True)  # TODO: might need replacement
             )
         ))
         return hooks
@@ -78,7 +78,8 @@ class CustomTrainer(DefaultTrainer):
         import detectron2.data.detection_utils as du
         augs = du.build_augmentation(cfg, is_train)
         if cfg.INPUT.CROP.ENABLED:
-            augs.insert(0, T.RandomCrop(cfg.INPUT.CROP.TYPE, cfg.INPUT.CROP.SIZE))
+            augs.insert(0, T.RandomCrop(cfg.INPUT.CROP.TYPE,
+                                        cfg.INPUT.CROP.SIZE))
             recompute_boxes = cfg.MODEL.MASK_ON
         else:
             recompute_boxes = False
@@ -92,8 +93,8 @@ class CustomTrainer(DefaultTrainer):
             "recompute_boxes": recompute_boxes,
         }
         if cfg.MODEL.KEYPOINT_ON:
-            mapper_conf["keypoint_hflip_indices"] = utils.create_keypoint_hflip_indices(
-                cfg.DATASETS.TRAIN)
+            mapper_conf["keypoint_hflip_indices"] = \
+                utils.create_keypoint_hflip_indices(cfg.DATASETS.TRAIN)
         if cfg.MODEL.LOAD_PROPOSALS:
             mapper_conf["precomputed_proposal_topk"] = (
                 cfg.DATASETS.PRECOMPUTED_PROPOSAL_TOPK_TRAIN
@@ -105,8 +106,8 @@ class CustomTrainer(DefaultTrainer):
         if cls.augmentations:
             mapper_conf["augmentations"].extend(cls.augmentations)
 
-        return build_detection_train_loader(cfg,
-                                            mapper=DatasetMapper(**mapper_conf))
+        return build_detection_train_loader(
+            cfg, mapper=DatasetMapper(**mapper_conf))
 
 
 # Currently not used
@@ -115,7 +116,8 @@ class CompleteMapper(DatasetMapper):
     def __call__(self, dataset_dict):
         """
         Args:
-            dataset_dict (dict): Metadata of one image, in Detectron2 Dataset format.
+            dataset_dict (dict): Metadata of one image, in Detectron2 Dataset
+            format.
 
         Returns:
             dict: a format that builtin models in detectron2 accept
@@ -129,8 +131,8 @@ class CompleteMapper(DatasetMapper):
 
         # USER: Remove if you don't do semantic/panoptic segmentation.
         if "sem_seg_file_name" in dataset_dict:
-            sem_seg_gt = utils.read_image(dataset_dict.pop("sem_seg_file_name"),
-                                          "L").squeeze(2)
+            sem_seg_gt = utils.read_image(
+                dataset_dict.pop("sem_seg_file_name"), "L").squeeze(2)
         else:
             sem_seg_gt = None
 
@@ -139,13 +141,15 @@ class CompleteMapper(DatasetMapper):
         image, sem_seg_gt = aug_input.image, aug_input.sem_seg
 
         image_shape = image.shape[:2]  # h, w
-        # Pytorch's dataloader is efficient on torch.Tensor due to shared-memory,
-        # but not efficient on large generic data structures due to the use of pickle & mp.Queue.
-        # Therefore it's important to use torch.Tensor.
+        # Pytorch's dataloader is efficient on torch.Tensor due to
+        # shared-memory, but not efficient on large generic data structures due
+        # to the use of pickle & mp.Queue. Therefore it's important to use
+        # torch.Tensor.
         dataset_dict["image"] = torch.as_tensor(
             np.ascontiguousarray(image.transpose(2, 0, 1)))
         if sem_seg_gt is not None:
-            dataset_dict["sem_seg"] = torch.as_tensor(sem_seg_gt.astype("long"))
+            dataset_dict["sem_seg"] = torch.as_tensor(
+                sem_seg_gt.astype("long"))
 
         # USER: Remove if you don't use pre-computed proposals.
         # Most users would not need this feature.
@@ -193,7 +197,7 @@ class EvalLossHook(HookBase):
                     seconds=int(total_seconds_per_img * (total - idx - 1)))
                 log_every_n_seconds(
                     logging.INFO,
-                    "Loss on Validation  done {}/{}. {:.4f} s / img. ETA={}".format(
+                    "Loss on Validation  done {}/{}. {:.4f} s / img. ETA={}".format(    # noqa: E501
                         idx + 1, total, seconds_per_img, str(eta)
                     ),
                     n=5,
@@ -240,10 +244,14 @@ class CustomTensorboardWriter(EventWriter):
     def __init__(self, log_dir: str, window_size: int = 20, **kwargs):
         """
         Args:
-            log_dir (str): the directory to save the output events
-            window_size (int): the scalars will be median-smoothed by this window size
+            log_dir (str):
+                The directory to save the output events
+            window_size (int):
+                The scalars will be median-smoothed by this window size
 
-            kwargs: other arguments passed to `torch.utils.tensorboard.SummaryWriter(...)`
+            kwargs:
+                Other arguments passed to
+                `torch.utils.tensorboard.SummaryWriter(...)`
         """
         self._window_size = window_size
         from torch.utils.tensorboard import SummaryWriter
@@ -294,15 +302,17 @@ class CustomTensorboardWriter(EventWriter):
         self._last_write = new_last_write
 
         # storage.put_{image,histogram} is only meant to be used by
-        # tensorboard writer. So we access its internal fields directly from here.
+        # tensorboard writer. So we access its internal fields directly from
+        # here.
         if len(storage._vis_data) >= 1:
             for img_name, img, step_num in storage._vis_data:
                 self._writer.add_image(img_name, img, step_num)
-            # Storage stores all image data and rely on this writer to clear them.
-            # As a result it assumes only one writer will use its image data.
-            # An alternative design is to let storage store limited recent
-            # data (e.g. only the most recent image) that all writers can access.
-            # In that case a writer may not see all image data if its period is long.
+            # Storage stores all image data and rely on this writer to clear
+            # them. As a result it assumes only one writer will use its image
+            # data. An alternative design is to let storage store limited
+            # recent data (e.g. only the most recent image) that all writers
+            # can access. In that case a writer may not see all image data if
+            # its period is long.
             storage.clear_images()
 
         if len(storage._histograms) >= 1:
@@ -311,7 +321,8 @@ class CustomTensorboardWriter(EventWriter):
             storage.clear_histograms()
 
     def close(self):
-        if hasattr(self, "_writer"):  # doesn't exist when the code fails at import
+        # doesn't exist when the code fails at import
+        if hasattr(self, "_writer"):
             self._writer.close()
 
 
