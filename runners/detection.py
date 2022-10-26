@@ -8,6 +8,7 @@ Date:       11.08.2022
 
 # import general libraries
 import os
+import warnings
 import cv2
 import random
 import logging
@@ -250,6 +251,9 @@ def run_detection_csv(dataset_format: str,
             file = dataset_format.format(frame=frame, cam_id=cam)
             _logger.info(f"Inference on: {file}")
             im = cv2.imread(file)
+            if im is None:
+                warnings.warn(f"Image couldn't be read: {file}")
+                continue
             outputs = predictor(im)
             # Thresholding/cleaning results
             outputs["instances"] = outputs["instances"][
