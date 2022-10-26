@@ -268,9 +268,19 @@ def run_detection_csv(dataset_format: str,
     if len(data) > 0:
         current_output = os.path.join(output_dir, "rods_df.csv")
         data.reset_index(drop=True, inplace=True)
+        data = replace_missing_rods(data, cam1_name, cam2_name)
         data.to_csv(current_output, ",")
         d_conv.csv_extract_colors(current_output)
     return predictions
+
+
+def replace_missing_rods(dataset: pd.DataFrame, cam1_id: str, cam2_id: str):
+    cols_2d = [col for col in dataset.columns
+               if cam1_id in col or cam2_id in col]
+    cols_seen = [col for col in dataset.columns if "seen" in col]
+    dataset[cols_2d] = dataset[cols_2d].fillna(-1.)
+    dataset[cols_seen] = dataset[cols_seen].fillna(0)
+    return dataset
 
 
 def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
