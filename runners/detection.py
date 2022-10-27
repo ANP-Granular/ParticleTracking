@@ -268,13 +268,13 @@ def run_detection_csv(dataset_format: str,
                 points = hf.rod_endpoints(outputs, classes)
                 data = add_points(points, data, cam, frame)
             _logger.info(f"Done with: {os.path.basename(file)}")
-    # Save rod data
-    if len(data) > 0:
-        current_output = os.path.join(output_dir, "rods_df.csv")
-        data.reset_index(drop=True, inplace=True)
-        data = replace_missing_rods(data, cam1_name, cam2_name)
-        data.to_csv(current_output, ",")
-        d_conv.csv_extract_colors(current_output)
+        # Save intermediate rod data
+        if len(data) > 0:
+            current_output = os.path.join(output_dir, "rods_df.csv")
+            data.reset_index(drop=True, inplace=True)
+            data = replace_missing_rods(data, cam1_name, cam2_name)
+            data.to_csv(current_output, ",")
+            d_conv.csv_extract_colors(current_output)
     return predictions
 
 
