@@ -24,10 +24,12 @@ from detectron2.utils.logger import setup_logger
 from detectron2.config import CfgNode
 
 # import custom code
-import utils.datasets as ds
-import utils.helper_funcs as hf
-import utils.data_conversions as d_conv
-from runners import visualization
+import ParticleDetection.utils.datasets as ds
+import ParticleDetection.utils.helper_funcs as hf
+import ParticleDetection.modelling.detectron_obj.datasets as det_ds
+from ParticleDetection.modelling.utils.helper_funcs import write_configs
+import ParticleDetection.utils.data_conversions as d_conv
+import ParticleDetection.modelling.utils.visualization as visualization
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -111,7 +113,7 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
     if weights is not None:
         cfg.MODEL.WEIGHTS = os.path.abspath(weights)
     cfg.MODEL.DEVICE = "cpu"  # to run predictions while gpu in use
-    hf.write_configs(cfg, output_dir)
+    write_configs(cfg, output_dir)
 
     predictor = DefaultPredictor(cfg)
     if classes is None:
@@ -119,7 +121,7 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
                    for i in range(0, cfg.MODEL.ROI_HEADS.NUM_CLASSES)}
     # Handling the ds.DataSet, List[str] ambiguity
     if isinstance(dataset, ds.DataSet):
-        dataset = ds.load_custom_data(dataset)
+        dataset = det_ds.load_custom_data(dataset)
 
     # Randomly select several samples to visualize the prediction results.
     to_visualize = np.zeros(len(dataset))
@@ -231,7 +233,7 @@ def run_detection_csv(dataset_format: str,
     if weights is not None:
         cfg.MODEL.WEIGHTS = os.path.abspath(weights)
     cfg.MODEL.DEVICE = "cpu"  # to run predictions while gpu in use
-    hf.write_configs(cfg, output_dir)
+    write_configs(cfg, output_dir)
 
     predictor = DefaultPredictor(cfg)
     if classes is None:

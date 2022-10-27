@@ -1,4 +1,4 @@
-import os.path
+import os
 import itertools
 import pathlib
 
@@ -11,7 +11,7 @@ from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
 
 import reconstruct_3D.data_loading as dl
-from reconstruct_3D.result_visualizations import matching_results
+from ParticleDetection.visualization.result_visualizations import matching_results
 
 
 def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,

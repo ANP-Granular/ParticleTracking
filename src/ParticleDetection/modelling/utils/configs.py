@@ -5,9 +5,10 @@ from detectron2.config import get_cfg
 from detectron2.config.config import CfgNode
 from detectron2.data import transforms as T
 
-from utils.datasets import DataSet
-import utils.helper_funcs as hf
-import utils.custom_augmentations as ca
+from ParticleDetection.utils.datasets import DataSet
+import ParticleDetection.utils.helper_funcs as hf
+import ParticleDetection.modelling.detectron_obj.augmentations as ca
+from ParticleDetection.modelling.utils.helper_funcs import get_iters
 
 
 PORTED_AUGMENTATIONS = [
@@ -98,7 +99,7 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     # Configurations with the given dataset
     cfg.DATASETS.TRAIN = (dataset.name,)
     image_count = hf.get_dataset_size(dataset)
-    iter_25ep = int(hf.get_iters(cfg, image_count, desired_epochs=25))
+    iter_25ep = int(get_iters(cfg, image_count, desired_epochs=25))
     iter_75ep = 3 * iter_25ep  # 2nd training period duration
     iter_125ep = 5 * iter_25ep  # 3rd training period duration  # noqa: F841
     cfg.SOLVER.MAX_ITER = 9 * iter_25ep

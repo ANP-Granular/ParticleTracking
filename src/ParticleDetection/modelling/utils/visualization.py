@@ -17,7 +17,8 @@ import torch
 from detectron2.data import MetadataCatalog
 from detectron2.utils.visualizer import Visualizer, GenericMask
 
-import utils.datasets as ds
+import ParticleDetection.utils.datasets as ds
+import ParticleDetection.modelling.detectron_obj.datasets as det_ds
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -209,7 +210,7 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
 
 def vis_single(dataset, filenames):
     filename = "FT2015_shot2_gp2_00750.jpg"                     # noqa: F841
-    dataset_dicts = ds.load_custom_data(dataset)
+    dataset_dicts = det_ds.load_custom_data(dataset)
     meta_data = MetadataCatalog.get(dataset.name)
 
     for d in random.sample(dataset_dicts, 5):
@@ -228,6 +229,6 @@ if __name__ == "__main__":
     val_data = ds.DataSet("c4m_val", data_folder + "/val", metadata_file)
     classes = ["blue", "green", "orange", "purple", "red", "yellow", "black",
                "lilac", "brown"]
-    ds.register_dataset(val_data, classes=classes)
+    det_ds.register_dataset(val_data, classes=classes)
 
     vis_single(val_data, 1)

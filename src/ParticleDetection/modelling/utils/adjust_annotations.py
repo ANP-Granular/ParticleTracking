@@ -9,8 +9,8 @@ from PIL import Image
 from detectron2.structures import Instances
 from detectron2.utils.visualizer import GenericMask
 
-import utils.datasets as ds
-import utils.helper_funcs as hf
+import ParticleDetection.utils.datasets as ds
+import ParticleDetection.utils.helper_funcs as hf
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)

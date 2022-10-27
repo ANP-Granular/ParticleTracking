@@ -22,10 +22,11 @@ from detectron2.config import CfgNode
 import detectron2.data.transforms as T
 
 # import custom code
-from utils.datasets import load_custom_data
-from utils import datasets as ds
-import utils.custom_detectron as custom
-import utils.helper_funcs as hf
+from ParticleDetection.modelling.detectron_obj.datasets import load_custom_data
+import ParticleDetection.utils.datasets as ds
+import ParticleDetection.utils.helper_funcs as hf
+import ParticleDetection.modelling.detectron_obj.detectron as custom
+from ParticleDetection.modelling.utils.helper_funcs import write_configs 
 
 
 def run_training(train_set: ds.DataSet,
@@ -135,7 +136,7 @@ def run_training(train_set: ds.DataSet,
 
         # Create output directory and save configuration
         os.makedirs(output_dir, exist_ok=True)
-        hf.write_configs(configuration, output_dir, img_augmentations)
+        write_configs(configuration, output_dir, img_augmentations)
 
     # Training
     if img_augmentations:

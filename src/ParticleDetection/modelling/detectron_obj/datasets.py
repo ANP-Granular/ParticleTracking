@@ -1,37 +1,14 @@
 import os
 import warnings
-from dataclasses import dataclass
 import json
 
 import numpy as np
 from PIL import Image
 from typing import List, Callable
+from ParticleDetection.utils.datasets import DataSet, DataGroup
 
 from detectron2.structures import BoxMode
 from detectron2.data import DatasetCatalog, MetadataCatalog
-
-
-DEFAULT_COLUMNS = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
-                   'x1_{id1:s}', 'y1_{id1:s}', 'x2_{id1:s}', 'y2_{id1:s}',
-                   'x1_{id2:s}', 'y1_{id2:s}', 'x2_{id2:s}', 'y2_{id2:s}',
-                   'frame', 'seen_{id1:s}', 'seen_{id2:s}']
-
-
-class DataSet:
-    folder: str
-    annotation: str
-    name: str
-
-    def __init__(self, name: str, folder: str, annotation_file: str):
-        self.name = name
-        self.annotation = os.path.abspath(folder+annotation_file)
-        self.folder = os.path.abspath(folder)
-
-
-@dataclass
-class DataGroup:
-    train: DataSet
-    val: DataSet
 
 
 def load_custom_data(dataset: DataSet) -> List[dict]:

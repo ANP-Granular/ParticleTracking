@@ -328,7 +328,7 @@ class CustomTensorboardWriter(EventWriter):
 
 if __name__ == "__main__":
     import os
-    import utils.datasets
+    import src.ParticleDetection.utils.datasets
     import matplotlib.pyplot as plt
     CONFIG_FILE = "../runners/test_augmentations/config.yaml"
     print(os.path.abspath(CONFIG_FILE))
