@@ -1,16 +1,13 @@
 [build-system]
-requires = ["setuptools>=42.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "ParticleDetection"
 version = "0.3.0"
-authors = [
-    { name="Adrian Niemann", email="adrian.niemann@gmx.de" },
-]
-description = "Tools to track rods with machine learning"
+description = "Tools to track rods with machine learning."
+authors = ["Adrian Niemann <adrian.niemann@gmx.de>"]
 readme = "README.md"
-requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -22,29 +19,63 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Image Processing",
     "Topic :: Scientific/Engineering :: Physics",
 ]
-dependencies = [
-    "numpy",
-    "scipy",
-    "matplotlib",
-    "opencv-python",
-    "tqdm",
-    "networkx",
-    "pandas",
-    "pulp",
-    "scikit-learn",
-    "scikit-image",
-    "trackpy",
-]
 
-[project.optional-dependencies]
+[tool.poetry.dependencies]
+python = "^3.10"
+scipy = "^1.9.3"
+numpy = "^1.23.4"
+matplotlib = "^3.6.1"
+opencv-python = "^4.6.0.66"
+tqdm = "^4.64.1"
+networkx = "^2.8.7"
+pandas = "^1.5.1"
+pulp = "^2.6.0"
+scikit-learn = "^1.1.3"
+scikit-image = "^0.19.3"
+trackpy = "^0.5.0"
+tensorboard =  {version = "*", optional = true}
+protobuf = {version = "==3.20.1", optional = true}
+torch = [
+    {version = "^1.13.0", markers = "sys_platform == 'win32' and (extra != 'detectron' and extra != 'gpu')"},   # default
+    {version = "*", source = "gpu-win", markers = "sys_platform == 'win32' and (extra == 'gpu' or extra == 'detectron')"},
+    {version = "^1.8", source = "cpu-linux", markers = "sys_platform == 'linux' and (extra != 'detectron' and extra != 'gpu')"},    # default
+    {version = "^1.8", markers = "sys_platform == 'linux' and (extra == 'detectron' or extra == 'gpu')"},
+
+]
+torchvision = [
+    {version = "^0.14.0", markers = "sys_platform == 'win32' and (extra != 'detectron' and extra != 'gpu')"},   # default
+    {version = "*", source = "gpu-win", markers = "sys_platform == 'win32' and (extra == 'gpu' or extra == 'detectron')"},
+    {version = "*", source = "cpu-linux", markers =  "sys_platform == 'linux' and (extra != 'detectron' and extra != 'gpu')"},      # default
+    {version = "*", markers = "sys_platform == 'linux' and (extra == 'detectron' or extra == 'gpu')"},
+]
+torchaudio = [
+    {version = "^0.13.0", markers = "sys_platform == 'win32' and (extra != 'detectron' and extra != 'gpu')"},   # default
+    {version = "*", source = "gpu-win", markers = "sys_platform == 'win32' and (extra == 'gpu' or extra == 'detectron')"},
+    {version = "*", source = "cpu-linux", markers =  "sys_platform == 'linux' and (extra != 'detectron' and extra != 'gpu')"},      # default
+    {version = "*", markers = "sys_platform == 'linux' and (extra == 'detectron' or extra == 'gpu')"},
+]
+detectron2 = [
+    {git = "https://github.com/facebookresearch/detectron2.git", optional = true, markers = "sys_platform == 'linux' and extra == 'detectron'"}
+]
+imgaug = {version = "*", optional = true}
+Pillow = {version = "*", optional = true}
+
+[[tool.poetry.source]]
+name = "gpu-win"
+url = "https://download.pytorch.org/whl/cu116/"
+default = false
+secondary = false
+
+[[tool.poetry.source]]
+name = "cpu-linux"
+url = "https://download.pytorch.org/whl/cpu/"
+default = false
+secondary = false
+
+[tool.poetry.extras]
+CPU = ["torch", "torchvision", "torchaudio"]
+GPU = ["torch", "torchvision", "torchaudio"]
 DETECTRON = [
-    "detectron2 @ git+https://github.com/facebookresearch/detectron2.git@main",
-    "imgaug",
-    "Pillow",
-]
-GPU = [
-    
-]
-CPU = [
-    
+    "torch", "torchvision", "torchaudio", "detectron2", "tensorboard", 
+    "protobuf", "shapely", "imgaug", "Pillow",
 ]
