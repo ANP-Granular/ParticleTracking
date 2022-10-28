@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ParticleDetection"
+version = "0.3.0"
+authors = [
+    { name="Adrian Niemann", email="adrian.niemann@gmx.de" },
+]
+description = "Tools to track rods with machine learning"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+    "Environment :: GPU :: NVIDIA CUDA",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "opencv-python",
+    "tqdm",
+    "networkx",
+    "pandas",
+    "pulp",
+    "scikit-learn",
+    "scikit-image",
+    "trackpy",
+]
+
+[project.optional-dependencies]
+DETECTRON = [
+    "detectron2 @ git+https://github.com/facebookresearch/detectron2.git@main",
+    "imgaug",
+    "Pillow",
+]
+GPU = [
+    
+]
+CPU = [
+    
+]
