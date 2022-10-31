@@ -1,3 +1,4 @@
+# TODO: document module
 import os
 import sys
 import json
@@ -208,7 +209,3 @@ def delete_len_0(file_name: str):
 
     with open(file_name, "w") as f:
         json.dump(to_change, f, indent=2)
-
-
-if __name__ == "__main__":
-    pass

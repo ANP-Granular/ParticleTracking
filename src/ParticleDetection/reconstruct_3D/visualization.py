@@ -1,5 +1,7 @@
+# TODO: document functions/module
 from typing import List
 import numpy as np
+import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from mpl_toolkits.mplot3d.art3d import Line3D
@@ -187,5 +189,55 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None):
     plt.show()
 
 
-if __name__ == "__main__":
-    pass
+def plot_results(weights: np.ndarray, whr):
+    """_summary_
+
+    Parameters
+    ----------
+    weights : np.ndarray
+        _description_
+    whr : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+    dims = weights.shape
+
+    # create list of node positions for plotting and labeling
+    pon = [(idi, idv) for idi, dim in enumerate(dims) for idv in range(dim)]
+    # convert to dictionary
+    pos = {tuple(poi): poi for poi in pon}
+
+    # create empty graph
+    graph = nx.empty_graph(len(pos))
+    # rename labels according to plot position
+    mapping = {idp: tuple(poi) for idp, poi in enumerate(pon)}
+    graph = nx.relabel_nodes(graph, mapping)
+
+    # set edges from maximum n-partite matching
+    edges = []
+    # loop over paths
+    for whi in np.array(whr).T:
+        weight = weights[tuple(np.array(whj) for whj in whi)]
+        pairs = list(zip(whi[:-1], whi[1:]))
+        # loop over consecutive node pairs along path
+        for idp, (id0, id1) in enumerate(pairs):
+            edges.append(((idp+0, id0), (idp+1, id1), {'weight': weight}))
+    graph.add_edges_from(edges)
+
+    # set path weights as edge widths for plotting
+    width = np.array([edge['weight'] for id0, id1, edge in
+                      graph.edges(data=True)])
+    width = 3.0*width/max(width)
+
+    # plot network
+    fig = plt.figure(figsize=(16, 9))
+    obj = weights[whr].sum()
+    plt.title('total matching weight = %.2f' % obj)
+    nx.draw_networkx(graph, pos=pos, width=width, node_color='orange',
+                     node_size=700)
+    plt.axis('off')
+    return graph, pos, fig

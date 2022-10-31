@@ -1,6 +1,8 @@
+# TODO: document functions/module, clear up todos
 import os
 import itertools
 import pathlib
+import warnings
 
 import cv2
 import scipy.io as sio
@@ -8,10 +10,8 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.transform import Rotation as R
-import matplotlib.pyplot as plt
 
-import reconstruct_3D.data_loading as dl
-from ParticleDetection.visualization.result_visualizations import matching_results
+import ParticleDetection.utils.data_loading as dl
 
 
 def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
@@ -37,6 +37,8 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
     This function currently saves the 3D points in the first camera's
     coordinate system, NOT the world/box coordinate system.
     """
+    warnings.warn("match_matlab_*() functions are deprecated."
+                  " Use functions for csv instead.", DeprecationWarning)
 
     if not cam1_convention.endswith(".mat"):
         cam1_convention += ".mat"
@@ -176,6 +178,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
                          transformation_file=None,
                          cam1_convention="{idx:05d}_{color:s}.mat",
                          cam2_convention="{idx:05d}_{color:s}.mat"):
+    # TODO: finish docs
     """_summary_
 
     Parameters
@@ -222,6 +225,9 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
     This function currently saves the 3D points in the first camera's
     coordinate system, NOT the world/box coordinate system.
     """
+    warnings.warn("match_matlab_*() functions are deprecated."
+                  " Use functions for csv instead.", DeprecationWarning)
+
     if not cam1_convention.endswith(".mat"):
         cam1_convention += ".mat"
     if not cam2_convention.endswith(".mat"):
@@ -387,6 +393,7 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
                       cam2_name="gp2", frame_numbers=None,
                       calibration_file=None, transformation_file=None,
                       rematching=True):
+    # TODO: extend function description
     """Matches and triangulates rods from *.csv data files.
 
     Parameters
@@ -614,127 +621,3 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
                       sep=",")
 
     return np.array(all_repr_errs), np.array(all_rod_lengths)
-
-
-def plot_rods(file: str, rods, color: str, save=False):
-    base_folder = "./testfiles"
-    img_file = base_folder + "/FT2015_shot1_gp1_00732.jpg"
-    # img_file = base_folder + "/" + \
-    #     os.path.splitext(file)[0].split(f"_{color}")[0] + ".jpg"
-    img = cv2.imread(img_file)
-    width, height = img.shape[1], img.shape[0]
-    fig = plt.figure(frameon=False)
-    dpi = fig.get_dpi()
-    fig.set_size_inches(
-        (width + 1e-2) / dpi,
-        (height + 1e-2) / dpi,
-    )
-    ax1 = fig.add_axes([0, 0, 1, 1])
-    ax1.imshow(img)
-    ax1.axis("off")
-    for r in rods:
-        ax1.plot(r[0:3:2], r[1:4:2], color=color)
-    plt.show()
-
-
-def example_match_rods():
-    """Shows the preparations and usage of `match_matlab_simple()`."""
-    debug = True
-
-    calibration_file = "./calibration_data/Matlab/gp12.json"
-    transformation_file = "./calibration_data/Matlab/" \
-                          "world_transformation.json"
-    colors = ["blue", "green", "red", "yellow", "brown"]
-    base_folder = "./testfiles"
-    cam1_folder = base_folder + "/gp1/"
-    cam1_convention = "FT2015_shot1_gp1_{idx:05d}_{color:s}.mat"
-    cam2_folder = base_folder + "/gp2/"
-    cam2_convention = "FT2015_shot1_gp2_{idx:05d}_{color:s}.mat"
-    out_folder = base_folder + "/data3D/"
-
-    start_frame = 732
-    end_frame = 736
-    frame_numbers = list(range(start_frame, end_frame+1))
-    if debug:
-        calibration_file = "./calibration_data/Matlab/gp12.json"
-        colors = ["blue", ]
-        base_folder = "./debug_files"
-        cam1_folder = base_folder + "/gp3/"
-        cam1_convention = "{idx:05d}_{color:s}.mat"
-        cam2_folder = base_folder + "/gp4/"
-        cam2_convention = "{idx:05d}_{color:s}.mat"
-        out_folder = base_folder + "/data3D/"
-        start_frame = 100
-        end_frame = 904
-        frame_numbers = list(range(start_frame, end_frame+1))
-
-    if debug:
-        from time import perf_counter
-        start = perf_counter()
-        errs, lens = match_matlab_simple(cam1_folder, cam2_folder, out_folder,
-                                         colors, frame_numbers,
-                                         calibration_file, transformation_file,
-                                         cam1_convention, cam2_convention)
-        end_simple = perf_counter()
-        errs, lens = match_matlab_complex(cam1_folder, cam2_folder, out_folder,
-                                          colors, frame_numbers,
-                                          calibration_file,
-                                          transformation_file, cam1_convention,
-                                          cam2_convention)
-        end_complex = perf_counter()
-        print(f"Durations\nSimple: {end_simple-start} s"
-              f"\tComplex: {end_complex-end_simple} s")
-
-        err_vis = np.array([])
-        len_vis = np.array([])
-        for err, l in zip(errs, lens):
-            err_vis = np.concatenate([err_vis, err.flatten()])
-            len_vis = np.concatenate([len_vis, l.flatten()])
-        matching_results(err_vis, len_vis)
-
-    else:
-        errs, lens = match_matlab_simple(cam1_folder, cam2_folder, out_folder,
-                                         colors, frame_numbers,
-                                         calibration_file, transformation_file,
-                                         cam1_convention, cam2_convention)
-        err_vis = np.array([])
-        len_vis = np.array([])
-        for err, l in zip(errs, lens):
-            err_vis = np.concatenate([err_vis, err.flatten()])
-            len_vis = np.concatenate([len_vis, l.flatten()])
-        matching_results(err_vis, len_vis)
-
-
-def extract_mat_from_txt():
-    import scipy.io as sio
-    col_names = ['x1_r', 'y1_r', 'z1_r', 'x2_r', 'y2_r', 'z2_r',
-                 'x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
-                 'x1_gp3', 'y1_gp3', 'x2_gp3', 'y2_gp3', 'x1_gp4', 'y1_gp4',
-                 'x2_gp4', 'y2_gp4', 'particle', 'frame']
-    dbg_data_format = "./debug_files/data3d_blueT/{:05d}.txt"
-    rods_exp = 12
-    frames = list(range(100, 905))
-    dbg_data = dl.load_positions_from_txt(dbg_data_format, col_names, frames)
-    # raw_3d = dbg_data[['x1_r', 'y1_r', 'z1_r', 'x2_r',
-    #                    'y2_r', 'z2_r']].to_numpy()
-    rods_cam1 = dbg_data[['x1_gp3', 'y1_gp3', 'x2_gp3', 'y2_gp3']].to_numpy()
-    rods_cam2 = dbg_data[['x1_gp4', 'y1_gp4', 'x2_gp4', 'y2_gp4']].to_numpy()
-    rods_cam1 = rods_cam1.reshape((-1, rods_exp, 4))
-    rods_cam2 = rods_cam2.reshape((-1, rods_exp, 4))
-    dt = np.dtype(
-        [('Point1', np.float, (2,)), ('Point2', np.float, (2,))])
-    for r_c1, r_c2, fr in zip(rods_cam1, rods_cam2, frames):
-        arr = np.zeros((rods_exp,), dtype=dt)
-        arr[:]['Point1'] = r_c1[:, 0:2]
-        arr[:]['Point2'] = r_c1[:, 2:]
-        sio.savemat(f"./debug_files/gp3/{fr:05d}_blue.mat",
-                    {'rod_data_links': arr})
-        arr2 = np.zeros((rods_exp,), dtype=dt)
-        arr2[:]['Point1'] = r_c2[:, 0:2]
-        arr2[:]['Point2'] = r_c2[:, 2:]
-        sio.savemat(f"./debug_files/gp4/{fr:05d}_blue.mat",
-                    {'rod_data_links': arr2})
-
-
-if __name__ == "__main__":
-    example_match_rods()

@@ -1,16 +1,12 @@
+# TODO: document functions/module
 import sys
-import json
 import logging
-import warnings
 from collections import Counter
 
 import numpy as np
-import pandas as pd
 from scipy.spatial import ConvexHull
 from sklearn.cluster import DBSCAN
 from skimage.transform import probabilistic_hough_line
-
-import ParticleDetection.utils.datasets as ds
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -234,55 +230,3 @@ def rod_endpoints(prediction, classes: dict):
 
             results[classes[i_c]] = np.array(XY)
     return results
-
-
-def get_dataset_size(dataset: ds.DataSet):
-    """Compute the number of annotated images in a dataset (excluding
-    augmentation)."""
-    with open(dataset.annotation) as metadata:
-        annotations = json.load(metadata)
-    image_count = 0
-    for image in list(annotations.values()):
-        # Skip non-annotated image entries
-        if image["regions"]:
-            image_count += 1
-    return image_count
-
-
-def get_object_counts(dataset: ds.DataSet):
-    """Returns a list of the number of objects in each image in the dataset."""
-    with open(dataset.annotation) as metadata:
-        annotations = json.load(metadata)
-    return [len(annotations[key]["regions"]) for key in annotations.keys()]
-
-
-def insert_missing_rods(dataset: pd.DataFrame, expected_rods: int) \
-        -> pd.DataFrame:
-    columns = ["x1", "y1", "z1", "x2", "y2", "z2", "x", "y", "z", "l",
-               "x1_gp1", "y1_gp1", "x2_gp1", "y2_gp1",
-               "x1_gp2", "y1_gp2", "x2_gp2", "y2_gp2",
-               "frame", "seen_gp1", "seen_gp2", "color"]
-    for color in dataset.color.unique():
-        data_tmp = dataset.loc[dataset.color == color]
-        for frame in data_tmp.frame.unique():
-            rod_no = len(data_tmp.loc[data_tmp.frame == frame])
-            if rod_no == expected_rods:
-                continue
-            elif rod_no > expected_rods:
-                warnings.warn(f"More rods than expected for frame #{frame}"
-                              f" of color '{color}'")
-            missing = expected_rods - rod_no
-            empty_rods = pd.DataFrame(missing * [
-                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-                 np.nan, np.nan, np.nan, -1, -1, -1, -1, -1, -1, -1, -1, frame,
-                 0, 0, color]],
-                columns=columns
-                )
-            empty_rods["particle"] = np.arange(rod_no, expected_rods,
-                                               dtype=int)
-            dataset = pd.concat([dataset, empty_rods], ignore_index=True)
-    return dataset
-
-
-if __name__ == "__main__":
-    pass

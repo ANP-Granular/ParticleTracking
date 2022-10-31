@@ -1,3 +1,4 @@
+# TODO: document functions/module
 import random
 import warnings
 

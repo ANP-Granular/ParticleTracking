@@ -1,7 +1,10 @@
+# TODO: document module/functions, add deprecation warning(s)
 import json
 from typing import List, Tuple
 import numpy as np
 import pandas as pd
+
+# TODO: define config keys/structure as Literals
 
 
 def extract_stereo_params(calibration_params: dict) -> dict:

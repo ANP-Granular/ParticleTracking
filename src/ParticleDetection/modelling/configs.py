@@ -1,3 +1,5 @@
+# TODO: document functions/module
+import pickle
 from warnings import warn
 
 from detectron2 import model_zoo
@@ -6,9 +8,8 @@ from detectron2.config.config import CfgNode
 from detectron2.data import transforms as T
 
 from ParticleDetection.utils.datasets import DataSet
-import ParticleDetection.utils.helper_funcs as hf
-import ParticleDetection.modelling.detectron_obj.augmentations as ca
-from ParticleDetection.modelling.utils.helper_funcs import get_iters
+import ParticleDetection.utils.datasets as ds
+import ParticleDetection.modelling.augmentations as ca
 
 
 PORTED_AUGMENTATIONS = [
@@ -21,6 +22,30 @@ PORTED_AUGMENTATIONS = [
                ca.SharpenAugmentation(alpha=(0.4, 0.6), lightness=(0.9, 1.1))
                ], lower=0, upper=3)
     ]
+
+
+def get_epochs(cfg: CfgNode, image_count: int) -> float:
+    """Computes the achieved number of epochs with given settings and data."""
+    batch_size = cfg.SOLVER.IMS_PER_BATCH
+    iterations = cfg.SOLVER.MAX_ITER
+    return iterations / (image_count/batch_size)
+
+
+def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
+    """Computes the necessary iterations to achieve a given number of
+    epochs.
+    """
+    batch_size = cfg.SOLVER.IMS_PER_BATCH
+    return desired_epochs*(image_count/batch_size)
+
+
+def write_configs(cfg: CfgNode, directory: str, augmentations=None) -> None:
+    """Write a configuration to a 'config.yaml' file in a target directory."""
+    with open(directory + "/config.yaml", "w") as f:
+        f.write(cfg.dump())
+    if augmentations is not None:
+        with open(directory + "/augmentations.pkl", "wb") as f:
+            pickle.dump(augmentations, f)
 
 
 def run_test_config(dataset: DataSet) -> CfgNode:
@@ -98,7 +123,7 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
 
     # Configurations with the given dataset
     cfg.DATASETS.TRAIN = (dataset.name,)
-    image_count = hf.get_dataset_size(dataset)
+    image_count = ds.get_dataset_size(dataset)
     iter_25ep = int(get_iters(cfg, image_count, desired_epochs=25))
     iter_75ep = 3 * iter_25ep  # 2nd training period duration
     iter_125ep = 5 * iter_25ep  # 3rd training period duration  # noqa: F841

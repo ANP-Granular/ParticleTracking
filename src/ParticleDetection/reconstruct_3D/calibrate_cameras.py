@@ -1,9 +1,10 @@
+# TODO: document functions/module
 import os
 import cv2
 import numpy as np
 
 
-def stereo_calibrate(cam1_path: str, cam2_path: str):
+def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
     # Setup
     corner_distance = 5     # mm
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
@@ -44,10 +45,10 @@ def stereo_calibrate(cam1_path: str, cam2_path: str):
                                              (-1, -1), criteria)
             img_points2.append(corners2_fine)
 
-            # Uncomment for visualization of the checkerboard detection
-            # cv2.drawChessboardCorners(img, (4, 5), corners_fine, ret)
-            # cv2.imshow('img', img)
-            # cv2.waitKey(1500)
+            if visualize:
+                cv2.drawChessboardCorners(img, (4, 5), corners_fine, ret)
+                cv2.imshow('img', img)
+                cv2.waitKey(1500)
 
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points,
                                                        img_grey.shape[::-1],
@@ -63,7 +64,3 @@ def stereo_calibrate(cam1_path: str, cam2_path: str):
         flags=stereocalibration_flags)
 
     return ret, CM1, dist1, CM2, dist2, R, T, E, F
-
-
-if __name__ == "__main__":
-    pass

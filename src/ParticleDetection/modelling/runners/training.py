@@ -1,3 +1,4 @@
+# TODO: document functions/module
 """
 Script to train a new model.
 
@@ -22,11 +23,10 @@ from detectron2.config import CfgNode
 import detectron2.data.transforms as T
 
 # import custom code
-from ParticleDetection.modelling.detectron_obj.datasets import load_custom_data
+from ParticleDetection.modelling.datasets import load_custom_data
 import ParticleDetection.utils.datasets as ds
-import ParticleDetection.utils.helper_funcs as hf
-import ParticleDetection.modelling.detectron_obj.detectron as custom
-from ParticleDetection.modelling.utils.helper_funcs import write_configs 
+import ParticleDetection.modelling.detectron as custom
+from ParticleDetection.modelling.configs import write_configs
 
 
 def run_training(train_set: ds.DataSet,
@@ -124,13 +124,13 @@ def run_training(train_set: ds.DataSet,
                 configuration.DATASETS.TEST = (val_set.name,)
                 # Determine the maximum number of instances to predict per
                 # image
-                counts = hf.get_object_counts(val_set)
+                counts = ds.get_object_counts(val_set)
                 configuration.TEST.DETECTIONS_PER_IMAGE = int(1.5 * np.max(
                     counts))
             elif not configuration.TEST.DETECTIONS_PER_IMAGE:
                 # Determine the maximum number of instances to predict per
                 # image
-                counts = hf.get_object_counts(val_set)
+                counts = ds.get_object_counts(val_set)
                 configuration.TEST.DETECTIONS_PER_IMAGE = int(1.5 * np.max(
                     counts))
 

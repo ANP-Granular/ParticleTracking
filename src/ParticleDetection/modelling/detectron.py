@@ -1,3 +1,4 @@
+# TODO: document module/functions, resolve todos (if possible)
 import time
 import datetime
 import logging
@@ -324,19 +325,3 @@ class CustomTensorboardWriter(EventWriter):
         # doesn't exist when the code fails at import
         if hasattr(self, "_writer"):
             self._writer.close()
-
-
-if __name__ == "__main__":
-    import os
-    import src.ParticleDetection.utils.datasets
-    import matplotlib.pyplot as plt
-    CONFIG_FILE = "../runners/test_augmentations/config.yaml"
-    print(os.path.abspath(CONFIG_FILE))
-    cfg = CfgNode(CfgNode.load_yaml_with_base(CONFIG_FILE))
-    test = CustomTrainer(cfg)
-    loader = test.build_train_loader(cfg)
-    for stuff in loader:
-        img = stuff[0]["image"]
-        plt.figure()
-        plt.imshow(torch.reshape(img, (*img.shape[1:], 3)))
-        plt.show()

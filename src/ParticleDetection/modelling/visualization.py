@@ -1,3 +1,4 @@
+# TODO: document functions/module
 """
 Functions to visualize predictions of models.
 
@@ -7,18 +8,14 @@ Date:       11.08.2022
 import os
 import sys
 import cv2
-import random
 import logging
 from typing import Union, Iterable
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import torch
-from detectron2.data import MetadataCatalog
-from detectron2.utils.visualizer import Visualizer, GenericMask
+from detectron2.utils.visualizer import GenericMask
 
-import ParticleDetection.utils.datasets as ds
-import ParticleDetection.modelling.detectron_obj.datasets as det_ds
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -206,29 +203,3 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
                          "Skipping mask visualization...")
 
     return fig
-
-
-def vis_single(dataset, filenames):
-    filename = "FT2015_shot2_gp2_00750.jpg"                     # noqa: F841
-    dataset_dicts = det_ds.load_custom_data(dataset)
-    meta_data = MetadataCatalog.get(dataset.name)
-
-    for d in random.sample(dataset_dicts, 5):
-        img = cv2.imread(d["file_name"])
-        visualizer = Visualizer(img[:, :, ::-1], metadata=meta_data, scale=0.5)
-        # d["annotations"] = random.sample(d["annotations"], 10)
-        out = visualizer.draw_dataset_dict(d)
-        plt.figure(figsize=[12.80, 7.20])
-        plt.imshow(out.get_image()[:, :, ::-1])
-        plt.show()
-
-
-if __name__ == "__main__":
-    data_folder = "../datasets/rods_c4m"
-    metadata_file = "/via_export_json.json"
-    val_data = ds.DataSet("c4m_val", data_folder + "/val", metadata_file)
-    classes = ["blue", "green", "orange", "purple", "red", "yellow", "black",
-               "lilac", "brown"]
-    det_ds.register_dataset(val_data, classes=classes)
-
-    vis_single(val_data, 1)

@@ -1,8 +1,13 @@
+# TODO: finish todos, document functions/module
 import os
 import sys
+import json
 import logging
 from typing import List
+from pathlib import Path
+import numpy as np
 import pandas as pd
+import scipy.io as sio
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -14,6 +19,40 @@ formatter = logging.Formatter(
     )
 ch.setFormatter(formatter)
 _logger.addHandler(ch)
+
+# TODO: define config keys/structure as Literals
+
+
+# TODO: complete
+def txt2mat(input_folder):
+    # TODO: use col names from datasets
+    col_names = ['x1_r', 'y1_r', 'z1_r', 'x2_r', 'y2_r', 'z2_r',
+                 'x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
+                 'x1_gp3', 'y1_gp3', 'x2_gp3', 'y2_gp3', 'x1_gp4', 'y1_gp4',
+                 'x2_gp4', 'y2_gp4', 'particle', 'frame']
+    dbg_data_format = "./debug_files/data3d_blueT/{:05d}.txt"
+    rods_exp = 12
+    frames = list(range(100, 905))
+    dbg_data = dl.load_positions_from_txt(dbg_data_format, col_names, frames)
+    # raw_3d = dbg_data[['x1_r', 'y1_r', 'z1_r', 'x2_r',
+    #                    'y2_r', 'z2_r']].to_numpy()
+    rods_cam1 = dbg_data[['x1_gp3', 'y1_gp3', 'x2_gp3', 'y2_gp3']].to_numpy()
+    rods_cam2 = dbg_data[['x1_gp4', 'y1_gp4', 'x2_gp4', 'y2_gp4']].to_numpy()
+    rods_cam1 = rods_cam1.reshape((-1, rods_exp, 4))
+    rods_cam2 = rods_cam2.reshape((-1, rods_exp, 4))
+    dt = np.dtype(
+        [('Point1', np.float, (2,)), ('Point2', np.float, (2,))])
+    for r_c1, r_c2, fr in zip(rods_cam1, rods_cam2, frames):
+        arr = np.zeros((rods_exp,), dtype=dt)
+        arr[:]['Point1'] = r_c1[:, 0:2]
+        arr[:]['Point2'] = r_c1[:, 2:]
+        sio.savemat(f"./debug_files/gp3/{fr:05d}_blue.mat",
+                    {'rod_data_links': arr})
+        arr2 = np.zeros((rods_exp,), dtype=dt)
+        arr2[:]['Point1'] = r_c2[:, 0:2]
+        arr2[:]['Point2'] = r_c2[:, 2:]
+        sio.savemat(f"./debug_files/gp4/{fr:05d}_blue.mat",
+                    {'rod_data_links': arr2})
 
 
 def mat2csv(input_folders: str, output_file: str):
@@ -147,5 +186,43 @@ def csv_split_by_frames(input_file: str, cut_frames: List[int]) -> List[str]:
     return written
 
 
-if __name__ == "__main__":
-    pass
+def convert_old(folder: Path):
+    cm1 = np.zeros((3, 3))
+    cm1[[0, 1], [2, 2]] = np.loadtxt(folder / "c.txt")
+    cm1[[0, 1], [0, 1]] = np.loadtxt(folder / "f.txt")
+    cm1[2, 2] = 1.
+    cm2 = np.zeros((3, 3))
+    cm2[[0, 1], [2, 2]] = np.loadtxt(folder / "c2.txt")
+    cm2[[0, 1], [0, 1]] = np.loadtxt(folder / "f2.txt")
+    cm2[2, 2] = 1.
+
+    dist1 = np.loadtxt(folder / "kc.txt")
+    dist2 = np.loadtxt(folder / "kc2.txt")
+
+    R = np.loadtxt(folder / "R.txt", delimiter=",")
+    T = np.loadtxt(folder / "transvek.txt")
+
+    to_json = {
+        "CM1": cm1.tolist(),
+        "dist1": [dist1.tolist()],
+        "CM2": cm2.tolist(),
+        "dist2": [dist2.tolist()],
+        "R": R.tolist(),
+        "T": [T.tolist()],
+    }
+    with open(folder / "converted.json", "w") as f:
+        json.dump(to_json, f, indent=2)
+
+    trafos = sio.loadmat(
+        folder / "transformations.mat")["transformations"][0][0]
+    world_to_json = {
+        "transformations": {
+            "M_rotate_x": trafos[0].tolist(),
+            "M_rotate_y": trafos[1].tolist(),
+            "M_rotate_z": trafos[2].tolist(),
+            "M_trans2": trafos[3].tolist(),
+            "M_trans": trafos[4].tolist(),
+        }
+    }
+    with open(folder / "world_transformations_converted.json", "w") as f:
+        json.dump(world_to_json, f, indent=2)

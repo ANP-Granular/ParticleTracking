@@ -1,3 +1,4 @@
+# TODO: document functions/module, factor out functions
 """
 Script to run inference with a trained network and save the results for further
 computations.
@@ -26,10 +27,10 @@ from detectron2.config import CfgNode
 # import custom code
 import ParticleDetection.utils.datasets as ds
 import ParticleDetection.utils.helper_funcs as hf
-import ParticleDetection.modelling.detectron_obj.datasets as det_ds
-from ParticleDetection.modelling.utils.helper_funcs import write_configs
+import ParticleDetection.modelling.datasets as det_ds
+from ParticleDetection.modelling.configs import write_configs
 import ParticleDetection.utils.data_conversions as d_conv
-import ParticleDetection.modelling.utils.visualization as visualization
+import ParticleDetection.modelling.visualization as visualization
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
