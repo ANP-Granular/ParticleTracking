@@ -19,6 +19,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Image Processing",
     "Topic :: Scientific/Engineering :: Physics",
 ]
+packages = [
+    { include = "ParticleDetection", from = "src"},
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
