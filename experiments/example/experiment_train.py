@@ -1,7 +1,8 @@
 from detectron2.config import CfgNode
-from runners import training
-from utils import datasets as ds
-from utils.configs import PORTED_AUGMENTATIONS
+from ParticleDetection.modelling.runners import training
+from ParticleDetection.modelling.configs import PORTED_AUGMENTATIONS
+import ParticleDetection.modelling.datasets as mod_ds
+import ParticleDetection.utils.datasets as ds
 
 
 def main():
@@ -12,8 +13,8 @@ def main():
     train_data = ds.DataSet("hgs_train", data_folder + "/train", metadata_file)
     val_data = ds.DataSet("hgs_val", data_folder + "/val", metadata_file)
     # Register datasets to Detectron2
-    ds.register_dataset(train_data, classes=["sphere"])
-    ds.register_dataset(val_data, classes=["sphere"])
+    mod_ds.register_dataset(train_data, classes=["sphere"])
+    mod_ds.register_dataset(val_data, classes=["sphere"])
 
     # Set up training configuration ###########################################
     # Load a *.yaml file with static configurations

@@ -15,12 +15,15 @@ import numpy as np
 
 from detectron2.config import CfgNode
 import detectron2.data.transforms as T
-from detectron2.projects import point_rend      # Don't remove, registers
-                                                # model parts in detectron2
-from runners import training
-from utils import datasets as ds
-import utils.custom_augmentations as ca
-import utils.helper_funcs as hf
+
+# Don't remove, registers model parts in detectron2
+from detectron2.projects import point_rend                      # noqa: F401
+
+from ParticleDetection.modelling.runners import training
+import ParticleDetection.utils.datasets as ds
+import ParticleDetection.modelling.datasets as mod_ds
+import ParticleDetection.modelling.configs as mod_config
+import ParticleDetection.modelling.augmentations as ca
 
 
 def train_heads(output_base: str, config: dict, weights: str = None) -> dict:
@@ -55,9 +58,10 @@ def train_heads(output_base: str, config: dict, weights: str = None) -> dict:
     else:
         config["configuration"].MODEL.WEIGHTS = weights
 
-    image_no = hf.get_dataset_size(config["train_set"])
+    image_no = mod_ds.get_dataset_size(config["train_set"])
     config["configuration"].SOLVER.MAX_ITER = int(
-        hf.get_iters(config["configuration"], image_no, desired_epochs=300))
+        mod_config.get_iters(config["configuration"], image_no,
+                             desired_epochs=300))
     config["configuration"].SOLVER.BASE_LR = 0.001
     config["configuration"].INPUT.CROP.ENABLED = True
     config["configuration"].INPUT.MIN_SIZE_TRAIN = 512
@@ -96,9 +100,10 @@ def train_all_s1(output_base: str, config: dict, weights: str = None) -> dict:
             previous_output, "model_final.pth")
     else:
         config["configuration"].MODEL.WEIGHTS = weights
-    image_no = hf.get_dataset_size(config["train_set"])
+    image_no = mod_ds.get_dataset_size(config["train_set"])
     config["configuration"].SOLVER.MAX_ITER = int(
-        hf.get_iters(config["configuration"], image_no, desired_epochs=450))
+        mod_config.get_iters(config["configuration"], image_no,
+                             desired_epochs=450))
 
     training.run_training(**config)
     return config
@@ -135,9 +140,10 @@ def train_all_s2(output_base: str, config: dict, weights: str = None) -> dict:
             previous_output, "model_final.pth")
     else:
         config["configuration"].MODEL.WEIGHTS = weights
-    image_no = hf.get_dataset_size(config["train_set"])
+    image_no = mod_ds.get_dataset_size(config["train_set"])
     config["configuration"].SOLVER.MAX_ITER = int(
-        hf.get_iters(config["configuration"], image_no, desired_epochs=600))
+        mod_config.get_iters(config["configuration"], image_no,
+                             desired_epochs=600))
     config["configuration"].SOLVER.BASE_LR = 0.0004
 
     training.run_training(**config)
@@ -175,9 +181,10 @@ def train_all_s3(output_base: str, config: dict, weights: str = None) -> dict:
             previous_output, "model_final.pth")
     else:
         config["configuration"].MODEL.WEIGHTS = weights
-    image_no = hf.get_dataset_size(config["train_set"])
+    image_no = mod_ds.get_dataset_size(config["train_set"])
     config["configuration"].SOLVER.MAX_ITER = int(
-        hf.get_iters(config["configuration"], image_no, desired_epochs=750))
+        mod_config.get_iters(config["configuration"], image_no,
+                             desired_epochs=750))
     config["configuration"].SOLVER.BASE_LR = 0.0001
 
     training.run_training(**config)
@@ -216,9 +223,10 @@ def train_point_rend(output_base: str, config: dict, weights: str = None) -> \
             previous_output, "model_final.pth")
     else:
         config["configuration"].MODEL.WEIGHTS = weights
-    image_no = hf.get_dataset_size(config["train_set"])
+    image_no = mod_ds.get_dataset_size(config["train_set"])
     config["configuration"].SOLVER.MAX_ITER = int(
-        hf.get_iters(config["configuration"], image_no, desired_epochs=300))
+        mod_config.get_iters(config["configuration"], image_no,
+                             desired_epochs=300))
 
     training.run_training(**config)
     return config
@@ -233,7 +241,7 @@ def init_cfg() -> dict:
         Configuration that can be used for training as:
             `training.run_training(**configuration)`
     """
-    # Set up known dataset(s) for use with Detectron2 ##########################
+    # Set up known dataset(s) for use with Detectron2 #########################
     data_folder = "../../datasets/rods_c4m"
     metadata_file = "/via_export_json.json"
     train_data = ds.DataSet("c4m_train", data_folder + "/train",
@@ -243,14 +251,14 @@ def init_cfg() -> dict:
     classes = ["blue", "green", "orange", "purple", "red", "yellow",
                "black", "lilac", "brown"]
     try:
-        ds.register_dataset(train_data, classes=classes)
-        ds.register_dataset(val_data, classes=classes)
+        mod_ds.register_dataset(train_data, classes=classes)
+        mod_ds.register_dataset(val_data, classes=classes)
     except AssertionError as e:
         # Datasets are already registered
         print(e)
-    image_no = hf.get_dataset_size(train_data)
+    image_no = mod_ds.get_dataset_size(train_data)
 
-    # Set up training configuration ############################################
+    # Set up training configuration ###########################################
     # Load a *.yaml file with static configurations
     cfg = CfgNode(CfgNode.load_yaml_with_base(
         "../../base_configs/rod_detection.yaml"))
@@ -270,10 +278,10 @@ def init_cfg() -> dict:
         ds.get_dataset_classes(train_data))
     cfg.MODEL.BACKBONE.FREEZE_AT = 0
     cfg.TEST.EVAL_PERIOD = int(image_no / cfg.SOLVER.IMS_PER_BATCH)
-    counts = hf.get_object_counts(val_data)
+    counts = ds.get_object_counts(val_data)
     cfg.TEST.DETECTIONS_PER_IMAGE = int(1.5 * np.max(counts))
 
-    # create a list of image augmentations to use ##############################
+    # create a list of image augmentations to use #############################
     augmentations = [
         ca.SomeOf([
             T.RandomFlip(horizontal=True, vertical=False),
@@ -310,7 +318,7 @@ def init_cfg_pr() -> dict:
         Configuration that can be used for training as:
             `training.run_training(**configuration)`
     """
-    # Set up known dataset(s) for use with Detectron2 ##########################
+    # Set up known dataset(s) for use with Detectron2 #########################
     data_folder = "../../datasets/rods_c4m"
     metadata_file = "/via_export_json.json"
     train_data = ds.DataSet("c4m_train", data_folder + "/train",
@@ -320,13 +328,13 @@ def init_cfg_pr() -> dict:
     classes = ["blue", "green", "orange", "purple", "red", "yellow",
                "black", "lilac", "brown"]
     try:
-        ds.register_dataset(train_data, classes=classes)
-        ds.register_dataset(val_data, classes=classes)
+        mod_ds.register_dataset(train_data, classes=classes)
+        mod_ds.register_dataset(val_data, classes=classes)
     except AssertionError as e:
         # Datasets are already registered
         print(e)
 
-    # Set up training configuration ############################################
+    # Set up training configuration ###########################################
     # Load a *.yaml file with static configurations
     cfg = CfgNode(CfgNode.load_yaml_with_base(
         "../../base_configs/rod_detection_PR.yaml"))
@@ -335,7 +343,7 @@ def init_cfg_pr() -> dict:
     cfg.DATASETS.TEST = [val_data.name]
 
     # add computed values to the configuration,
-    image_no = hf.get_dataset_size(train_data)
+    image_no = mod_ds.get_dataset_size(train_data)
     cfg.TEST.EVAL_PERIOD = int(image_no / cfg.SOLVER.IMS_PER_BATCH)
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(
         ds.get_dataset_classes(train_data))
@@ -382,7 +390,7 @@ def main():
     """Set up the experiment(s) and invoke the training procedure."""
 
     output = "./rod_detector"
-    init_weights = "https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x/138205316/model_final_a3ec72.pkl"
+    init_weights = "https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x/138205316/model_final_a3ec72.pkl"    # noqa: E501
     cfg = init_cfg()
     cfg = train_heads(output, cfg, init_weights)
     cfg = train_all_s1(output, cfg)

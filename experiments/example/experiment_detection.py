@@ -1,7 +1,7 @@
 import os
 from detectron2.config import CfgNode
-import utils.datasets as ds
-from runners import detection
+import ParticleDetection.utils.datasets as ds
+from ParticleDetection.modelling.runners import detection
 
 
 def main():
