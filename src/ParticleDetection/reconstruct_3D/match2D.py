@@ -1,4 +1,13 @@
-# TODO: document functions/module, clear up todos
+"""
+Function(s) to reconstruct 3D rod endpoints from images of a stereocamera
+system on a per-frame basis, without knowledge about positions in other frames.
+Some functions are directly ported from a MATLAB implementation to python.
+
+Authors:    Adrian Niemann (adrian.niemann@ovgu.de),
+            Dmitry Puzyrev (dmitry.puzyrev@ovgu.de)
+Date:       01.11.2022
+
+"""
 import os
 import itertools
 import pathlib
@@ -47,11 +56,11 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
     if calibration_file is None:
         this_dir = pathlib.Path(__file__).parent.resolve()
         calibration_file = this_dir.joinpath(
-            "calibration_data/Matlab/gp12.json")
+            "example_calibration/Matlab/gp12.json")
     if transformation_file is None:
         this_dir = pathlib.Path(__file__).parent.resolve()
         transformation_file = this_dir.joinpath(
-            "calibration_data/Matlab/world_transformation.json")
+            "example_calibration/Matlab/world_transformation.json")
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
@@ -178,8 +187,12 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
                          transformation_file=None,
                          cam1_convention="{idx:05d}_{color:s}.mat",
                          cam2_convention="{idx:05d}_{color:s}.mat"):
-    # TODO: finish docs
-    """_summary_
+    """Match rod endpoints per frame such that the reprojection error is
+    minimal.
+    This function takes the same input file format and outputs the same file
+    formats as the previous implementation in MATLAB. The inputs and outputs
+    are equivalent to `match_matlab_simple()` but makes heavy use of matrix
+    operations to increase computational efficiency.
 
     Parameters
     ----------
@@ -235,11 +248,11 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
     if calibration_file is None:
         this_dir = pathlib.Path(__file__).parent.resolve()
         calibration_file = this_dir.joinpath(
-            "calibration_data/Matlab/gp12.json")
+            "example_calibration/Matlab/gp12.json")
     if transformation_file is None:
         this_dir = pathlib.Path(__file__).parent.resolve()
         transformation_file = this_dir.joinpath(
-            "calibration_data/Matlab/world_transformation.json")
+            "example_calibration/Matlab/world_transformation.json")
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
@@ -393,17 +406,23 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
                       cam2_name="gp2", frame_numbers=None,
                       calibration_file=None, transformation_file=None,
                       rematching=True):
-    # TODO: extend function description
     """Matches and triangulates rods from *.csv data files.
+
+    The function matches rod endpoints per frame such that the reprojection
+    error is minimal. It takes *.csv files with the columns from
+    `datasets.DEFAULT_COLUMNS` as input and also outputs the results in this
+    format.
 
     Parameters
     ----------
     input_folder : str
         Folder containing the *.csv files for all colors given in `colors`s.
     output_folder : str
-        See `match_matlab_complex()`.
+        Folder to write the output to. The parent folder of this must exist
+        already.
     colors : Iterable[str]
-        See `match_matlab_complex()`.
+        Names of the colors present in the dataset.
+        See `datasets.DEFAULT_CLASSES`.
     cam1_name : str, optional
         First camera's identifier in the given dataset.
         By default "gp1".
@@ -411,30 +430,31 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
         Second camera's identifier in the given dataset.
         By default "gp2".
     frame_numbers : Iterable[int], optional
-        See `match_matlab_complex()`.
+        An iterable of frame numbers present in the data.
     calibration_file : str, optional
-        See `match_matlab_complex()`.
-    transformation_file : _type_, optional
-        See `match_matlab_complex()`.
+        Path to a *.json file with stereocalibration data for the cameras which
+        produced the images for the rod position data.
+        By default the calibration constructed with Matlab for GP1 and GP2 is
+        used.
+    transformation_file : str, optional
+        Path to a *.json file with transformation matrices expressing the
+        transformation from the first camera's coordinate system to the
+        world/box coordinate system.
+        By default the transformation constructed with Matlab is used.
 
     Returns
     -------
     np.ndarray, np.ndarray
         Reprojection errors, rod lengths of the matched rod endpoints.
-
-    Note
-    ----
-    This function currently saves the 3D points in the first camera's
-    coordinate system, NOT the world/box coordinate system.
     """
     if calibration_file is None:
         this_dir = pathlib.Path(__file__).parent.resolve()
         calibration_file = this_dir.joinpath(
-            "calibration_data/Matlab/gp12.json")
+            "example_calibration/Matlab/gp12.json")
     if transformation_file is None:
         this_dir = pathlib.Path(__file__).parent.resolve()
         transformation_file = this_dir.joinpath(
-            "calibration_data/Matlab/world_transformation.json")
+            "example_calibration/Matlab/world_transformation.json")
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 

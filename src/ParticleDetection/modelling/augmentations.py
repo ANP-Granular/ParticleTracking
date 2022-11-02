@@ -1,4 +1,12 @@
-# TODO: document functions/module
+"""
+Collection of custom image augmentations extending the Detectron2 augmentation
+pool. These augmentations are intended to be used during the training process
+of a neural network using the Detectron2 framework.
+
+Author:     Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       31.10.2022
+
+"""
 import random
 import warnings
 

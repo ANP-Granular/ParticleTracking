@@ -1,5 +1,14 @@
-# TODO: document functions/module
+"""
+Collection of helper functions to be used with CfgNode configuration objects
+for a Detectron2 network. Additionally, defines a ported version of a
+previously used R-CNN from an older implementation.
+
+Author:     Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       31.10.2022
+
+"""
 import pickle
+from typing import List
 from warnings import warn
 
 from detectron2 import model_zoo
@@ -39,7 +48,8 @@ def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
     return desired_epochs*(image_count/batch_size)
 
 
-def write_configs(cfg: CfgNode, directory: str, augmentations=None) -> None:
+def write_configs(cfg: CfgNode, directory: str,
+                  augmentations: List[T.Augmentation] = None) -> None:
     """Write a configuration to a 'config.yaml' file in a target directory."""
     with open(directory + "/config.yaml", "w") as f:
         f.write(cfg.dump())
@@ -59,6 +69,9 @@ def run_test_config(dataset: DataSet) -> CfgNode:
 
 def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
         -> CfgNode:
+    """Creates a configuration resembling one previously used with an older
+    implementation of a R-CNN.
+    """
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file(
         "COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
@@ -72,12 +85,6 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     cfg.SOLVER.CHECKPOINT_PERIOD = 1500
 
     # INPUT
-    # TODO: The input sizing and cropping settings seem to be strange,
-    #  as it "first" resizes the original image and then crops them to the
-    #  same size. How is that actually done in the old implementation?????
-    #  _
-    #  Here it might be necessary to keep the MIN_SIZE higher than CROP.SIZE
-    #  to achieve the same data augmentation effect!
     cfg.INPUT.MIN_SIZE_TRAIN = (512,)   # (256,)
     cfg.INPUT.MAX_SIZE_TRAIN = (768,)   # (256,)
     # cfg.INPUT.MIN_SIZE_TEST = (512,)
@@ -90,7 +97,6 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
 
     # The "RoIHead batch size". 128 is faster, and good enough for this toy
     # dataset (default: 512)
-    # TODO: not entirely sure about this
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 500
     # only has one class (polygon), DON'T add 1 for background
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
@@ -130,7 +136,6 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     cfg.SOLVER.MAX_ITER = 9 * iter_25ep
 
     # Construct the 1st learning period
-    # TODO: find out how to just train the heads
     cfg.SOLVER.WARMUP_FACTOR = 1  # keeps the base lr
     cfg.SOLVER.WARMUP_ITERS = iter_25ep
     cfg.SOLVER.WARMUP_METHOD = "constant"
@@ -143,7 +148,6 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
         warn("No DataSet was given for testing.")
         return cfg
 
-    # TODO: implement DefaultTrainer.build_evaluator() to use these
     cfg.DATASETS.TEST = (test_dataset.name,)
     cfg.TEST.EVAL_PERIOD = 100
 

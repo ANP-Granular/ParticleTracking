@@ -1,4 +1,6 @@
-# TODO: document functions/module
+"""
+Collection of miscellaneous helper functions.
+"""
 import sys
 import logging
 from collections import Counter
@@ -20,7 +22,7 @@ ch.setFormatter(formatter)
 _logger.addHandler(ch)
 
 
-def dot_arccos(lineA, lineB):
+def _dot_arccos(lineA, lineB):
     # Get nicer vector form
     vA = [(lineA[0] - lineA[2]), (lineA[1] - lineA[3])]
     vB = [(lineB[0] - lineB[2]), (lineB[1] - lineB[3])]
@@ -33,7 +35,7 @@ def dot_arccos(lineA, lineB):
                 1))
 
 
-def line_metric_4(l1, l2):
+def _line_metric_4(l1, l2):
     """Custom metric: (distance + const)*exp"""
     num_min = np.argmin([np.linalg.norm([(l1[0] - l1[2]), (l1[1] - l1[3])]),
                          np.linalg.norm(
@@ -64,23 +66,29 @@ def line_metric_4(l1, l2):
     prox_m = (g / len_min) ** 2
 
     # Parallelism
-    parr_m = (dot_arccos(l1, l2) * s * len_max) / (len_min * len_min)
+    parr_m = (_dot_arccos(l1, l2) * s * len_max) / (len_min * len_min)
 
     # Collinearity
-    coll_m = (dot_arccos(l1, l2) * s * (len_min + g)) / (len_min * len_min)
+    coll_m = (_dot_arccos(l1, l2) * s * (len_min + g)) / (len_min * len_min)
 
     # return [prox_m, parr_m, coll_m]
     return np.linalg.norm([prox_m, 5.0 * parr_m, 4.0 * coll_m])
 
 
-def minimum_bounding_rectangle(points):
-    """Minimum bounding rectangle (parallelogram?)
+def _minimum_bounding_rectangle(points):
+    """Minimum bounding rectangle.
 
     Find the smallest bounding rectangle for a set of points.
     Returns a set of points representing the corners of the bounding box.
 
-    :param points: an nx2 matrix of coordinates
-    :rval: an nx2 matrix of coordinates
+    Parameters
+    ----------
+    points :
+        An nx2 matrix of coordinates
+
+    Returns
+    -------
+        An nx2 matrix of coordinates
     """
     pi2 = np.pi / 2.
 
@@ -140,8 +148,24 @@ def minimum_bounding_rectangle(points):
     return rval
 
 
-def rod_endpoints(prediction, classes: dict):
-    """Calculates the endpoints of rods from the prediction masks."""
+def rod_endpoints(prediction, classes: dict[int, str]) \
+        -> dict[int, np.ndarray]:
+    """Calculates the endpoints of rods from the prediction masks.
+
+    Parameters
+    ----------
+    prediction : dict
+        Prediction output of a Detectron2 network with the actual results
+        present in `prediction["instances"]` as a torch.Tensor.
+    classes : dict[int, str]
+        Dictionary of classes expected/possible in the prediction. The key
+        being the class ID as an integer, that is the output of the
+        inferring network. The value being an arbitrary string associated with
+        the class, e.g. {1: "blue", 2: "green"}.
+    Returns
+    -------
+    dict[int, np.ndarray]
+    """
     results = {}
     with np.errstate(divide='ignore', invalid='ignore'):
         r = prediction["instances"].to("cpu").get_fields()
@@ -173,7 +197,7 @@ def rod_endpoints(prediction, classes: dict):
                 X = np.ravel(Xl).reshape(Xl.shape[0], 4)
                 # Clustering with custom metric
                 db = DBSCAN(eps=0.0008, min_samples=4, algorithm='auto',
-                            metric=line_metric_4).fit(X)
+                            metric=_line_metric_4).fit(X)
 
                 core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
                 core_samples_mask[db.core_sample_indices_] = True
@@ -187,7 +211,7 @@ def rod_endpoints(prediction, classes: dict):
 
                 points = xy.reshape(2 * xy.shape[0], 2)
                 if points.shape[0] > 2:
-                    bbox = minimum_bounding_rectangle(points)
+                    bbox = _minimum_bounding_rectangle(points)
                     bord = -1  # Make rods 1 pix shorter
 
                     # End coordinates

@@ -1,14 +1,39 @@
-# TODO: document module/functions, add deprecation warning(s)
+"""
+Collection of (mostly deprecated) functions to load stereo camera calibration
+data and rod position data.
+
+Authors:    Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       02.11.2022
+
+"""
 import json
-from typing import List, Tuple
+from typing import List, Tuple, Iterable
+import warnings
 import numpy as np
 import pandas as pd
 
-# TODO: define config keys/structure as Literals
-
 
 def extract_stereo_params(calibration_params: dict) -> dict:
-    """
+    """Load stereo camera calibrations from a direct MATLAB *.json export.
+
+    Loads stereo camera calibrations, that have been exported to *.json
+    directly from MATLAB and therefore still adhere to MATLAB's naming
+    convention. These are then transferred to the naming convention used by
+    this package (OpenCV's naming convention).
+
+    Parameters
+    ----------
+    calibration_params : dict
+        A MATLAB stereo camera calibration loaded from a *.json file.
+
+    Returns
+    -------
+    dict
+        Stereo camera calibration matrices to be used by this package.
+        Has the keys: "F", "R", "T", "E"
+
+    Notes
+    -----
     OpenCV:             Matlab:
     F                   FundamentalMatrix
     E                   EssentialMatrix
@@ -66,6 +91,8 @@ def extract_stereo_params(calibration_params: dict) -> dict:
     See https://de.mathworks.com/help/vision/ref/stereoparameters.html and
     https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html for more info.
     """
+    warnings.warn("Avoid using this function. Instead convert the calibration"
+                  "to the currently used json-format.", DeprecationWarning)
     F = np.asarray(calibration_params["FundamentalMatrix"])
     E = np.asarray(calibration_params["EssentialMatrix"])
     R = np.linalg.inv(np.asarray(calibration_params["RotationOfCamera2"]))
@@ -73,8 +100,28 @@ def extract_stereo_params(calibration_params: dict) -> dict:
     return {"F": F, "R": R, "T": T, "E": E}
 
 
-def extract_cam_params(mat_params: dict):
-    """
+def extract_cam_params(mat_params: dict) -> dict:
+    """Load camera calibrations from a direct MATLAB *.json export.
+
+    Loads camera calibrations, that have been exported to *.json directly from
+    MATLAB and therefore still adhere to MATLAB's naming and data convention.
+    These are then transferred to the data(/naming) convention used by
+    this package (OpenCV's data convention).
+
+    Parameters
+    ----------
+    mat_params : dict
+        A MATLAB camera calibration loaded from a *.json file.
+
+    Returns
+    -------
+    dict
+        Camera calibration matrices and distortion coefficients to be used by
+        this package.
+        Has the keys: "matrix", "distortions"
+
+    Notes
+    -----
     OpenCV:             Matlab:
     [[fx, 0, cx],       [[fx, 0, 0],
     [0, fy, cy],        [s, fy, 0],
@@ -95,6 +142,8 @@ def extract_cam_params(mat_params: dict):
     https://de.mathworks.com/help/vision/ref/cameraintrinsics.html
     https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
     """
+    warnings.warn("Avoid using this function. Instead convert the calibration"
+                  "to the currently used json-format.", DeprecationWarning)
     # mat_matrix = camera_parameters["IntrinsicMatrix"]
     fx, fy = mat_params["FocalLength"]
     cx, cy = mat_params["PrincipalPoint"]
@@ -123,6 +172,9 @@ def load_calib_from_json(file_name: str) -> \
     with open(file_name, "r") as f:
         all_calibs = json.load(f)
     if "stereoParams" in all_calibs.keys():
+        warnings.warn("Don't use this function anymore to load camera "
+                      "calibrations. Use `load_camera_calibration` instead.",
+                      DeprecationWarning)
         cam1 = extract_cam_params(all_calibs["stereoParams"][
                                          "CameraParameters1"])
         cam2 = extract_cam_params(
@@ -164,9 +216,11 @@ def load_camera_calibration(file_name: str) -> dict:
 
 
 def load_positions_from_txt(base_file_name: str, columns: List[str],
-                            frames: List[int], expected_particles: int =
+                            frames: Iterable[int], expected_particles: int =
                             None) -> pd.DataFrame:
     """Loads the rod data from point matching and adds a frame column."""
+    warnings.warn("Don't use the *.txt data format anymore but switch to the"
+                  " new *.csv format", DeprecationWarning)
     if "particle" not in columns:
         columns.append("particle")
     data = pd.DataFrame(columns=columns)

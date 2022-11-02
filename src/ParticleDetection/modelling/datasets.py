@@ -1,8 +1,16 @@
-# TODO: document functions/module
+"""
+Functions to prepare datasets for the use by the Detectron2 framework, as well
+as functions to get basic information about a dataset, i.e. size and thing
+classes.
+
+Author:     Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       31.10.2022
+
+"""
 import os
 import json
 import warnings
-from typing import List, Callable
+from typing import List, Callable, Set
 
 import numpy as np
 from PIL import Image
@@ -13,6 +21,24 @@ from ParticleDetection.utils.datasets import DataSet
 
 
 def load_custom_data(dataset: DataSet) -> List[dict]:
+    """Loads a (training/testing) dataset into the Detectron2 format.
+
+    Parameters
+    ----------
+    dataset : DataSet
+        Dataset that will be transferred to the Detectron2 dataset format for
+        training a model.
+
+    Returns
+    -------
+    List[dict]
+        Dataset in the Detectron2 format.
+
+    Note
+    ----
+    For more information see:
+    https://detectron2.readthedocs.io/en/latest/tutorials/datasets.html#standard-dataset-dicts
+    """
     with open(dataset.annotation) as metadata:
         annotations = json.load(metadata)
 
@@ -68,6 +94,19 @@ def load_custom_data(dataset: DataSet) -> List[dict]:
 def register_dataset(dataset: DataSet,
                      generation_function: Callable = load_custom_data,
                      classes: List[str] = None):
+    """Register a custom dataset to the Detectron2 framework.
+
+    Parameters
+    ----------
+    dataset : DataSet
+    generation_function : Callable, optional
+        Function, that transforms a given `DataSet` into a Detectron2 readable
+        format.
+        By default `load_custom_data(...)`.
+    classes : List[str], optional
+        Names of the classes present in the loaded dataset.
+        By default None, which results in class names like 0, 1, 2, ...
+    """
     DatasetCatalog.register(dataset.name,
                             lambda: generation_function(dataset))
     if classes is not None:
@@ -77,7 +116,7 @@ def register_dataset(dataset: DataSet,
                       "of the built-in COCOEvaluator.")
 
 
-def get_dataset_size(dataset: DataSet):
+def get_dataset_size(dataset: DataSet) -> int:
     """Compute the number of annotated images in a dataset (excluding
     augmentation)."""
     with open(dataset.annotation) as metadata:
@@ -90,7 +129,7 @@ def get_dataset_size(dataset: DataSet):
     return image_count
 
 
-def get_dataset_classes(dataset: DataSet):
+def get_dataset_classes(dataset: DataSet) -> Set[int]:
     """Retrieve the number and IDs of thing classes in the dataset."""
     with open(dataset.annotation) as metadata:
         annotations = json.load(metadata)

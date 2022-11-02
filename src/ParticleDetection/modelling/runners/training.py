@@ -1,12 +1,10 @@
-# TODO: document functions/module
 """
-Script to train a new model.
+Function(s) to train a new model using the Detectron2 framework.
 
 Author:     Adrian Niemann (adrian.niemann@ovgu.de)
 Date:       10.08.2022
-"""
 
-# import general libraries
+"""
 import os
 import cv2
 import random
@@ -15,14 +13,12 @@ from typing import Union, List
 import matplotlib.pyplot as plt
 import numpy as np
 
-# import detectron2 utilities
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog
 from detectron2.utils.logger import setup_logger
 from detectron2.config import CfgNode
 import detectron2.data.transforms as T
 
-# import custom code
 from ParticleDetection.modelling.datasets import load_custom_data
 import ParticleDetection.utils.datasets as ds
 import ParticleDetection.modelling.detectron as custom

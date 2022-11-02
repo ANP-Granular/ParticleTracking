@@ -1,9 +1,9 @@
-# TODO: document functions/module
 """
-Functions to visualize predictions of models.
+Functions to visualize predictions of Detectron2 models.
 
 Author:     Adrian Niemann (adrian.niemann@ovgu.de)
 Date:       11.08.2022
+
 """
 import os
 import sys

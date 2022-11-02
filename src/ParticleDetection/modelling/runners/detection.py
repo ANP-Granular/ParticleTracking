@@ -1,13 +1,11 @@
-# TODO: document functions/module, factor out functions
 """
 Script to run inference with a trained network and save the results for further
 computations.
 
 Author:     Adrian Niemann (adrian.niemann@ovgu.de)
 Date:       11.08.2022
-"""
 
-# import general libraries
+"""
 import os
 import warnings
 import cv2
@@ -19,12 +17,10 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 
-# import detectron2 utilities
 from detectron2.engine import DefaultPredictor
 from detectron2.utils.logger import setup_logger
 from detectron2.config import CfgNode
 
-# import custom code
 import ParticleDetection.utils.datasets as ds
 import ParticleDetection.utils.helper_funcs as hf
 import ParticleDetection.modelling.datasets as det_ds
@@ -104,6 +100,9 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
     list
         Prediction for each image inference was run on.
     """
+    warnings.warn("The output in a format for use in MATLAB is deprecated."
+                  "Please use `run_detection_csv()` instead.",
+                  DeprecationWarning)
     setup_logger(os.path.join(output_dir, log_name))
 
     # Configuration
@@ -177,7 +176,7 @@ def run_detection_csv(dataset_format: str,
                       threshold: float = 0.5,
                       frames: List[int] = [], cam1_name: str = "gp1",
                       cam2_name: str = "gp2"):
-    """Runs inference on a given set of images and saves the output to a .csv.
+    """Runs inference on a given set of images and saves the output to a *.csv.
 
     This function runs a rod detection on images and generates rod enpoints
     from the generated masks, if the network predicted these. Finally, these
@@ -194,17 +193,27 @@ def run_detection_csv(dataset_format: str,
         Example:
         `"my/dataset/path/{cam_id:s}/experiment_{frame:05d}.png"`
     configuration : Union[CfgNode, str]
-        See `run_detection()`.
+        Configuration for the Detectron2 model and inferences settings given as
+        a CfgNode or path to a *.yaml file in the Detectron2 configuration
+        format.
     weights : str, optional
-        See `run_detection()`.
+        Path to a *.pkl model file. Is optional, if the weights are already
+        given in the configuration.
     classes : dict, optional
-        See `run_detection()`.
+        Dictionary of classes detectable by the model with
+        {key}  ->  Index of class in the model
+        {value} ->  Name of the class
+        By default None.
     output_dir : str, optional
-        See `run_detection()`.
+        Path to the intended output directory. It's parent directory must exist
+        prior to running this function.
+        By default "./".
     log_name : str, optional
-        See `run_detection()`.
+        Filename for logging output in the output directory.
+        By default "detection.log".
     threshold : float, optional
-        See `run_detection()`.
+        Threshold for the minimum score of predicted instances.
+        By default 0.5.
     frames : List[int], optional
         A list of frames, that shall be used for rod detection.
         By default [].
@@ -246,7 +255,6 @@ def run_detection_csv(dataset_format: str,
     files = []
     cols = [col.format(id1=cam1_name, id2=cam2_name)
             for col in ds.DEFAULT_COLUMNS]
-    cols.append("color")
     data = pd.DataFrame(columns=cols)
     for frame in frames:
         frame_data = {color: [] for color in classes}           # noqa: F841
@@ -275,19 +283,10 @@ def run_detection_csv(dataset_format: str,
         if len(data) > 0:
             current_output = os.path.join(output_dir, "rods_df.csv")
             data.reset_index(drop=True, inplace=True)
-            data = replace_missing_rods(data, cam1_name, cam2_name)
+            data = ds.replace_missing_rods(data, cam1_name, cam2_name)
             data.to_csv(current_output, ",")
             d_conv.csv_extract_colors(current_output)
     return predictions
-
-
-def replace_missing_rods(dataset: pd.DataFrame, cam1_id: str, cam2_id: str):
-    cols_2d = [col for col in dataset.columns
-               if cam1_id in col or cam2_id in col]
-    cols_seen = [col for col in dataset.columns if "seen" in col]
-    dataset[cols_2d] = dataset[cols_2d].fillna(-1.)
-    dataset[cols_seen] = dataset[cols_seen].fillna(0)
-    return dataset
 
 
 def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,

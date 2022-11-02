@@ -1,13 +1,24 @@
-# TODO: finish todos, document functions/module
+"""
+Collection of function to convert between different file formats used over the
+course of the particle detection project, e.g. camera calibrations from MATLAB
+to the now used json-format.
+
+Authors:    Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       02.11.2022
+
+"""
 import os
 import sys
 import json
 import logging
-from typing import List
+from typing import Iterable, List
 from pathlib import Path
 import numpy as np
 import pandas as pd
 import scipy.io as sio
+
+import ParticleDetection.utils.data_loading as dl
+import ParticleDetection.utils.datasets as ds
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
@@ -20,47 +31,78 @@ formatter = logging.Formatter(
 ch.setFormatter(formatter)
 _logger.addHandler(ch)
 
-# TODO: define config keys/structure as Literals
 
+def txt2mat(input_folder: Path, frames: Iterable[int], expected_rods: int,
+            cam1_id: str = "gp1", cam2_id: str = "gp2",
+            output_folder: Path = None) -> None:
+    """Read rod position data in old *.txt format and save it in *.mat format.
 
-# TODO: complete
-def txt2mat(input_folder):
-    # TODO: use col names from datasets
-    col_names = ['x1_r', 'y1_r', 'z1_r', 'x2_r', 'y2_r', 'z2_r',
-                 'x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
-                 'x1_gp3', 'y1_gp3', 'x2_gp3', 'y2_gp3', 'x1_gp4', 'y1_gp4',
-                 'x2_gp4', 'y2_gp4', 'particle', 'frame']
-    dbg_data_format = "./debug_files/data3d_blueT/{:05d}.txt"
-    rods_exp = 12
-    frames = list(range(100, 905))
-    dbg_data = dl.load_positions_from_txt(dbg_data_format, col_names, frames)
-    # raw_3d = dbg_data[['x1_r', 'y1_r', 'z1_r', 'x2_r',
-    #                    'y2_r', 'z2_r']].to_numpy()
-    rods_cam1 = dbg_data[['x1_gp3', 'y1_gp3', 'x2_gp3', 'y2_gp3']].to_numpy()
-    rods_cam2 = dbg_data[['x1_gp4', 'y1_gp4', 'x2_gp4', 'y2_gp4']].to_numpy()
-    rods_cam1 = rods_cam1.reshape((-1, rods_exp, 4))
-    rods_cam2 = rods_cam2.reshape((-1, rods_exp, 4))
+    Converts the rod positions from the *.txt format to *.mat format assuming,
+    that only one color is saved in the given input folder.
+    The converted files are then saved to two subfolders of the output folder,
+    named after `cam1_id` and `cam2_id`.
+
+    Parameters
+    ----------
+    input_folder : Path
+        Folder containing the 3D data in txt-files of format:
+        {frame:05d}.txt
+    frames : Iterable[int]
+        Frame numbers found in the input folder and intended to be converted.
+    expected_rods : int
+        Number of rods to expect in one frame.
+    cam1_id : str, optional
+        First camera's identifier in the given dataset.
+        By default "gp1".
+    cam2_id : str, optional
+        Second camera's identifier in the given dataset.
+        By default "gp2".
+    output_folder : Path, optional
+        Parent folder of the two output folders.
+        By default set to the parent folder of the input folder.
+    """
+    col_names = [col.format(id1=cam1_id, id2=cam2_id)
+                 for col in ds.DEFAULT_COLUMNS if "seen" not in col]
+    data_format = str(input_folder.resolve()) + "/{:05d}.txt"
+    if output_folder is None:
+        output_folder = input_folder.parent
+    output_format = str(output_folder.resolve()) + "/{cam:s}/{frame:05d}.mat"
     dt = np.dtype(
         [('Point1', np.float, (2,)), ('Point2', np.float, (2,))])
+
+    data = dl.load_positions_from_txt(data_format, col_names, frames)
+    rods_cam1 = data[[f'x1_{cam1_id}', f'y1_{cam1_id}', f'x2_{cam1_id}',
+                      f'y2_{cam1_id}']].to_numpy()
+    rods_cam2 = data[[f'x1_{cam2_id}', f'y1_{cam2_id}', f'x2_{cam2_id}',
+                      f'y2_{cam2_id}']].to_numpy()
+    rods_cam1 = rods_cam1.reshape((-1, expected_rods, 4))
+    rods_cam2 = rods_cam2.reshape((-1, expected_rods, 4))
+
+    # Create output directories
+    test_out = output_format.format(cam=cam1_id, frame=0)
+    Path(test_out).parent.mkdir(parents=True, exist_ok=True)
+    test_out = output_format.format(cam=cam2_id, frame=0)
+    Path(test_out).parent.mkdir(parents=True, exist_ok=True)
+
     for r_c1, r_c2, fr in zip(rods_cam1, rods_cam2, frames):
-        arr = np.zeros((rods_exp,), dtype=dt)
+        arr = np.zeros((expected_rods,), dtype=dt)
         arr[:]['Point1'] = r_c1[:, 0:2]
         arr[:]['Point2'] = r_c1[:, 2:]
-        sio.savemat(f"./debug_files/gp3/{fr:05d}_blue.mat",
-                    {'rod_data_links': arr})
-        arr2 = np.zeros((rods_exp,), dtype=dt)
+        out_file1 = output_format.format(cam=cam1_id, frame=fr)
+        sio.savemat(out_file1, {'rod_data_links': arr})
+        arr2 = np.zeros((expected_rods,), dtype=dt)
         arr2[:]['Point1'] = r_c2[:, 0:2]
         arr2[:]['Point2'] = r_c2[:, 2:]
-        sio.savemat(f"./debug_files/gp4/{fr:05d}_blue.mat",
-                    {'rod_data_links': arr2})
+        out_file2 = output_format.format(cam=cam2_id, frame=fr)
+        sio.savemat(out_file2, {'rod_data_links': arr2})
 
 
 def mat2csv(input_folders: str, output_file: str):
-    pass
+    raise NotImplementedError
 
 
 def csv2mat(input_file: str, output_folders: List[str]):
-    pass
+    raise NotImplementedError
 
 
 def csv_extract_colors(input_file: str) -> List[str]:
@@ -186,7 +228,23 @@ def csv_split_by_frames(input_file: str, cut_frames: List[int]) -> List[str]:
     return written
 
 
-def convert_old(folder: Path):
+def convert_txt_config(folder: Path):
+    """Convert camera calibrations from MATLAB's *.txt/*.mat to *.json format.
+
+    This function converts a stereo camera calibration saved by MATLAB to *.txt
+    and *.mat files into the *.json format used by functions in this package.
+
+    The resulting files are saved as 'converted.json' and
+    'world_transformations_converted.json'.
+
+    Parameters
+    ----------
+    folder : Path
+        Folder containing the stereo calibration output, consisting of the
+        following files:
+        c.txt, f.txt, c2.txt, f2.txt, kc.txt, kc2.txt, R.txt, transvek.txt,
+        transformations.mat
+    """
     cm1 = np.zeros((3, 3))
     cm1[[0, 1], [2, 2]] = np.loadtxt(folder / "c.txt")
     cm1[[0, 1], [0, 1]] = np.loadtxt(folder / "f.txt")

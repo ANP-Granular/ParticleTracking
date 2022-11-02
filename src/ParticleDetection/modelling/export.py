@@ -1,4 +1,10 @@
-# TODO: document functions/module
+"""
+Functions to export a Detectron2 model as a pure pytorch model.
+
+Author:     Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       31.10.2022
+
+"""
 import sys
 import logging
 from pathlib import Path
@@ -27,14 +33,37 @@ _logger.addHandler(ch)
 EXPORT_OPTIONS = Literal["cpu", "cuda"]
 
 
-def get_sample_img(sample: Path):
+def get_sample_img(sample: Path) -> torch.Tensor:
+    """Loads an image into the format necessary for inference by a Detectron2
+    model.
+    """
     img = read_image(sample, format="BGR")
     img = torch.from_numpy(np.ascontiguousarray(img.transpose(2, 0, 1)))
     return img
 
 
 def export_model(config_path: Path, weights_path: Path, sample_img: Path,
-                 option: EXPORT_OPTIONS = "cuda"):
+                 option: EXPORT_OPTIONS = "cuda") -> None:
+    """Exports a Detectron2 model to be usable with just pytorch.
+
+    Parameters
+    ----------
+    config_path : Path
+        File that holds the model's configuration in yaml format.
+    weights_path : Path
+        File that holds the trained model's weights.
+    sample_img : Path
+        Image to be used to trace the model.
+    option : EXPORT_OPTIONS, optional
+        Option whether to restrict the exported model to be used on the CPU or
+        to also allow the use of a GPU.
+        By default "cuda".
+
+    Note
+    ----
+    The GPU version then requires the pytorch GPU version to be installed.
+    The CPU version can be run with both, pytorch's CPU and GPU version.
+    """
     def inference_func(model, image):
         inputs = [{"image": image}]
         return model.inference(inputs, do_postprocess=False)[0]

@@ -1,10 +1,42 @@
-# TODO: document functions/module
 import os
 import cv2
 import numpy as np
 
 
 def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
+    """Calibrate a stereo camera system.
+
+    Using images of a checkerboard with 4-by-5 inner corners to calibrate a
+    stereo camera system.
+
+    Parameters
+    ----------
+    cam1_path : str
+        Absolute path to a folder containing only the calibration images from
+        camera one.
+    cam2_path : str
+        Absolute path to a folder containing only the calibration images from
+        camera two.
+    visualize : bool, optional
+        Boolean flag to draw corner detection results for camera one images.
+        By default False.
+
+    Returns
+    -------
+    Tuple :
+        Return values of OpenCV's `stereoCalibrate()` function.
+        [0] : reprojection error
+        [1] : camera matrix 1
+        [2] : distortion coefficients 1
+        [3] : camera matrix 2
+        [4] : distortion coefficients 2
+        [5] : rotation matrix (R) -> with T can transform points in camera
+              one's coordinate system to points in camear two's coordinate
+              system
+        [6] : translation vector (T)
+        [7] : essential matrix (E)
+        [8] : fundamental matrix (F)
+    """
     # Setup
     corner_distance = 5     # mm
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,

@@ -1,4 +1,12 @@
-# TODO: document functions/module, add deprecation warning(s)
+"""
+Collection of previously used automatic rod tracking approaches. These are just
+implemented for comparison with new, more promising methods.
+
+Authors:    Dmitry Puzyrev (dmitry.puzyrev@ovgu.de),
+            Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       31.10.2022
+
+"""
 import itertools
 from typing import Tuple
 import numpy as np
@@ -8,19 +16,20 @@ from scipy.optimize import linear_sum_assignment
 
 
 def tracking_trackpy(data: pd.DataFrame, report: bool = False) -> pd.DataFrame:
-    """_summary_
+    """Tracks rods (one colour) over multiple frames using `trackpy`.
 
     Parameters
     ----------
     data : pd.DataFrame
-        _description_
+        _Data(-slice) from rod tracking. Must contain at least the following
+        columns: x, y, z,
     report : bool, optional
-        _description_, by default False
+        Flag, whether to print the number of rods before and after tracking.
+        By default False.
 
     Returns
     -------
     pd.DataFrame
-        _description_
     """
     # Linking of trajectories (center of particles)
     predictor = tp.predict.NearestVelocityPredict()
@@ -106,4 +115,4 @@ def tracking_global_assignment(data: pd.DataFrame) \
 
 
 def tracking_imm_kalman():
-    pass
+    raise NotImplementedError

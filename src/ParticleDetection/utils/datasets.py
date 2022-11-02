@@ -1,10 +1,16 @@
-# TODO: document functions/variables/module, resolve todos
+"""
+Functions and classes for dataset information and manipulation.
+
+Author:     Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       31.10.2022
+
+"""
 import os
 import sys
 import json
 import logging
 import warnings
-from typing import List
+from typing import List, Set
 from pathlib import Path
 from dataclasses import dataclass
 import numpy as np
@@ -21,12 +27,16 @@ formatter = logging.Formatter(
 ch.setFormatter(formatter)
 _logger.addHandler(ch)
 
-# TODO: add default colors/classes
-# TODO: define config keys/structure as Literals
+
+DEFAULT_CLASSES = {
+    0: 'blue', 1: 'green', 2: 'orange', 3: 'purple', 4: 'red',
+    5: 'yellow', 6: 'black', 7: 'lilac', 8: 'brown'
+}
 DEFAULT_COLUMNS = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
                    'x1_{id1:s}', 'y1_{id1:s}', 'x2_{id1:s}', 'y2_{id1:s}',
                    'x1_{id2:s}', 'y1_{id2:s}', 'x2_{id2:s}', 'y2_{id2:s}',
-                   'frame', 'seen_{id1:s}', 'seen_{id2:s}']
+                   'frame', 'seen_{id1:s}', 'seen_{id2:s}', 'color']
+RNG_SEED = 1
 
 
 class DataSet:
@@ -46,7 +56,7 @@ class DataGroup:
     val: DataSet
 
 
-def get_dataset_size(dataset: DataSet):
+def get_dataset_size(dataset: DataSet) -> int:
     """Compute the number of annotated images in a dataset (excluding
     augmentation)."""
     with open(dataset.annotation) as metadata:
@@ -59,7 +69,7 @@ def get_dataset_size(dataset: DataSet):
     return image_count
 
 
-def get_dataset_classes(dataset: DataSet):
+def get_dataset_classes(dataset: DataSet) -> Set[int]:
     """Retrieve the number and IDs of thing classes in the dataset."""
     with open(dataset.annotation) as metadata:
         annotations = json.load(metadata)
@@ -75,20 +85,34 @@ def get_dataset_classes(dataset: DataSet):
     return classes
 
 
-def get_object_counts(dataset: DataSet):
+def get_object_counts(dataset: DataSet) -> List[int]:
     """Returns a list of the number of objects in each image in the dataset."""
     with open(dataset.annotation) as metadata:
         annotations = json.load(metadata)
     return [len(annotations[key]["regions"]) for key in annotations.keys()]
 
 
-# TODO: generelize function
-def insert_missing_rods(dataset: pd.DataFrame, expected_rods: int) \
+def insert_missing_rods(dataset: pd.DataFrame, expected_rods: int,
+                        cam1_id: str = "gp1", cam2_id: str = "gp2") \
         -> pd.DataFrame:
-    columns = ["x1", "y1", "z1", "x2", "y2", "z2", "x", "y", "z", "l",
-               "x1_gp1", "y1_gp1", "x2_gp1", "y2_gp1",
-               "x1_gp2", "y1_gp2", "x2_gp2", "y2_gp2",
-               "frame", "seen_gp1", "seen_gp2", "color"]
+    """Inserts 'empty' rods into a dataset, depending on how many are expected.
+
+    Parameters
+    ----------
+    dataset : pd.DataFrame
+        Dataset with the column format from `DEFAULT_COLUMNS`.
+    expected_rods : int
+        The expected number of rods per frame (and color).
+    cam1_id : str
+        Default is "gp1".
+    cam2_id : str
+        Default is "gp2".
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+    columns = [col.format(id1=cam1_id, id2=cam2_id) for col in DEFAULT_COLUMNS]
     for color in dataset.color.unique():
         data_tmp = dataset.loc[dataset.color == color]
         for frame in data_tmp.frame.unique():
@@ -111,10 +135,18 @@ def insert_missing_rods(dataset: pd.DataFrame, expected_rods: int) \
     return dataset
 
 
-rnd_seed = 1
+def randomize_particles(file: Path) -> None:
+    """Randomizes particle numbers per frame of a given *.csv dataset.
 
+    The dataset with randomized particle numbers is saved with
+    'rand_particles_' as a prefix to the file's name.
 
-def randomize_particles(file: Path):
+    Parameters
+    ----------
+    file : Path
+        Path to a *.csv file containing data in the format of
+        `DEFAULT_COLUMNS`, but at minimum with column `frame`.
+    """
     file = file.resolve()
     out = file.parent / ("rand_particles_" + str(file.name))
     data = pd.read_csv(file, index_col=0)
@@ -122,14 +154,31 @@ def randomize_particles(file: Path):
     for frame in data.frame.unique():
         data_tmp = data.loc[data.frame == frame].sample(frac=1,
                                                         ignore_index=True,
-                                                        random_state=rnd_seed)
+                                                        random_state=RNG_SEED)
         data_out = pd.concat([data_out, data_tmp])
     data_out.reset_index(drop=True, inplace=True)
     data_out.to_csv(out, sep=",")
 
 
-def randomize_endpoints(file: Path, cam_ids: List[str] = None):
-    """Randomize the order of particles/endpoints in a dataset/-file."""
+def randomize_endpoints(file: Path, cam_ids: List[str] = None) -> None:
+    """Randomize the order of particles/endpoints in a dataset/-file.
+
+    The dataset with randomized particle numbers is saved with
+    'rand_endpoints_' as a prefix to the file's name.
+
+    Parameters
+    ----------
+    file : Path
+        Path to a *.csv file containing data in the format of
+        `DEFAULT_COLUMNS`.
+    cam_ids : List[str]
+        Cam IDs present in the dataset.
+        Default is ["gp1", "gp2"]
+
+    Returns
+    -------
+    None
+    """
     file = file.resolve()
     out_p = file.parent / ("rand_endpoints_" + str(file.name))
     if cam_ids is None:
@@ -147,3 +196,33 @@ def randomize_endpoints(file: Path, cam_ids: List[str] = None):
         data[[f"x1_{c}", f"y1_{c}", f"x2_{c}", f"y2_{c}"]] = out
 
     data.to_csv(out_p, sep=",")
+
+
+def replace_missing_rods(dataset: pd.DataFrame, cam1_id: str = "gp1",
+                         cam2_id: str = "gp2") -> pd.DataFrame:
+    """Fills missing data in 'seen_...' and '[xy][12]_...' columns.
+
+    Replaces NaN values in columns of the format 'seen_...' and '[xy][12]_...',
+    see `DEFAULT_COLUMNS` for more information.
+    NaNs in 'seen_...' are replaced by `0`, NaNs in '[xy][12]_...' are replaced
+    by `-1.`.
+
+    Parameters
+    ----------
+    dataset : pd.DataFrame
+        Dataset with the column format from `DEFAULT_COLUMNS`.
+    cam1_id : str
+        Default is "gp1".
+    cam2_id : str
+        Default is "gp2".
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+    cols_2d = [col for col in dataset.columns
+               if cam1_id in col or cam2_id in col]
+    cols_seen = [col for col in dataset.columns if "seen" in col]
+    dataset[cols_2d] = dataset[cols_2d].fillna(-1.)
+    dataset[cols_seen] = dataset[cols_seen].fillna(0)
+    return dataset

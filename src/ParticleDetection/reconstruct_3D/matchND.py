@@ -1,9 +1,18 @@
-# TODO: document functions/module, resolve todos
+"""
+Function(s) to reconstruct 3D rod endpoints from images of a stereocamera
+system by solving an n-partite matching problem between the rods within one
+frame and the respective previous frame.
+
+Authors:    Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       31.10.2022
+
+"""
 import os
 import copy
 import pathlib
 import warnings
 import itertools
+from typing import Iterable, Tuple
 
 import cv2
 import pulp
@@ -17,25 +26,50 @@ import ParticleDetection.utils.data_loading as dl
 
 
 # BUG: the minimization does not work yet
-# taken from:
-# https://stackoverflow.com/questions/60940781/solving-the-assignment-problem-for-3-groups-instead-of-2 
-def npartite_matching(weights, maximize: bool = True,
-                      solver: pulp.LpSolver = pulp.PULP_CBC_CMD(msg=False)):
-    """_summary_
+def npartite_matching(weights: np.ndarray, maximize: bool = True,
+                      solver: pulp.LpSolver = pulp.PULP_CBC_CMD(msg=False))\
+        -> Tuple[np.ndarray]:
+    """Solve an n-partite matching problem.
+
+    The weights given represent the cost of assigning the entities associated
+    with the respective indices together.
 
     Parameters
     ----------
-    weights : _type_
-        _description_
+    weights : np.ndarray
+        A n-dimensional matrix where each entry is the cost associated with
+        choosing the combination of indeces. The number of dimensions represent
+        the number of groups and the size of each dimension the number of
+        members in this group.
     maximize : bool, optional
-        _description_, by default True
+        By default True.
     solver : pulp.LpSolver, optional
-        _description_, by default pulp.PULP_CBC_CMD(msg=False)
+        A solver for the matching problem.
+        By default pulp.PULP_CBC_CMD(msg=False).
 
     Returns
     -------
-    _type_
-        _description_
+    Tuple[np.ndarray]
+        The length of the tuple is equal to the number of dimensions of
+        `weights`. Each element of the tuple has a maximum size of the smallest
+        dimension of `weights`. The elements of the arrays represent the index
+        of the groups paired member.
+
+    Examples
+    --------
+    The following weights are defined: weights.shape -> [12, 12, 4]
+    This means three groups must be associated to each other, with four
+    paths, because the smallest dimension has size 4.
+    weights[0, 5, 2] then represents the cost of pairing element 0 of group
+    0 with element 5 of group 1 and element 2 of group 2.
+
+    >>> npartite_matching(np.random((12, 12, 4)))
+    (array([2, 9, 4, 11]), array([6, 9, 1, 0]), array([2, 1, 0, 3]))
+
+    Note
+    ----
+    Adapted from:
+    https://stackoverflow.com/questions/60940781/solving-the-assignment-problem-for-3-groups-instead-of-2
     """
     if not maximize:
         warnings.warn("Minimization is currently not fully supported."
@@ -83,8 +117,11 @@ def npartite_matching(weights, maximize: bool = True,
     return whr
 
 
-def create_weights_0(p_3D: np.ndarray, p_3D_prev: np.ndarray):
-    """Create weights from 3D-displacements.
+def create_weights_0(p_3D: np.ndarray, p_3D_prev: np.ndarray) -> np.ndarray:
+    """Create weights from 3D-displacements for matching rods between frames.
+
+    Creates a weight matrix for matching rods between frames, using the rod
+    endpoint displacement between frames as the cost of an assignment.
 
     Parameters
     ----------
@@ -96,6 +133,11 @@ def create_weights_0(p_3D: np.ndarray, p_3D_prev: np.ndarray):
         Shape must be in (rod_ids, 2, 3).
         Dimension explanations:
         (rod_id, end-point, 3D-coordinates)
+
+    Returns
+    -------
+    np.ndarray
+        Weights in the shape of (rod_id, rod_ids(cam1), rod_ids(cam2))
     """
     rods1, rods2 = p_3D.shape[0:2]
     rods_prev = p_3D_prev.shape[0]
@@ -118,8 +160,13 @@ def create_weights_0(p_3D: np.ndarray, p_3D_prev: np.ndarray):
 
 
 def create_weights_1(p_3D: np.ndarray, p_3D_prev: np.ndarray,
-                     repr_errs: np.ndarray, repr_errs_prev: np.ndarray):
+                     repr_errs: np.ndarray, repr_errs_prev: np.ndarray)\
+        -> np.ndarray:
     """Generate weights with 3D-displacement*reprojection-error.
+
+    Creates a weight matrix for matching rods between frames, using the rod
+    endpoint displacement between frames times the reprojection-error of the
+    rod endpoints as the cost of an assignment.
 
     Parameters
     ----------
@@ -132,13 +179,17 @@ def create_weights_1(p_3D: np.ndarray, p_3D_prev: np.ndarray,
         Dimension explanations:
         (rod_id, end-point, 3D-coordinates)
     repr_errs : np.ndarray
-
+        Shape must be in (rod_ids(cam1), rod_ids(cam2), 4, 2)
         Dimension explanations:
         (rod_id(cam1), rod_id(cam2), end-combo, err{cam1, cam2})
     repr_errs_prev : np.ndarray
+        Shape must be in (rod_id,), with rod_id representing the rods from the
+        previous frame.
 
-        Dimension explanations:
-        (rod_id, end-combo, err{cam1, cam2})
+    Returns
+    -------
+    np.ndarray
+        Weights in the shape of (rod_id, rod_ids(cam1), rod_ids(cam2))
     """
 
     rods1, rods2 = p_3D.shape[0:2]
@@ -166,10 +217,15 @@ def create_weights_1(p_3D: np.ndarray, p_3D_prev: np.ndarray,
 
 
 def create_weights_2(p_3D: np.ndarray, p_3D_prev: np.ndarray,
-                     repr_errs: np.ndarray, repr_errs_prev: np.ndarray):
-    """Create weights with 3D-displacement*reprojection-error*rod-length.
+                     repr_errs: np.ndarray, repr_errs_prev: np.ndarray)\
+        -> np.ndarray:
+    """Create weights with 3D-displacement*reprojection-error*rod_length.
 
-   Parameters
+    Creates a weight matrix for matching rods between frames, using the rod
+    endpoint displacement between frames times the reprojection-error of the
+    rod endpoints times the 3D rod length as the cost of an assignment.
+
+    Parameters
     ----------
     p_3D : np.ndarray
         Shape must be in (rod_ids(cam1), rod_ids(cam2), 4, 3)
@@ -180,13 +236,17 @@ def create_weights_2(p_3D: np.ndarray, p_3D_prev: np.ndarray,
         Dimension explanations:
         (rod_id, end-point, 3D-coordinates)
     repr_errs : np.ndarray
-
+        Shape must be in (rod_ids(cam1), rod_ids(cam2), 4, 2)
         Dimension explanations:
         (rod_id(cam1), rod_id(cam2), end-combo, err{cam1, cam2})
     repr_errs_prev : np.ndarray
+        Shape must be in (rod_id,), with rod_id representing the rods from the
+        previous frame.
 
-        Dimension explanations:
-        (rod_id, end-combo, err{cam1, cam2})
+    Returns
+    -------
+    np.ndarray
+        Weights in the shape of (rod_id, rod_ids(cam1), rod_ids(cam2))
     """
     weights = create_weights_1(p_3D, p_3D_prev, repr_errs, repr_errs_prev)
     p_3D = np.concatenate((p_3D, p_3D), axis=2)
@@ -204,17 +264,63 @@ def create_weights_2(p_3D: np.ndarray, p_3D_prev: np.ndarray,
     return weights
 
 
-def assign(input_folder, output_folder, colors, cam1_name="gp1",
-           cam2_name="gp2", frame_numbers=None, calibration_file=None,
-           transformation_file=None):
+def assign(input_folder: str, output_folder: str, colors: Iterable[str],
+           cam1_name: str = "gp1", cam2_name: str = "gp2",
+           frame_numbers: Iterable[int] = None, calibration_file: str = None,
+           transformation_file: str = None) -> Tuple[np.ndarray]:
+    """Matches, triangulates and tracks rods over frames from *.csv data files.
+
+    The function matches rods over multiple frames using npartite matching and
+    a combination of 3D displacement and 2D reprojection error as the weights.
+    This results in 3D reconstructed rods, that are tracked over the course of
+    the given frames.
+    It takes *.csv files with the columns from `datasets.DEFAULT_COLUMNS` as
+    input and also outputs the results in this format.
+    The resulting dataset is saved in the given output folder.
+
+    Parameters
+    ----------
+    input_folder : str
+        Folder containing the *.csv files for all colors given in `colors`s.
+    output_folder : str
+        Folder to write the output to. The parent folder of this must exist
+        already.
+    colors : Iterable[str]
+        Names of the colors present in the dataset.
+        See `datasets.DEFAULT_CLASSES`.
+    cam1_name : str, optional
+        First camera's identifier in the given dataset.
+        By default "gp1".
+    cam2_name : str, optional
+        Second camera's identifier in the given dataset.
+        By default "gp2".
+    frame_numbers : Iterable[int], optional
+        An iterable of frame numbers present in the data.
+    calibration_file : str, optional
+        Path to a *.json file with stereocalibration data for the cameras which
+        produced the images for the rod position data.
+        By default the calibration constructed with Matlab for GP1 and GP2 is
+        used.
+    transformation_file : str, optional
+        Path to a *.json file with transformation matrices expressing the
+        transformation from the first camera's coordinate system to the
+        world/box coordinate system.
+        By default the transformation constructed with Matlab is used.
+
+    Returns
+    -------
+    Tuple[np.ndarray]
+        -> [0]: reprojection errors
+        -> [1]: rod lengths
+    """
     if calibration_file is None:
         this_dir = pathlib.Path(__file__).parent.resolve()
         calibration_file = this_dir.joinpath(
-            "calibration_data/Matlab/gp12.json")
+            "example_calibration/Matlab/gp12.json")
     if transformation_file is None:
         this_dir = pathlib.Path(__file__).parent.resolve()
         transformation_file = this_dir.joinpath(
-            "calibration_data/Matlab/world_transformation.json")
+            "example_calibration/Matlab/world_transformation.json")
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
@@ -444,6 +550,7 @@ def assign(input_folder, output_folder, colors, cam1_name="gp1",
 
                 ###############################################################
                 all_rod_lengths.append(out[:, 9])
+                # BUG: costs are only defined on the first frame iteration
                 all_repr_errs.append(costs[idx_out[1, :], idx_out[2, :]])
 
                 # Data preparation for saving as *.csv

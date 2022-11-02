@@ -1,4 +1,12 @@
-# TODO: document module
+"""
+Collection of function to manipulate training dataset metadata in json format.
+These functions are mainly to cleanup the metadata, but also to transfer it
+into a form for different detection tasks, i.e. keypoint detection.
+
+Author:     Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       31.10.2022
+
+"""
 import os
 import sys
 import json
@@ -25,7 +33,7 @@ ch.setFormatter(formatter)
 _logger.addHandler(ch)
 
 
-def remove_duplicate_regions(dataset: ds.DataSet):
+def remove_duplicate_regions(dataset: ds.DataSet) -> None:
     """Remove duplicate regions from the dataset's metadata.
 
     Parameters
@@ -54,7 +62,7 @@ def remove_duplicate_regions(dataset: ds.DataSet):
     return
 
 
-def change_visibiliy(file: str):
+def change_visibiliy(file: str) -> None:
     """Changes the visibility flag for all keypoints in a file of keypoint
     training data.
 
@@ -75,7 +83,7 @@ def change_visibiliy(file: str):
         json.dump(to_change, f, indent=2)
 
 
-def change_class(file: str):
+def change_class(file: str) -> None:
     """Changes all class labels to "0" in a file of keypoint training data.
 
     Parameters
@@ -95,7 +103,7 @@ def change_class(file: str):
         json.dump(to_change, f, indent=2)
 
 
-def order_by_x(file: str):
+def order_by_x(file: str) -> None:
     """Adjust keypoints, such that the more left one is always the first point.
 
     Parameters
@@ -118,7 +126,7 @@ def order_by_x(file: str):
         json.dump(to_change, f, indent=2)
 
 
-def create_keypoints(file_name: str, single_class=True, order_x=True):
+def create_keypoints(file_name: str, single_class=True, order_x=True) -> None:
     """Creates rod keypoints from segmentation data.
 
     Creates rod endpoints as key points from segmentation, adds it to
@@ -189,7 +197,7 @@ def create_keypoints(file_name: str, single_class=True, order_x=True):
         json.dump(annotations, metadata, indent=2)
 
 
-def delete_len_0(file_name: str):
+def delete_len_0(file_name: str) -> None:
     """Deletes annotations with keypoints resulting in 0 lenght rods.
 
     Parameters

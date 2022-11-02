@@ -1,4 +1,11 @@
-# TODO: document module/functions, resolve todos (if possible)
+"""
+Collection of custom Detectron2 objects to provide a customized training
+process with more sophisticated outputs.
+
+Author:     Adrian Niemann (adrian.niemann@ovgu.de)
+Date:       31.10.2022
+
+"""
 import time
 import datetime
 import logging
@@ -26,6 +33,24 @@ class CustomTrainer(DefaultTrainer):
 
     @classmethod
     def build_evaluator(cls, cfg: CfgNode, dataset_name: str):
+        """Build a custom evaluator depending on the detection task.
+
+        Parameters
+        ----------
+        cfg : CfgNode
+            Detectron2 network configuration with allowed TASK field of:
+            "None" -> will be changed to "segm"
+            "segm" -> results in an evaluator for a segmentation task
+            "keypoints" -> results in an evaluator for a keypoint detection 
+                           task
+        dataset_name : str
+            Name of a dataset that is registered in the Detectron2 framework,
+            that is used as the 'test' dataset of the constructed evaluator.
+
+        Returns
+        -------
+        DatasetEvaluators
+        """
         # TODO: What exactly is max_dets_per_image controlling/ how does it
         #  influence the metrics?
         try:
@@ -49,10 +74,15 @@ class CustomTrainer(DefaultTrainer):
         return DatasetEvaluators(dataset_evaluators)
 
     def build_writers(self):
+        """Builds additional/custom writers for use during training."""
         return [CustomTensorboardWriter(self.cfg.OUTPUT_DIR, window_size=1),
                 CommonMetricPrinter(self.cfg.SOLVER.MAX_ITER)]
 
     def build_hooks(self):
+        """
+        Build a list of hooks, including the DefaultTrainer default hooks and
+        a custom loss hook used during evaluation.
+        """
         hooks = super().build_hooks()
         hooks.insert(-1, EvalLossHook(
             self.cfg.TEST.EVAL_PERIOD,   # 1,
@@ -73,6 +103,17 @@ class CustomTrainer(DefaultTrainer):
 
     @classmethod
     def build_train_loader(cls, cfg):
+        """Custom loader for training data.
+
+        Parameters
+        ----------
+        cfg : CfgNode
+            Detectron2 network configuration
+
+        Returns
+        -------
+        Iterable
+        """
         # Code from DatasetMapper.from_config(cls, cfg, is_train: bool = True)
         # to properly load settings from the configuration
         is_train = True
