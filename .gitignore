@@ -1,6 +1,7 @@
 # Work directories to be ignored
 /datasets/
 /experiments/*
+/models/
 !/experiments/scripts/
 
 # Python related ignores
