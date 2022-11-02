@@ -1,6 +1,6 @@
 import numpy as np
-import reconstruct_3D.matching as mt
-from reconstruct_3D import result_visualizations
+from ParticleDetection.reconstruct_3D import match2D
+import ParticleDetection.reconstruct_3D.visualization as vis_r3d
 
 
 def rematch_dbg():
@@ -12,15 +12,15 @@ def rematch_dbg():
     calibration_file = "../../reconstruct_3D/calibration_data/Matlab/gp12.json"
     transformation_file = "../../reconstruct_3D/calibration_data/Matlab/" \
                           "world_transformation.json"
-    errs, lens = mt.match_csv_complex(input_folder, output, ["blue"], "gp1",
-                                      "gp2", frames, calibration_file,
-                                      transformation_file, rematching=False)
+    errs, lens = match2D.match_csv_complex(
+        input_folder, output, ["blue"], "gp1", "gp2", frames, calibration_file,
+        transformation_file, rematching=False)
     err_vis = np.array([])
     len_vis = np.array([])
     for err, l in zip(errs, lens):
         err_vis = np.concatenate([err_vis, err.flatten()])
         len_vis = np.concatenate([len_vis, l.flatten()])
-    result_visualizations.matching_results(err_vis, len_vis)
+    vis_r3d.matching_results(err_vis, len_vis)
 
 
 if __name__ == "__main__":

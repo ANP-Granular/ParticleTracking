@@ -1,5 +1,6 @@
 import json
-from reconstruct_3D.calibrate_cameras import stereo_calibrate
+from ParticleDetection.reconstruct_3D.calibrate_cameras import stereo_calibrate
+
 
 def cam1_2():
     """Stereocalibrate two cameras and save the results to a *.json file."""
@@ -21,6 +22,7 @@ def cam1_2():
         json.dump(to_json, f, indent=2)
     print(results)
 
+
 def cam3_4():
     """Stereocalibrate two cameras and save the results to a *.json file."""
     gp3 = "../../datasets/calibration_imgs/gp3_alt"
@@ -40,6 +42,7 @@ def cam3_4():
     with open("OpenCV_calibration_gp34_alt.json", "w") as f:
         json.dump(to_json, f, indent=2)
     print(results)
+
 
 if __name__ == "__main__":
     cam3_4()

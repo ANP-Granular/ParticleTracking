@@ -1,7 +1,7 @@
 from time import perf_counter
 import numpy as np
 import pandas as pd
-from reconstruct_3D import matching, result_visualizations, tracking
+from ParticleDetection.reconstruct_3D import match2D, tracking, visualization
 
 
 def test_assignment():
@@ -16,7 +16,7 @@ def test_assignment():
     frame_numbers = np.arange(start_frame, end_frame+1)
 
     start = perf_counter()
-    errs, lens = matching.match_csv_complex(
+    errs, lens = match2D.match_csv_complex(
         raw_data, out_folder, colors, "gp1", "gp2", frame_numbers,
         calibration_file, transformation_file, rematching=True)
     print(f"Matching duration: {perf_counter()-start} s")
@@ -26,7 +26,7 @@ def test_assignment():
     for err, l in zip(errs, lens):
         err_vis = np.concatenate([err_vis, err.flatten()])
         len_vis = np.concatenate([len_vis, l.flatten()])
-    result_visualizations.matching_results(err_vis, len_vis)
+    visualization.matching_results(err_vis, len_vis)
 
     data = pd.read_csv(out_folder + "/rods_df_blue.csv", index_col=0)
     tracked, _ = tracking.tracking_global_assignment(data)
@@ -40,7 +40,7 @@ def test_assignment():
         data_3d[idx_f, idx_p, :, 0] = frame_data[["x1", "y1", "z1"]].to_numpy()
         data_3d[idx_f, idx_p, :, 1] = frame_data[["x2", "y2", "z2"]].to_numpy()
 
-    result_visualizations.displacement_fwise(data_3d)
+    visualization.displacement_fwise(data_3d)
 
     print("done")
 

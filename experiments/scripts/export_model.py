@@ -1,13 +1,13 @@
 from typing import List
 from pathlib import Path
 import torch
-from utils.export_model import get_sample_img, export_model
+from ParticleDetection.modelling import export
 
 
 def test_export(version: str):
     model = torch.jit.load(f"./model_{version}.pt")
     sample = Path("../../datasets/rods_c4m/train/FT2015_shot1_gp1_00400.jpg")
-    input = get_sample_img(sample)
+    input = export.get_sample_img(sample)
     with torch.no_grad():
         testing = model.forward(input)
     print(testing)
@@ -19,7 +19,7 @@ def run_exported(model_path: Path, images: List[Path]):
     out = []
 
     for img in images:
-        input = get_sample_img(img)
+        input = export.get_sample_img(img)
         with torch.no_grad():
             ret = model.forward(input)
             out.append({
@@ -37,5 +37,5 @@ if __name__ == "__main__":
     config = Path("../../models/PointRend/config.yaml").resolve()
     weights = Path("../../models/PointRend/model_final.pth").resolve()
     sample = Path("../../datasets/rods_c4m/train/FT2015_shot1_gp1_00400.jpg")
-    export_model(config, weights, sample, version)
+    export.export_model(config, weights, sample, version)
     test_export(version)
