@@ -4,8 +4,11 @@ Collection of miscellaneous helper functions.
 import sys
 import logging
 from collections import Counter
+import multiprocessing as mp
 
+import torch
 import numpy as np
+from PIL import Image
 from scipy.spatial import ConvexHull
 from sklearn.cluster import DBSCAN
 from skimage.transform import probabilistic_hough_line
@@ -148,7 +151,7 @@ def _minimum_bounding_rectangle(points):
     return rval
 
 
-def rod_endpoints(prediction, classes: dict[int, str]) \
+def rod_endpoints(prediction, classes: dict[int, str])\
         -> dict[int, np.ndarray]:
     """Calculates the endpoints of rods from the prediction masks.
 
@@ -167,90 +170,178 @@ def rod_endpoints(prediction, classes: dict[int, str]) \
     dict[int, np.ndarray]
     """
     results = {}
+    cpu_count = mp.cpu_count()
     with np.errstate(divide='ignore', invalid='ignore'):
-        r = prediction["instances"].to("cpu").get_fields()
-
-        for i_c in classes:  # Loop on colors
-            XY = []
-            i_c_list = np.argwhere(r['pred_classes'] == i_c).flatten()
-            for i_m in i_c_list:
-                segmentation = r['pred_masks'][i_m, :, :].numpy()
-                # Prob hough for line detection
-                lines = probabilistic_hough_line(segmentation, threshold=0,
-                                                 line_length=10,
-                                                 line_gap=30)
-                # If too short
-                if not lines:
-                    lines = probabilistic_hough_line(segmentation,
-                                                     threshold=0,
-                                                     line_length=4,
-                                                     line_gap=30)
-                # No endpoint estimation possible
-                if not lines:
-                    _logger.info(f"No endpoints computed for a rod of class "
-                                 f"{classes[i_c]}.")
-                    XY.append(np.array([[-1, -1], [-1, -1]]))
-                    continue
-
-                # Lines to 4 dim array
-                Xl = np.array(lines)
-                X = np.ravel(Xl).reshape(Xl.shape[0], 4)
-                # Clustering with custom metric
-                db = DBSCAN(eps=0.0008, min_samples=4, algorithm='auto',
-                            metric=_line_metric_4).fit(X)
-
-                core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-                core_samples_mask[db.core_sample_indices_] = True
-                labels = db.labels_
-
-                cl_count = Counter(labels)
-                k = cl_count.most_common(1)[0][0]
-                class_member_mask = (labels == k)
-
-                xy = X[class_member_mask & core_samples_mask]
-
-                points = xy.reshape(2 * xy.shape[0], 2)
-                if points.shape[0] > 2:
-                    bbox = _minimum_bounding_rectangle(points)
-                    bord = -1  # Make rods 1 pix shorter
-
-                    # End coordinates
-                    if np.argmin(
-                        [np.linalg.norm(bbox[0, :] - bbox[1, :]),
-                         np.linalg.norm(bbox[1, :] - bbox[2, :])]) == 0:
-                        x1 = np.mean(bbox[0:2, 0])
-                        y1 = np.mean(bbox[0:2, 1])
-                        x2 = np.mean(bbox[2:4, 0])
-                        y2 = np.mean(bbox[2:4, 1])
-
-                    else:
-                        x1 = np.mean(bbox[1:3, 0])
-                        y1 = np.mean(bbox[1:3, 1])
-                        x2 = np.mean([bbox[0, 0], bbox[3, 0]])
-                        y2 = np.mean([bbox[0, 1], bbox[3, 1]])
-
-                    vX = x2 - x1
-                    vY = y2 - y1
-                    vN = np.linalg.norm([vX, vY])
-                    nvX = vX / vN
-                    nvY = vY / vN
-                    x1 = x1 - bord * nvX
-                    x2 = x2 + bord * nvX
-                    y1 = y1 - bord * nvY
-                    y2 = y2 + bord * nvY
-                    xy1 = [x1, y1]
-                    xy2 = [x2, y2]
-
-                elif points.shape[0] == 2:
-                    xy1 = points[0, :]
-                    xy2 = points[1, :]
-
-                else:
-                    xy1 = [-1, -1]  # value, if no endpoints are computed
-                    xy2 = [-1, -1]  # value, if no endpoints are computed
-                    _logger.info(f"No endpoints computed for a rod of class "
-                                 f"{classes[i_c]}.")
-                XY.append(np.array([xy1, xy2]))
-
-            results[classes[i_c]] = np.array(XY)
+        if "instances" in prediction.keys():
+            prediction = prediction["instances"].get_fields()
+        for k, v in prediction.items():
+            prediction[k] = v.to("cpu")
+        for i_c in classes:
+            i_c_list = np.argwhere(prediction["pred_classes"] == i_c).flatten()
+            segmentations = [
+                prediction['pred_masks'][i_m, :, :].numpy().squeeze()
+                for i_m in i_c_list]
+            if not len(segmentations):
+                continue
+            if len(segmentations) <= cpu_count:
+                use_processes = len(segmentations)
+            else:
+                use_processes = cpu_count
+            with mp.Pool(use_processes) as p:
+                end_points = p.map(line_estimator, segmentations)
+            results[classes[i_c]] = np.array(end_points)
     return results
+
+
+def line_estimator(segmentation: np.ndarray) -> np.ndarray:
+    """Calculates the endpoints of rods from the segmentation mask.
+
+    Parameters
+    ----------
+    segmentation : np.ndarray
+        Boolean segmentation (bit)mask.
+    Returns
+    -------
+    np.ndarray
+    """
+    # Prob hough for line detection
+    lines = probabilistic_hough_line(segmentation, threshold=0,
+                                     line_length=10,
+                                     line_gap=30)
+    # If too short
+    if not lines:
+        lines = probabilistic_hough_line(segmentation,
+                                         threshold=0,
+                                         line_length=4,
+                                         line_gap=30)
+    # No endpoint estimation possible
+    if not lines:
+        return np.array([[-1, -1], [-1, -1]])
+
+    # Lines to 4 dim array
+    Xl = np.array(lines)
+    X = np.ravel(Xl).reshape(Xl.shape[0], 4)
+    # Clustering with custom metric
+    db = DBSCAN(eps=0.0008, min_samples=4, algorithm='auto',
+                metric=_line_metric_4).fit(X)
+
+    core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+    core_samples_mask[db.core_sample_indices_] = True
+    labels = db.labels_
+
+    cl_count = Counter(labels)
+    k = cl_count.most_common(1)[0][0]
+    class_member_mask = (labels == k)
+
+    xy = X[class_member_mask & core_samples_mask]
+
+    points = xy.reshape(2 * xy.shape[0], 2)
+    if points.shape[0] > 2:
+        bbox = _minimum_bounding_rectangle(points)
+        bord = -1  # Make rods 1 pix shorter
+
+        # End coordinates
+        if np.argmin(
+            [np.linalg.norm(bbox[0, :] - bbox[1, :]),
+                np.linalg.norm(bbox[1, :] - bbox[2, :])]) == 0:
+            x1 = np.mean(bbox[0:2, 0])
+            y1 = np.mean(bbox[0:2, 1])
+            x2 = np.mean(bbox[2:4, 0])
+            y2 = np.mean(bbox[2:4, 1])
+
+        else:
+            x1 = np.mean(bbox[1:3, 0])
+            y1 = np.mean(bbox[1:3, 1])
+            x2 = np.mean([bbox[0, 0], bbox[3, 0]])
+            y2 = np.mean([bbox[0, 1], bbox[3, 1]])
+
+        vX = x2 - x1
+        vY = y2 - y1
+        vN = np.linalg.norm([vX, vY])
+        nvX = vX / vN
+        nvY = vY / vN
+        x1 = x1 - bord * nvX
+        x2 = x2 + bord * nvX
+        y1 = y1 - bord * nvY
+        y2 = y2 + bord * nvY
+        xy1 = [x1, y1]
+        xy2 = [x2, y2]
+
+    elif points.shape[0] == 2:
+        xy1 = points[0, :]
+        xy2 = points[1, :]
+
+    else:
+        xy1 = [-1, -1]  # value, if no endpoints are computed
+        xy2 = [-1, -1]  # value, if no endpoints are computed
+    return np.array([xy1, xy2])
+
+
+def paste_mask_in_image_old(mask: torch.Tensor, box: torch.Tensor, img_h: int,
+                            img_w: int, threshold: float = 0.5):
+    """Paste a single mask in an image.
+
+    This is a per-box implementation of `paste_masks_in_image`. This function
+    has larger quantization error due to incorrect pixel modeling and is not
+    used any more.
+
+    Parameters
+    ----------
+    mask : Tensor
+        A tensor of shape (Hmask, Wmask) storing the mask of a single object
+        instance. Values are in [0, 1].
+    box : Tensor
+        A tensor of shape (4, ) storing the x0, y0, x1, y1 box corners of the
+        object instance.
+    img_h : int
+        Image height.
+    img_w : int
+        Image width.
+    threshold : float
+        Mask binarization threshold in [0, 1].
+        Default is 0.5.
+
+    Returns
+    -------
+    Tensor :
+        The resized and binarized object mask pasted into the original
+        image plane (a tensor of shape (img_h, img_w)).
+
+    Note
+    ----
+    This function is copied from `detectron2.layers.mask_ops`.
+    """
+    # Conversion from continuous box coordinates to discrete pixel coordinates
+    # via truncation (cast to int32). This determines which pixels to paste the
+    # mask onto.
+    box = box.to(dtype=torch.int32)
+    # Continuous to discrete coordinate conversion
+    # An example (1D) box with continuous coordinates (x0=0.7, x1=4.3) will
+    # map to a discrete coordinates (x0=0, x1=4). Note that box is mapped
+    # to 5 = x1 - x0 + 1 pixels (not x1 - x0 pixels).
+    samples_w = box[2] - box[0] + 1  # Number of pixel samples, *not* geometric width       # noqa: E501
+    samples_h = box[3] - box[1] + 1  # Number of pixel samples, *not* geometric height      # noqa: E501
+
+    # Resample the mask from it's original grid to the new samples_w x samples_h grid       # noqa: E501
+    mask = Image.fromarray(mask.cpu().numpy())
+    mask = mask.resize((samples_w, samples_h), resample=Image.BILINEAR)
+    mask = np.array(mask, copy=False)
+
+    if threshold >= 0:
+        mask = np.array(mask > threshold, dtype=np.uint8)
+        mask = torch.from_numpy(mask)
+    else:
+        # for visualization and debugging, we also
+        # allow it to return an unmodified mask
+        mask = torch.from_numpy(mask * 255).to(torch.uint8)
+
+    im_mask = torch.zeros((img_h, img_w), dtype=torch.uint8)
+    x_0 = max(box[0], 0)
+    x_1 = min(box[2] + 1, img_w)
+    y_0 = max(box[1], 0)
+    y_1 = min(box[3] + 1, img_h)
+
+    im_mask[y_0:y_1, x_0:x_1] = mask[
+        (y_0 - box[1]):(y_1 - box[1]), (x_0 - box[0]):(x_1 - box[0])
+    ]
+    return im_mask

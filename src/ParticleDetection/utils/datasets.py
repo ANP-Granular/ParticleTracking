@@ -10,7 +10,7 @@ import sys
 import json
 import logging
 import warnings
-from typing import List, Set
+from typing import List, Set, Dict
 from pathlib import Path
 from dataclasses import dataclass
 import numpy as np
@@ -226,3 +226,54 @@ def replace_missing_rods(dataset: pd.DataFrame, cam1_id: str = "gp1",
     dataset[cols_2d] = dataset[cols_2d].fillna(-1.)
     dataset[cols_seen] = dataset[cols_seen].fillna(0)
     return dataset
+
+
+def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
+               cam_id: str, frame: int):
+    """Updates a dataframe with new rod endpoint data for one camera and frame.
+
+    Parameters
+    ----------
+    points : Dict[str, np.ndarray]
+        Rod endpoints in the format obtained from
+        `utils.helper_funcs.rod_endpoints`.
+    data : pd.DataFrame
+        Dataframe for the rods to be saved in.
+    cam_id : str
+        ID/Name of the camera, that produced the image the rod endpoints were
+        computed on.
+    frame : int
+        Frame number in the dataset.
+
+    Returns
+    -------
+    pd.DataFrame
+        Returns the updated `data` dataframe.
+    """
+    cols = [col for col in data.columns if cam_id in col]
+    for color, v in points.items():
+        if np.size(v) == 0:
+            continue
+        v = np.reshape(v, (len(v), -1))
+        seen = np.ones((len(v), 1))
+        to_df = np.concatenate((v, seen), axis=1)
+        temp_df = pd.DataFrame(to_df, columns=cols)
+        if len(data.loc[(data.frame == frame) & (data.color == color)]) == 0:
+            temp_df["frame"] = frame
+            temp_df["color"] = color
+            temp_df["particle"] = np.arange(0, len(temp_df), dtype=int)
+            data = pd.concat((data, temp_df))
+        else:
+            previous_data = data.loc[
+                (data.frame == frame) & (data.color == color)]
+            new_data = data.loc[
+                (data.frame == frame) & (data.color == color)].fillna(temp_df)
+            data.loc[(data.frame == frame) & (data.color == color)] = new_data
+            if len(previous_data) < len(temp_df):
+                temp_df["frame"] = frame
+                temp_df["color"] = color
+                temp_df["particle"] = np.arange(0, len(temp_df), dtype=int)
+                idx_to_add = np.arange(len(previous_data), len(temp_df))
+                data = pd.concat((data, temp_df.iloc[idx_to_add]))
+    data = data.astype({"frame": 'int', "particle": 'int'})
+    return data

@@ -7,8 +7,11 @@ Date:       02.11.2022
 
 """
 import json
-from typing import List, Tuple, Iterable
 import warnings
+from pathlib import Path
+from typing import List, Tuple, Iterable
+import cv2
+import torch
 import numpy as np
 import pandas as pd
 
@@ -240,3 +243,19 @@ def load_positions_from_txt(base_file_name: str, columns: List[str],
         data_raw["frame"] = f
         data = pd.concat([data, data_raw], ignore_index=True)
     return data
+
+
+def read_image(img_path: Path):
+    """Loads an image for detection with an exported model.
+
+    Parameters
+    ----------
+    img_path : Path
+
+    Returns
+    -------
+    torch.Tensor
+    """
+    img = cv2.imread(str(img_path.resolve()))   # loads in 'BGR' mode
+    img = torch.from_numpy(np.ascontiguousarray(img.transpose(2, 0, 1)))
+    return img

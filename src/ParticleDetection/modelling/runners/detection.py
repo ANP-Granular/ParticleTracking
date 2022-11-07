@@ -12,7 +12,7 @@ import cv2
 import random
 import logging
 import sys
-from typing import Union, List, Dict
+from typing import Union, List
 import numpy as np
 import pandas as pd
 import scipy.io as sio
@@ -175,7 +175,7 @@ def run_detection_csv(dataset_format: str,
                       output_dir: str = "./", log_name: str = "detection.log",
                       threshold: float = 0.5,
                       frames: List[int] = [], cam1_name: str = "gp1",
-                      cam2_name: str = "gp2"):
+                      cam2_name: str = "gp2") -> None:
     """Runs inference on a given set of images and saves the output to a *.csv.
 
     This function runs a rod detection on images and generates rod enpoints
@@ -230,8 +230,7 @@ def run_detection_csv(dataset_format: str,
 
     Returns
     -------
-    list
-        Prediction for each image inference was run on.
+    None
     """
 
     setup_logger(os.path.join(output_dir, log_name))
@@ -251,8 +250,6 @@ def run_detection_csv(dataset_format: str,
                    for i in range(0, cfg.MODEL.ROI_HEADS.NUM_CLASSES)}
 
     _logger.info("Starting rod detection ...")
-    predictions = []
-    files = []
     cols = [col.format(id1=cam1_name, id2=cam2_name)
             for col in ds.DEFAULT_COLUMNS]
     data = pd.DataFrame(columns=cols)
@@ -269,15 +266,14 @@ def run_detection_csv(dataset_format: str,
             # Thresholding/cleaning results
             outputs["instances"] = outputs["instances"][
                 outputs["instances"].scores > threshold]
-            # Accumulate results
-            predictions.append(outputs)
-            files.append(os.path.basename(file))
 
             # Prepare outputs for saving
             if "pred_masks" in outputs["instances"].get_fields():
+                if not len(outputs["instances"]):
+                    continue
                 _logger.info("Starting endpoint computation ...")
                 points = hf.rod_endpoints(outputs, classes)
-                data = add_points(points, data, cam, frame)
+                data = ds.add_points(points, data, cam, frame)
             _logger.info(f"Done with: {os.path.basename(file)}")
         # Save intermediate rod data
         if len(data) > 0:
@@ -286,58 +282,7 @@ def run_detection_csv(dataset_format: str,
             data = ds.replace_missing_rods(data, cam1_name, cam2_name)
             data.to_csv(current_output, ",")
             d_conv.csv_extract_colors(current_output)
-    return predictions
-
-
-def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
-               cam_id: str, frame: int):
-    """Updates a dataframe with new rod endpoint data for one camera and frame.
-
-    Parameters
-    ----------
-    points : Dict[str, np.ndarray]
-        Rod endpoints in the format obtained from
-        `utils.helper_funcs.rod_endpoints`.
-    data : pd.DataFrame
-        Dataframe for the rods to be saved in.
-    cam_id : str
-        ID/Name of the camera, that produced the image the rod endpoints were
-        computed on.
-    frame : int
-        Frame number in the dataset.
-
-    Returns
-    -------
-    pd.DataFrame
-        Returns the updated `data` dataframe.
-    """
-    cols = [col for col in data.columns if cam_id in col]
-    for color, v in points.items():
-        if np.size(v) == 0:
-            continue
-        v = np.reshape(v, (len(v), -1))
-        seen = np.ones((len(v), 1))
-        to_df = np.concatenate((v, seen), axis=1)
-        temp_df = pd.DataFrame(to_df, columns=cols)
-        if len(data.loc[(data.frame == frame) & (data.color == color)]) == 0:
-            temp_df["frame"] = frame
-            temp_df["color"] = color
-            temp_df["particle"] = np.arange(0, len(temp_df), dtype=int)
-            data = pd.concat((data, temp_df))
-        else:
-            previous_data = data.loc[
-                (data.frame == frame) & (data.color == color)]
-            new_data = data.loc[
-                (data.frame == frame) & (data.color == color)].fillna(temp_df)
-            data.loc[(data.frame == frame) & (data.color == color)] = new_data
-            if len(previous_data) < len(temp_df):
-                temp_df["frame"] = frame
-                temp_df["color"] = color
-                temp_df["particle"] = np.arange(0, len(temp_df), dtype=int)
-                idx_to_add = np.arange(len(previous_data), len(temp_df))
-                data = pd.concat((data, temp_df.iloc[idx_to_add]))
-    data = data.astype({"frame": 'int', "particle": 'int'})
-    return data
+    return
 
 
 def save_to_mat(file_name: str, points: dict):

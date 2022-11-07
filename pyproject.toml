@@ -61,7 +61,7 @@ detectron2 = [
     {git = "https://github.com/facebookresearch/detectron2.git", optional = true, markers = "sys_platform == 'linux' and extra == 'detectron'"}
 ]
 imgaug = {version = "*", optional = true}
-Pillow = {version = "*", optional = true}
+Pillow = {version = "*"}
 
 [[tool.poetry.source]]
 name = "gpu-win"
