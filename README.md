@@ -1,25 +1,57 @@
 # Particle Detection
 This repository customizes the training, inference and visualization code of the **Detectron2** framework to accurately detect rod-like particles. It additionally provides functionality to track these detected particles over multiple frames and reconstruct 3D representations of these observed granular gases.
 
+Use it like any other python package, by installing it in your environment and
+then importing it in your scripts/modules/functions.
+```python
+import ParticleDetection.utils.helper_funcs as hf
+```
+
 ## Installation instructions
-- install Detectron2 (use the 
-[Detectron2 Installation Guide](https://detectron2.readthedocs.io/en/latest/tutorials/install.html))
-  - use the `opencv_python` package (see its [PyPI-Page](https://pypi.org/project/opencv-python/))
-  - for installing PyTorch use the newer version of CUDA first (see [PyTorch Get Started Page](https://pytorch.org/get-started/locally/))
-- change the protobuf version to 3.20.1
-```shell
-pip install protobuf==3.20.1
-``` 
-- install Shapely 
-```shell
-pip install shapely 
-```
-- install tensorboard for training metric visualization
-```shell
-pip install tensorboard 
-```
-## Running Code
-The root directory of this repository must be in the `PYTHONPATH` environment variable for the code to run. 
+- clone this repository
+- install it using pip
+  ```shell
+  YOUR/REPO/PATH$ pip install .
+  ```
+- or install a specific option using pip
+  ```shell
+  YOUR/REPO/PATH$ pip install .[OPTION]
+  ```
+
+Available installation options:
+- `CPU`:
+  - is the **default**
+  - attempts to install the cpu version of pytorch
+  - no Detectron2 installation
+    - the `ParticleDetection.modelling` module is not usable
+  - allows to run exported detection model on the CPU only
+- `GPU`:
+  - **Requirement:** CUDA is installed
+  - attempts to install the cuda/gpu version of pytorch
+  - no Detectron2 installation
+    - the `ParticleDetection.modelling` module is not usable
+  - allows to run exported detection models on the CPU and GPU
+- `DETECTRON`:
+  - **Requirement:** CUDA is installed
+  - attempts to install the cuda/gpu version of pytorch 
+  - attempts to install Detectron2
+  - allows to train/run/export new Detectron2 models
+  - allows to run exported detection models on the CPU and GPU
+  - **Troubleshooting:**
+    - change the protobuf version to 3.20.1
+    ```shell
+    pip install protobuf==3.20.1
+    ```
+    - install Shapely 
+    ```shell
+    pip install shapely 
+    ```
+    - refer to the [Detectron2 Installation Guide](https://detectron2.readthedocs.io/en/latest/tutorials/install.html) and the [PyTorch Get Started Page](https://pytorch.org/get-started/locally/)
+
+## Running Example Code
+An example on how to use this customization of the Detectron2 library is 
+given in the [Example](experiments/example) folder.
+~~The root directory of this repository must be in the `PYTHONPATH` environment variable for the code to run.~~
 In Visual Studio Code this could be achieved by setting the `"env"` variable in a run configuration as shown below. Other IDEs like PyCharm add this by default.
 All scripts also assume, that the current working directory is in their respective directory, when they are run as the main script.
 ```json
@@ -45,11 +77,6 @@ Run the following command for training data visualization with Tensorboard:
 tensorboard --logdir "path\to\output\folder(s)"
 ```
 
-
-## Examples
-An example on how to use this customization of the Detectron2 library is 
-given in the [Example](experiments/example) folder.
-
 ## Experiments
 The code of the *final* versions of experiments are given, but without the used training data.
 ### Rod Detection
@@ -61,12 +88,7 @@ Instead of the standard mask head, this network uses a PointRend network for the
 
 
 # 3D-Reconstruction
-## Installation
-```shell
-pip install pandas scipy scikit-image trackpy filterpy matplotlib
-```
-
-# Output file format & naming conventions
+## Output file format & naming conventions
 Rod Endpoint files after detection:
 - file names: {image name}_{rod color}.mat
 - content:
