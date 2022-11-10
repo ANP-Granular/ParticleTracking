@@ -433,16 +433,15 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
             # repr_errs desired shape:[block x err(p)] with
             #   block: re11, re12, re21, re22
             repr_errs = np.reshape(repr_errs, (-1, 4))
+            costs = np.reshape(
+                np.min(
+                    [np.sum(repr_errs[:, 0::3], axis=1),
+                        np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
+                (len(undist_cam1), len(undist_cam2))
+            )
 
             # regular matching
             if fn == 0:
-                costs = np.reshape(
-                        np.min(
-                            [np.sum(repr_errs[:, 0::3], axis=1),
-                             np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
-                        (len(undist_cam1), len(undist_cam2))
-                    )
-
                 cam1_ind, cam2_ind = linear_sum_assignment(costs)
                 assignment_cost = costs[cam1_ind, cam2_ind]
                 all_repr_errs.append(assignment_cost)
@@ -550,7 +549,6 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
 
                 ###############################################################
                 all_rod_lengths.append(out[:, 9])
-                # BUG: costs are only defined on the first frame iteration
                 all_repr_errs.append(costs[idx_out[1, :], idx_out[2, :]])
 
                 # Data preparation for saving as *.csv
