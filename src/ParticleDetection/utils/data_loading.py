@@ -259,3 +259,30 @@ def read_image(img_path: Path):
     img = cv2.imread(str(img_path.resolve()))   # loads in 'BGR' mode
     img = torch.from_numpy(np.ascontiguousarray(img.transpose(2, 0, 1)))
     return img
+
+
+def extract_3d_data(df_data: pd.DataFrame) -> np.ndarray:
+    """Extract the 3D data from a rod position DataFrame ready for plotting.
+
+    Parameters
+    ----------
+    df_data : pd.DataFrame
+        Rod position data, with at least the following columns:
+        ["particle", "frame", "x1", "y1", "z1", "x2", "y2", "z2"]
+
+    Returns
+    -------
+    np.ndarray
+        Dimensions: [frame, particle, 3, 2]
+    """
+    no_frames = len(df_data.frame.unique())
+    no_particles = len(df_data.particle.unique())
+    data3d = np.zeros((no_frames, no_particles, 3, 2))
+    for idx_f, f in enumerate(df_data.frame.unique()):
+        frame_data = df_data.loc[df_data.frame == f]
+        idx_p = frame_data["particle"].to_numpy()
+        data3d[idx_f, idx_p, :, 0] = frame_data[
+            ["x1", "y1", "z1"]].to_numpy()
+        data3d[idx_f, idx_p, :, 1] = frame_data[
+            ["x2", "y2", "z2"]].to_numpy()
+    return data3d
