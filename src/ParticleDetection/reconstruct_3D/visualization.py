@@ -260,10 +260,10 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
     ----------
     data : np.ndarray
         3D coordinates of rods over multiple frames.
-        Dimensions: [frame, 3, 2]
+        Dimensions: [frame, particle, 3, 2]
     comparison : np.ndarray, optional
         3D coordinates of comparison rods over the same frames as `data`.
-        Dimensions: [frame, 3, 2]
+        Dimensions: [frame, particle, 3, 2]
         By default None.
     show : bool, optional
         Flag, whether to show the figure immediately or to return it instead.

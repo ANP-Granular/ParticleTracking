@@ -236,7 +236,7 @@ def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
     ----------
     points : Dict[str, np.ndarray]
         Rod endpoints in the format obtained from
-        `utils.helper_funcs.rod_endpoints`.
+        `ParticleDetection.utils.helper_funcs.rod_endpoints`.
     data : pd.DataFrame
         Dataframe for the rods to be saved in.
     cam_id : str
