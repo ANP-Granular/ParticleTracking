@@ -6,10 +6,10 @@ Author:     Adrian Niemann (adrian.niemann@ovgu.de)
 Date:       07.11.2022
 
 """
-import sys
 import logging
 from typing import List
 from pathlib import Path
+from tqdm import tqdm
 import torch
 import pandas as pd
 
@@ -25,15 +25,6 @@ import ParticleDetection.utils.helper_funcs as hf
 import ParticleDetection.utils.data_conversions as d_conv
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-    )
-ch.setFormatter(formatter)
-_logger.addHandler(ch)
 
 
 def _run_detection(model: torch.ScriptModule, img: Path,
@@ -147,14 +138,14 @@ def run_detection(model: torch.ScriptModule, dataset_format: str,
     cols = [col.format(id1=cam1_name, id2=cam2_name)
             for col in ds.DEFAULT_COLUMNS]
     data = pd.DataFrame(columns=cols)
-    for frame in frames:
+    for frame in tqdm(frames):
         for cam in [cam1_name, cam2_name]:
             file = Path(dataset_format.format(frame=frame, cam_id=cam))
-            _logger.info(f"Inference on: {str(file)}")
+            _logger.debug(f"Inference on: {str(file)}")
             outputs = _run_detection(model, file, threshold=threshold)
 
             if "pred_masks" in outputs:
-                _logger.info("Starting endpoint computation ...")
+                _logger.debug("Starting endpoint computation ...")
                 # points = hf.rod_endpoints_independent(outputs, classes)
                 points = hf.rod_endpoints(outputs, classes)
                 data = ds.add_points(points, data, cam, frame)

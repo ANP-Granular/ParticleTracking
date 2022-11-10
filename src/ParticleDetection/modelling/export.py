@@ -5,7 +5,6 @@ Author:     Adrian Niemann (adrian.niemann@ovgu.de)
 Date:       31.10.2022
 
 """
-import sys
 import logging
 from pathlib import Path
 from typing import Literal
@@ -18,18 +17,7 @@ from detectron2.projects import point_rend                      # noqa: F401
 from detectron2.export import TracingAdapter
 from detectron2.data.detection_utils import read_image
 
-
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-    )
-ch.setFormatter(formatter)
-_logger.addHandler(ch)
-
 EXPORT_OPTIONS = Literal["cpu", "cuda"]
 
 

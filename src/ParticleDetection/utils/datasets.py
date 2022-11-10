@@ -6,10 +6,8 @@ Date:       31.10.2022
 
 """
 import os
-import sys
 import json
 import logging
-import warnings
 from typing import List, Set, Dict
 from pathlib import Path
 from dataclasses import dataclass
@@ -17,15 +15,6 @@ import numpy as np
 import pandas as pd
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-    )
-ch.setFormatter(formatter)
-_logger.addHandler(ch)
 
 
 DEFAULT_CLASSES = {
@@ -120,8 +109,8 @@ def insert_missing_rods(dataset: pd.DataFrame, expected_rods: int,
             if rod_no == expected_rods:
                 continue
             elif rod_no > expected_rods:
-                warnings.warn(f"More rods than expected for frame #{frame}"
-                              f" of color '{color}'")
+                _logger.warning(f"More rods than expected for frame #{frame}"
+                                f" of color '{color}'")
             missing = expected_rods - rod_no
             empty_rods = pd.DataFrame(missing * [
                 [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,

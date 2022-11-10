@@ -6,7 +6,6 @@ Date:       11.08.2022
 
 """
 import os
-import sys
 import cv2
 import logging
 from typing import Union, Iterable
@@ -16,17 +15,7 @@ import matplotlib as mpl
 import torch
 from detectron2.utils.visualizer import GenericMask
 
-
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-    )
-ch.setFormatter(formatter)
-_logger.addHandler(ch)
 
 
 def visualize(prediction, original: Union[dict, str],
@@ -165,8 +154,8 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
         except AttributeError:
             # predictions does not have mask data, e.g. because it predicted
             # only keypoints
-            _logger.info("Predictions don't have segmentation masks. "
-                         "Skipping mask visualization...")
+            _logger.warning("Predictions don't have segmentation masks. "
+                            "Skipping mask visualization...")
 
         # Groundtruth axes
         ax2 = fig.add_axes([0, 0, 1, .5])
@@ -180,8 +169,8 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
         except IndexError:
             # annotations don't have the "segmentation" field, e.g. because
             # they only have keypoints
-            _logger.info("Ground-truth does not have segmentation masks. "
-                         "Skipping mask visualization...")
+            _logger.warning("Ground-truth does not have segmentation masks. "
+                            "Skipping mask visualization...")
 
     else:
         fig.set_size_inches(
@@ -199,7 +188,7 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
         except AttributeError:
             # predictions does not have mask data, e.g. because it predicted
             # only keypoints
-            _logger.info("Predictions don't have segmentation masks. "
-                         "Skipping mask visualization...")
+            _logger.warning("Predictions don't have segmentation masks. "
+                            "Skipping mask visualization...")
 
     return fig

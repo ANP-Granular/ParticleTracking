@@ -8,7 +8,6 @@ Date:       02.11.2022
 
 """
 import os
-import sys
 import json
 import logging
 from typing import Iterable, List
@@ -21,15 +20,6 @@ import ParticleDetection.utils.data_loading as dl
 import ParticleDetection.utils.datasets as ds
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-    )
-ch.setFormatter(formatter)
-_logger.addHandler(ch)
 
 
 def txt2mat(input_folder: Path, frames: Iterable[int], expected_rods: int,

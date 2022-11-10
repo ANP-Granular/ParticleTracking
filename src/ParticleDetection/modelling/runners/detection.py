@@ -11,7 +11,6 @@ import warnings
 import cv2
 import random
 import logging
-import sys
 from typing import Union, List
 import numpy as np
 import pandas as pd
@@ -29,17 +28,6 @@ import ParticleDetection.utils.data_conversions as d_conv
 import ParticleDetection.modelling.visualization as visualization
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-    )
-ch.setFormatter(formatter)
-_logger.addHandler(ch)
-
-
 SHOW_ORIGINAL = True
 
 

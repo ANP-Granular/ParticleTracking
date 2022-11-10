@@ -41,7 +41,7 @@ class CustomTrainer(DefaultTrainer):
             Detectron2 network configuration with allowed TASK field of:
             "None" -> will be changed to "segm"
             "segm" -> results in an evaluator for a segmentation task
-            "keypoints" -> results in an evaluator for a keypoint detection 
+            "keypoints" -> results in an evaluator for a keypoint detection
                            task
         dataset_name : str
             Name of a dataset that is registered in the Detectron2 framework,

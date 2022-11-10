@@ -14,15 +14,25 @@ from sklearn.cluster import DBSCAN
 from skimage.transform import probabilistic_hough_line
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-    )
-ch.setFormatter(formatter)
-_logger.addHandler(ch)
+
+
+def configure_logging(level: int = logging.INFO):
+    """Configure the default output to stdout by this library.
+
+    Parameters
+    ----------
+    level : int, optional
+        By default logging.INFO.
+    """
+    lg = logging.getLogger()
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setLevel(level)
+    formatter = logging.Formatter(
+        "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
+        datefmt="%m/%d %H:%M:%S"
+        )
+    ch.setFormatter(formatter)
+    lg.addHandler(ch)
 
 
 def _dot_arccos(lineA, lineB):

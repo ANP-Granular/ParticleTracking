@@ -8,7 +8,6 @@ Date:       31.10.2022
 
 """
 import os
-import sys
 import json
 import logging
 
@@ -22,15 +21,6 @@ import ParticleDetection.utils.datasets as ds
 import ParticleDetection.utils.helper_funcs as hf
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-    )
-ch.setFormatter(formatter)
-_logger.addHandler(ch)
 
 
 def remove_duplicate_regions(dataset: ds.DataSet) -> None:
