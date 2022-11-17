@@ -243,6 +243,10 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None,
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
+    if comparison:
+        ax.legend([orig_lines[0], rod_lines[0]], ["manual", "auto"])
+    else:
+        ax.legend([rod_lines[0]], ["auto"])
 
     if not show:
         return fig
@@ -302,6 +306,10 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
     ax.set(xlim3d=(data[:, :, 0, :].min(), data[:, :, 0, :].max()), xlabel='X')
     ax.set(ylim3d=(data[:, :, 1, :].min(), data[:, :, 1, :].max()), ylabel='Y')
     ax.set(zlim3d=(data[:, :, 2, :].min(), data[:, :, 2, :].max()), zlabel='Z')
+    if comparison:
+        ax.legend([orig_lines[0], lines[0]], ["manual", "auto"])
+    else:
+        ax.legend([lines[0]], ["auto"])
 
     # Creating the Animation object
     anim = animation.FuncAnimation(                             # noqa: F841
@@ -309,6 +317,8 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
         interval=50)
 
     if not show:
+        writer = animation.PillowWriter(fps=30)
+        anim.save("./animate_3D.gif", writer=writer)
         return fig
     plt.show()
     return
