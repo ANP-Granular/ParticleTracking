@@ -243,7 +243,7 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None,
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
-    if comparison:
+    if comparison is not None:
         ax.legend([orig_lines[0], rod_lines[0]], ["manual", "auto"])
     else:
         ax.legend([rod_lines[0]], ["auto"])
@@ -306,7 +306,7 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
     ax.set(xlim3d=(data[:, :, 0, :].min(), data[:, :, 0, :].max()), xlabel='X')
     ax.set(ylim3d=(data[:, :, 1, :].min(), data[:, :, 1, :].max()), ylabel='Y')
     ax.set(zlim3d=(data[:, :, 2, :].min(), data[:, :, 2, :].max()), zlabel='Z')
-    if comparison:
+    if comparison is not None:
         ax.legend([orig_lines[0], lines[0]], ["manual", "auto"])
     else:
         ax.legend([lines[0]], ["auto"])
