@@ -545,11 +545,12 @@ def assign(
                     i2 = idx_out[2, rod_id]
                     i3 = idx_out[3, rod_id]
 
-                    out[idx_r, 0:6] = p_out[i1, i2, i3, :].flatten()
+                    out[idx_r, 0:6] = np.concatenate(
+                        (p_out[i1, i2, i3, 0], p_out[i1, i2, 3-i3, 1]))
                     out[idx_r, 6:9] = \
                         p_out[i1, i2, i3, :].sum(axis=0) / 2
                     out[idx_r, 9] = np.linalg.norm(
-                        np.diff(p_out[i1, i2, i3, :], axis=0))
+                        p_out[i1, i2, i3, 0] - p_out[i1, i2, 3-i3, 1], axis=0)
                     out[idx_r, 10:14] = rods_cam1[i1, :].flatten()
                     out[idx_r, 14:] = rods_cam2[i2, :].flatten()
 
