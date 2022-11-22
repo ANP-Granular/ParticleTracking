@@ -66,7 +66,7 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
 
     # Load Matlab exported calibrations
     calibration = dl.load_camera_calibration(str(calibration_file))
-    # transforms = dl.load_calib_from_json(transformation_file)
+    transforms = dl.load_calib_from_json(transformation_file)
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
@@ -78,6 +78,14 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
     t2 = calibration["T"]
     P2 = np.vstack((r2.T, t2.T)) @ calibration["CM2"].T
     P2 = P2.T
+
+    # Preparation of world transformations
+    rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
+    roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
+    rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
+    rot_comb = rotz*roty*rotx
+    tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
+    tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
 
     # Setup the triangulation function with the loaded calibration
     def triangulate(point1, point2, sampson=False):
@@ -104,6 +112,8 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
                                 distCoeffs=calibration["dist1"])[0]
         rp2 = cv2.projectPoints(wp, r2, t2, calibration["CM2"],
                                 distCoeffs=calibration["dist2"])[0]
+        # Transformation to world coordinates
+        wp = rot_comb.apply((wp + tw1)) + tw2
         rep_errs = [np.linalg.norm(orig1 - rp1), np.linalg.norm(orig2 - rp2)]
         return wp, rep_errs
 
@@ -257,7 +267,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
         os.mkdir(output_folder)
 
     calibration = dl.load_camera_calibration(str(calibration_file))
-    # transforms = dl.load_calib_from_json(str(transformation_file))
+    transforms = dl.load_calib_from_json(str(transformation_file))
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
@@ -269,6 +279,14 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
     t2 = calibration["T"]
     P2 = np.vstack((r2.T, t2.T)) @ calibration["CM2"].T
     P2 = P2.T
+
+    # Preparation of world transformations
+    rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
+    roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
+    rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
+    rot_comb = rotz*roty*rotx
+    tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
+    tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
 
     all_repr_errs = []
     all_rod_lengths = []
@@ -320,9 +338,6 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
                               itertools.product(rods_cam1, rods_cam2)]
             pairs_original = np.reshape(pairs_original, (-1, 2, 2))
 
-            # FIXME: currently yields points in the first cameras coordinate
-            #  system (i.e. "gp3")
-            # TODO: transformation to "world"-coordinates
             p_triang = cv2.triangulatePoints(
                 P1, P2,
                 pairs_all[:, 0, :].squeeze().transpose(),
@@ -367,10 +382,11 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
 
             point_choices = point_choices.reshape((len(rods_cam1),
                                                    len(rods_cam2)))
+
+            # Transformation to world coordinates
+            p_triang = rot_comb.apply((p_triang + tw1)) + tw2
             p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2), 4, 3))
 
-            # TODO: transformation to world coordinates of the 3D point
-            # p_triang = project_to_world(p_triang, transforms)
             out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
             idx_out = 0     # TODO: remove the use of idx_out
             for m in range(len(cam1_ind)):
@@ -476,7 +492,7 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
     rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
     roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
     rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
-    rot_comb = roty*rotz*rotx
+    rot_comb = rotz*roty*rotx
     tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
     tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
 

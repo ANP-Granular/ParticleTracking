@@ -264,10 +264,13 @@ def create_weights_2(p_3D: np.ndarray, p_3D_prev: np.ndarray,
     return weights
 
 
-def assign(input_folder: str, output_folder: str, colors: Iterable[str],
-           cam1_name: str = "gp1", cam2_name: str = "gp2",
-           frame_numbers: Iterable[int] = None, calibration_file: str = None,
-           transformation_file: str = None) -> Tuple[np.ndarray]:
+def assign(
+        input_folder: str, output_folder: str, colors: Iterable[str],
+        cam1_name: str = "gp1", cam2_name: str = "gp2",
+        frame_numbers: Iterable[int] = None, calibration_file: str = None,
+        transformation_file: str = None,
+        solver: pulp.LpSolver = pulp.PULP_CBC_CMD(msg=False)
+        ) -> Tuple[np.ndarray]:
     """Matches, triangulates and tracks rods over frames from *.csv data files.
 
     The function matches rods over multiple frames using npartite matching and
@@ -306,6 +309,9 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
         transformation from the first camera's coordinate system to the
         world/box coordinate system.
         By default the transformation constructed with Matlab is used.
+    solver : pulp.LpSolver, optional
+        Solver that is used for the n-partite matching problem
+        Default is pulp.PULP_CBC_CMD(msg=False).
 
     Returns
     -------
@@ -342,7 +348,7 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
     rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
     roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
     rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
-    rot_comb = roty*rotz*rotx
+    rot_comb = rotz*roty*rotx
     tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
     tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
 
@@ -510,7 +516,7 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
                                            prev_repr_errs)
 
                 rod, cam1_ind, cam2_ind, combo_idx = npartite_matching(
-                    weights, maximize=True)
+                    weights, maximize=True, solver=solver)
 
                 rod_nums = list(range(weights.shape[0]))
                 idx_out = np.empty((4, weights.shape[0]))
