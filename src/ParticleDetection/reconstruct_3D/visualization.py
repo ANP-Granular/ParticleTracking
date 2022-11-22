@@ -244,9 +244,9 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None,
     ax.set_ylabel("y")
     ax.set_zlabel("z")
     if comparison is not None:
-        ax.legend([orig_lines[0], rod_lines[0]], ["manual", "auto"])
+        ax.legend([orig_lines[0][0], rod_lines[0][0]], ["manual", "auto"])
     else:
-        ax.legend([rod_lines[0]], ["auto"])
+        ax.legend([rod_lines[0][0]], ["auto"])
 
     if not show:
         return fig
