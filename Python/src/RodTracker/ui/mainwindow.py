@@ -251,8 +251,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.settings.settings_changed.connect(self.update_settings)
         self.settings.settings_changed.connect(
             rn.RodNumberWidget.update_defaults)
-        self.ui.action_preferences.triggered.connect(
-            lambda: self.settings.show_dialog(self))
 
         # Logging
         self.logger.notify_unsaved.connect(self.tab_has_changes)

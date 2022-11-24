@@ -850,8 +850,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>794</width>
-                     <height>349</height>
+                     <width>100</width>
+                     <height>30</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -1091,7 +1091,7 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>326</width>
+                        <width>255</width>
                         <height>485</height>
                        </rect>
                       </property>
@@ -1403,7 +1403,6 @@
     <addaction name="action_open"/>
     <addaction name="action_open_rods"/>
     <addaction name="action_save"/>
-    <addaction name="action_preferences"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="enabled">

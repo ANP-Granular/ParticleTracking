@@ -17,7 +17,6 @@
 import json
 from abc import abstractmethod
 from PyQt5 import QtWidgets, QtCore
-from RodTracker.ui.dialogs import SettingsDialog
 import RodTracker.backend.logger as lg
 
 
@@ -170,19 +169,6 @@ class Settings(Configuration):
         """
         for _, category in self._contents.items():
             self.settings_changed.emit(category)
-
-    def show_dialog(self, parent: QtWidgets.QMainWindow):
-        self.parent = parent
-        settings_dialog = SettingsDialog(self._contents, parent,
-                                         self._default)
-        if settings_dialog.exec():
-            lg._logger.info("Saved changed settings.")
-            self._contents = settings_dialog.tmp_contents
-            self.save(new_data=self._contents)
-            self.send_settings()
-        else:
-            lg._logger.info("Discarded changed settings.")
-            return
 
     def update_field(self, category: str, field: str, value):
         """Update one of the settings and notify other objects about it.
