@@ -34,6 +34,7 @@ import RodTracker.backend.file_locations as fl
 import RodTracker.ui.rodnumberwidget as rn
 import RodTracker.ui.mainwindow_layout as mw_l
 from RodTracker.ui import dialogs
+from RodTracker.ui.settings_setup import init_settings
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
@@ -196,6 +197,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.slider_frames.setMaximum(1)
         self.settings = se.Settings()
 
+        init_settings(self.ui, self.settings)
         self.connect_signals()
         self.settings.send_settings()
 

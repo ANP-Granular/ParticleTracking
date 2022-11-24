@@ -126,13 +126,17 @@ class Settings(Configuration):
             "number_size": 11,
             "boundary_offset": 5,
             "position_scaling": 1.0,
-            "number_rods": 25,
-            "rod_increment": 1.0
         },
         "data": {
             "images_root": "./",
             "positions_root": "./",
-        }
+        },
+        "functional": {
+            "rod_increment": 1.0,
+        },
+        "experiment": {
+            "number_rods": 25,
+        },
     }
     _contents = _default
     parent: QtWidgets.QMainWindow
@@ -164,8 +168,8 @@ class Settings(Configuration):
 
         Emits a `settings_changed` signal for every category of settings.
         """
-        self.settings_changed.emit(self._contents["visual"])
-        self.settings_changed.emit(self._contents["data"])
+        for _, category in self._contents.items():
+            self.settings_changed.emit(category)
 
     def show_dialog(self, parent: QtWidgets.QMainWindow):
         self.parent = parent
@@ -179,3 +183,19 @@ class Settings(Configuration):
         else:
             lg._logger.info("Discarded changed settings.")
             return
+
+    def update_field(self, category: str, field: str, value):
+        """Update one of the settings and notify other objects about it.
+
+        Parameters
+        ----------
+        category : str
+            Category of settings.
+        field : str
+            Field/setting within the `category`.
+        value : any
+            New value of the setting.
+        """
+        self._contents[category][field] = value
+        self.save(new_data=self._contents)
+        self.send_settings()
