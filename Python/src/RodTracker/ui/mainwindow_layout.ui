@@ -213,7 +213,7 @@
              </sizepolicy>
             </property>
             <property name="title">
-             <string>Rod Color</string>
+             <string>Particle Color</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_4">
              <item row="0" column="3">
@@ -294,7 +294,7 @@
                <string notr="true">background-color: transparent; font-weight: bold;</string>
               </property>
               <property name="text">
-               <string>Loaded Rods: 0</string>
+               <string>Loaded Particles: 0</string>
               </property>
               <property name="frame">
                <bool>false</bool>
@@ -381,7 +381,7 @@
                   </sizepolicy>
                  </property>
                  <property name="text">
-                  <string>All Rods</string>
+                  <string>All Particles</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -405,7 +405,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Rod No.:</string>
+                    <string>Particle No.:</string>
                    </property>
                   </widget>
                  </item>
@@ -718,6 +718,9 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="styleSheet">
+               <string notr="true">QTabWidget#camera_tabs{font-weight: bold;}</string>
+              </property>
               <property name="tabPosition">
                <enum>QTabWidget::West</enum>
               </property>
@@ -757,8 +760,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>781</width>
-                     <height>335</height>
+                     <width>752</width>
+                     <height>228</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -847,8 +850,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>781</width>
-                     <height>335</height>
+                     <width>752</width>
+                     <height>228</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -906,7 +909,7 @@
               </widget>
              </widget>
              <widget class="QWidget" name="verticalLayoutWidget">
-              <layout class="QVBoxLayout" name="undo_layout" stretch="0">
+              <layout class="QVBoxLayout" name="right_tabs_layout" stretch="0">
                <property name="spacing">
                 <number>10</number>
                </property>
@@ -917,62 +920,97 @@
                 <number>5</number>
                </property>
                <item>
-                <widget class="QSplitter" name="splitter_2">
-                 <property name="orientation">
-                  <enum>Qt::Vertical</enum>
+                <widget class="QTabWidget" name="right_tabs">
+                 <property name="styleSheet">
+                  <string notr="true"> QTabWidget#right_tabs{font-weight: bold;}</string>
                  </property>
-                 <widget class="QTreeWidget" name="tv_rods">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>16777215</width>
-                    <height>16777215</height>
-                   </size>
-                  </property>
-                  <attribute name="headerMinimumSectionSize">
-                   <number>26</number>
+                 <property name="tabPosition">
+                  <enum>QTabWidget::East</enum>
+                 </property>
+                 <property name="currentIndex">
+                  <number>0</number>
+                 </property>
+                 <widget class="QWidget" name="tab_rods">
+                  <attribute name="title">
+                   <string>Particles</string>
                   </attribute>
-                  <attribute name="headerDefaultSectionSize">
-                   <number>100</number>
-                  </attribute>
-                  <attribute name="headerStretchLastSection">
-                   <bool>true</bool>
-                  </attribute>
-                  <column>
-                   <property name="text">
-                    <string>List of Rods:</string>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <weight>75</weight>
-                     <bold>true</bold>
-                    </font>
-                   </property>
-                   <property name="textAlignment">
-                    <set>AlignCenter</set>
-                   </property>
-                  </column>
-                 </widget>
-                 <widget class="QWidget" name="verticalLayoutWidget_2">
                   <layout class="QVBoxLayout" name="verticalLayout_5">
+                   <property name="spacing">
+                    <number>0</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
                    <item>
-                    <widget class="QLabel" name="lbl_actions_list">
-                     <property name="styleSheet">
-                      <string notr="true">background-color: transparent;font-weight: bold;</string>
+                    <widget class="QTreeWidget" name="tv_rods">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
                      </property>
-                     <property name="text">
-                      <string>Performed Actions:</string>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>16777215</height>
+                      </size>
                      </property>
-                     <property name="alignment">
-                      <set>Qt::AlignCenter</set>
-                     </property>
+                     <attribute name="headerMinimumSectionSize">
+                      <number>26</number>
+                     </attribute>
+                     <attribute name="headerDefaultSectionSize">
+                      <number>100</number>
+                     </attribute>
+                     <attribute name="headerStretchLastSection">
+                      <bool>true</bool>
+                     </attribute>
+                     <column>
+                      <property name="text">
+                       <string>Loaded Particles:</string>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <weight>75</weight>
+                        <bold>true</bold>
+                       </font>
+                      </property>
+                      <property name="textAlignment">
+                       <set>AlignCenter</set>
+                      </property>
+                     </column>
                     </widget>
                    </item>
+                  </layout>
+                 </widget>
+                 <widget class="QWidget" name="tab_history">
+                  <attribute name="title">
+                   <string>History</string>
+                  </attribute>
+                  <layout class="QVBoxLayout" name="verticalLayout_6">
+                   <property name="spacing">
+                    <number>0</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
                    <item>
                     <widget class="LoggerWidget" name="lv_actions_list">
                      <property name="sizePolicy">
@@ -999,7 +1037,7 @@
                      </property>
                      <property name="minimumSize">
                       <size>
-                       <width>60</width>
+                       <width>0</width>
                        <height>0</height>
                       </size>
                      </property>

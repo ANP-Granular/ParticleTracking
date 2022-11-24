@@ -467,9 +467,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def open_image_folder(self, chosen_file: pathlib.Path):
         """Tries to open an image folder to show the given image.
 
-        All images of the folder from the chosen file's folder are marked for 
-        later display. The selected image is opened immediately. It tries to 
-        extract a camera id from the selected folder and logs the 
+        All images of the folder from the chosen file's folder are marked for
+        later display. The selected image is opened immediately. It tries to
+        extract a camera id from the selected folder and logs the
         opening action.
 
         Returns
@@ -574,9 +574,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """Tries to open the selected folder with potential rod position data.
 
         It is evaluated which files in the folder are valid data files and what
-        colors they describe. The GUI is updated accordingly to the found 
+        colors they describe. The GUI is updated accordingly to the found
         files. The original files are copied to a temporary location for
-        storage of temporary changes. The data is opened immediately, if 
+        storage of temporary changes. The data is opened immediately, if
         applicable by the GUI state. The data discovery/loading is logged.
 
         Returns
@@ -630,7 +630,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                 "already. Do you want to use that "
                                 "instead of the selected data?")
                     msg.setStandardButtons(QMessageBox.Yes |
-                                            QMessageBox.No)
+                                           QMessageBox.No)
                     user_decision = msg.exec()
                     if user_decision == QMessageBox.Yes:
                         self.original_data = out_folder + "/"
@@ -644,8 +644,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
                 # Update visual elements
                 rb_colors = [child for child
-                                in self.ui.group_rod_color.children() if
-                                type(child) is QRadioButton]
+                             in self.ui.group_rod_color.children() if
+                             type(child) is QRadioButton]
                 rb_color_texts = [btn.text().lower() for btn in rb_colors]
                 group_layout = self.ui.group_rod_color.layout()
                 max_col = group_layout.columnCount() - 1
@@ -689,6 +689,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         btn.deleteLater()
                 return False
         return True
+
     @QtCore.pyqtSlot(object)
     def setup_tree(self, inputs):
         """Handles the setup of the treeview from extracted rod data."""
@@ -788,7 +789,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.current_camera.edits = []
             lg._logger.warning("Display method is not selected.")
 
-        self.ui.le_rod_disp.setText(f"Loaded Rods: {len(new_rods)}")
+        self.ui.le_rod_disp.setText(f"Loaded Particles: {len(new_rods)}")
         if not new_rods:
             lg._logger.info("No rod position data available for this image.")
 
