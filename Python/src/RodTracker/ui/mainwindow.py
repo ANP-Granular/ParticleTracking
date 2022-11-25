@@ -768,8 +768,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         for rod in new_rods:
             self.settings.settings_changed.connect(rod.update_settings)
             rod.setParent(self.current_camera)
-        # Trick to adjust the RodNumber bounds
-        self.settings.send_settings()
 
         # Distinguish between display methods
         if self.ui.rb_disp_all.isChecked():
