@@ -37,6 +37,15 @@ def init_settings(ui: mw_l.Ui_MainWindow, settings: Settings):
     ui.number_rods.valueChanged.connect(
         lambda val: settings.update_field("experiment", "number_rods", val)
     )
+    ui.box_width.valueChanged.connect(
+        lambda val: settings.update_field("experiment", "box_width", val)
+    )
+    ui.box_height.valueChanged.connect(
+        lambda val: settings.update_field("experiment", "box_height", val)
+    )
+    ui.box_depth.valueChanged.connect(
+        lambda val: settings.update_field("experiment", "box_depth", val)
+    )
     ui.position_scaling.textChanged.connect(
         lambda _: handle_line_edit_changes(ui.position_scaling, settings,
                                            "visual", "position_scaling")
@@ -139,6 +148,9 @@ def set_all_values(se: dict, ui: mw_l.Ui_MainWindow):
     ui.thickness.setValue(se["visual"]["rod_thickness"])
     ui.number_size.setValue(se["visual"]["number_size"])
     ui.number_rods.setValue(se["experiment"]["number_rods"])
+    ui.box_width.setValue(se["experiment"]["box_width"])
+    ui.box_height.setValue(se["experiment"]["box_height"])
+    ui.box_depth.setValue(se["experiment"]["box_depth"])
     draw_icon(QtGui.QColor(*se["visual"]["rod_color"]), ui.rod_color)
     draw_icon(QtGui.QColor(*se["visual"]["number_color"]), ui.number_color)
     ui.position_scaling.setText(

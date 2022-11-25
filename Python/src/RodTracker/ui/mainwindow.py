@@ -108,6 +108,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     saving_finished()
         Is emitted after saving to trigger all loggers to reset their list of
         unsaved actions.
+    update_3d(int)
+        Is emitted to trigger the 3D view to update the displayed rods.
 
     Slots
     -----
@@ -124,6 +126,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     request_undo = QtCore.pyqtSignal(str, name="request_undo")
     request_redo = QtCore.pyqtSignal(str, name="request_redo")
     saving_finished = QtCore.pyqtSignal()
+    update_3d = QtCore.pyqtSignal(int)
+
     _current_file_ids: list = []
     _CurrentFileIndex: int = 0
     _allow_overwrite: bool = False
@@ -228,6 +232,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_original_size.triggered.connect(self.original_size)
         self.ui.action_fit_to_window.triggered.connect(self.fit_to_window)
         self.ui.cb_overlay.stateChanged.connect(self.cb_changed)
+        self.ui.pb_front.clicked.connect(self.ui.view_3d.show_front)
+        self.ui.pb_top.clicked.connect(self.ui.view_3d.show_top)
 
         # Displayed data
         self.ui.action_cleanup.triggered.connect(self.clean_data)
@@ -246,11 +252,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.le_disp_one.textChanged.connect(self.display_rod_changed)
         for rb in self.ui.group_disp_method.findChildren(QRadioButton):
             rb.toggled.connect(self.display_method_change)
+        self.update_3d.connect(self.ui.view_3d.update_rods)
 
         # Settings
         self.settings.settings_changed.connect(self.update_settings)
         self.settings.settings_changed.connect(
             rn.RodNumberWidget.update_defaults)
+        self.settings.settings_changed.connect(self.ui.view_3d.update_settings)
 
         # Logging
         self.logger.notify_unsaved.connect(self.tab_has_changes)
@@ -536,6 +544,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             first_action.parent_id = self.logger_id
             self.logger.add_action(first_action)
 
+            self.update_3d.emit(new_frame)
             self.update_tree_folding()
 
     def get_rod_selection(self):
@@ -629,8 +638,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     msg.setText("There seems to be corrected data "
                                 "already. Do you want to use that "
                                 "instead of the selected data?")
-                    msg.setStandardButtons(QMessageBox.Yes |
-                                           QMessageBox.No)
+                    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
                     user_decision = msg.exec()
                     if user_decision == QMessageBox.Yes:
                         self.original_data = out_folder + "/"
@@ -682,6 +690,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.ui.lv_actions_list.add_action(
                     this_action)
                 self.show_overlay()
+                self.update_3d.emit(self.logger.frame)
                 for btn in rb_colors:
                     if btn.text().lower() not in found_colors:
                         group_layout.removeWidget(btn)
@@ -885,6 +894,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     new_frame = self.current_file_ids[self.current_file_index]
                     self.logger.frame = new_frame
                     self.current_camera.logger.frame = new_frame
+                    self.update_3d.emit(new_frame)
                     self.update_tree_folding()
 
             except IndexError:

@@ -135,6 +135,9 @@ class Settings(Configuration):
         },
         "experiment": {
             "number_rods": 25,
+            "box_width": 112,
+            "box_height": 80,
+            "box_depth": 80,
         },
     }
     _contents = _default
