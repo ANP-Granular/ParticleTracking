@@ -202,8 +202,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.settings = se.Settings()
 
         init_settings(self.ui, self.settings)
+        self.ui.view_3d.set_mode_group(self.ui.rb_all_3d, self.ui.rb_color_3d,
+                                       self.ui.rb_one_3d)
         self.connect_signals()
         self.settings.send_settings()
+        self.ui.view_3d.toggle_display(self.ui.cb_show_3D.checkState())
+        self.ui.view_3d.update_color(self.get_selected_color())
+        self.ui.view_3d.rod_changed(self.ui.le_disp_one.text())
 
     def connect_signals(self):
         # Opening files
@@ -253,6 +258,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         for rb in self.ui.group_disp_method.findChildren(QRadioButton):
             rb.toggled.connect(self.display_method_change)
         self.update_3d.connect(self.ui.view_3d.update_rods)
+        self.ui.cb_show_3D.stateChanged.connect(self.ui.view_3d.toggle_display)
+        self.ui.le_disp_one.textChanged.connect(self.ui.view_3d.rod_changed)
 
         # Settings
         self.settings.settings_changed.connect(self.update_settings)
@@ -807,8 +814,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.load_rods()
 
     @QtCore.pyqtSlot(str)
-    def display_rod_changed(self, _: str):
+    def display_rod_changed(self, number: str):
         """Handles a change of rod numbers in the user's input field."""
+        self.ui.view_3d.current_rod = int(number)
         if self.ui.rb_disp_one.isChecked():
             self.load_rods()
 
@@ -976,6 +984,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.last_color = self.get_selected_color()
             self.show_overlay()
             self.update_tree_folding()
+            self.ui.view_3d.update_color(self.last_color)
 
     @QtCore.pyqtSlot(int, list)
     def create_new_rod(self, number: int, new_position: list) -> None:
