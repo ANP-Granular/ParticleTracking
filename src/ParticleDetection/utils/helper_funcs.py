@@ -198,7 +198,7 @@ def rod_endpoints(prediction, classes: dict[int, str])\
             else:
                 use_processes = cpu_count
             with mp.Pool(use_processes) as p:
-                end_points = p.map(line_estimator, segmentations)
+                end_points = p.map(line_estimator_simple, segmentations)
             results[classes[i_c]] = np.array(end_points)
     return results
 
@@ -284,6 +284,52 @@ def line_estimator(segmentation: np.ndarray) -> np.ndarray:
     else:
         xy1 = [-1, -1]  # value, if no endpoints are computed
         xy2 = [-1, -1]  # value, if no endpoints are computed
+    return np.array([xy1, xy2])
+
+
+def line_estimator_simple(segmentation: np.ndarray) -> np.ndarray:
+    """Calculates the endpoints of rods from the segmentation mask.
+
+    Parameters
+    ----------
+    segmentation : np.ndarray
+        Boolean segmentation (bit)mask.
+    Returns
+    -------
+    np.ndarray
+    """
+    idxs = np.nonzero(segmentation)
+    points = np.asarray((idxs[1], idxs[0])).swapaxes(0, 1)
+    bbox = _minimum_bounding_rectangle(points)
+    bord = -5  # Make rods 1 pix shorter
+
+    # End coordinates
+    if np.argmin(
+        [np.linalg.norm(bbox[0, :] - bbox[1, :]),
+            np.linalg.norm(bbox[1, :] - bbox[2, :])]) == 0:
+        x1 = np.mean(bbox[0:2, 0])
+        y1 = np.mean(bbox[0:2, 1])
+        x2 = np.mean(bbox[2:4, 0])
+        y2 = np.mean(bbox[2:4, 1])
+
+    else:
+        x1 = np.mean(bbox[1:3, 0])
+        y1 = np.mean(bbox[1:3, 1])
+        x2 = np.mean([bbox[0, 0], bbox[3, 0]])
+        y2 = np.mean([bbox[0, 1], bbox[3, 1]])
+
+    vX = x2 - x1
+    vY = y2 - y1
+    vN = np.linalg.norm([vX, vY])
+    nvX = vX / vN
+    nvY = vY / vN
+    x1 = x1 - bord * nvX
+    x2 = x2 + bord * nvX
+    y1 = y1 - bord * nvY
+    y2 = y2 + bord * nvY
+    xy1 = [x1, y1]
+    xy2 = [x2, y2]
+
     return np.array([xy1, xy2])
 
 

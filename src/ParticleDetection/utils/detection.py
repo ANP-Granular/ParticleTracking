@@ -146,7 +146,6 @@ def run_detection(model: torch.ScriptModule, dataset_format: str,
 
             if "pred_masks" in outputs:
                 _logger.debug("Starting endpoint computation ...")
-                # points = hf.rod_endpoints_independent(outputs, classes)
                 points = hf.rod_endpoints(outputs, classes)
                 data = ds.add_points(points, data, cam, frame)
             _logger.info(f"Done with: {file.name}")
