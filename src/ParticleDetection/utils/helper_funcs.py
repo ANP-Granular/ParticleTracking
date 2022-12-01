@@ -161,7 +161,7 @@ def _minimum_bounding_rectangle(points):
     return rval
 
 
-def rod_endpoints(prediction, classes: dict[int, str])\
+def rod_endpoints(prediction, classes: dict[int, str], method: str = "simple")\
         -> dict[int, np.ndarray]:
     """Calculates the endpoints of rods from the prediction masks.
 
@@ -175,6 +175,11 @@ def rod_endpoints(prediction, classes: dict[int, str])\
         being the class ID as an integer, that is the output of the
         inferring network. The value being an arbitrary string associated with
         the class, e.g. {1: "blue", 2: "green"}.
+    method : str
+        Selection of endpoint extraction method:
+            "simple"    ->  Creates a bounding box around the masks.
+            "advanced" ->  Creates Hough lines and clusters these.
+        Default is "simple".
     Returns
     -------
     dict[int, np.ndarray]
@@ -193,12 +198,19 @@ def rod_endpoints(prediction, classes: dict[int, str])\
                 for i_m in i_c_list]
             if not len(segmentations):
                 continue
-            if len(segmentations) <= cpu_count:
-                use_processes = len(segmentations)
+            if method == "advanced":
+                if len(segmentations) <= cpu_count:
+                    use_processes = len(segmentations)
+                else:
+                    use_processes = cpu_count
+                with mp.Pool(use_processes) as p:
+                    end_points = p.map(line_estimator_simple, segmentations)
+            elif method == "simple":
+                end_points = list(map(line_estimator_simple, segmentations))
             else:
-                use_processes = cpu_count
-            with mp.Pool(use_processes) as p:
-                end_points = p.map(line_estimator_simple, segmentations)
+                raise ValueError("Unknown extraction method. "
+                                 "Please choose between 'simple' and "
+                                 "'advanced'.")
             results[classes[i_c]] = np.array(end_points)
     return results
 
