@@ -312,6 +312,8 @@ def line_estimator_simple(segmentation: np.ndarray) -> np.ndarray:
     """
     idxs = np.nonzero(segmentation)
     points = np.asarray((idxs[1], idxs[0])).swapaxes(0, 1)
+    if not len(points):
+        return np.array([[-1., -1.], [-1., -1.]])
     bbox = _minimum_bounding_rectangle(points)
     bord = -5  # Make rods 1 pix shorter
 
