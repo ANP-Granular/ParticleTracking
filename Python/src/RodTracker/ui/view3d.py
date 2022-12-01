@@ -112,6 +112,9 @@ class View3D(QtWidgets.QWidget):
 
     def show_front(self):
         """Move the camera to display the front for the experiment box."""
+        self.camera.setViewCenter(
+            QtGui.QVector3D(0.0, 0.0, 0.0)
+        )
         self.camera.setPosition(
             QtGui.QVector3D(0.0, 0.0, 1.5 * BOX_WIDTH)
         )
@@ -121,6 +124,9 @@ class View3D(QtWidgets.QWidget):
 
     def show_top(self):
         """Move the camera to display the top for the experiment box."""
+        self.camera.setViewCenter(
+            QtGui.QVector3D(0.0, 0.0, 0.0)
+        )
         self.camera.setPosition(
             QtGui.QVector3D(0.0, 1.5 * BOX_WIDTH, 0.0)
         )
@@ -231,7 +237,7 @@ class View3D(QtWidgets.QWidget):
 
         # Camera controls
         camController = QOrbitCameraController(scene)
-        camController.setLinearSpeed(50.0)
+        camController.setLinearSpeed(250.0)
         camController.setLookSpeed(180.0)
         camController.setCamera(camera)
         return camera
@@ -542,7 +548,7 @@ class View3D(QtWidgets.QWidget):
 
         # Camera
         camController = QOrbitCameraController(self.scene)
-        camController.setLinearSpeed(50.0)
+        camController.setLinearSpeed(250.0)
         camController.setLookSpeed(180.0)
         camController.setCamera(self.camera)
         self.view.setRootEntity(self.scene)
