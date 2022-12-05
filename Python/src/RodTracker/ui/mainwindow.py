@@ -22,7 +22,7 @@ from typing import Iterable, List
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, \
-    QScrollArea, QTreeWidgetItem, QAbstractItemView
+    QScrollArea, QTreeWidgetItem
 from PyQt5.QtGui import QImage, QWheelEvent
 
 import RodTracker.backend.settings as se
@@ -357,74 +357,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.current_camera.rod_activated(selected_rod)
         return
 
-    def update_tree(self, new_data: dict, no_gen=False):
-        """Update the "seen" status in the displayed rod data tree.
-        Skip updating of the tree by using no_gen=True."""
-        header = self.ui.tv_rods.headerItem()
-        headings = []
-        for i in range(1, header.columnCount()):
-            headings.append(header.text(i))
-        insert_idx = headings.index(new_data["cam_id"])
-        self.rod_info[new_data["frame"]][new_data["color"]][new_data[
-            "rod_id"]][insert_idx] = "seen" if new_data["seen"] else "unseen"
-        if no_gen:
-            return
-        self.generate_tree()
-
-    def update_tree_folding(self):
-        """Updates the folding of the tree view.
-
-        The tree view is updated in synchrony with the UI switching frames
-        and colors. The corresponding portion of the tree is expanded and
-        moved into view.
-        """
-        self.ui.tv_rods.collapseAll()
-        root = self.ui.tv_rods.invisibleRootItem()
-        frames = [int(root.child(i).text(0)[7:])
-                  for i in range(root.childCount())]
-        try:
-            expand_frame = root.child(frames.index(self.logger.frame))
-        except ValueError:
-            # frame not found in list -> unable to update the list
-            return
-        colors = [expand_frame.child(i).text(0)
-                  for i in range(expand_frame.childCount())]
-
-        try:
-            to_expand = colors.index(self.get_selected_color())
-        except ValueError:
-            to_expand = 0
-        expand_color = expand_frame.child(to_expand)
-
-        self.ui.tv_rods.expandItem(expand_frame)
-        self.ui.tv_rods.expandItem(expand_color)
-        self.ui.tv_rods.scrollToItem(expand_frame,
-                                     QAbstractItemView.PositionAtTop)
-        return
-
-    def generate_tree(self):
-        """(Re)generates the tree for display of loaded rod data."""
-        self.ui.tv_rods.clear()
-        for frame in self.rod_info.keys():
-            current_frame = QTreeWidgetItem(self.ui.tv_rods)
-            current_frame.setText(0, f"Frame: {frame}")
-            for color in self.rod_info[frame].keys():
-                current_color = QTreeWidgetItem(
-                    current_frame)
-                current_color.setText(0, color)
-                for particle in self.rod_info[frame][color].keys():
-                    current_particle = QTreeWidgetItem(
-                        current_color)
-                    current_particle.setText(
-                        0, f"Rod{particle:3d}: "
-                    )
-                    for idx, gp in enumerate(
-                            self.rod_info[frame][color][particle]):
-                        current_particle.setText(idx + 1, gp)
-                current_color.sortChildren(0, QtCore.Qt.AscendingOrder)
-            current_frame.sortChildren(0, QtCore.Qt.AscendingOrder)
-        self.update_tree_folding()
-
     def slider_moved(self, _):
         if self.current_file_ids:
             new_idx = self.ui.slider_frames.sliderPosition()
@@ -552,7 +484,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.logger.add_action(first_action)
 
             self.update_3d.emit(new_frame)
-            self.update_tree_folding()
+            self.ui.tv_rods.update_tree_folding(self.logger.frame,
+                                                self.get_selected_color())
 
     def get_rod_selection(self):
         """Lets the user select a folder with rod position data.
@@ -685,7 +618,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
                 # Display as a tree
                 worker = pl.Worker(d_ops.extract_seen_information)
-                worker.signals.result.connect(self.setup_tree)
+                worker.signals.result.connect(self.ui.tv_rods.setup_tree)
                 self.threads.start(worker)
 
                 # Rod position data was selected correctly
@@ -705,23 +638,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                         btn.deleteLater()
                 return False
         return True
-
-    @QtCore.pyqtSlot(object)
-    def setup_tree(self, inputs):
-        """Handles the setup of the treeview from extracted rod data."""
-        assert len(inputs) == 2
-        rod_info, columns = inputs[:]
-        assert type(columns) is list
-        assert type(rod_info) is dict
-
-        self.rod_info = rod_info
-        self.ui.tv_rods.clear()
-        self.ui.tv_rods.setColumnCount(len(columns) + 1)
-        headers = [self.ui.tv_rods.headerItem().text(0),
-                   *columns]
-        self.ui.tv_rods.setHeaderLabels(headers)
-        self.generate_tree()
-        self.update_tree_folding()
 
     def show_overlay(self):
         """Tries to load rods and hints the user if that is not possible.
@@ -901,7 +817,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.logger.frame = new_frame
                     self.current_camera.logger.frame = new_frame
                     self.update_3d.emit(new_frame)
-                    self.update_tree_folding()
+                    self.ui.tv_rods.update_tree_folding(
+                        new_frame, self.get_selected_color())
 
             except IndexError:
                 # the iterator has finished, restart it
@@ -983,7 +900,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if state:
             self.last_color = self.get_selected_color()
             self.show_overlay()
-            self.update_tree_folding()
+            self.ui.tv_rods.update_tree_folding(self.logger.frame,
+                                                self.last_color)
             self.ui.view_3d.update_color(self.last_color)
 
     @QtCore.pyqtSlot(int, list)
@@ -1007,8 +925,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         None
         """
         # update information for the tree view
-        self.rod_info[self.logger.frame][self.last_color][number] = \
-            ["unseen", "unseen"]
+        self.ui.tv_rods.new_rod(self.logger.frame, self.last_color, number)
 
         new_rod = rn.RodNumberWidget(self.last_color, self.current_camera,
                                      str(number))
@@ -1047,10 +964,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     "rod_id": new_data["rod_id"][i],
                     "seen": new_data["seen"][i]
                 }
-                self.update_tree(tmp_data, no_gen=True)
-            self.generate_tree()
+                self.ui.tv_rods.update_tree(tmp_data, no_gen=True)
+            self.ui.tv_rods.generate_tree()
         else:
-            self.update_tree(new_data)
+            self.ui.tv_rods.update_tree(new_data)
 
     @QtCore.pyqtSlot(object)
     def update_changed_data(self, _):
@@ -1182,7 +1099,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             if rb.objectName()[3:] == to_color:
                 # activate the last color
                 rb.toggle()
-                self.update_tree_folding()
+                self.ui.tv_rods.update_tree_folding(self.logger.frame,
+                                                    to_color)
 
     @QtCore.pyqtSlot(int)
     def change_frame(self, to_frame: int):
@@ -1467,7 +1385,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                     self.logger.add_action(performed_action)
                     # Update rods and tree display
                     worker = pl.Worker(d_ops.extract_seen_information)
-                    worker.signals.result.connect(self.setup_tree)
+                    worker.signals.result.connect(self.ui.tv_rods.setup_tree)
                     self.threads.start(worker)
 
                     self.load_rods()
