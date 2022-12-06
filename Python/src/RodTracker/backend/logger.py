@@ -1,4 +1,4 @@
-#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -209,7 +209,7 @@ class FileAction(Action):
             to_str = str(self.file_num) + " " + to_str
         if self.cam_id is not None:
             to_str = f"({self.cam_id}) " + to_str
-        elif self._parent_id is not None:
+        if self._parent_id is not None:
             to_str = f"({self._parent_id}) " + to_str
         return to_str
 

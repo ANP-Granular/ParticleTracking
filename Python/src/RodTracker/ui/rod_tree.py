@@ -49,7 +49,7 @@ class RodTree(QtWidgets.QTreeWidget):
         headers = [self.headerItem().text(0), *columns]
         self.setHeaderLabels(headers)
         self.generate_tree()
-        self.update_tree_folding()
+        # self.update_tree_folding()
 
     def generate_tree(self):
         """(Re)generates the tree for display of loaded rod data."""
@@ -71,7 +71,7 @@ class RodTree(QtWidgets.QTreeWidget):
                         current_particle.setText(idx + 1, gp)
                 current_color.sortChildren(0, QtCore.Qt.AscendingOrder)
             current_frame.sortChildren(0, QtCore.Qt.AscendingOrder)
-        self.update_tree_folding()
+        # self.update_tree_folding()
 
     def update_tree(self, new_data: dict, no_gen=False):
         """Update the "seen" status in the displayed rod data tree.

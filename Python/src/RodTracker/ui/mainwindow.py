@@ -1,4 +1,4 @@
-#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -14,16 +14,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import shutil
 import pathlib
 import platform
-from typing import Iterable, List
+from typing import Iterable, List, Callable
+from functools import partial
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, \
     QScrollArea, QTreeWidgetItem
-from PyQt5.QtGui import QImage, QWheelEvent
+from PyQt5.QtGui import QWheelEvent
 
 import RodTracker.backend.settings as se
 import RodTracker.backend.logger as lg
@@ -31,6 +31,7 @@ import RodTracker.backend.data_operations as d_ops
 import RodTracker.backend.file_operations as f_ops
 import RodTracker.backend.parallelism as pl
 import RodTracker.backend.file_locations as fl
+import RodTracker.backend.img_data as img_data
 import RodTracker.ui.rodnumberwidget as rn
 import RodTracker.ui.mainwindow_layout as mw_l
 from RodTracker.ui import dialogs
@@ -58,24 +59,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         The GUI main window object, that contains all other visual objects.
     cameras : List[RodImageWidget]
         A copy of all image display objects (views) from the GUI main window.
-    current_camera : RodImageWidget
-        The currently selected/displayed image display object. This is
-        automatically updated when the user switches between the different
-        tabs.
-    view_filelists : List[List[pathlib.Path]]
-        A list of all selected image files for all camera views.
-    fileList : List[pathlib.Path]
-        A list of all selected image files for the `current_camera` view.
-    file_ids : List[List[int]]
-        A list of all selected image/frame numbers for all camera views.
-    current_file_ids : List[str]
-        A list of all selected image/frame numbers for the `current_camera`
-        view.
-    file_indexes : List[int]
-        The index of the currently loaded image file for all camera views.
-    CurrentFileIndex : int
-        The index of the currently loaded image file for the
-        `current_camera` view.
+    image_managers : List[ImageData]
+        Manager objects for loaded/selected image datasets. There is one
+        associated with each `RodImageWidget` in `cameras`.
     original_data : str
         The full path to folder containing the rod position data files.
     data_files : str
@@ -113,11 +99,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     Slots
     -----
+    catch_data(Action)
+    catch_number_switch([NumberChangeActions, int, int], [NumberChangeActions, int, int, str, int, str, bool])      # noqa: E501
     cb_changed(int)
     color_change(bool)
     change_color(str)
+    create_new_rod(int, list)
+    display_method_change(bool)
+    display_rod_changed(str)
+    images_loaded(int, str, Path)
+    next_image(int, int)
+    slider_moved(int)
+    tab_has_changes(bool, str)
+    tree_selection(QTreeWidgetItem, int)
+    update_changed_data(object)
+    update_settings(dict)
     view_changed(int)
-    tab_has_changes(bool)
 
     """
     fileList: List[pathlib.Path] = None
@@ -128,10 +125,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     saving_finished = QtCore.pyqtSignal()
     update_3d = QtCore.pyqtSignal(int)
 
-    _current_file_ids: list = []
-    _CurrentFileIndex: int = 0
     _allow_overwrite: bool = False
     _rod_incr: float = 1.0
+    _fit_next_img: bool = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -171,12 +167,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.setFocus()
 
         # Initialize
-        self.cameras = [self.ui.camera_0, self.ui.camera_1]
-        self.current_camera = self.cameras[self.ui.camera_tabs.currentIndex()]
-        self.view_filelists = [[], []]
-        self.file_ids = [[], []]
-        self.file_indexes = [0, 0]
+        self.image_managers = [img_data.ImageData(0), img_data.ImageData(1)]
+        for manager in self.image_managers:
+            id = manager._logger_id
+            manager._logger = self.ui.lv_actions_list.get_new_logger(id)
 
+        self.cameras = [self.ui.camera_0, self.ui.camera_1]
         for cam in self.cameras:
             cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
             cam.setPixmap(QtGui.QPixmap(fl.icon_path()))
@@ -212,9 +208,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def connect_signals(self):
         # Opening files
-        self.ui.pb_load_images.clicked.connect(self.get_image_selection)
-        self.ui.action_open.triggered.connect(self.get_image_selection)
-        self.ui.le_image_dir.returnPressed.connect(self.get_image_selection)
         self.ui.action_open_rods.triggered.connect(self.get_rod_selection)
         self.ui.pb_load_rods.clicked.connect(self.get_rod_selection)
         self.ui.le_rod_dir.returnPressed.connect(self.get_rod_selection)
@@ -272,9 +265,24 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.logger.data_changed.connect(self.catch_data)
 
         # Cameras
-        for cam in self.cameras:
+        tab_idx = self.ui.camera_tabs.currentIndex()
+        for cam, manager in zip(self.cameras, self.image_managers):
+            manager.data_loaded.connect(self.images_loaded)
+            manager.next_img[int, int].connect(self.next_image)
+            manager.next_img[QtGui.QImage].connect(cam.image)
+            if str(tab_idx) in manager._logger_id:
+                self.ui.pb_load_images.clicked.connect(
+                    partial(manager.select_images,
+                            self.ui.le_image_dir.text()))
+                self.ui.action_open.triggered.connect(
+                    partial(manager.select_images,
+                            self.ui.le_image_dir.text()))
+                self.ui.le_image_dir.returnPressed.connect(
+                    partial(manager.select_images,
+                            self.ui.le_image_dir.text()))
+
             cam.request_color_change.connect(self.change_color)
-            cam.request_frame_change.connect(self.change_frame)
+            cam.request_frame_change.connect(manager.image_at)
             cam.normal_frame_change.connect(self.show_next)
             cam.logger.notify_unsaved.connect(self.tab_has_changes)
             cam.logger.request_saving.connect(self.save_changes)
@@ -289,17 +297,18 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.request_undo.connect(cam.logger.undo_last)
             self.request_redo.connect(cam.logger.redo_last)
             self.settings.settings_changed.connect(cam.update_settings)
+
         self.ui.action_shorten_displayed.triggered.connect(
-            lambda: self.current_camera.adjust_rod_length(
+            lambda: self.cameras[tab_idx].adjust_rod_length(
                 -self._rod_incr, False))
         self.ui.action_lengthen_displayed.triggered.connect(
-            lambda: self.current_camera.adjust_rod_length(
+            lambda: self.cameras[tab_idx].adjust_rod_length(
                 self._rod_incr, False))
         self.ui.action_shorten_selected.triggered.connect(
-            lambda: self.current_camera.adjust_rod_length(
+            lambda: self.cameras[tab_idx].adjust_rod_length(
                 -self._rod_incr, True))
         self.ui.action_lengthen_selected.triggered.connect(
-            lambda: self.current_camera.adjust_rod_length(
+            lambda: self.cameras[tab_idx].adjust_rod_length(
                 self._rod_incr, True))
 
         # Help
@@ -311,37 +320,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             lambda: QMessageBox.aboutQt(self, "RodTracker"))
         self.ui.action_logs.triggered.connect(lg.open_logs)
 
-    @property
-    def current_file_index(self):
-        return self._CurrentFileIndex
-
-    @current_file_index.setter
-    def current_file_index(self, new_idx: int):
-        self._CurrentFileIndex = new_idx
-        try:
-            self.ui.le_frame_disp.setText(f"Frame: "
-                                          f"{self._current_file_ids[new_idx]}")
-        except IndexError:
-            self.ui.le_frame_disp.setText("Frame: ???")
-
-    @property
-    def current_file_ids(self):
-        return self._current_file_ids
-
-    @current_file_ids.setter
-    def current_file_ids(self, new_ids):
-        self._current_file_ids = new_ids
-        self.ui.slider_frames.setMaximum(len(new_ids) - 1)
-        self.ui.slider_frames.setMinimum(0)
-        try:
-            self.ui.le_frame_disp.setText(
-                f"Frame: {self._current_file_ids[self.current_file_index]}")
-            self.ui.slider_frames.setSliderPosition(self.current_file_index)
-        except IndexError:
-            self.ui.le_frame_disp.setText("Frame: ???")
-
     @QtCore.pyqtSlot(QTreeWidgetItem, int)
     def tree_selection(self, item: QTreeWidgetItem, col: int):
+        """Handle the selection of a rod & frame in the `RodTree` widget.
+
+        Parameters
+        ----------
+        item : QTreeWidgetItem
+            Selected item in the `RodTree` widget.
+        col : int
+            Column of the `RodTree` widget the item was selected in.
+        """
         if not item.childCount():
             # change camera
             # TODO
@@ -350,18 +339,27 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.change_color(color)
             # change frame
             frame = int(item.parent().parent().text(0)[7:])
-            self.change_frame(frame)
+            tab_idx = self.ui.camera_tabs.currentIndex()
+            self.image_managers[tab_idx].image(frame)
             # activate clicked rod
-            if self.current_camera.edits:
+            cam = self.cameras[tab_idx]
+            if cam.edits:
                 selected_rod = int(item.text(0)[4:6])
-                self.current_camera.rod_activated(selected_rod)
+                cam.rod_activated(selected_rod)
         return
 
-    def slider_moved(self, _):
-        if self.current_file_ids:
-            new_idx = self.ui.slider_frames.sliderPosition()
-            idx_diff = new_idx - self.current_file_index
-            self.show_next(idx_diff)
+    @QtCore.pyqtSlot(int)
+    def slider_moved(self, pos: int):
+        """Handle image displays corresponding to slider movements.
+
+        Parameters
+        ----------
+        pos : int
+            New position of the slider, that is thereby the new image index to
+            be displayed.
+        """
+        tab_idx = self.ui.camera_tabs.currentIndex()
+        self.image_managers[tab_idx].image_at(pos)
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict):
@@ -378,114 +376,74 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        # settings_changed = False
         if "rod_increment" in settings:
-            # settings_changed = True
             self._rod_incr = settings["rod_increment"]
 
-    def get_image_selection(self):
-        """Lets the user select an image folder to show images from.
+    @QtCore.pyqtSlot(int, int)
+    def next_image(self, frame: int, frame_idx: int):
+        """Handles updates of the currently displayed image.
 
-        Lets the user select an image from folder out of which all images
-        are marked for later display. The selected image is opened
-        immediately.
+        Updates the GUI controls to match the currently displayed image.
 
-        Returns
-        -------
-        None
+        Parameters
+        ----------
+        frame : int
+            Frame number of the newly displayed image.
+        frame_idx : int
+            Index of the newly displayed image in the whole image dataset.
         """
-        # check for a directory
-        ui_dir = self.ui.le_image_dir.text()
-        # opens directory to select image
-        kwargs = {}
-        # handle file path issue when running on linux as a snap
-        if 'SNAP' in os.environ:
-            kwargs["options"] = QFileDialog.DontUseNativeDialog
-        chosen_file, _ = QFileDialog.getOpenFileName(self, 'Open an image',
-                                                     ui_dir,
-                                                     'Images (*.png *.jpeg '
-                                                     '*.jpg)', **kwargs)
-        if chosen_file == "":
-            # File selection was aborted
-            return
-        chosen_file = pathlib.Path(chosen_file).resolve()
-        self.open_image_folder(chosen_file)
-
-    def open_image_folder(self, chosen_file: pathlib.Path):
-        """Tries to open an image folder to show the given image.
-
-        All images of the folder from the chosen file's folder are marked for
-        later display. The selected image is opened immediately. It tries to
-        extract a camera id from the selected folder and logs the
-        opening action.
-
-        Returns
-        -------
-        None
-        """
-        file_name = chosen_file.stem
-        if chosen_file:
-            # open file as image
-            loaded_image = QImage(str(chosen_file))
-            if loaded_image.isNull():
-                QMessageBox.information(self, "Image Viewer",
-                                        "Cannot load %s." % chosen_file)
-                return
-            # Directory
-            read_dir = chosen_file.parent
-            self.fileList, self.current_file_ids = f_ops.get_images(read_dir)
-            self.current_file_index = self.current_file_ids.index(
-                int(file_name))
-
-            # Sort according to name / ascending order
-            desired_file = self.fileList[self.current_file_index]
-            self.fileList.sort()
-            self.current_file_index = self.fileList.index(desired_file)
-            self.current_file_ids.sort()
-            self.cameras[self.ui.camera_tabs.currentIndex()].image = \
-                loaded_image
-
-            # Get camera id for data display
-            self.current_camera.cam_id = chosen_file.parent.name
-            curr_idx = self.ui.camera_tabs.currentIndex()
-            tab_text = self.ui.camera_tabs.tabText(curr_idx)
-            front_text = tab_text.split("(")[0]
-            end_text = tab_text.split(")")[-1]
-            new_text = front_text + "(" + self.current_camera.cam_id + ")" +\
-                end_text
-            self.ui.camera_tabs.setTabText(curr_idx, new_text)
-
+        self.ui.le_frame_disp.setText(f"Frame: {frame}")
+        self.ui.slider_frames.setSliderPosition(frame_idx)
+        self.logger.frame = frame
+        self.cameras[self.ui.camera_tabs.currentIndex()].logger.frame = frame
+        # Fit the first image of a newly loaded dataset to the screen
+        if self._fit_next_img:
             self.fit_to_window()
-            self.ui.le_image_dir.setText(str(read_dir))
+            self._fit_next_img = False
+
+        self.update_3d.emit(frame)
+        self.ui.tv_rods.update_tree_folding(frame, self.get_selected_color())
+
+        if not self.ui.action_persistent_view.isChecked():
+            self.fit_to_window()
+            del self.cameras[self.ui.camera_tabs.currentIndex()].edits
+        else:
             if self.original_data is not None:
                 self.show_overlay()
 
-            # Update persistent file lists
-            self.view_filelists[self.ui.camera_tabs.currentIndex()] = \
-                self.fileList
-            self.file_ids[self.ui.camera_tabs.currentIndex()] = \
-                self.current_file_ids
+    @QtCore.pyqtSlot(int, str, pathlib.Path)
+    def images_loaded(self, frames: int, cam_id: str, folder: pathlib.Path):
+        """Handles updates of loaded image datasets.
 
-            # Update slider
-            self.ui.slider_frames.setMaximum(len(self.fileList) - 1)
-            self.ui.slider_frames.setSliderPosition(self.current_file_index)
-            current_id = self.current_file_ids[self.current_file_index]
-            self.ui.le_frame_disp.setText(f"Frame: {current_id}")
+        Updates the GUI elements to match the newly loaded image dataset.
 
-            # Logging
-            new_frame = self.current_file_ids[self.current_file_index]
-            self.logger.frame = new_frame
-            self.current_camera.logger.frame = new_frame
-            first_action = lg.FileAction(read_dir, lg.FileActions.LOAD_IMAGES,
-                                         len(self.fileList),
-                                         cam_id=self.current_camera.cam_id,
-                                         parent_id="main")
-            first_action.parent_id = self.logger_id
-            self.logger.add_action(first_action)
+        Parameters
+        ----------
+        frames : int
+            Number of loaded frames.
+        cam_id : str
+            ID of the loaded dataset/folder/camera.
+        folder : pathlib.Path
+            Folder from which the images were loaded.
+        """
+        self._fit_next_img = True
+        # Set new camera ID
+        tab_idx = self.ui.camera_tabs.currentIndex()
+        tab_text = self.ui.camera_tabs.tabText(tab_idx)
+        front_text = tab_text.split("(")[0]
+        end_text = tab_text.split(")")[-1]
+        new_text = front_text + "(" + cam_id + ")" +\
+            end_text
+        self.ui.camera_tabs.setTabText(tab_idx, new_text)
+        self.cameras[tab_idx].cam_id = cam_id
 
-            self.update_3d.emit(new_frame)
-            self.ui.tv_rods.update_tree_folding(self.logger.frame,
-                                                self.get_selected_color())
+        # Update slider
+        self.ui.slider_frames.setMaximum(frames - 1)
+        self.ui.slider_frames.setSliderPosition(0)
+        self.ui.le_frame_disp.setText("Frame: ???")
+
+        # Update folder display
+        self.ui.le_image_dir.setText(str(folder))
 
     def get_rod_selection(self):
         """Lets the user select a folder with rod position data.
@@ -655,7 +613,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             return
         if self.original_data is not None:
             # Check whether image file is loaded
-            if self.fileList is None:
+            tab_idx = self.ui.camera_tabs.currentIndex()
+            if self.image_managers[tab_idx].folder is None:
                 dialogs.show_warning("There is no image loaded yet. Please "
                                      "select an image before rods can be "
                                      "displayed.")
@@ -682,20 +641,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Load rod position data
         if self.original_data is None or not self.ui.cb_overlay.isChecked():
             return
-        if self.current_camera.image is None:
+        tab_idx = self.ui.camera_tabs.currentIndex()
+        if self.cameras[tab_idx]._image is None:
             return
-        file_name = self.fileList[self.current_file_index].stem
+        frame = self.image_managers[tab_idx].frames[
+            self.image_managers[tab_idx].frame_idx]
         color = self.get_selected_color()
-        new_rods = d_ops.extract_rods(self.current_camera.cam_id,
-                                      int(file_name), color)
+        new_rods = d_ops.extract_rods(self.cameras[tab_idx].cam_id,
+                                      frame, color)
         for rod in new_rods:
             self.settings.settings_changed.connect(rod.update_settings)
-            rod.setParent(self.current_camera)
+            rod.setParent(self.cameras[tab_idx])
 
         # Distinguish between display methods
         if self.ui.rb_disp_all.isChecked():
             # Display all loaded rods
-            self.current_camera.edits = new_rods
+            self.cameras[tab_idx].edits = new_rods
         elif self.ui.rb_disp_one.isChecked():
             # Display only one user chosen rod
             rod_id = self.ui.le_disp_one.text()
@@ -703,25 +664,26 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             for rod in new_rods:
                 if rod_id == "":
                     rod_present = True
-                    self.current_camera.edits = []
+                    self.cameras[tab_idx].edits = []
                     break
                 if int(rod.rod_id) == int(rod_id):
-                    self.current_camera.edits = [rod]
+                    self.cameras[tab_idx].edits = [rod]
                     rod_present = True
                     break
             if not rod_present:
                 lg._logger.info(f"Rod #{rod_id} is not available in the "
                                 f"currently loaded data.")
-                self.current_camera.edits = []
+                self.cameras[tab_idx].edits = []
 
         else:
             # something went wrong/no display selected notification
-            self.current_camera.edits = []
+            self.cameras[tab_idx].edits = []
             lg._logger.warning("Display method is not selected.")
 
         self.ui.le_rod_disp.setText(f"Loaded Particles: {len(new_rods)}")
         if not new_rods:
-            lg._logger.info("No rod position data available for this image.")
+            lg._logger.info(f"No rod position data available for "
+                            f"frame #{frame}.")
 
     @QtCore.pyqtSlot(bool)
     def display_method_change(self, state: bool) -> None:
@@ -779,57 +741,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        if direction == 0:
-            # No change necessary
-            return
-        if self.fileList:
-            # Switch images
-            try:
-                self.current_file_index += direction
-                # Chooses next image with specified extension
-                filename = self.fileList[self.current_file_index]
-                file_name = filename.stem
-                # Create Pixmap operator to display image
-                image_next = QImage(str(filename))
-                if image_next.isNull():
-                    # The file is not a valid image, remove it from the list
-                    # and try to load the next one
-                    lg._logger.warning(f"The image {file_name} is "
-                                       f"corrupted and therefore "
-                                       f"excluded.")
-                    self.fileList.remove(filename)
-                    self.show_next(direction)
-                else:
-                    self.current_camera.image = image_next
-                    if self.ui.action_persistent_view.isChecked():
-                        self.load_rods()
-                    else:
-                        del self.current_camera.edits
-                        self.current_camera.scale_factor = 1
-                    self.file_indexes[self.ui.camera_tabs.currentIndex()] = \
-                        self.current_file_index
-                    # Update information on last action
-                    new_idx = self.current_file_index if \
-                        self.current_file_index >= 0 else \
-                        len(self.current_file_ids) + self.current_file_index
-                    self.ui.slider_frames.setSliderPosition(new_idx)
-                    new_frame = self.current_file_ids[self.current_file_index]
-                    self.logger.frame = new_frame
-                    self.current_camera.logger.frame = new_frame
-                    self.update_3d.emit(new_frame)
-                    self.ui.tv_rods.update_tree_folding(
-                        new_frame, self.get_selected_color())
-
-            except IndexError:
-                # the iterator has finished, restart it
-                if direction > 0:
-                    self.current_file_index = -1
-                else:
-                    self.current_file_index = 0
-                self.show_next(direction)
-        else:
-            # no file list found, load an image
-            self.get_image_selection()
+        tab_idx = self.ui.camera_tabs.currentIndex()
+        self.image_managers[tab_idx].next_image(direction)
 
     def original_size(self):
         """Displays the currently loaded image in its native size.
@@ -838,7 +751,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        self.current_camera.scale_factor = 1
+        tab_idx = self.ui.camera_tabs.currentIndex()
+        self.cameras[tab_idx].scale_factor = 1
         self.ui.action_zoom_in.setEnabled(True)
         self.ui.action_zoom_out.setEnabled(True)
 
@@ -857,14 +771,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                                     f"{self.ui.camera_tabs.currentIndex()}")
         to_size = current_sa.size()
         to_size = QtCore.QSize(to_size.width() - 20, to_size.height() - 20)
-        self.current_camera.scale_to_size(to_size)
+        tab_idx = self.ui.camera_tabs.currentIndex()
+        self.cameras[tab_idx].scale_to_size(to_size)
 
     def scale_image(self, factor):
         """Sets a new relative scaling for the current image.
 
-        Sets a new scaling to the currently displayed image by
-        `current_camera`. The scaling factor given thereby acts relative to
-        the already applied scaling.
+        Sets a new scaling to the currently displayed image. The scaling factor
+        acts relative to the already applied scaling.
 
         Parameters
         ----------
@@ -876,8 +790,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        new_zoom = self.current_camera.scale_factor * factor
-        self.current_camera.scale_factor = new_zoom
+        tab_idx = self.ui.camera_tabs.currentIndex()
+        new_zoom = self.cameras[tab_idx].scale_factor * factor
+        self.cameras[tab_idx].scale_factor = new_zoom
         # Disable zoom, if zoomed too much
         self.ui.action_zoom_in.setEnabled(new_zoom < 9.0)
         self.ui.action_zoom_out.setEnabled(new_zoom > 0.11)
@@ -927,8 +842,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # update information for the tree view
         self.ui.tv_rods.new_rod(self.logger.frame, self.last_color, number)
 
-        new_rod = rn.RodNumberWidget(self.last_color, self.current_camera,
-                                     str(number))
+        cam = self.cameras[self.ui.camera_tabs.currentIndex()]
+        new_rod = rn.RodNumberWidget(self.last_color, cam, str(number))
         new_rod.rod_id = number
         new_rod.setObjectName(f"rn_{number}")
         new_rod.rod_points = new_position
@@ -936,12 +851,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Newly created rods are always "seen"
         new_rod.seen = True
         new_rods = []
-        for rod in self.current_camera.edits:
+        for rod in cam.edits:
             new_rods.append(rod.copy())
         new_rods.append(new_rod)
-        self.current_camera.edits = new_rods
+        cam.edits = new_rods
         last_action = lg.CreateRodAction(new_rod.copy())
-        self.current_camera.logger.add_action(last_action)
+        cam.logger.add_action(last_action)
 
     @QtCore.pyqtSlot(lg.Action)
     def catch_data(self, change: lg.Action) -> None:
@@ -973,11 +888,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def update_changed_data(self, _):
         """Updates the main data storage in RAM (used for communication
         with threads)."""
-        previously_selected = self.current_camera.active_rod
+        cam = self.cameras[self.ui.camera_tabs.currentIndex()]
+        previously_selected = cam.active_rod
         if not previously_selected:
             return
         self.load_rods()
-        self.current_camera.rod_activated(previously_selected)
+        cam.rod_activated(previously_selected)
 
     def save_changes(self, temp_only=False):
         """Saves unsaved changes to disk temporarily or permanently.
@@ -1102,33 +1018,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.ui.tv_rods.update_tree_folding(self.logger.frame,
                                                     to_color)
 
-    @QtCore.pyqtSlot(int)
-    def change_frame(self, to_frame: int):
-        """Loads the requested frame for the currently used view/camera.
-
-        Parameters
-        ----------
-        to_frame : int
-            ID of the requested frame.
-
-        Returns
-        -------
-        None
-        """
-        try:
-            new_idx = self.current_file_ids.index(to_frame)
-            idx_diff = new_idx - self.current_file_index
-        except ValueError:
-            # Image not found
-            self.current_camera.setPixmap(QtGui.QPixmap(fl.icon_path()))
-            lg._logger.warning(f"No image with ID:{to_frame} found.")
-            return
-        # Loads a new image
-        self.show_next(idx_diff)
-        if self.ui.cb_overlay.isChecked():
-            # Ensure that rods are loaded
-            self.load_rods()
-
     @QtCore.pyqtSlot(lg.NumberChangeActions, int, int)
     @QtCore.pyqtSlot(lg.NumberChangeActions, int, int, str, int, str, bool)
     def catch_number_switch(self, mode: lg.NumberChangeActions, old_id: int,
@@ -1136,12 +1025,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                             cam_id: str = None, log: bool = True):
         """Handles changes of rod numbers for more than the current frame and
         camera."""
+        cam = self.cameras[self.ui.camera_tabs.currentIndex()]
         if color is None:
             color = self.get_selected_color()
         if frame is None:
             frame = self.logger.frame
         if cam_id is None:
-            cam_id = self.current_camera.cam_id
+            cam_id = cam.cam_id
 
         worker = pl.Worker(d_ops.rod_number_swap, mode=mode,
                            previous_id=old_id, new_id=new_id, color=color,
@@ -1150,10 +1040,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.threads.start(worker)
 
         if log:
-            self.current_camera.logger.add_action(
+            cam.logger.add_action(
                 lg.NumberExchange(mode, old_id, new_id,
                                   self.get_selected_color(), self.logger.frame,
-                                  self.current_camera.cam_id)
+                                  cam.cam_id)
             )
         return
 
@@ -1161,14 +1051,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """Helper method for programmatic changes of the camera tabs."""
         old_idx = self.ui.camera_tabs.currentIndex()
         new_idx = old_idx + direction
-        if new_idx > 1:
-            new_idx = 0
+        if new_idx > (self.ui.camera_tabs.count() - 1):
+            new_idx -= self.ui.camera_tabs.count()
         elif new_idx < 0:
-            new_idx = 1
+            new_idx += self.ui.camera_tabs.count()
         self.ui.camera_tabs.setCurrentIndex(new_idx)
 
     @QtCore.pyqtSlot(int)
-    def view_changed(self, new_idx):
+    def view_changed(self, new_idx: int):
         """Handles switches between the camera tabs.
 
         Handles the switches between the camera tabs and depending on the
@@ -1185,53 +1075,43 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        # Ensure the image/frame number is consistent over views
-        index_diff = 0
+        manager = self.image_managers[new_idx]
+        cam = self.cameras[new_idx]
+
+        reconnect(
+            self.ui.action_shorten_displayed.triggered,
+            lambda: cam.adjust_rod_length(-self._rod_incr, False))
+        reconnect(
+            self.ui.action_lengthen_displayed.triggered,
+            lambda: cam.adjust_rod_length(self._rod_incr, False))
+        reconnect(
+            self.ui.action_shorten_selected.triggered,
+            lambda: cam.adjust_rod_length(-self._rod_incr, True))
+        reconnect(
+            self.ui.action_lengthen_selected.triggered,
+            lambda: cam.adjust_rod_length(self._rod_incr, True))
+
+        reconnect(
+            self.ui.pb_load_images.clicked,
+            lambda: manager.select_images(self.ui.le_image_dir.text()))
+        reconnect(
+            self.ui.action_open.triggered,
+            lambda: manager.select_images(self.ui.le_image_dir.text()))
+        reconnect(
+            self.ui.le_image_dir.returnPressed,
+            lambda: manager.select_images(self.ui.le_image_dir.text()))
+
+        if manager.folder is None:
+            self.ui.le_image_dir.setText("")
+        else:
+            self.ui.le_image_dir.setText(str(manager.folder))
+
         if self.ui.action_persistent_view.isChecked():
-            if self.current_file_ids:
-                current_id = self.current_file_ids[self.current_file_index]
-                try:
-                    # Find the new camera's image corresponding to the old
-                    # camera's image
-                    new_id_idx = self.file_ids[new_idx].index(current_id)
-                    index_diff = new_id_idx - self.file_indexes[new_idx]
-                except ValueError:
-                    # Image not found
-                    self.cameras[new_idx].setPixmap(
-                        QtGui.QPixmap(fl.icon_path()))
-                    lg._logger.warning(f"No image with ID:{current_id} found "
-                                       f"for this view.")
-
-        self.current_file_index = self.file_indexes[new_idx]
-        self.fileList = self.view_filelists[new_idx]
-        self.current_file_ids = self.file_ids[new_idx]
-        self.current_camera = self.cameras[new_idx]
-
-        # Connect signals for rod alteration
-        self.ui.action_shorten_displayed.triggered.disconnect()
-        self.ui.action_lengthen_displayed.triggered.disconnect()
-        self.ui.action_shorten_selected.triggered.disconnect()
-        self.ui.action_lengthen_selected.triggered.disconnect()
-        self.ui.action_shorten_displayed.triggered.connect(
-            lambda: self.current_camera.adjust_rod_length(
-                -self._rod_incr, False))
-        self.ui.action_lengthen_displayed.triggered.connect(
-            lambda: self.current_camera.adjust_rod_length(
-                self._rod_incr, False))
-        self.ui.action_shorten_selected.triggered.connect(
-            lambda: self.current_camera.adjust_rod_length(
-                -self._rod_incr, True))
-        self.ui.action_lengthen_selected.triggered.connect(
-            lambda: self.current_camera.adjust_rod_length(
-                self._rod_incr, True))
-
-        # Loads a new image, if necessary
-        self.show_next(index_diff)
-        try:
-            new_path = self.fileList[0].parent
-        except IndexError:
-            new_path = ""
-        self.ui.le_image_dir.setText(str(new_path))
+            # Ensure the image/frame number is consistent over views
+            old_frame = self.logger.frame
+            if manager.frames:
+                idx_diff = manager.frames.index(old_frame) - manager.frame_idx
+                self.show_next(idx_diff)
 
         if self.ui.cb_overlay.isChecked():
             # ensure that rods are loaded
@@ -1239,11 +1119,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def requesting_undo(self) -> None:
         """Helper method to emit a request for reverting the last action."""
-        self.request_undo.emit(self.current_camera.cam_id)
+        cam = self.cameras[self.ui.camera_tabs.currentIndex()]
+        self.request_undo.emit(cam.cam_id)
 
     def requesting_redo(self) -> None:
         """Helper method to emit a request for repeating the last action."""
-        self.request_redo.emit(self.current_camera.cam_id)
+        cam = self.cameras[self.ui.camera_tabs.currentIndex()]
+        self.request_redo.emit(cam.cam_id)
 
     @QtCore.pyqtSlot(bool, str)
     def tab_has_changes(self, has_changes: bool, cam_id: str) -> None:
@@ -1398,3 +1280,32 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         else:
             # No unused rods found for deletion
             return
+
+
+def reconnect(signal: QtCore.pyqtSignal, newhandler: Callable = None,
+              oldhandler: Callable = None) -> None:
+    """(Re-)connect handler(s) to a signal.
+
+    Connect a new handler function to a signal while either removing all other,
+    previous handlers, or just one specific one.
+
+    Parameters
+    ----------
+    signal : QtCore.pyqtSignal
+    newhandler : Callable, optional
+        By default None.
+    oldhandler : Callable, optional
+        Handler function currently connected to `signal`. All connected
+        functions will be removed, if this parameters is None.
+        By default None.
+    """
+    try:
+        if oldhandler is not None:
+            while True:
+                signal.disconnect(oldhandler)
+        else:
+            signal.disconnect()
+    except TypeError:
+        pass
+    if newhandler is not None:
+        signal.connect(newhandler)

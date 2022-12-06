@@ -1,4 +1,4 @@
-#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -48,7 +48,6 @@ class RodImageWidget(QLabel):
         A "clean" image in the correct scaled size.
     edits : List[RodNumberWidget]
     scale_factor : float
-    image : QImage
     logger : ActionLogger
     cam_id : str
         ID of the GUI object. It must be human readable as it is used for
@@ -164,18 +163,7 @@ class RodImageWidget(QLabel):
         self._scale_factor = factor
         self._scale_image()
 
-    @property
-    def image(self) -> QtGui.QImage:
-        """
-        Property that holds the image, that is displayed by the Widget.
-
-        Returns
-        -------
-        QImage
-        """
-        return self._image
-
-    @image.setter
+    @QtCore.pyqtSlot(QtGui.QImage)
     def image(self, new_image: QtGui.QImage):
         if new_image.isNull():
             raise ValueError("Assigned image cannot be 'Null'.")

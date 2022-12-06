@@ -1,4 +1,4 @@
-#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -21,34 +21,6 @@ import shutil
 import pandas as pd
 
 COLOR_DATA_REGEX = re.compile('rods_df_\w+\.csv')               # noqa: W605
-
-
-def get_images(read_dir: pathlib.Path) -> Tuple[List[pathlib.Path], List[int]]:
-    """Reads image files from a directory.
-
-    Checks all files for naming convention according to the selected file
-    and generates the frame IDs from them.
-
-    Parameters
-    ----------
-    read_dir : str
-        Path to the directory to read image files from.
-
-    Returns
-    -------
-    Tuple[List[str], List[int]]
-        Full paths to the found image files and frame numbers extracted from
-        the file names.
-    """
-
-    files = []
-    file_ids = []
-    for f in read_dir.iterdir():
-        if f.is_file() and f.suffix in ['.png', '.jpg', '.jpeg']:
-            # Add all image files to a list
-            files.append(f)
-            file_ids.append(int(f.stem))
-    return files, file_ids
 
 
 def get_color_data(read_dir: pathlib.Path, write_dir: pathlib.Path) -> \
