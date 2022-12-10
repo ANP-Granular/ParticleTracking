@@ -219,21 +219,21 @@
              <item row="0" column="3">
               <widget class="QRadioButton" name="rb_red">
                <property name="text">
-                <string>Red</string>
+                <string>red</string>
                </property>
               </widget>
              </item>
              <item row="0" column="2">
               <widget class="QRadioButton" name="rb_purple">
                <property name="text">
-                <string>Purple</string>
+                <string>purple</string>
                </property>
               </widget>
              </item>
              <item row="0" column="1">
               <widget class="QRadioButton" name="rb_black">
                <property name="text">
-                <string>Black</string>
+                <string>black</string>
                </property>
                <property name="checked">
                 <bool>true</bool>
@@ -243,21 +243,21 @@
              <item row="1" column="1">
               <widget class="QRadioButton" name="rb_green">
                <property name="text">
-                <string>Green</string>
+                <string>green</string>
                </property>
               </widget>
              </item>
              <item row="1" column="2">
               <widget class="QRadioButton" name="rb_blue">
                <property name="text">
-                <string>Blue</string>
+                <string>blue</string>
                </property>
               </widget>
              </item>
              <item row="1" column="3">
               <widget class="QRadioButton" name="rb_yellow">
                <property name="text">
-                <string>Yellow</string>
+                <string>yellow</string>
                </property>
               </widget>
              </item>
@@ -1435,7 +1435,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QGroupBox" name="groupBox">
+                      <widget class="QGroupBox" name="group_3D_mode">
                        <property name="title">
                         <string/>
                        </property>

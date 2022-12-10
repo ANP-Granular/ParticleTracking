@@ -255,7 +255,7 @@ class ConflictDialog(QtWidgets.QMessageBox):
         self.btn_switch_all = self.addButton(
             "Switch in:\nBoth views, following frames",
             QtWidgets.QMessageBox.ActionRole)
-        self.btn_one_cam = self.addButton("Switch in:\nThis views, following "
+        self.btn_one_cam = self.addButton("Switch in:\nThis view, following "
                                           "frames",
                                           QtWidgets.QMessageBox.ActionRole)
         self.btn_both_cams = self.addButton(

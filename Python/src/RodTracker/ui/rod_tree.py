@@ -21,35 +21,44 @@ class RodTree(QtWidgets.QTreeWidget):
 
     Parameters
     ----------
-    *args
-    **kwargs
+    *args : iterable
+        Positional arguments for the `QTreeWidget` superclass.
+    **kwargs : dict
+        Keyword arguments for the `QTreeWidget` superclass.
 
     Attributes
     ----------
     rod_info : None | Dict[Dict[Dict[list]]]
         Holds the loaded information of the rod dataset about a rod being
         'seen' or 'unseen'.
+        Dimensions: (frame, color, particle, camera)
+
     """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
         self.rod_info = None
 
-    @QtCore.pyqtSlot(object)
-    def setup_tree(self, inputs):
-        """Handles the setup of the treeview from extracted rod data."""
-        assert len(inputs) == 2
-        rod_info, columns = inputs[:]
-        assert type(columns) is list
-        assert type(rod_info) is dict
+    @QtCore.pyqtSlot(dict, list)
+    def setup_tree(self, rod_info: dict, columns: list):
+        """Handles the setup of the treeview from extracted rod data.
 
+        Accepts a new `rod_info` dataset and (re-)sets the tree display of it.
+
+        Paramters
+        ---------
+        rod_info : Dict[Dict[Dict[list]]]
+            Information of the rod dataset about a rod being 'seen' or
+            'unseen'.
+            Dimensions: (frame, color, particle, camera)
+        columns : list
+            List of 'camera' IDs on which a rod can be "seen"/"unseen".
+        """
         self.rod_info = rod_info
         self.clear()
         self.setColumnCount(len(columns) + 1)
         headers = [self.headerItem().text(0), *columns]
         self.setHeaderLabels(headers)
         self.generate_tree()
-        # self.update_tree_folding()
 
     def generate_tree(self):
         """(Re)generates the tree for display of loaded rod data."""
@@ -71,18 +80,34 @@ class RodTree(QtWidgets.QTreeWidget):
                         current_particle.setText(idx + 1, gp)
                 current_color.sortChildren(0, QtCore.Qt.AscendingOrder)
             current_frame.sortChildren(0, QtCore.Qt.AscendingOrder)
-        # self.update_tree_folding()
 
-    def update_tree(self, new_data: dict, no_gen=False):
-        """Update the "seen" status in the displayed rod data tree.
-        Skip updating of the tree by using no_gen=True."""
+    def update_tree(self, new_data: dict, no_gen: bool = False):
+        """Update the "seen" status in the rod data tree.
+
+        Parameters
+        ----------
+        new_data : dict
+            Information about the rod, whos 'seen' status has changed.
+            Mandatory keys: "frame", "cam_id", "color", "seen", "rod_id"
+        no_gen : bool
+            Skip updating of the displayed tree by using no_gen=True.
+            Default is False.
+        """
         header = self.headerItem()
         headings = []
         for i in range(1, header.columnCount()):
             headings.append(header.text(i))
         insert_idx = headings.index(new_data["cam_id"])
-        self.rod_info[new_data["frame"]][new_data["color"]][new_data[
-            "rod_id"]][insert_idx] = "seen" if new_data["seen"] else "unseen"
+        try:
+            self.rod_info[new_data["frame"]][new_data["color"]][new_data[
+                "rod_id"]][insert_idx] = ("seen" if new_data["seen"]
+                                          else "unseen")
+        except KeyError:
+            self.new_rod(new_data["frame"], new_data["color"],
+                         new_data["rod_id"])
+            self.rod_info[new_data["frame"]][new_data["color"]][new_data[
+                "rod_id"]][insert_idx] = ("seen" if new_data["seen"]
+                                          else "unseen")
         if no_gen:
             return
         self.generate_tree()
@@ -93,6 +118,11 @@ class RodTree(QtWidgets.QTreeWidget):
         The tree view is updated in synchrony with the UI switching frames
         and colors. The corresponding portion of the tree is expanded and
         moved into view.
+
+        Parameters
+        ----------
+        frame : int
+        color : str
         """
         self.collapseAll()
         root = self.invisibleRootItem()
@@ -101,7 +131,7 @@ class RodTree(QtWidgets.QTreeWidget):
         try:
             expand_frame = root.child(frames.index(frame))
         except ValueError:
-            # frame not found in list -> unable to update the list
+            # Frame not found in list -> unable to update the list
             return
         colors = [expand_frame.child(i).text(0)
                   for i in range(expand_frame.childCount())]

@@ -1,22 +1,30 @@
+#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of RodTracker.
+#  RodTracker is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  RodTracker is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 from typing import List, Tuple
-from enum import Enum
 import numpy as np
+import pandas as pd
 import matplotlib.colors as mpl_colors
 from PyQt5 import Qt3DCore, QtCore, QtWidgets, QtGui
 from PyQt5.Qt3DRender import QDirectionalLight, QCamera
 from PyQt5.Qt3DExtras import QPhongMaterial, \
     QCylinderMesh, Qt3DWindow, QOrbitCameraController, QCuboidMesh, \
     QExtrudedTextMesh, QPhongAlphaMaterial
-import RodTracker.backend.data_operations as d_ops
+import RodTracker.backend.logger as lg
 
-
-class DisplayModes3D(Enum):
-    ALL = 1
-    COLOR = 2
-    ONE = 3
-
-
-POSITION_SCALING = 1.
 BOX_WIDTH = 112.
 BOX_HEIGHT = 80.
 BOX_DEPTH = 80.
@@ -24,11 +32,33 @@ ROD_RADIUS = 0.5
 
 
 class View3D(QtWidgets.QWidget):
+    """A custom `QWidget` for display of 3D rod data.
+
+    Parameters
+    ----------
+    *args : iterable
+        Positional arguments for the `QWidget` superclass.
+    **kwargs : dict
+        Keyword arguments for the `QWidget` superclass.
+
+    Attributes
+    ----------
+    rods : List[QEntity]
+        Entities that resemble a rod each.
+    view : Qt3DWindow
+    camera : QOrbitCameraController
+    scene : QEntity
+        Root entity for the 3D scene.
+
+    Slots
+    -----
+    update_rods(DataFrame)
+    update_settings(dict)
+    """
     rods: List[Qt3DCore.QEntity] = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.threads = QtCore.QThreadPool()
         self.view = Qt3DWindow()
         self.container = self.createWindowContainer(self.view)
 
@@ -66,50 +96,6 @@ class View3D(QtWidgets.QWidget):
         self.camera = self.init_camera(self.view, self.scene)
         self.view.setRootEntity(self.scene)
 
-        # Controls
-        self.current_frame = None
-        self.current_rod = None
-        self.show_3d = False
-        self.current_color = None
-        self.mode = DisplayModes3D.ALL
-        self.mode_group = QtWidgets.QButtonGroup()
-        self.mode_group.setExclusive(True)
-        self.mode_group.buttonToggled.connect(self.mode_changed)
-
-    def set_mode_group(self, *mode_btns: QtWidgets.QRadioButton):
-        """Initializes the buttons group for selection of display mode."""
-        for old_btn in self.mode_group.buttons():
-            self.mode_group.removeButton(old_btn)
-        for btn in mode_btns:
-            self.mode_group.addButton(btn)
-            self.mode_changed(btn, btn.isChecked())
-
-    @QtCore.pyqtSlot(str)
-    def rod_changed(self, number: str):
-        """Handles a change in rod number for single rod display.
-
-        Parameters
-        ----------
-        number : str
-        """
-        self.current_rod = int(number)
-        self.clear()
-        self.update_rods(self.current_frame)
-
-    def mode_changed(self, btn: QtWidgets.QRadioButton, state: bool):
-        if not state:
-            return
-        if "all" in btn.objectName():
-            self.mode = DisplayModes3D.ALL
-        elif "color" in btn.objectName():
-            self.mode = DisplayModes3D.COLOR
-        elif "one" in btn.objectName():
-            self.mode = DisplayModes3D.ONE
-        else:
-            raise ValueError("Unknown 3D mode button.")
-        self.clear()
-        self.update_rods(self.current_frame)
-
     def show_front(self):
         """Move the camera to display the front for the experiment box."""
         self.camera.setViewCenter(
@@ -134,53 +120,44 @@ class View3D(QtWidgets.QWidget):
             QtGui.QVector3D(0.0, 0.0, -1.0)
         )
 
-    @QtCore.pyqtSlot(int)
-    def update_rods(self, frame: int) -> None:
-        """Updates the displayed rods.
-
-        Which rods are eventually displayed depends on the `mode` selected
-        during call time of this function.
+    @QtCore.pyqtSlot(pd.DataFrame)
+    def update_rods(self, data: pd.DataFrame) -> None:
+        """Updates the displayed 3D rods.
 
         Parameters
         ----------
-        frame : int
-            Frame number that shall be displayed.
+        data : DataFrame
+            3D position data of one frame. Required columns:
+            "x1", "x2", "y1", "y2", "z1", "z2", "color"
         """
-        self.current_frame = frame
-        if frame is None or not self.show_3d:
-            return
-
-        with QtCore.QReadLocker(d_ops.lock):
-            if d_ops.rod_data is None:
-                return
-            disp_data = d_ops.rod_data.loc[d_ops.rod_data.frame == frame]
-        if not len(disp_data):
+        if not len(data):
             self.clear()
             return
         available_rods = len(self.rods)
         i = 0
-        cm_rod = QCylinderMesh()
-        cm_rod.setRadius(ROD_RADIUS)
-        for color in disp_data.color.unique():
-            if (self.mode == DisplayModes3D.COLOR or
-                self.mode == DisplayModes3D.ONE) and\
-                    color != self.current_color:
-                continue
-            data = disp_data.loc[disp_data.color == color]
-            rod_color = mpl_colors.to_rgba(color, alpha=1.0)
+        for color in data.color.unique():
+            c_data = data.loc[data.color == color]
+            try:
+                rod_color = mpl_colors.to_rgba(color, alpha=1.0)
+            except ValueError as e:
+                lg._logger.error(f"Unknown color for 3D display!\n{e.args}\n"
+                                 f"Using 'pink' instead.")
+                rod_color = mpl_colors.to_rgba("pink", alpha=1.0)
+            # TODO: create material for each rod, if they are supposed to be
+            #  reused
             material = QPhongMaterial(self.scene)
             material.setDiffuse(QtGui.QColor.fromRgbF(*rod_color))
-            xs = data[["x1", "x2"]].to_numpy() * POSITION_SCALING
-            ys = data[["y1", "y2"]].to_numpy() * POSITION_SCALING
-            zs = data[["z1", "z2"]].to_numpy() * POSITION_SCALING
+            xs = c_data[["x1", "x2"]].to_numpy()
+            ys = c_data[["y1", "y2"]].to_numpy()
+            zs = c_data[["z1", "z2"]].to_numpy()
             dxs = np.diff(xs, axis=1)
             dys = np.diff(ys, axis=1)
             dzs = np.diff(zs, axis=1)
             k = 0
-            for idx in range(len(data)):
-                if self.mode == DisplayModes3D.ONE and \
-                        self.current_rod != data.particle.iloc[idx]:
-                    continue
+            for idx in range(len(c_data)):
+                # TODO:  reuse already created entities and components
+                cm_rod = QCylinderMesh()
+                cm_rod.setRadius(ROD_RADIUS)
                 if i + k >= available_rods:
                     self.rods.append(Qt3DCore.QEntity(self.scene))
                 rod = self.rods[i + k]
@@ -200,19 +177,7 @@ class View3D(QtWidgets.QWidget):
                 rod.addComponent(transformation)
                 rod.addComponent(material)
                 k += 1
-            i += len(data)
-
-    @QtCore.pyqtSlot(object)
-    def integrate_rods(
-            self, rods_components: List[List[Qt3DCore.QComponent]]) -> None:
-        rods = []
-        for components in rods_components:
-            new_rod = Qt3DCore.QEntity(self.scene)
-            new_rod.addComponent(components[0])
-            new_rod.addComponent(components[1])
-            new_rod.addComponent(components[2])
-            rods.append(new_rod)
-        self.rods = rods
+            i += len(c_data)
 
     @staticmethod
     def init_camera(view: Qt3DWindow, scene: Qt3DCore.QEntity) -> QCamera:
@@ -474,7 +439,7 @@ class View3D(QtWidgets.QWidget):
         -------
         None
         """
-        global BOX_WIDTH, BOX_HEIGHT, BOX_DEPTH, POSITION_SCALING
+        global BOX_WIDTH, BOX_HEIGHT, BOX_DEPTH
         settings_changed = False
         if "box_width" in settings and BOX_WIDTH != settings["box_width"]:
             settings_changed = True
@@ -485,70 +450,12 @@ class View3D(QtWidgets.QWidget):
         if "box_depth" in settings and BOX_DEPTH != settings["box_depth"]:
             settings_changed = True
             BOX_DEPTH = settings["box_depth"]
-        if "position_scaling" in settings and \
-                POSITION_SCALING != settings["position_scaling"]:
-            settings_changed = True
-            POSITION_SCALING = settings["position_scaling"]
 
         if settings_changed:
             self.update_box()
-            self.update_rods(self.current_frame)
-
-    def toggle_display(self, state: int):
-        """Update whether to display particles in the 3D view.
-
-        Parameters
-        ----------
-        state : int
-            0   ->  Do not show particles.
-            !=0 ->  Show particles.
-        """
-        self.show_3d = bool(state)
-        if not self.show_3d:
-            self.clear()
-        self.update_rods(self.current_frame)
-
-    def update_color(self, color: str):
-        """Updates the color for displaying particles.
-
-        Parameters
-        ----------
-        color : str
-        """
-        self.current_color = color
-        self.update_rods(self.current_frame)
 
     def clear(self):
-        """Discards all currently loaded rods and regenerates the box."""
+        """Discard all currently loaded rods and regenerate the box."""
+        for rod in self.rods:
+            rod.setParent(None)
         self.rods = []
-        self.scene = Qt3DCore.QEntity()
-        self.box, self.top, self.top_t, self.front, self.front_t = \
-            self.create_box(self.scene)
-        self.fences = self.create_fences(self.scene)
-
-        front_light = QDirectionalLight()
-        front_light.setWorldDirection(QtGui.QVector3D(0, 0, -1))
-        top_light = QDirectionalLight()
-        top_light.setWorldDirection(QtGui.QVector3D(0, -1, 0))
-        right_light = QDirectionalLight()
-        right_light.setWorldDirection(QtGui.QVector3D(1, 0, 0))
-        left_light = QDirectionalLight()
-        left_light.setWorldDirection(QtGui.QVector3D(-1, 0, 0))
-        back_light = QDirectionalLight()
-        back_light.setWorldDirection(QtGui.QVector3D(0, 0, 1))
-        bottom_light = QDirectionalLight()
-        bottom_light.setWorldDirection(QtGui.QVector3D(0, 1, 0))
-
-        self.scene.addComponent(front_light)
-        self.scene.addComponent(top_light)
-        self.scene.addComponent(right_light)
-        self.scene.addComponent(left_light)
-        self.scene.addComponent(back_light)
-        self.scene.addComponent(bottom_light)
-
-        # Camera
-        camController = QOrbitCameraController(self.scene)
-        camController.setLinearSpeed(250.0)
-        camController.setLookSpeed(180.0)
-        camController.setCamera(self.camera)
-        self.view.setRootEntity(self.scene)

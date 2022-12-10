@@ -14,24 +14,21 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-import shutil
-import pathlib
+from pathlib import Path
 import platform
-from typing import Iterable, List, Callable
+from typing import List, Callable
 from functools import partial
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QFileDialog, QMessageBox, QRadioButton, \
-    QScrollArea, QTreeWidgetItem
+from PyQt5.QtWidgets import (QMessageBox, QRadioButton,
+                             QScrollArea, QTreeWidgetItem)
 from PyQt5.QtGui import QWheelEvent
 
 import RodTracker.backend.settings as se
 import RodTracker.backend.logger as lg
-import RodTracker.backend.data_operations as d_ops
-import RodTracker.backend.file_operations as f_ops
-import RodTracker.backend.parallelism as pl
 import RodTracker.backend.file_locations as fl
 import RodTracker.backend.img_data as img_data
+import RodTracker.backend.rod_data as r_data
 import RodTracker.ui.rodnumberwidget as rn
 import RodTracker.ui.mainwindow_layout as mw_l
 from RodTracker.ui import dialogs
@@ -42,16 +39,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     """The main window for the Rod Tracker application.
 
     This class handles most of the interaction between the user and the GUI
-    elements of the Rod Tracker application. Especially most interactions
-    that trigger file access are located here. Also most custom interactions
-    between visual elements are setup or managed here.
+    elements of the Rod Tracker application. It also sets up the backend
+    objects necessary for this application.
 
     Parameters
     ----------
     *args : iterable
-        Positional arguments for the QMainWindow superclass.
+        Positional arguments for the `QMainWindow` superclass.
     **kwargs : dict
-        Keyword arguments for the QMainWindow superclass.
+        Keyword arguments for the `QMainWindow` superclass.
 
     Attributes
     ----------
@@ -62,19 +58,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     image_managers : List[ImageData]
         Manager objects for loaded/selected image datasets. There is one
         associated with each `RodImageWidget` in `cameras`.
-    original_data : str
-        The full path to folder containing the rod position data files.
-    data_files : str
-        The full path to the temporary folder containing the working copies
-        of the files in the `original_data` directory. These files are only
-        available during runtime of the program and all changes are stored
-        there before final saving by the user.
-    data_file_name : str
-        The template string to match file names of data file candidates in a
-        user-selected folder.
-    last_color : str
-        The color that is currently selected in the GUI and therefore used
-        for data display.
     logger : ActionLogger
         A logger object keeping track of users' actions performed on the
         main window, i.e. data and image loading and saving.
@@ -91,47 +74,35 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         Is emitted when the user wants to redo a previously reverted action.
         The payload is the ID of the widget on which the last action shall
         be redone.
-    saving_finished()
-        Is emitted after saving to trigger all loggers to reset their list of
-        unsaved actions.
-    update_3d(int)
-        Is emitted to trigger the 3D view to update the displayed rods.
 
     Slots
     -----
-    catch_data(Action)
-    catch_number_switch([NumberChangeActions, int, int], [NumberChangeActions, int, int, str, int, str, bool])      # noqa: E501
-    cb_changed(int)
     color_change(bool)
     change_color(str)
-    create_new_rod(int, list)
-    display_method_change(bool)
     display_rod_changed(str)
     images_loaded(int, str, Path)
+    method_2D_changed(bool)
+    method_3D_changed(bool)
     next_image(int, int)
+    rods_loaded(Path, Path, list)
+    show_2D_changed(int)
+    show_3D_changed(int)
     slider_moved(int)
     tab_has_changes(bool, str)
     tree_selection(QTreeWidgetItem, int)
-    update_changed_data(object)
     update_settings(dict)
     view_changed(int)
-
     """
-    fileList: List[pathlib.Path] = None
-    logger_id: str = "main"
-    logger: lg.ActionLogger
     request_undo = QtCore.pyqtSignal(str, name="request_undo")
     request_redo = QtCore.pyqtSignal(str, name="request_redo")
-    saving_finished = QtCore.pyqtSignal()
-    update_3d = QtCore.pyqtSignal(int)
 
-    _allow_overwrite: bool = False
+    logger_id: str = "main"
+    logger: lg.ActionLogger
     _rod_incr: float = 1.0
     _fit_next_img: bool = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.threads = QtCore.QThreadPool()
         self.ui = mw_l.Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -144,7 +115,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if platform.system() == "Darwin":
             self.ui.action_zoom_in.setShortcut("Ctrl+=")
             self.ui.action_zoom_out.setShortcut("Ctrl+-")
-
         # Set maximum button/checkbox sizes to avoid text clipping
         pb_load_txt = self.ui.pb_load_images.text()
         pb_load_size = self.ui.pb_load_images.fontMetrics().width(
@@ -158,7 +128,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         cb_ov_txt = self.ui.cb_overlay.text()
         cb_ov_size = self.ui.cb_overlay.fontMetrics().width(cb_ov_txt)
         self.ui.cb_overlay.setMaximumWidth(int(2 * cb_ov_size))
-
         # Set possible inputs for rod selection field
         self.ui.le_disp_one.setInputMask("99")
         self.ui.le_disp_one.setText("00")
@@ -167,6 +136,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.setFocus()
 
         # Initialize
+        self.rod_data = r_data.RodData()
+        id = self.rod_data._logger_id
+        self.rod_data._logger = self.ui.lv_actions_list.get_new_logger(id)
+        self.rod_data.show_2D = self.ui.cb_overlay.isChecked()
+        self.rod_data.show_3D = self.ui.cb_show_3D.isChecked()
+
         self.image_managers = [img_data.ImageData(0), img_data.ImageData(1)]
         for manager in self.image_managers:
             id = manager._logger_id
@@ -177,15 +152,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
             cam.setPixmap(QtGui.QPixmap(fl.icon_path()))
 
-        self.original_data = None   # Holds the original data directory
-        self.data_files = pathlib.Path(
-            self.ui.lv_actions_list.temp_manager.name)
-        self.data_file_name = 'rods_df_{:s}.csv'
-        self.last_color = None
-        self.rod_info = None
-        for rb in self.ui.group_rod_color.findChildren(QRadioButton):
-            if rb.isChecked():
-                self.last_color = rb.objectName()[3:]
         self.logger = self.ui.lv_actions_list.get_new_logger(self.logger_id)
         self.ui.sa_camera_0.verticalScrollBar().installEventFilter(self)
         self.ui.sa_camera_1.verticalScrollBar().installEventFilter(self)
@@ -198,24 +164,29 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.settings = se.Settings()
 
         init_settings(self.ui, self.settings)
-        self.ui.view_3d.set_mode_group(self.ui.rb_all_3d, self.ui.rb_color_3d,
-                                       self.ui.rb_one_3d)
         self.connect_signals()
         self.settings.send_settings()
-        self.ui.view_3d.toggle_display(self.ui.cb_show_3D.checkState())
-        self.ui.view_3d.update_color(self.get_selected_color())
-        self.ui.view_3d.rod_changed(self.ui.le_disp_one.text())
 
     def connect_signals(self):
+        """Connect all signals and slots of the Rod Tracker objects."""
+        tab_idx = self.ui.camera_tabs.currentIndex()
         # Opening files
-        self.ui.action_open_rods.triggered.connect(self.get_rod_selection)
-        self.ui.pb_load_rods.clicked.connect(self.get_rod_selection)
-        self.ui.le_rod_dir.returnPressed.connect(self.get_rod_selection)
+        self.ui.action_open_rods.triggered.connect(partial(
+            self.rod_data.select_rods, self.ui.le_rod_dir.text()))
+        self.ui.pb_load_rods.clicked.connect(partial(
+            self.rod_data.select_rods, self.ui.le_rod_dir.text()))
+        self.ui.le_rod_dir.returnPressed.connect(partial(
+            self.rod_data.select_rods, self.ui.le_rod_dir.text()))
+
+        # Data loading
+        self.rod_data.data_loaded.connect(self.rods_loaded)
+        self.rod_data.seen_loaded.connect(self.ui.tv_rods.setup_tree)
 
         # Saving
-        self.ui.pb_save_rods.clicked.connect(self.save_changes)
-        self.ui.action_save.triggered.connect(self.save_changes)
-        self.saving_finished.connect(self.logger.actions_saved)
+        self.ui.pb_save_rods.clicked.connect(self.rod_data.save_changes)
+        self.ui.action_save.triggered.connect(self.rod_data.save_changes)
+        self.rod_data.saved.connect(self.logger.actions_saved)
+        self.ui.le_save_dir.textChanged.connect(self.rod_data.set_out_folder)
 
         # Undo/Redo
         self.ui.action_revert.triggered.connect(self.requesting_undo)
@@ -229,12 +200,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             factor=0.8))
         self.ui.action_original_size.triggered.connect(self.original_size)
         self.ui.action_fit_to_window.triggered.connect(self.fit_to_window)
-        self.ui.cb_overlay.stateChanged.connect(self.cb_changed)
         self.ui.pb_front.clicked.connect(self.ui.view_3d.show_front)
         self.ui.pb_top.clicked.connect(self.ui.view_3d.show_top)
 
         # Displayed data
-        self.ui.action_cleanup.triggered.connect(self.clean_data)
+        self.ui.cb_overlay.stateChanged.connect(self.show_2D_changed)
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             rb.toggled.connect(self.color_change)
         self.ui.pb_previous.clicked.connect(
@@ -245,30 +215,27 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.camera_tabs.currentChanged.connect(self.view_changed)
         self.ui.slider_frames.sliderMoved.connect(self.slider_moved)
         self.ui.tv_rods.itemClicked.connect(self.tree_selection)
+        self.rod_data.data_2d.connect(self.cameras[tab_idx].extract_rods)
+        self.rod_data.data_3d.connect(self.ui.view_3d.update_rods)
+        self.rod_data.data_update.connect(self.ui.tv_rods.update_tree)
 
         # Display methods
         self.ui.le_disp_one.textChanged.connect(self.display_rod_changed)
         for rb in self.ui.group_disp_method.findChildren(QRadioButton):
-            rb.toggled.connect(self.display_method_change)
-        self.update_3d.connect(self.ui.view_3d.update_rods)
-        self.ui.cb_show_3D.stateChanged.connect(self.ui.view_3d.toggle_display)
-        self.ui.le_disp_one.textChanged.connect(self.ui.view_3d.rod_changed)
+            rb.toggled.connect(self.method_2D_changed)
 
-        # Settings
-        self.settings.settings_changed.connect(self.update_settings)
-        self.settings.settings_changed.connect(
-            rn.RodNumberWidget.update_defaults)
-        self.settings.settings_changed.connect(self.ui.view_3d.update_settings)
+        # 3D display methods
+        for rb in self.ui.group_3D_mode.findChildren(QRadioButton):
+            rb.toggled.connect(self.method_3D_changed)
+        self.ui.cb_show_3D.stateChanged.connect(self.show_3D_changed)
 
-        # Logging
-        self.logger.notify_unsaved.connect(self.tab_has_changes)
-        self.logger.data_changed.connect(self.catch_data)
-
-        # Cameras
-        tab_idx = self.ui.camera_tabs.currentIndex()
+        # 2D display and data provider widgets
         for cam, manager in zip(self.cameras, self.image_managers):
             manager.data_loaded.connect(self.images_loaded)
             manager.next_img[int, int].connect(self.next_image)
+            manager.next_img[int, int].connect(
+                lambda frame, idx: cam.frame(frame)
+            )
             manager.next_img[QtGui.QImage].connect(cam.image)
             if str(tab_idx) in manager._logger_id:
                 self.ui.pb_load_images.clicked.connect(
@@ -280,24 +247,31 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.ui.le_image_dir.returnPressed.connect(
                     partial(manager.select_images,
                             self.ui.le_image_dir.text()))
+            if self.ui.cb_overlay.isChecked():
+                manager.next_img[int, int].connect(self.rod_data.update_frame)
 
             cam.request_color_change.connect(self.change_color)
             cam.request_frame_change.connect(manager.image_at)
             cam.normal_frame_change.connect(self.show_next)
             cam.logger.notify_unsaved.connect(self.tab_has_changes)
-            cam.logger.request_saving.connect(self.save_changes)
-            cam.logger.data_changed.connect(self.catch_data)
-            self.saving_finished.connect(cam.logger.actions_saved)
-            cam.request_new_rod.connect(self.create_new_rod)
-            cam.number_switches[lg.NumberChangeActions, int, int].connect(
-                self.catch_number_switch)
+            cam.logger.request_saving.connect(self.rod_data.save_changes)
+            cam.logger.data_changed.connect(self.rod_data.catch_data)
+            self.rod_data.saved.connect(cam.logger.actions_saved)
             cam.number_switches[
-                lg.NumberChangeActions, int, int, str, int, str, bool].connect(
-                self.catch_number_switch)
+                lg.NumberChangeActions, int, int, str].connect(
+                self.rod_data.catch_number_switch)
+            cam.number_switches[
+                lg.NumberChangeActions, int, int, str, str, int].connect(
+                self.rod_data.catch_number_switch)
             self.request_undo.connect(cam.logger.undo_last)
             self.request_redo.connect(cam.logger.redo_last)
             self.settings.settings_changed.connect(cam.update_settings)
+            cam.loaded_rods.connect(
+                lambda n: self.ui.le_rod_disp.setText(
+                    f"Loaded Particles: {n}"))
 
+        # Data manipulation
+        self.ui.action_cleanup.triggered.connect(self.rod_data.clean_data)
         self.ui.action_shorten_displayed.triggered.connect(
             lambda: self.cameras[tab_idx].adjust_rod_length(
                 -self._rod_incr, False))
@@ -310,6 +284,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_lengthen_selected.triggered.connect(
             lambda: self.cameras[tab_idx].adjust_rod_length(
                 self._rod_incr, True))
+
+        # Settings
+        self.settings.settings_changed.connect(self.update_settings)
+        self.settings.settings_changed.connect(
+            rn.RodNumberWidget.update_defaults)
+        self.settings.settings_changed.connect(self.ui.view_3d.update_settings)
+        self.settings.settings_changed.connect(self.rod_data.update_settings)
+
+        # Logging
+        self.logger.notify_unsaved.connect(self.tab_has_changes)
+        self.logger.data_changed.connect(self.rod_data.catch_data)
 
         # Help
         self.ui.action_docs.triggered.connect(lambda: dialogs.show_readme(
@@ -332,18 +317,18 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             Column of the `RodTree` widget the item was selected in.
         """
         if not item.childCount():
-            # change camera
+            # Change camera
             # TODO
-            # change color
+            # Change color
             color = item.parent().text(0)
             self.change_color(color)
-            # change frame
+            # Change frame
             frame = int(item.parent().parent().text(0)[7:])
             tab_idx = self.ui.camera_tabs.currentIndex()
             self.image_managers[tab_idx].image(frame)
-            # activate clicked rod
+            # Activate clicked rod
             cam = self.cameras[tab_idx]
-            if cam.edits:
+            if cam.rods:
                 selected_rod = int(item.text(0)[4:6])
                 cam.rod_activated(selected_rod)
         return
@@ -401,21 +386,17 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.fit_to_window()
             self._fit_next_img = False
 
-        self.update_3d.emit(frame)
         self.ui.tv_rods.update_tree_folding(frame, self.get_selected_color())
 
         if not self.ui.action_persistent_view.isChecked():
             self.fit_to_window()
-            del self.cameras[self.ui.camera_tabs.currentIndex()].edits
-        else:
-            if self.original_data is not None:
-                self.show_overlay()
+            del self.cameras[self.ui.camera_tabs.currentIndex()].rods
 
-    @QtCore.pyqtSlot(int, str, pathlib.Path)
-    def images_loaded(self, frames: int, cam_id: str, folder: pathlib.Path):
+    @QtCore.pyqtSlot(int, str, Path)
+    def images_loaded(self, frames: int, cam_id: str, folder: Path):
         """Handles updates of loaded image datasets.
 
-        Updates the GUI elements to match the newly loaded image dataset.
+        Updates GUI elements to match the newly loaded image dataset.
 
         Parameters
         ----------
@@ -445,266 +426,87 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Update folder display
         self.ui.le_image_dir.setText(str(folder))
 
-    def get_rod_selection(self):
-        """Lets the user select a folder with rod position data.
+    @QtCore.pyqtSlot(Path, Path, list)
+    def rods_loaded(self, input: Path, output: Path, new_colors: List[str]):
+        """Handles updates of loaded rod position datasets.
 
-        Lets the user select a folder with rod position data. It is
-        evaluated which files in the folder are valid data files and what
-        colors they describe. The GUI is updated accordingly to the found
-        files. The original files are copied to a temporary location for
-        storage of temporary changes. The data is opened immediately,
-        if applicable by the GUI state. The data discovery/loading is logged.
+        Updates GUI elements to match the newly loaded rod position dataset.
 
-        Returns
-        -------
-        None
+        Parameters
+        ----------
+        input : Path
+            Path to the folder the position data is loaded from.
+        output : Path
+            Path to the (automatically) selected folder for later output of the
+            corrected dataset.
+        new_colors : List[str]
+            Colors for which data is available in the loaded dataset.
         """
-        # check for a directory
-        ui_dir = self.ui.le_rod_dir.text()
-        try_again = True
-        while try_again:
-            old_original_data = self.original_data
-            # self.original_data = QFileDialog.getExistingDirectory(
-            #     self, 'Choose Folder with position data', ui_dir) + '/'
-            self.original_data = QFileDialog.getExistingDirectory(
-                self, 'Choose Folder with position data', ui_dir)
-            if self.original_data == '':
-                if old_original_data is None:
-                    self.original_data = None
-                else:
-                    self.original_data = old_original_data
-                return
-            self.original_data = pathlib.Path(self.original_data).resolve()
-            try_again = self.open_rod_folder()
+        # Update visual elements
+        self.ui.le_rod_dir.setText(str(input))
+        self.ui.le_save_dir.setText(str(output))
 
-    def open_rod_folder(self) -> bool:
-        """Tries to open the selected folder with potential rod position data.
-
-        It is evaluated which files in the folder are valid data files and what
-        colors they describe. The GUI is updated accordingly to the found
-        files. The original files are copied to a temporary location for
-        storage of temporary changes. The data is opened immediately, if
-        applicable by the GUI state. The data discovery/loading is logged.
-
-        Returns
-        -------
-        None
-        """
-        if self.original_data is not None:
-            # delete old stored files
-            for file in self.data_files.iterdir():
-                file.unlink()   # deletes the file
-            d_ops.lock.lockForWrite()
-            d_ops.rod_data = None
-            d_ops.lock.unlock()
-
-            # Check for eligible files and de-/activate radio buttons
-            eligible_files = f_ops.folder_has_data(self.original_data)
-            if not eligible_files:
-                # No matching file was found
-                msg = QMessageBox()
-                msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-                msg.setIcon(QMessageBox.Warning)
-                msg.setWindowTitle("Rod Tracker")
-                msg.setText(f"There were no useful files found in: "
-                            f"'{self.original_data}'")
-                msg.setStandardButtons(
-                    QMessageBox.Retry | QMessageBox.Cancel)
-                user_decision = msg.exec()
-                self.original_data = None
-                if user_decision == QMessageBox.Cancel:
-                    # Stop overlaying
-                    self.ui.le_rod_dir.setText("")
-                    self.clear_screen()
-                    self._allow_overwrite = False
-                    return False
-                else:
-                    # Retry folder selection
-                    return True
-
+        rb_colors = self.ui.group_rod_color.findChildren(
+            QtWidgets.QRadioButton)
+        rb_color_texts = [btn.text().lower() for btn in rb_colors]
+        group_layout: QtWidgets.QGridLayout = self.ui.group_rod_color.layout()
+        for btn in rb_colors:
+            group_layout.removeWidget(btn)
+            if btn.text().lower() not in new_colors:
+                btn.hide()
+                btn.deleteLater()
+        row = 0
+        col = 0
+        for color in new_colors:
+            try:
+                btn = rb_colors[rb_color_texts.index(color)]
+            except ValueError:
+                # Create new QRadioButton for this color
+                btn = QtWidgets.QRadioButton(text=color.lower())
+                btn.setObjectName(f"rb_{color}")
+                btn.toggled.connect(self.color_change)
+            group_layout.addWidget(btn, row, col)
+            if row == 1:
+                row = 0
+                col += 1
             else:
-                self._allow_overwrite = False
-                # Check whether there is already corrected data
-                out_folder = self.original_data.stem + "_corrected"
-                out_folder = self.original_data.parent / out_folder
-                corrected_files = f_ops.folder_has_data(out_folder)
-                if corrected_files:
-                    msg = QMessageBox()
-                    msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-                    msg.setIcon(QMessageBox.Question)
-                    msg.setWindowTitle("Rod Tracker")
-                    msg.setText("There seems to be corrected data "
-                                "already. Do you want to use that "
-                                "instead of the selected data?")
-                    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-                    user_decision = msg.exec()
-                    if user_decision == QMessageBox.Yes:
-                        self.original_data = out_folder + "/"
-                        self._allow_overwrite = True
-
-                # Load data
-                d_ops.lock.lockForWrite()
-                d_ops.rod_data, found_colors = f_ops.get_color_data(
-                    self.original_data, self.data_files)
-                d_ops.lock.unlock()
-
-                # Update visual elements
-                rb_colors = [child for child
-                             in self.ui.group_rod_color.children() if
-                             type(child) is QRadioButton]
-                rb_color_texts = [btn.text().lower() for btn in rb_colors]
-                group_layout = self.ui.group_rod_color.layout()
-                max_col = group_layout.columnCount() - 1
-                max_row = 1
-                if group_layout.itemAtPosition(1, max_col) is not None:
-                    # 'Add' a new column as current layout is full
-                    max_col += 1
-                    max_row = 0
-                for color in found_colors:
-                    if color not in rb_color_texts:
-                        # Create new QRadioButton for this color
-                        new_btn = QRadioButton(text=color.capitalize())
-                        new_btn.setObjectName(f"rb_{color}")
-                        new_btn.toggled.connect(self.color_change)
-                        # retain only 2 rows
-                        group_layout.addWidget(new_btn, max_row, max_col)
-                        if max_row == 1:
-                            max_row = 0
-                            max_col += 1
-                        else:
-                            max_row += 1
-
-                # Display as a tree
-                worker = pl.Worker(d_ops.extract_seen_information)
-                worker.signals.result.connect(self.ui.tv_rods.setup_tree)
-                self.threads.start(worker)
-
-                # Rod position data was selected correctly
-                self.ui.le_rod_dir.setText(str(self.original_data.parent))
-                self.ui.le_save_dir.setText(str(out_folder))
-                this_action = lg.FileAction(self.original_data.parent,
-                                            lg.FileActions.LOAD_RODS)
-                this_action.parent_id = self.logger_id
-                self.ui.lv_actions_list.add_action(
-                    this_action)
-                self.show_overlay()
-                self.update_3d.emit(self.logger.frame)
-                for btn in rb_colors:
-                    if btn.text().lower() not in found_colors:
-                        group_layout.removeWidget(btn)
-                        btn.hide()
-                        btn.deleteLater()
-                return False
-        return True
-
-    def show_overlay(self):
-        """Tries to load rods and hints the user if that is not possible.
-
-        Tries to load rods and hints the user if that is not possible. It
-        displays warnings, if
-            a) no images are loaded (yet)
-            b) no rod position data is loaded (yet).
-
-        Returns
-        -------
-        None
-        """
-        if not self.ui.cb_overlay.isChecked():
-            return
-        if self.original_data is not None:
-            # Check whether image file is loaded
-            tab_idx = self.ui.camera_tabs.currentIndex()
-            if self.image_managers[tab_idx].folder is None:
-                dialogs.show_warning("There is no image loaded yet. Please "
-                                     "select an image before rods can be "
-                                     "displayed.")
-                return
-            else:
-                self.load_rods()
-        else:
-            dialogs.show_warning("There are no rod position files selected "
-                                 "yet. Please select files!")
-            self.get_rod_selection()
-
-    def load_rods(self):
-        """Loads rod data for one color and creates the `RodNumberWidget`s.
-
-        Loads the rod position data for the selected color in the GUI. It
-        creates the `RodNumberWidget` that is associated with each rod. A
-        message is logged, if there is no data available for this frame in the
-        loaded files.
-
-        Returns
-        -------
-        None
-        """
-        # Load rod position data
-        if self.original_data is None or not self.ui.cb_overlay.isChecked():
-            return
-        tab_idx = self.ui.camera_tabs.currentIndex()
-        if self.cameras[tab_idx]._image is None:
-            return
-        frame = self.image_managers[tab_idx].frames[
-            self.image_managers[tab_idx].frame_idx]
-        color = self.get_selected_color()
-        new_rods = d_ops.extract_rods(self.cameras[tab_idx].cam_id,
-                                      frame, color)
-        for rod in new_rods:
-            self.settings.settings_changed.connect(rod.update_settings)
-            rod.setParent(self.cameras[tab_idx])
-
-        # Distinguish between display methods
-        if self.ui.rb_disp_all.isChecked():
-            # Display all loaded rods
-            self.cameras[tab_idx].edits = new_rods
-        elif self.ui.rb_disp_one.isChecked():
-            # Display only one user chosen rod
-            rod_id = self.ui.le_disp_one.text()
-            rod_present = False
-            for rod in new_rods:
-                if rod_id == "":
-                    rod_present = True
-                    self.cameras[tab_idx].edits = []
-                    break
-                if int(rod.rod_id) == int(rod_id):
-                    self.cameras[tab_idx].edits = [rod]
-                    rod_present = True
-                    break
-            if not rod_present:
-                lg._logger.info(f"Rod #{rod_id} is not available in the "
-                                f"currently loaded data.")
-                self.cameras[tab_idx].edits = []
-
-        else:
-            # something went wrong/no display selected notification
-            self.cameras[tab_idx].edits = []
-            lg._logger.warning("Display method is not selected.")
-
-        self.ui.le_rod_disp.setText(f"Loaded Particles: {len(new_rods)}")
-        if not new_rods:
-            lg._logger.info(f"No rod position data available for "
-                            f"frame #{frame}.")
+                row = 1
+        group_layout.itemAtPosition(0, 0).widget().toggle()
 
     @QtCore.pyqtSlot(bool)
-    def display_method_change(self, state: bool) -> None:
-        """Handles changes of `QRadioButtons` for display method selection."""
-        if state:
-            self.load_rods()
+    def method_2D_changed(self, _: bool) -> None:
+        """Handles changes of 2D display method selection."""
+        if self.ui.rb_disp_all.isChecked():
+            self.rod_data.update_rod_2D()
+        elif self.ui.rb_disp_one.isChecked():
+            self.rod_data.update_rod_2D(int(self.ui.le_disp_one.text()))
+
+    @QtCore.pyqtSlot(bool)
+    def method_3D_changed(self, _: bool) -> None:
+        """Handles changes of 3D display method selection."""
+        self.ui.view_3d.clear()
+        if self.ui.rb_all_3d.isChecked():
+            self.rod_data.update_color_3D(send=False)
+            self.rod_data.update_rod_3D()
+        elif self.ui.rb_color_3d.isChecked():
+            self.rod_data.update_rod_3D(send=False)
+            self.rod_data.update_color_3D(self.get_selected_color())
+        elif self.ui.rb_one_3d.isChecked():
+            self.rod_data.update_color_3D(self.get_selected_color(), False)
+            self.rod_data.update_rod_3D(int(self.ui.le_disp_one.text()))
 
     @QtCore.pyqtSlot(str)
     def display_rod_changed(self, number: str):
         """Handles a change of rod numbers in the user's input field."""
-        self.ui.view_3d.current_rod = int(number)
+        rod = int(number)
         if self.ui.rb_disp_one.isChecked():
-            self.load_rods()
-
-    def clear_screen(self) -> None:
-        """Clears the screen from any displayed rods."""
-        self.cameras[self.ui.camera_tabs.currentIndex()].clear_screen()
+            self.rod_data.update_rod_2D(rod)
+        if self.ui.rb_one_3d.isChecked():
+            self.rod_data.update_rod_3D(rod)
 
     @QtCore.pyqtSlot(int)
-    def cb_changed(self, state):
-        """Catches a QCheckBox state change and overlays or clears the rods.
+    def show_2D_changed(self, state: int):
+        """Catches a `QCheckBox` state change to display or clear rods in 2D.
 
         Parameters
         ----------
@@ -716,17 +518,33 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         None
         """
         if state == 0:
-            # deactivated
-            self.clear_screen()
-        elif state == 2:
-            # activated
-            self.show_overlay()
+            # Deactivated
+            self.cameras[self.ui.camera_tabs.currentIndex()].clear_screen()
+        self.rod_data.show_2D = bool(state)
+
+    @QtCore.pyqtSlot(int)
+    def show_3D_changed(self, state: int):
+        """Catches a `QCheckBox` state change to display or clear rods in 3D.
+
+        Parameters
+        ----------
+        state : int
+            The new state of the QCheckbox {0, 2}
+
+        Returns
+        -------
+        None
+        """
+        if state == 0:
+            # Deactivated
+            self.ui.view_3d.clear()
+        self.rod_data.show_3D = bool(state)
 
     def show_next(self, direction: int):
-        """Tries to open the next image.
+        """Attempt to open the next image.
 
-        It tries to open the next image in the direction provided relative
-        to the currently opened image.
+        Attempt to open the next image in the direction provided relative to
+        the currently opened image.
 
         Parameters
         ----------
@@ -745,12 +563,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.image_managers[tab_idx].next_image(direction)
 
     def original_size(self):
-        """Displays the currently loaded image in its native size.
-
-        Returns
-        -------
-        None
-        """
+        """Displays the currently loaded image in its native size."""
         tab_idx = self.ui.camera_tabs.currentIndex()
         self.cameras[tab_idx].scale_factor = 1
         self.ui.action_zoom_in.setEnabled(True)
@@ -774,7 +587,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         tab_idx = self.ui.camera_tabs.currentIndex()
         self.cameras[tab_idx].scale_to_size(to_size)
 
-    def scale_image(self, factor):
+    def scale_image(self, factor: float):
         """Sets a new relative scaling for the current image.
 
         Sets a new scaling to the currently displayed image. The scaling factor
@@ -813,159 +626,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def color_change(self, state: bool) -> None:
         """Handles changes of the `QRadioButtons` for color selection."""
         if state:
-            self.last_color = self.get_selected_color()
-            self.show_overlay()
-            self.ui.tv_rods.update_tree_folding(self.logger.frame,
-                                                self.last_color)
-            self.ui.view_3d.update_color(self.last_color)
-
-    @QtCore.pyqtSlot(int, list)
-    def create_new_rod(self, number: int, new_position: list) -> None:
-        """Creates a new rod, that was previously not in the loaded data.
-
-        Creates the new rod, adds it to the currently displayed
-        `RodImageWidget`'s list of `RodNumberWidget`s and notifies the
-        respective logger object about this performed action.
-
-        Parameters
-        ----------
-        number : int
-            The new rod's ID.
-        new_position : list
-            The new rod's position in the unscaled image's reference frame.
-            [x1, y1, x2, y2]
-
-        Returns
-        -------
-        None
-        """
-        # update information for the tree view
-        self.ui.tv_rods.new_rod(self.logger.frame, self.last_color, number)
-
-        cam = self.cameras[self.ui.camera_tabs.currentIndex()]
-        new_rod = rn.RodNumberWidget(self.last_color, cam, str(number))
-        new_rod.rod_id = number
-        new_rod.setObjectName(f"rn_{number}")
-        new_rod.rod_points = new_position
-        new_rod.rod_state = rn.RodState.SELECTED
-        # Newly created rods are always "seen"
-        new_rod.seen = True
-        new_rods = []
-        for rod in cam.edits:
-            new_rods.append(rod.copy())
-        new_rods.append(new_rod)
-        cam.edits = new_rods
-        last_action = lg.CreateRodAction(new_rod.copy())
-        cam.logger.add_action(last_action)
-
-    @QtCore.pyqtSlot(lg.Action)
-    def catch_data(self, change: lg.Action) -> None:
-        """Changes the data stored in RAM according to the Action performed."""
-        new_data = change.to_save()
-        if new_data is None:
-            return
-
-        worker = pl.Worker(d_ops.change_data, new_data=new_data)
-        worker.signals.result.connect(self.update_changed_data)
-        self.threads.start(worker)
-
-        if isinstance(new_data["frame"], Iterable):
-            for i in range(len(new_data["frame"])):
-                tmp_data = {
-                    "frame": new_data["frame"][i],
-                    "cam_id": new_data["cam_id"][i],
-                    "color": new_data["color"][i],
-                    "position": new_data["position"][i],
-                    "rod_id": new_data["rod_id"][i],
-                    "seen": new_data["seen"][i]
-                }
-                self.ui.tv_rods.update_tree(tmp_data, no_gen=True)
-            self.ui.tv_rods.generate_tree()
-        else:
-            self.ui.tv_rods.update_tree(new_data)
-
-    @QtCore.pyqtSlot(object)
-    def update_changed_data(self, _):
-        """Updates the main data storage in RAM (used for communication
-        with threads)."""
-        cam = self.cameras[self.ui.camera_tabs.currentIndex()]
-        previously_selected = cam.active_rod
-        if not previously_selected:
-            return
-        self.load_rods()
-        cam.rod_activated(previously_selected)
-
-    def save_changes(self, temp_only=False):
-        """Saves unsaved changes to disk temporarily or permanently.
-
-        Saves the changes made in all views to disk. Depending on the flags
-        it will be only to the temporary files or also to the (user-)chosen
-        permanent saving directory. A warning is issued, if the user tries
-        to overwrite the original data files.
-
-        Parameters
-        ----------
-        temp_only : bool
-            Flag to either save to the temporary files only or permanently
-            to the (user-)chosen location.
-            (Default is False)
-
-        Returns
-        -------
-        None
-        """
-        # TODO: move saving to different Thread(, if it still takes too long)
-        if d_ops.rod_data is None:
-            return
-        # Skip, if there are no changes
-        if not self.ui.lv_actions_list.unsaved_changes:
-            return
-
-        # Clean up data from unused rods before permanent saving
-        if not temp_only:
-            self.clean_data()
-
-        # Update temporary files
-        d_ops.lock.lockForRead()
-        for rb in self.ui.group_rod_color.findChildren(QRadioButton):
-            color = rb.objectName()[3:]
-            tmp_file = self.data_files / self.data_file_name.format(color)
-            df_current = d_ops.rod_data.loc[
-                d_ops.rod_data.color == color].copy()
-            df_current = df_current.astype({"frame": 'int', "particle": 'int'})
-            df_current.to_csv(tmp_file, index_label="")
-        d_ops.lock.unlock()
-
-        if temp_only:
-            # skip permanent saving
-            return
-
-        save_dir = self.ui.le_save_dir.text()
-        if save_dir == self.ui.le_rod_dir.text() and not self._allow_overwrite:
-            msg = QMessageBox()
-            msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-            msg.setIcon(QMessageBox.Warning)
-            msg.setWindowTitle("Rod Tracker")
-            msg.setText("The saving path points to the original data!"
-                        "Do you want to overwrite it?")
-            msg.addButton("Overwrite", QMessageBox.ActionRole)
-            btn_cancel = msg.addButton("Cancel",
-                                       QMessageBox.ActionRole)
-            msg.exec()
-            if msg.clickedButton() == btn_cancel:
-                return
-        save_dir = pathlib.Path(save_dir)
-        if not save_dir.exists():
-            save_dir.mkdir()
-
-        for file in self.data_files.iterdir():
-            save_file = save_dir / file.name
-            shutil.copy2(file, save_file)
-            this_action = lg.FileAction(save_file, lg.FileActions.SAVE)
-            this_action.parent_id = self.logger_id
-            self.ui.lv_actions_list.add_action(this_action)
-        # notify loggers that everything was saved
-        self.saving_finished.emit()
+            color = self.get_selected_color()
+            self.rod_data.update_color_2D(color)
+            self.ui.tv_rods.update_tree_folding(self.logger.frame, color)
+            if self.ui.rb_color_3d.isChecked() or \
+                    self.ui.rb_one_3d.isChecked():
+                self.rod_data.update_color_3D(color)
 
     @staticmethod
     def warning_unsaved() -> bool:
@@ -1013,39 +679,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             if rb.objectName()[3:] == to_color:
-                # activate the last color
+                # Activate the last color
                 rb.toggle()
                 self.ui.tv_rods.update_tree_folding(self.logger.frame,
                                                     to_color)
-
-    @QtCore.pyqtSlot(lg.NumberChangeActions, int, int)
-    @QtCore.pyqtSlot(lg.NumberChangeActions, int, int, str, int, str, bool)
-    def catch_number_switch(self, mode: lg.NumberChangeActions, old_id: int,
-                            new_id: int, color: str = None, frame: int = None,
-                            cam_id: str = None, log: bool = True):
-        """Handles changes of rod numbers for more than the current frame and
-        camera."""
-        cam = self.cameras[self.ui.camera_tabs.currentIndex()]
-        if color is None:
-            color = self.get_selected_color()
-        if frame is None:
-            frame = self.logger.frame
-        if cam_id is None:
-            cam_id = cam.cam_id
-
-        worker = pl.Worker(d_ops.rod_number_swap, mode=mode,
-                           previous_id=old_id, new_id=new_id, color=color,
-                           frame=frame, cam_id=cam_id)
-        worker.signals.result.connect(self.update_changed_data)
-        self.threads.start(worker)
-
-        if log:
-            cam.logger.add_action(
-                lg.NumberExchange(mode, old_id, new_id,
-                                  self.get_selected_color(), self.logger.frame,
-                                  cam.cam_id)
-            )
-        return
 
     def change_view(self, direction: int) -> None:
         """Helper method for programmatic changes of the camera tabs."""
@@ -1063,8 +700,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         Handles the switches between the camera tabs and depending on the
         GUI state tries to load the same frame for the newly displayed tab
-        as in the old one. If no frame is available in the new tab it
-        displays a dummy graphic and logs a warning message.
+        as in the old one.
 
         Parameters
         ----------
@@ -1077,6 +713,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """
         manager = self.image_managers[new_idx]
         cam = self.cameras[new_idx]
+
+        reconnect(self.rod_data.data_2d, cam.extract_rods)
 
         reconnect(
             self.ui.action_shorten_displayed.triggered,
@@ -1113,10 +751,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 idx_diff = manager.frames.index(old_frame) - manager.frame_idx
                 self.show_next(idx_diff)
 
-        if self.ui.cb_overlay.isChecked():
-            # ensure that rods are loaded
-            self.load_rods()
-
     def requesting_undo(self) -> None:
         """Helper method to emit a request for reverting the last action."""
         cam = self.cameras[self.ui.camera_tabs.currentIndex()]
@@ -1127,9 +761,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         cam = self.cameras[self.ui.camera_tabs.currentIndex()]
         self.request_redo.emit(cam.cam_id)
 
+    def attempt_saving(self) -> None:
+        """Handles the propagation of a saving attempt by a user."""
+        if not self.ui.lv_actions_list.unsaved_changes:
+            return
+        self.rod_data.save_changes()
+
     @QtCore.pyqtSlot(bool, str)
     def tab_has_changes(self, has_changes: bool, cam_id: str) -> None:
-        """Changes the current tabs text to indicate it has (no) changes."""
+        """Changes the tabs text to indicate it has (no) changes.
+
+        Parameters
+        ----------
+        has_changes : bool
+        cam_id : str
+            Camera which indicated it now has (no) changes.
+        """
         for i in range(self.ui.camera_tabs.count()):
             tab_txt = self.ui.camera_tabs.tabText(i)
             if cam_id not in tab_txt:
@@ -1190,9 +837,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         None
         """
         super().resizeEvent(a0)
-        # get the screen's resolution the application is displayed on
-        # self.screen().size()
-        # adapt margins to screen resolution
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         """Reimplements QMainWindow.closeEvent(a0).
@@ -1223,63 +867,16 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             msg.setDefaultButton(btn_save)
             msg.exec()
             if msg.clickedButton() == btn_save:
-                self.save_changes(temp_only=False)
+                self.rod_data.save_changes(temp_only=False)
                 a0.accept()
                 pass
             elif msg.clickedButton() == btn_cancel:
                 a0.ignore()
             else:
-                # discards changes and proceeds with closing
+                # Discards changes and proceeds with closing
                 a0.accept()
         else:
             a0.accept()
-
-    def clean_data(self):
-        """Deletes unused rods from the dataset in RAM.
-
-        Unused rods are identified by not having positional data in the
-        *gp_* columns of the dataset. This assumed when only NaN or 0 is
-        present in all these columns for a given rod/row. The user is asked
-        to confirm these deletions and has the opportunity to exclude
-        identified candidates from deletion. All confirmed rows are then
-        deleted from the main dataset in RAM and therefore propagated to
-        disk on the next saving operation.
-
-        Returns
-        -------
-        None
-        """
-        if d_ops.rod_data is None:
-            # No position data loaded
-            return
-        to_delete = d_ops.find_unused_rods()
-        if len(to_delete):
-            confirm = dialogs.ConfirmDeleteDialog(to_delete, parent=self)
-            if confirm.exec():
-                delete_idx = to_delete.index[confirm.confirmed_delete]
-                if len(delete_idx):
-                    d_ops.lock.lockForWrite()
-                    # deleted_rows = d_ops.rod_data.loc[delete_idx].copy()
-                    d_ops.rod_data = d_ops.rod_data.drop(index=delete_idx)
-                    d_ops.lock.unlock()
-                    performed_action = lg.PermanentRemoveAction(
-                        len(delete_idx))
-                    self.logger.add_action(performed_action)
-                    # Update rods and tree display
-                    worker = pl.Worker(d_ops.extract_seen_information)
-                    worker.signals.result.connect(self.ui.tv_rods.setup_tree)
-                    self.threads.start(worker)
-
-                    self.load_rods()
-                else:
-                    lg._logger.info("No rods confirmed for permanent "
-                                    "deletion.")
-            else:
-                # Aborted data cleaning
-                return
-        else:
-            # No unused rods found for deletion
-            return
 
 
 def reconnect(signal: QtCore.pyqtSignal, newhandler: Callable = None,
