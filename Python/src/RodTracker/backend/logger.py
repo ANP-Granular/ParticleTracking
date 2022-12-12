@@ -780,7 +780,7 @@ class PruneLength(Action):
         if len(self.rods) > 1:
             to_str += f"All rod lengths adjusted by: {self.adjustment}"
         else:
-            to_str += (f"#{self.rods[0].rod_id} length adjusted"
+            to_str += (f"#{self.rods[0].rod_id} length adjusted "
                        f"by: {self.adjustment}")
 
         if self.rods is not None:

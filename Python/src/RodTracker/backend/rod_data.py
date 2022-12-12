@@ -96,12 +96,10 @@ class RodData(QtCore.QObject):
         display as a tree.
         Dict[Dict[Dict[list]]] -> (frame, color, particle, camera)
         list -> List of 'camera' IDs on which a rod can be "seen"/"unseen".
-    data_update(dict, bool)
+    data_update(dict)
         Notify objects about updates in the 'seen'/'unseen' status of rods.
         dict -> Information about the rod, whos 'seen' status has changed.
                 Mandatory keys: "frame", "cam_id", "color", "seen", "rod_id"
-        bool -> Flag, whether to skip updating the tree visual elements
-                immediately.
     saved()
         Notify objects, that all changed data has been saved successfully.
 
@@ -126,7 +124,7 @@ class RodData(QtCore.QObject):
     data_loaded = QtCore.pyqtSignal([Path, Path, list], [int, int, list],
                                     name="data_loaded")
     seen_loaded = QtCore.pyqtSignal((dict, list), name="seen_loaded")
-    data_update = QtCore.pyqtSignal((dict, bool), name="data_update")
+    data_update = QtCore.pyqtSignal((dict), name="data_update")
     saved = QtCore.pyqtSignal(name="saved")
 
     _logger: lg.ActionLogger = None
@@ -552,10 +550,9 @@ class RodData(QtCore.QObject):
                     "rod_id": new_data["rod_id"][i],
                     "seen": new_data["seen"][i]
                 }
-                self.data_update.emit(tmp_data, True)
-            self.data_update.emit(tmp_data, False)
+                self.data_update.emit(tmp_data)
         else:
-            self.data_update.emit(new_data, False)
+            self.data_update.emit(new_data)
 
     @QtCore.pyqtSlot(lg.NumberChangeActions, int, int, str)
     @QtCore.pyqtSlot(lg.NumberChangeActions, int, int, str, str, int)

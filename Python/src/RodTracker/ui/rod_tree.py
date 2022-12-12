@@ -81,7 +81,8 @@ class RodTree(QtWidgets.QTreeWidget):
                 current_color.sortChildren(0, QtCore.Qt.AscendingOrder)
             current_frame.sortChildren(0, QtCore.Qt.AscendingOrder)
 
-    def update_tree(self, new_data: dict, no_gen: bool = False):
+    @QtCore.pyqtSlot(dict)
+    def update_tree(self, new_data: dict):
         """Update the "seen" status in the rod data tree.
 
         Parameters
@@ -89,9 +90,6 @@ class RodTree(QtWidgets.QTreeWidget):
         new_data : dict
             Information about the rod, whos 'seen' status has changed.
             Mandatory keys: "frame", "cam_id", "color", "seen", "rod_id"
-        no_gen : bool
-            Skip updating of the displayed tree by using no_gen=True.
-            Default is False.
         """
         header = self.headerItem()
         headings = []
@@ -108,9 +106,20 @@ class RodTree(QtWidgets.QTreeWidget):
             self.rod_info[new_data["frame"]][new_data["color"]][new_data[
                 "rod_id"]][insert_idx] = ("seen" if new_data["seen"]
                                           else "unseen")
-        if no_gen:
-            return
-        self.generate_tree()
+
+        # Update visual elements
+        f_it = self.findItems(str(new_data["frame"]),
+                              QtCore.Qt.MatchFlag.MatchEndsWith)[0]
+        for i in range(f_it.childCount()):
+            color = f_it.child(i)
+            if new_data["color"] in color.text(0):
+                for k in range(color.childCount()):
+                    rod = color.child(k)
+                    if f"Rod{new_data['rod_id']:3d}:" in rod.text(0):
+                        rod.setText(insert_idx + 1, ("seen" if new_data["seen"]
+                                                     else "unseen"))
+                        break
+                break
 
     def update_tree_folding(self, frame: int, color: str):
         """Updates the folding of the tree view.
