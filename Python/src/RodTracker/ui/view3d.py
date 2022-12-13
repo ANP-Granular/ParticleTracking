@@ -56,6 +56,7 @@ class View3D(QtWidgets.QWidget):
     update_settings(dict)
     """
     rods: List[Qt3DCore.QEntity] = []
+    _components: List[List[Qt3DCore.QEntity]] = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -138,15 +139,13 @@ class View3D(QtWidgets.QWidget):
         for color in data.color.unique():
             c_data = data.loc[data.color == color]
             try:
-                rod_color = mpl_colors.to_rgba(color, alpha=1.0)
+                rod_color = QtGui.QColor.fromRgbF(
+                    *mpl_colors.to_rgba(color, alpha=1.0))
             except ValueError as e:
                 lg._logger.error(f"Unknown color for 3D display!\n{e.args}\n"
                                  f"Using 'pink' instead.")
-                rod_color = mpl_colors.to_rgba("pink", alpha=1.0)
-            # TODO: create material for each rod, if they are supposed to be
-            #  reused
-            material = QPhongMaterial(self.scene)
-            material.setDiffuse(QtGui.QColor.fromRgbF(*rod_color))
+                rod_color = QtGui.QColor.fromRgbF(
+                    *mpl_colors.to_rgba("pink", alpha=1.0))
             xs = c_data[["x1", "x2"]].to_numpy()
             ys = c_data[["y1", "y2"]].to_numpy()
             zs = c_data[["z1", "z2"]].to_numpy()
@@ -155,27 +154,48 @@ class View3D(QtWidgets.QWidget):
             dzs = np.diff(zs, axis=1)
             k = 0
             for idx in range(len(c_data)):
-                # TODO:  reuse already created entities and components
-                cm_rod = QCylinderMesh()
-                cm_rod.setRadius(ROD_RADIUS)
                 if i + k >= available_rods:
-                    self.rods.append(Qt3DCore.QEntity(self.scene))
-                rod = self.rods[i + k]
-                rod.setEnabled(True)
-                cm_rod.setLength(
-                    np.linalg.norm(np.array((dxs[idx], dys[idx], dzs[idx]))))
-                transformation = Qt3DCore.QTransform()
-                new_pos = QtGui.QVector3D(xs[idx, 0] + dxs[idx] / 2,
-                                          ys[idx, 0] + dys[idx] / 2,
-                                          zs[idx, 0] + dzs[idx] / 2)
-                transformation.setTranslation(new_pos)
-                rod_rot = QtGui.QQuaternion.rotationTo(
-                    QtGui.QVector3D(0., 1., 0.),
-                    QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]))
-                transformation.setRotation(rod_rot)
-                rod.addComponent(cm_rod)
-                rod.addComponent(transformation)
-                rod.addComponent(material)
+                    cm_rod = QCylinderMesh()
+                    transformation = Qt3DCore.QTransform()
+                    material = QPhongMaterial(self.scene)
+                    rod = Qt3DCore.QEntity(self.scene)
+
+                    cm_rod.setRadius(ROD_RADIUS)
+                    material.setDiffuse(rod_color)
+                    cm_rod.setLength(
+                        np.linalg.norm(
+                            np.array((dxs[idx], dys[idx], dzs[idx]))))
+                    new_pos = QtGui.QVector3D(xs[idx, 0] + dxs[idx] / 2,
+                                              ys[idx, 0] + dys[idx] / 2,
+                                              zs[idx, 0] + dzs[idx] / 2)
+                    transformation.setTranslation(new_pos)
+                    rod_rot = QtGui.QQuaternion.rotationTo(
+                        QtGui.QVector3D(0., 1., 0.),
+                        QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]))
+                    transformation.setRotation(rod_rot)
+
+                    rod.addComponent(cm_rod)
+                    rod.addComponent(transformation)
+                    rod.addComponent(material)
+                    self._components.append([cm_rod, transformation, material])
+                    rod.setEnabled(True)
+                    self.rods.append(rod)
+                else:
+                    rod = self.rods[i + k]
+                    cm_rod, transformation, material = self._components[i + k]
+                    cm_rod.setRadius(ROD_RADIUS)
+                    cm_rod.setLength(
+                        np.linalg.norm(
+                            np.array((dxs[idx], dys[idx], dzs[idx]))))
+                    new_pos = QtGui.QVector3D(xs[idx, 0] + dxs[idx] / 2,
+                                              ys[idx, 0] + dys[idx] / 2,
+                                              zs[idx, 0] + dzs[idx] / 2)
+                    transformation.setTranslation(new_pos)
+                    rod_rot = QtGui.QQuaternion.rotationTo(
+                        QtGui.QVector3D(0., 1., 0.),
+                        QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]))
+                    transformation.setRotation(rod_rot)
+                    material.setDiffuse(rod_color)
                 k += 1
             i += len(c_data)
 
@@ -331,6 +351,11 @@ class View3D(QtWidgets.QWidget):
         fences = [Qt3DCore.QEntity(root) for i in range(12)]
 
         off_set = QtGui.QVector3D(-BOX_WIDTH / 2, 0, BOX_DEPTH / 2)
+        lens = [
+            BOX_HEIGHT, BOX_HEIGHT, BOX_HEIGHT, BOX_HEIGHT, BOX_DEPTH,
+            BOX_DEPTH, BOX_WIDTH, BOX_WIDTH, BOX_DEPTH, BOX_DEPTH, BOX_WIDTH,
+            BOX_WIDTH
+        ]
         positions = [
             QtGui.QVector3D(0, 0, 0),
             QtGui.QVector3D(BOX_WIDTH, 0, 0),
@@ -372,10 +397,11 @@ class View3D(QtWidgets.QWidget):
                 QtGui.QVector3D(0.0, 0.0, 1.0), 90.0)
         ]
 
-        cm_tmp = QCylinderMesh()
-        cm_tmp.setRadius(0.1)
-        cm_tmp.setLength(1.1 * np.max((BOX_WIDTH, BOX_HEIGHT, BOX_DEPTH)))
         for i in range(12):
+            cm_tmp = QCylinderMesh()
+            cm_tmp.setRadius(0.1)
+            cm_tmp.setLength(lens[i])
+
             bar_transform = Qt3DCore.QTransform()
             bar_transform.setTranslation(positions[i] + off_set)
             bar_transform.setRotation(rotations[i])
@@ -455,7 +481,8 @@ class View3D(QtWidgets.QWidget):
             self.update_box()
 
     def clear(self):
-        """Discard all currently loaded rods and regenerate the box."""
+        """Discard all currently loaded rods."""
         for rod in self.rods:
             rod.setParent(None)
         self.rods = []
+        self._components = []
