@@ -16,6 +16,7 @@
 
 import re
 import math
+import logging
 from typing import List, Tuple, Dict, Iterable, Union
 from pathlib import Path
 import pandas as pd
@@ -34,6 +35,7 @@ POSITION_SCALING = 1.0
 
 rod_data: pd.DataFrame = None
 lock = QtCore.QReadWriteLock(QtCore.QReadWriteLock.Recursive)
+_logger = logging.getLogger(__name__)
 
 
 class RodData(QtCore.QObject):
@@ -305,6 +307,7 @@ class RodData(QtCore.QObject):
         # Display as a tree
         worker = pl.Worker(self.extract_seen_information)
         worker.signals.result.connect(lambda ret: self.seen_loaded.emit(*ret))
+        worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
         self.threads.start(worker)
 
         # Rod position data was selected correctly
@@ -472,8 +475,8 @@ class RodData(QtCore.QObject):
                 out_2d = out_2d.loc[out_2d.particle == self.rod_2D]
             self.data_2d.emit(out_2d[self.cols_2D].copy(), self.color_2D)
             if not len(out_2d):
-                lg._logger.info(f"No 2D rod position data available for "
-                                f"frame #{self.frame}.")
+                _logger.info(f"No 2D rod position data available for "
+                             f"frame #{self.frame}.")
 
         if self._show_3D and data_3d:
             out_3d = out_data
@@ -537,6 +540,7 @@ class RodData(QtCore.QObject):
         worker = pl.Worker(change_data, new_data=new_data)
         worker.signals.result.connect(
             lambda _: self.provide_data(data_3d=False))
+        worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
         self.threads.start(worker)
 
         if isinstance(new_data["frame"], Iterable):
@@ -586,6 +590,7 @@ class RodData(QtCore.QObject):
                            frame=frame, cam_id=cam_id)
         worker.signals.result.connect(
             lambda _: self.provide_data(data_3d=False))
+        worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
         self.threads.start(worker)
         return
 
@@ -730,12 +735,13 @@ class RodData(QtCore.QObject):
                     worker = pl.Worker(self.extract_seen_information)
                     worker.signals.result.connect(
                         lambda ret: self.seen_loaded.emit(*ret))
+                    worker.signals.error.connect(
+                        lambda ret: lg.exception_logger(*ret))
                     self.threads.start(worker)
 
                     self.provide_data()
                 else:
-                    lg._logger.info("No rods confirmed for permanent "
-                                    "deletion.")
+                    _logger.info("No rods confirmed for permanent deletion.")
             else:
                 # Aborted data cleaning
                 return

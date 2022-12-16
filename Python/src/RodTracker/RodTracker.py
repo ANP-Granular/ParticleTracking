@@ -24,6 +24,7 @@ parentdir = currentdir.parent
 sys.path.insert(0, str(parentdir))
 
 from PyQt5 import QtWidgets                                     # noqa: E402
+from RodTracker import TEMP_DIR                                 # noqa: E402
 import RodTracker.backend.logger as lg                          # noqa: E402
 import RodTracker.ui.mainwindow as mw                           # noqa: E402
 
@@ -41,8 +42,8 @@ except ModuleNotFoundError:
 def main():
     if HAS_SPLASH:
         pyi_splash.update_text("Updating environment...")
-    if not lg.TEMP_DIR.exists():
-        lg.TEMP_DIR.mkdir()
+    if not TEMP_DIR.exists():
+        TEMP_DIR.mkdir()
     if HAS_SPLASH:
         pyi_splash.update_text("Loading UI...")
 

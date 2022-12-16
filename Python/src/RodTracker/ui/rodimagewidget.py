@@ -15,10 +15,11 @@
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
-import numpy as np
-import pandas as pd
+import logging
 import re
 from typing import List, Union
+import numpy as np
+import pandas as pd
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QLabel, QInputDialog
@@ -26,6 +27,8 @@ from PyQt5.QtWidgets import QLabel, QInputDialog
 import RodTracker.ui.rodnumberwidget as rn
 from RodTracker.ui import dialogs
 import RodTracker.backend.logger as lg
+
+_logger = logging.getLogger(__name__)
 
 
 class RodImageWidget(QLabel):
@@ -1066,8 +1069,8 @@ class RodImageWidget(QLabel):
         try:
             data = data[col_list]
         except KeyError:
-            lg._logger.info(f"Couldn't extract rods. Didn't find columns: "
-                            f"{col_list}")
+            _logger.info(f"Couldn't extract rods. Didn't find columns: "
+                         f"{col_list}")
             del self.rods
             return
 

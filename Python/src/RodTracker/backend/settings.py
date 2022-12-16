@@ -17,14 +17,14 @@
 import json
 from abc import abstractmethod
 from PyQt5 import QtWidgets, QtCore
-import RodTracker.backend.logger as lg
+from RodTracker import TEMP_DIR
 
 
 class Configuration(QtCore.QObject):
     """Generic class that shall hold configurations/settings."""
     _default: dict = {}
     _contents: dict = {}
-    path: str = str(lg.TEMP_DIR / "configurations.json")
+    path: str = str(TEMP_DIR / "configurations.json")
 
     def read(self, path: str = None):
         """Reads configurations from a file and saves them in this object.
@@ -115,7 +115,7 @@ class Settings(Configuration):
     -------
     settings_changed(dict)
     """
-    path = str(lg.TEMP_DIR / "settings.json")
+    path = str(TEMP_DIR / "settings.json")
     _default = {
         "visual": {
             "rod_thickness": 3,

@@ -15,10 +15,13 @@
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import logging
 from pathlib import Path
 from typing import List, Tuple
 from PyQt5 import QtCore, QtGui, QtWidgets
 import RodTracker.backend.logger as lg
+
+_logger = logging.getLogger(__name__)
 
 
 class ImageData(QtCore.QObject):
@@ -218,8 +221,8 @@ class ImageData(QtCore.QObject):
             if image_next.isNull():
                 # The file is not a valid image, remove it from the list
                 # and try to load the next one
-                lg._logger.warning(f"The image {filename.stem} is corrupted "
-                                   f"and therefore excluded.")
+                _logger.warning(f"The image {filename.stem} is corrupted and "
+                                f"therefore excluded.")
                 self.files.remove(filename)
                 self.data_loaded.emit(len(self.files), self.data_id,
                                       self.folder)

@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from typing import List, Tuple
 import numpy as np
 import pandas as pd
@@ -23,12 +24,12 @@ from PyQt5.Qt3DRender import QDirectionalLight, QCamera
 from PyQt5.Qt3DExtras import QPhongMaterial, \
     QCylinderMesh, Qt3DWindow, QOrbitCameraController, QCuboidMesh, \
     QExtrudedTextMesh, QPhongAlphaMaterial
-import RodTracker.backend.logger as lg
 
 BOX_WIDTH = 112.
 BOX_HEIGHT = 80.
 BOX_DEPTH = 80.
 ROD_RADIUS = 0.5
+_logger = logging.getLogger(__name__)
 
 
 class View3D(QtWidgets.QWidget):
@@ -142,8 +143,8 @@ class View3D(QtWidgets.QWidget):
                 rod_color = QtGui.QColor.fromRgbF(
                     *mpl_colors.to_rgba(color, alpha=1.0))
             except ValueError as e:
-                lg._logger.error(f"Unknown color for 3D display!\n{e.args}\n"
-                                 f"Using 'pink' instead.")
+                _logger.error(f"Unknown color for 3D display!\n{e.args}\n"
+                              f"Using 'pink' instead.")
                 rod_color = QtGui.QColor.fromRgbF(
                     *mpl_colors.to_rgba("pink", alpha=1.0))
             xs = c_data[["x1", "x2"]].to_numpy()

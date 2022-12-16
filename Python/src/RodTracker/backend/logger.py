@@ -19,29 +19,16 @@ import logging
 import pathlib
 import sys
 import subprocess
-import tempfile
 import traceback
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Optional, Iterable, Union, List
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
+from RodTracker import LOG_PATH
 import RodTracker.ui.rodnumberwidget as rn
 
-TEMP_DIR: pathlib.Path = pathlib.Path(tempfile.gettempdir()) / "RodTracker"
-if not TEMP_DIR.exists():
-    TEMP_DIR.mkdir()
-LOG_PATH = TEMP_DIR / "RodTracker.log"
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-f_handle = logging.FileHandler(LOG_PATH, mode="a")
-f_handle.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-)
-f_handle.setFormatter(formatter)
-_logger.addHandler(f_handle)
 
 
 def exception_logger(e_type, e_value, e_tb):
