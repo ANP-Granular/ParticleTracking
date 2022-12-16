@@ -164,6 +164,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.settings = se.Settings()
 
         init_settings(self.ui, self.settings)
+        rn.RodNumberWidget.settings_signal = self.settings.settings_changed
         self.connect_signals()
         self.settings.send_settings()
 
