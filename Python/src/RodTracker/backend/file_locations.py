@@ -19,6 +19,9 @@ if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
     # function, so use the PyPI version:
     import importlib_resources
+    importlib_resources.path = (
+        lambda module, file: importlib_resources.files(module).joinpath(file)
+    )
 else:
     # importlib.resources has files(), so use that:
     import importlib.resources as importlib_resources
