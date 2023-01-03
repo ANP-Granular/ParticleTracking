@@ -39,7 +39,7 @@ PyQt3D = ">=5.15.5"
 matplotlib = ">=3.6.2"
 importlib-resources = {version = ">=1.4", python = "<3.9"}
 
-pyinstaller = {version = ">=4.5.1", optional = true}
+pyinstaller = {version = ">=5.7", optional = true}
 qt5-applications = {version = ">=5.15", optional = true}
 PyQt5-stubs = {version = ">=5.15", optional = true}
 flake8 = {version = ">=5", optional = true}
