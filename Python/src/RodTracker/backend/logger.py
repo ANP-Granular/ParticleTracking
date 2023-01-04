@@ -1,4 +1,4 @@
-#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -16,37 +16,42 @@
 
 import os
 import logging
+import pathlib
 import sys
 import subprocess
-import tempfile
 import traceback
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Optional, Iterable, Union, List
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
+from RodTracker import LOG_PATH
 import RodTracker.ui.rodnumberwidget as rn
 
-TEMP_DIR = tempfile.gettempdir() + "/RodTracker"
-if not os.path.exists(TEMP_DIR):
-    os.mkdir(TEMP_DIR)
-LOG_PATH = f"{TEMP_DIR}/RodTracker.log"
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-f_handle = logging.FileHandler(LOG_PATH, mode="a")
-f_handle.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-)
-f_handle.setFormatter(formatter)
-_logger.addHandler(f_handle)
 
 
 def exception_logger(e_type, e_value, e_tb):
     """Handler for logging uncaught exceptions during the program flow."""
     tb_str = "".join(traceback.format_exception(e_type, e_value, e_tb))
     _logger.exception(f"Uncaught exception:\n{tb_str}")
+
+
+def qt_error_handler(mode, context, msg):
+    """Handler for logging uncaught Qt exceptions during the program flow."""
+    if mode == QtCore.QtInfoMsg:
+        _logger.info(f"{msg}")
+    elif mode == QtCore.QtWarningMsg:
+        _logger.warning(f"{msg}")
+    elif mode == QtCore.QtCriticalMsg:
+        _logger.critical(f"{msg}")
+    elif mode == QtCore.QtFatalMsg:
+        _logger.error(f"{msg}")
+    else:
+        _logger.debug(f"{msg}")
+
+
+QtCore.qInstallMessageHandler(qt_error_handler)
 
 
 def open_logs():
@@ -169,7 +174,7 @@ class FileAction(Action):
 
     action: FileActions
 
-    def __init__(self, path: str, action: FileActions, file_num=None,
+    def __init__(self, path: pathlib.Path, action: FileActions, file_num=None,
                  cam_id=None, parent_id: str = None, *args, **kwargs):
 
         self._parent_id = parent_id
@@ -191,7 +196,7 @@ class FileAction(Action):
             to_str = str(self.file_num) + " " + to_str
         if self.cam_id is not None:
             to_str = f"({self.cam_id}) " + to_str
-        elif self._parent_id is not None:
+        if self._parent_id is not None:
             to_str = f"({self._parent_id}) " + to_str
         return to_str
 
@@ -762,7 +767,7 @@ class PruneLength(Action):
         if len(self.rods) > 1:
             to_str += f"All rod lengths adjusted by: {self.adjustment}"
         else:
-            to_str += (f"#{self.rods[0].rod_id} length adjusted"
+            to_str += (f"#{self.rods[0].rod_id} length adjusted "
                        f"by: {self.adjustment}")
 
         if self.rods is not None:
@@ -941,10 +946,10 @@ class ActionLogger(QtCore.QObject):
         Notifies that the `Action` in the payload has been reverted.
     added_action(Action)
         Notifies that this object logged the `Action` from the payload.
-    notify_unsaved(bool)
+    notify_unsaved(bool, str)
         Notifies, if this objects attribute `unsaved_changes` changes from
         empty to being filled with one or more items (True) or from filled to
-        being empty (False).
+        being empty (False). The `parent_id` is added to the payload.
     request_saving(bool)
         Requests the saving of any unsaved changes.
         True    ->  permanent saving
@@ -965,7 +970,7 @@ class ActionLogger(QtCore.QObject):
     undo_action = QtCore.pyqtSignal(Action, name="undoAction")
     undone_action = QtCore.pyqtSignal(Action, name="undone_action")
     added_action = QtCore.pyqtSignal(Action, name="added_action")
-    notify_unsaved = QtCore.pyqtSignal(bool, name="notify_unsaved")
+    notify_unsaved = QtCore.pyqtSignal((bool, str), name="notify_unsaved")
     request_saving = QtCore.pyqtSignal(bool, name="request_saving")
     data_changed = QtCore.pyqtSignal(Action, name="data_changed")
     unsaved_changes: List[Action]
@@ -989,12 +994,12 @@ class ActionLogger(QtCore.QObject):
             self.repeatable_changes = []
         if type(last_action) is not FileAction:
             if not self.unsaved_changes:
-                self.notify_unsaved.emit(True)
+                self.notify_unsaved.emit(True, self.parent_id)
             self.unsaved_changes.append(last_action)
         elif type(last_action) is FileAction:
             if last_action.action == FileActions.SAVE:
                 self.unsaved_changes = []
-                self.notify_unsaved.emit(False)
+                self.notify_unsaved.emit(False, self.parent_id)
         self.added_action.emit(last_action)
         self.data_changed.emit(last_action)
 
@@ -1012,14 +1017,14 @@ class ActionLogger(QtCore.QObject):
         self.repeatable_changes.append(inv_undo_item)
         if undo_item not in self.unsaved_changes:
             if not self.unsaved_changes:
-                self.notify_unsaved.emit(True)
+                self.notify_unsaved.emit(True, self.parent_id)
             self.unsaved_changes.append(inv_undo_item)
         else:
             # Remove & Delete action
             self.unsaved_changes.pop()
             if not self.unsaved_changes:
                 # No more unsaved changes present
-                self.notify_unsaved.emit(False)
+                self.notify_unsaved.emit(False, self.parent_id)
         undo_item.revert = True
         self.undo_action.emit(undo_item)
         self.data_changed.emit(undo_item)
@@ -1041,7 +1046,7 @@ class ActionLogger(QtCore.QObject):
             self.undone_action.emit(undone_action)
             if not self.unsaved_changes:
                 # No more unsaved changes present
-                self.notify_unsaved.emit(False)
+                self.notify_unsaved.emit(False, self.parent_id)
 
     def discard_changes(self):
         """Discards and reverts all unsaved changes made."""
@@ -1054,14 +1059,14 @@ class ActionLogger(QtCore.QObject):
             del item
         # Save changes only in the temp location
         self.unsaved_changes = []
-        self.notify_unsaved.emit(False)
+        self.notify_unsaved.emit(False, self.parent_id)
 
     @QtCore.pyqtSlot()
     def actions_saved(self):
         """All unsaved actions were saved"""
         if self.unsaved_changes:
             self.unsaved_changes = []
-            self.notify_unsaved.emit(False)
+            self.notify_unsaved.emit(False, self.parent_id)
 
     @QtCore.pyqtSlot(str)
     def redo_last(self, parent_id: str) -> None:
@@ -1080,7 +1085,7 @@ class ActionLogger(QtCore.QObject):
                 self.unsaved_changes.pop()
                 if not self.unsaved_changes:
                     # No more unsaved changes present
-                    self.notify_unsaved.emit(False)
+                    self.notify_unsaved.emit(False, self.parent_id)
         except IndexError:
             try:
                 if inv_rep_item.coupled_action is not None:
@@ -1088,7 +1093,7 @@ class ActionLogger(QtCore.QObject):
             except AttributeError:
                 pass
             self.unsaved_changes.append(inv_rep_item)
-            self.notify_unsaved.emit(True)
+            self.notify_unsaved.emit(True, self.parent_id)
 
         # Insert the coupled action before its parent to keep the correct
         # order for undoing

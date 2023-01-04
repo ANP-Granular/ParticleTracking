@@ -1,3 +1,0 @@
-pyinstaller>=4.5.1
-qt5-applications>=5.15.2.2.2
-flake8>=5

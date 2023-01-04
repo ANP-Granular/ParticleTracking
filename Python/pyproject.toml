@@ -1,3 +1,52 @@
 [build-system]
-requires = ["setuptools>=42.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "RodTracker"
+description = "GUI to track rod like particles on multiple cameras"
+readme = "README.md"
+version = "0.5.8"
+authors = [
+    "Adrian Niemann <adrian.niemann@gmx.de>",
+    "Dmitry Puzyrev <dmitry.puzyrev@ovgu.de>"
+]
+license = "GPL-3.0-only"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+packages = [
+    {include = "RodTracker", from = "src"},
+]
+include = [
+    {path = "src/RodTracker/resources"}
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+PyQt5 = ">=5.15.4"
+pandas= ">=1.2.5"
+numpy = ">=1.21.0"
+PyQt3D = ">=5.15.5"
+matplotlib = ">=3.6.2"
+importlib-resources = {version = ">=1.4", python = "<3.9"}
+
+pyinstaller = {version = ">=5.7", optional = true}
+qt5-applications = {version = ">=5.15", optional = true}
+PyQt5-stubs = {version = ">=5.15", optional = true}
+flake8 = {version = ">=5", optional = true}
+
+[tool.poetry.extras]
+dev = ["pyinstaller", "qt5-applications", "PyQt5-stubs", "flake8"]
+test = ["pytest"]
+
+[tool.poetry.scripts]
+RodTracker = 'RodTracker.RodTracker:main'

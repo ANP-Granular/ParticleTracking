@@ -14,42 +14,48 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import pathlib
 import sys
 import inspect
-
-currentdir = os.path.dirname(os.path.abspath(
-    inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
-
-from PyQt5 import QtWidgets                                     # noqa: E402
-import RodTracker.backend.logger as lg                          # noqa: E402
-import RodTracker.ui.mainwindow as mw                           # noqa: E402
-
-sys.excepthook = lg.exception_logger
-
-HAS_SPLASH = False
-try:
-    import pyi_splash
-    HAS_SPLASH = True
-except ModuleNotFoundError:
-    # Application not bundled
-    HAS_SPLASH = False
+if sys.version_info < (3, 9):
+    # importlib.resources either doesn't exist or lacks the files()
+    # function, so use the PyPI version:
+    import importlib_resources
+    importlib_resources.path = (
+        lambda module, file: importlib_resources.files(module).joinpath(file)
+    )
+else:
+    # importlib.resources has files(), so use that:
+    import importlib.resources as importlib_resources
+from PyQt5 import QtWidgets, QtGui, QtCore
 
 
 def main():
-    if HAS_SPLASH:
-        pyi_splash.update_text("Updating environment...")
-    if HAS_SPLASH:
-        pyi_splash.update_text("Loading UI...")
+    currentdir = pathlib.Path(
+        inspect.getfile(inspect.currentframe())).resolve().parent
+    parentdir = currentdir.parent
+    sys.path.insert(0, str(parentdir))
 
     app = QtWidgets.QApplication(sys.argv)
-    main_window = mw.RodTrackWindow()
+    pixmap = QtGui.QPixmap(
+        str(importlib_resources.path("RodTracker.resources", "splash.png"))
+    )
+    align = QtCore.Qt.AlignBottom | QtCore.Qt.AlignHCenter
+    color = QtGui.QColorConstants.White
+    splash = QtWidgets.QSplashScreen(pixmap)
+    splash.show()
 
-    if HAS_SPLASH:
-        # Close the splash screen.
-        pyi_splash.close()
+    splash.showMessage("Updating environment...", align, color)
+    from RodTracker import TEMP_DIR
+    import RodTracker.backend.logger as lg
+    sys.excepthook = lg.exception_logger
+    if not TEMP_DIR.exists():
+        TEMP_DIR.mkdir()
+
+    splash.showMessage("Loading UI...", align, color)
+    import RodTracker.ui.mainwindow as mw
+    main_window = mw.RodTrackWindow()
+    splash.finish(main_window)
 
     main_window.show()
     main_window.raise_()

@@ -277,6 +277,9 @@ out
 gen
 *.xml
 
+# VSCode
+.vscode
+
 # Environments
 .env
 .venv

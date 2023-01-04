@@ -7,9 +7,7 @@ cd ..
 
 if [ $# -eq 0 ]; then
     # build as one directory
-    echo "The bundling as a directory process is currently broken."
-    echo "Please use the -onefile option."
-    # pyinstaller ./build-files/build_onedir.spec
+    pyinstaller ./build-files/build_onedir.spec
   else
     if [ $1 == "-onefile" ]
       then
@@ -19,9 +17,7 @@ if [ $# -eq 0 ]; then
     if [ $1 == "-onedir" ]
       then
         # build as one directory
-        echo "The bundling as a directory process is currently broken."
-        echo "Please use the -onefile option."
-        # pyinstaller ./build-files/build_onedir.spec
+        pyinstaller ./build-files/build_onedir.spec
     fi
     if [[ $1 != "-onedir" && $1 != "-onefile" ]]
       then

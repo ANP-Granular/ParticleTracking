@@ -1,32 +1,28 @@
-from functools import partial
-from typing import Callable, Tuple
+import sys
 from PyQt5 import QtCore
 
 
-class WorkerWrapper(QtCore.QObject):
-    """Wraps a function to be executed in a thread with the given inputs."""
-    finished = QtCore.pyqtSignal(object, name="finished")
+class WorkerSignals(QtCore.QObject):
+    error = QtCore.pyqtSignal(tuple)
+    result = QtCore.pyqtSignal(object)
+    finished = QtCore.pyqtSignal()
 
-    def __init__(self, f: Callable, inputs: dict):
+
+class Worker(QtCore.QRunnable):
+    def __init__(self, func, *args, **kwargs):
         super().__init__()
-        self.f = partial(f, **inputs)
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
 
     def run(self):
-        results = self.f()
-        self.finished.emit(results)
-
-
-def run_in_thread(func: Callable, inputs: dict) -> Tuple[QtCore.QThread,
-                                                         WorkerWrapper]:
-    """Wraps a function to be executed in a different thread to avoid GUI
-    blocking. Returns the created thread and a worker which is the wrapped
-    function."""
-    worker = WorkerWrapper(func, inputs)
-    thread = QtCore.QThread()
-    worker.moveToThread(thread)
-    thread.started.connect(worker.run)
-    worker.finished.connect(thread.quit)
-    worker.finished.connect(worker.deleteLater)
-    thread.finished.connect(thread.deleteLater)
-
-    return thread, worker
+        try:
+            result = self.func(*self.args, **self.kwargs)
+        except:                                                    # noqa: E722
+            exctype, value, tb = sys.exc_info()
+            self.signals.error.emit((exctype, value, tb))
+        else:
+            self.signals.result.emit(result)
+        finally:
+            self.signals.finished.emit()

@@ -19,6 +19,9 @@ if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
     # function, so use the PyPI version:
     import importlib_resources
+    importlib_resources.path = (
+        lambda module, file: importlib_resources.files(module).joinpath(file)
+    )
 else:
     # importlib.resources has files(), so use that:
     import importlib.resources as importlib_resources
@@ -31,8 +34,8 @@ except AttributeError:
 
 
 def icon_path() -> str:
-    return str(importlib_resources.files(
-        "RodTracker.resources").joinpath("icon_main.ico"))
+    return str(importlib_resources.path("RodTracker.resources",
+                                        "icon_main.ico"))
 
 
 def readme_path() -> str:
@@ -42,5 +45,5 @@ def readme_path() -> str:
 
 
 def undo_icon_path() -> str:
-    return str(importlib_resources.files(
-        "RodTracker.resources").joinpath("left-arrow-96.png"))
+    return str(importlib_resources.path("RodTracker.resources",
+                                        "left-arrow-96.png"))
