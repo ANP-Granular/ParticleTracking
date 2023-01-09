@@ -14,10 +14,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import tempfile
 from typing import List
 from PyQt5 import QtCore, QtWidgets
 import RodTracker.backend.logger as lg
+from RodTracker import TEMP_DIR
+
+_logger = logging.getLogger(__name__)
 
 
 class LoggerWidget(QtWidgets.QListWidget):
@@ -65,8 +69,8 @@ class LoggerWidget(QtWidgets.QListWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.temp_manager = tempfile.TemporaryDirectory(
-            prefix="Session_", dir=str(lg.TEMP_DIR))
-        lg._logger.info(self.temp_manager.name)
+            prefix="Session_", dir=str(TEMP_DIR))
+        _logger.info(self.temp_manager.name)
 
     @property
     def unsaved_changes(self) -> List[lg.Action]:
@@ -124,14 +128,14 @@ class LoggerWidget(QtWidgets.QListWidget):
             return
         self.insertItem(self.count(), new_action)
         self.scrollToBottom()
-        lg._logger.info(str(new_action))
+        _logger.info(str(new_action))
 
     @QtCore.pyqtSlot(lg.Action)
     def remove_action(self, undo_action: lg.Action) -> None:
         """Removes an Action from the displayed list and deletes it."""
         item_pos = self.row(undo_action)
         undo_item = self.takeItem(item_pos)
-        lg._logger.warning(f"Removed action: {undo_action}")
+        _logger.warning(f"Removed action: {undo_action}")
         del undo_item
         self.scrollToBottom()
 

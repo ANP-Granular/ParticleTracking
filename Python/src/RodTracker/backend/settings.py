@@ -17,15 +17,14 @@
 import json
 from abc import abstractmethod
 from PyQt5 import QtWidgets, QtCore
-from RodTracker.ui.dialogs import SettingsDialog
-import RodTracker.backend.logger as lg
+from RodTracker import TEMP_DIR
 
 
 class Configuration(QtCore.QObject):
     """Generic class that shall hold configurations/settings."""
     _default: dict = {}
     _contents: dict = {}
-    path: str = str(lg.TEMP_DIR / "configurations.json")
+    path: str = str(TEMP_DIR / "configurations.json")
 
     def read(self, path: str = None):
         """Reads configurations from a file and saves them in this object.
@@ -116,7 +115,7 @@ class Settings(Configuration):
     -------
     settings_changed(dict)
     """
-    path = str(lg.TEMP_DIR / "settings.json")
+    path = str(TEMP_DIR / "settings.json")
     _default = {
         "visual": {
             "rod_thickness": 3,
@@ -126,13 +125,20 @@ class Settings(Configuration):
             "number_size": 11,
             "boundary_offset": 5,
             "position_scaling": 1.0,
-            "number_rods": 25,
-            "rod_increment": 1.0
         },
         "data": {
             "images_root": "./",
             "positions_root": "./",
-        }
+        },
+        "functional": {
+            "rod_increment": 1.0,
+        },
+        "experiment": {
+            "number_rods": 25,
+            "box_width": 112,
+            "box_height": 80,
+            "box_depth": 80,
+        },
     }
     _contents = _default
     parent: QtWidgets.QMainWindow
@@ -164,18 +170,21 @@ class Settings(Configuration):
 
         Emits a `settings_changed` signal for every category of settings.
         """
-        self.settings_changed.emit(self._contents["visual"])
-        self.settings_changed.emit(self._contents["data"])
+        for _, category in self._contents.items():
+            self.settings_changed.emit(category)
 
-    def show_dialog(self, parent: QtWidgets.QMainWindow):
-        self.parent = parent
-        settings_dialog = SettingsDialog(self._contents, parent,
-                                         self._default)
-        if settings_dialog.exec():
-            lg._logger.info("Saved changed settings.")
-            self._contents = settings_dialog.tmp_contents
-            self.save(new_data=self._contents)
-            self.send_settings()
-        else:
-            lg._logger.info("Discarded changed settings.")
-            return
+    def update_field(self, category: str, field: str, value):
+        """Update one of the settings and notify other objects about it.
+
+        Parameters
+        ----------
+        category : str
+            Category of settings.
+        field : str
+            Field/setting within the `category`.
+        value : any
+            New value of the setting.
+        """
+        self._contents[category][field] = value
+        self.save(new_data=self._contents)
+        self.send_settings()

@@ -1,5 +1,4 @@
 import sys
-import traceback
 from PyQt5 import QtCore
 
 
@@ -21,9 +20,8 @@ class Worker(QtCore.QRunnable):
         try:
             result = self.func(*self.args, **self.kwargs)
         except:                                                    # noqa: E722
-            traceback.print_exc()
-            exctype, value = sys.exc_info()[:2]
-            self.signals.error.emit((exctype, value, traceback.format_exc()))
+            exctype, value, tb = sys.exc_info()
+            self.signals.error.emit((exctype, value, tb))
         else:
             self.signals.result.emit(result)
         finally:

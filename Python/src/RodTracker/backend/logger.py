@@ -1,4 +1,4 @@
-#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -19,29 +19,16 @@ import logging
 import pathlib
 import sys
 import subprocess
-import tempfile
 import traceback
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Optional, Iterable, Union, List
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
+from RodTracker import LOG_PATH
 import RodTracker.ui.rodnumberwidget as rn
 
-TEMP_DIR: pathlib.Path = pathlib.Path(tempfile.gettempdir()) / "RodTracker"
-if not TEMP_DIR.exists():
-    TEMP_DIR.mkdir()
-LOG_PATH = TEMP_DIR / "RodTracker.log"
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
-f_handle = logging.FileHandler(LOG_PATH, mode="a")
-f_handle.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
-)
-f_handle.setFormatter(formatter)
-_logger.addHandler(f_handle)
 
 
 def exception_logger(e_type, e_value, e_tb):
@@ -209,7 +196,7 @@ class FileAction(Action):
             to_str = str(self.file_num) + " " + to_str
         if self.cam_id is not None:
             to_str = f"({self.cam_id}) " + to_str
-        elif self._parent_id is not None:
+        if self._parent_id is not None:
             to_str = f"({self._parent_id}) " + to_str
         return to_str
 
@@ -780,7 +767,7 @@ class PruneLength(Action):
         if len(self.rods) > 1:
             to_str += f"All rod lengths adjusted by: {self.adjustment}"
         else:
-            to_str += (f"#{self.rods[0].rod_id} length adjusted"
+            to_str += (f"#{self.rods[0].rod_id} length adjusted "
                        f"by: {self.adjustment}")
 
         if self.rods is not None:

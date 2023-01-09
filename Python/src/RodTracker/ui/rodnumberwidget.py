@@ -79,6 +79,10 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         [x1, y1, x2, y2]
     color : str
         The color of the rod being represented.
+    settings_signal : QtCore.pyqtBoundSignal
+        Signal to connect to for receiving updates of settings. Must be set
+        before the creation of an instance to be used by that instance.
+        By default None.
 
     Signals
     -------
@@ -103,6 +107,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
                                        name="request_delete")
     rod_state: RodState
     seen: bool = False
+    settings_signal: QtCore.pyqtBoundSignal = None
 
     _boundary_offset: int = 5
     _number_size: int = 12
@@ -135,9 +140,16 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         self.setStyleSheet(RodStyle.GENERAL.format(*self._number_color,
                                                    self._number_size))
 
-        content_size = self.fontMetrics().boundingRect("99")
+        tmp_font = self.font()
+        tmp_font.setPixelSize(self._number_size)
+        tmp_font.setBold(True)
+        content_size = QtGui.QFontMetrics(tmp_font).boundingRect("99")
         content_size.setWidth(content_size.width() + self._boundary_offset)
         self.setGeometry(content_size)
+
+        # Connect to settings update signal
+        if self.settings_signal is not None:
+            self.settings_signal.connect(self.update_settings)
 
     @property
     def rod_id(self):

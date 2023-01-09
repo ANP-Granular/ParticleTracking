@@ -25,22 +25,11 @@ pyz = PYZ(a.pure,
           a.zipped_data,
           cipher=block_cipher)
 
-splash = Splash('../src/RodTracker/resources/splash.png',
-                binaries=a.binaries,
-                datas=a.datas,
-                text_pos=(250, 450),
-                text_size=12,
-                text_color='white',
-                text_default='Initializing ...',
-                minify_script=True)
-
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
           a.datas,
-          splash,
-          splash.binaries,
           [],
           name='RodTracker',
           debug=False,
