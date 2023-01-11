@@ -202,26 +202,27 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     @property
     def pen(self):
-        color = None
+        pen = QtGui.QPen()
+        pen.setWidth(self._rod_thickness)
         if self.rod_state == RodState.NORMAL:
-            color = QtGui.QColor(*self._rod_color)
+            pen.setColor(QtGui.QColor(*self._rod_color))
         elif self.rod_state == RodState.SELECTED:
-            color = QtCore.Qt.white
+            pen.setColor(QtCore.Qt.white)
+            pen.setWidthF(self._rod_thickness / 2)
         elif self.rod_state == RodState.EDITING:
-            # Don't return a pen as a new rod is currently drawn
-            return None
+            pen.setColor(QtCore.Qt.white)
+            pen.setWidthF(self._rod_thickness / 2)
         elif self.rod_state == RodState.CHANGED:
-            color = QtCore.Qt.green
+            pen.setColor(QtCore.Qt.green)
         elif self.rod_state == RodState.CONFLICT:
-            color = QtCore.Qt.red
+            pen.setColor(QtCore.Qt.red)
         else:
             raise RodStateError()
         if self.seen:
-            line_style = QtCore.Qt.SolidLine
+            pen.setStyle(QtCore.Qt.SolidLine)
         else:
-            line_style = QtCore.Qt.DotLine
-
-        return QtGui.QPen(color, self._rod_thickness, line_style)
+            pen.setStyle(QtCore.Qt.DotLine)
+        return pen
 
     # Controlling "editing" behaviour
     def mouseDoubleClickEvent(self, e: QtGui.QMouseEvent) -> None:
