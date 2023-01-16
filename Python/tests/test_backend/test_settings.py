@@ -1,18 +1,32 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of RodTracker.
+#  RodTracker is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  RodTracker is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 import json
 import random
 import importlib
 import pathlib
 import pytest
 from pytestqt.qtbot import QtBot
-from PyQt5 import QtWidgets
-import RodTracker.backend.logger as lg
+import RodTracker
 import RodTracker.backend.settings as se
-from RodTracker.ui.dialogs import SettingsDialog
 
 
 class TestConfiguration:
     def test_read_default(self, tmp_path: pathlib.Path):
-        lg.TEMP_DIR = tmp_path
+        RodTracker.TEMP_DIR = tmp_path
         # Force reload to account for the new TEMP_DIR
         importlib.reload(se)
 
@@ -87,12 +101,20 @@ class TestSettings:
                 "boundary_offset": random.random(),
                 "position_scaling": random.random(),
                 "number_rods": random.random(),
-                "rod_increment": random.random()
             },
             "data": {
                 "images_root": "./",
                 "positions_root": "./",
-            }
+            },
+            "functional": {
+                "rod_increment": random.random(),
+            },
+            "experiment": {
+                "number_rods": random.random(),
+                "box_width": random.random(),
+                "box_height": random.random(),
+                "box_depth": random.random(),
+            },
         }
         test_path = tmp_path.joinpath("settings.json")
         se.Settings.path = str(test_path)
@@ -113,12 +135,20 @@ class TestSettings:
                 "boundary_offset": random.random(),
                 "position_scaling": random.random(),
                 "number_rods": random.random(),
-                "rod_increment": random.random()
             },
             "data": {
-                "images_root": "./test",
-                "positions_root": "./test",
-            }
+                "images_root": "./",
+                "positions_root": "./",
+            },
+            "functional": {
+                "rod_increment": random.random(),
+            },
+            "experiment": {
+                "number_rods": random.random(),
+                "box_width": random.random(),
+                "box_height": random.random(),
+                "box_depth": random.random(),
+            },
         }
         default_cfg = {
             "visual": {
@@ -130,12 +160,20 @@ class TestSettings:
                 "boundary_offset": random.random(),
                 "position_scaling": random.random(),
                 "number_rods": random.random(),
-                "rod_increment": random.random()
             },
             "data": {
-                "images_root": "./test",
-                "positions_root": "./test",
-            }
+                "images_root": "./",
+                "positions_root": "./",
+            },
+            "functional": {
+                "rod_increment": random.random(),
+            },
+            "experiment": {
+                "number_rods": random.random(),
+                "box_width": random.random(),
+                "box_height": random.random(),
+                "box_depth": random.random(),
+            },
         }
         test_path = str(tmp_path.joinpath("settings.json"))
         default_path = str(tmp_path.joinpath("default.json"))
@@ -150,12 +188,12 @@ class TestSettings:
 
     @pytest.mark.parametrize("test_cfg", [
         {},
-        {f"key{i}": i for i in range(4)},
+        {"category": {f"key{i}": i for i in range(4)}},
         {"visual": {"rod_thickness": 10}},
         {"visual": {f"key{i}": i for i in range(4)}},
         {"visual": {"rod_thickness": 10, "testkey": "test"}}
     ])
-    def test_read_file(self, tmp_path: pathlib.Path, qtbot, test_cfg):
+    def test_read_file(self, tmp_path: pathlib.Path, qtbot: QtBot, test_cfg):
         test_file = str(tmp_path.joinpath("settings.json"))
         with open(test_file, "w") as f:
             json.dump(test_cfg, f)
@@ -195,6 +233,21 @@ class TestSettings:
     def test_read_nonexistent(self, tmp_path: pathlib.Path):
         raise NotImplementedError
 
+    @pytest.mark.parametrize("item", [
+        ["visual", "rod_thickness", 10],
+        ["data", "images_root", "./test"],
+        ["functional", "rod_increment", 10.5],
+    ])
+    def test_update_field(self, tmp_path: pathlib.Path, qtbot: QtBot, item):
+        importlib.reload(se)
+        out_path = str(tmp_path.joinpath("settings.json"))
+        se.Settings.path = out_path
+        config = se.Settings()
+        with qtbot.wait_signal(config.settings_changed):
+            config.update_field(*item)
+        assert pathlib.Path(out_path).exists()
+        assert pathlib.Path(out_path).is_file()
+
     def test_reset_defaults(self, qtbot: QtBot):
         config = se.Settings()
         defaults = config._default
@@ -214,22 +267,6 @@ class TestSettings:
             assert ((it.args[0] == config._contents["visual"]) or
                     (it.args[0] == config._contents["data"]))
 
-    @pytest.mark.parametrize("user_decision", [0, 1])
-    def test_show_dialog(self, tmp_path: pathlib.Path,
-                         monkeypatch: pytest.MonkeyPatch, qtbot: QtBot,
-                         user_decision):
-        test_settings = se.Settings()
-        monkeypatch.setattr(SettingsDialog, "exec", lambda _: user_decision)
-        if user_decision:
-            test_path = tmp_path.joinpath("test_dialog.json")
-            with qtbot.wait_signal(test_settings.settings_changed):
-                se.Settings.path = str(test_path)
-                test_settings.show_dialog(QtWidgets.QMainWindow())
-            assert test_path.is_file()
-        else:
-            with qtbot.assert_not_emitted(test_settings.settings_changed):
-                test_settings.show_dialog(QtWidgets.QMainWindow())
-
     def test_save_default(self, tmp_path: pathlib.Path):
         test_cfg = se.Settings()
         se.Settings.path = str(tmp_path.joinpath("configurations.json"))
@@ -241,10 +278,11 @@ class TestSettings:
         assert read_cfg == test_dict
 
     def test_save(self, tmp_path: pathlib.Path):
+        importlib.reload(se)
         se.Settings._contents = {}
         test_cfg = se.Settings()
         test_path = str(tmp_path.joinpath("test.json"))
-        test_dict = {f"key{i}": i for i in range(4)}
+        test_dict = {"category": {f"key{i}": i for i in range(4)}}
         assert se.Settings.path != test_path
         assert se.Settings._contents != test_dict
 

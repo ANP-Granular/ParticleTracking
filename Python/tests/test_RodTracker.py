@@ -1,7 +1,22 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of RodTracker.
+#  RodTracker is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  RodTracker is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 import sys
 import pathlib
 import importlib
-import pytest
 
 
 def test_path_addition():
@@ -10,24 +25,19 @@ def test_path_addition():
         in sys.path
 
 
-def test_has_splash(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setitem(sys.modules, 'pyi_splash',
-                        __import__('mock_pyi_splash'))
-    import RodTracker.RodTracker
-    # Force reload to avoid "results" from imports in previous tests
-    importlib.reload(RodTracker.RodTracker)
-    assert RodTracker.RodTracker.HAS_SPLASH
+def test_tmp_dir_create():
+    # Clean temporary files from potential previous RodTracker runs/imports
+    import RodTracker
+    for handler in RodTracker.logger.handlers:
+        RodTracker.logger.removeHandler(handler)
+        handler.close()
+    for file in RodTracker.TEMP_DIR.iterdir():
+        if file.is_file():
+            file.unlink()
+        elif file.is_dir():
+            file.rmdir()
+    RodTracker.TEMP_DIR.rmdir()
 
-
-@pytest.mark.skip(reason="Requires user interaction and therefore blocks "
-                  "further automatic test execution")
-def test_tmp_dir_create(tmpdir, monkeypatch: pytest.MonkeyPatch):
-    import RodTracker.backend.logger as lg
-    import RodTracker.RodTracker as RT
-    lg.TEMP_DIR = tmpdir / "Rodtracker"
-    assert not lg.TEMP_DIR.exists()
-    with monkeypatch.context() as m:
-        m.setattr(sys, "exit", lambda x: x)
-        # TODO: autoclose window
-        RT.main()
-    assert lg.TEMP_DIR.exists()
+    importlib.reload(RodTracker)
+    assert RodTracker.TEMP_DIR.exists()
+    assert RodTracker.LOG_PATH.exists()
