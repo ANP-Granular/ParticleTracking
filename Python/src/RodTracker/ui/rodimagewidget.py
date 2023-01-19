@@ -466,7 +466,6 @@ class RodImageWidget(QLabel):
                 if distance < min_dist:
                     min_dist = distance
                     closest_rod = rod
-                    _logger.info(f"ID: {rod.rod_id}, dist: {distance}")
             self.rod_activated(closest_rod.rod_id)
 
     def save_line(self, start: QtCore.QPoint, end: QtCore.QPoint):
