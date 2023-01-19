@@ -51,7 +51,7 @@
          <x>0</x>
          <y>0</y>
          <width>1204</width>
-         <height>512</height>
+         <height>511</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -760,8 +760,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>644</width>
-                     <height>349</height>
+                     <width>693</width>
+                     <height>341</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -850,8 +850,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>644</width>
-                     <height>349</height>
+                     <width>693</width>
+                     <height>341</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -1091,8 +1091,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>476</width>
-                        <height>485</height>
+                        <width>431</width>
+                        <height>442</height>
                        </rect>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -1526,7 +1526,7 @@
      <x>0</x>
      <y>0</y>
      <width>1204</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -1562,6 +1562,7 @@
     <addaction name="action_zoom_out"/>
     <addaction name="action_original_size"/>
     <addaction name="action_fit_to_window"/>
+    <addaction name="action_autoselect_rods"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1729,6 +1730,17 @@
   <action name="action_logs">
    <property name="text">
     <string>Show Logs</string>
+   </property>
+  </action>
+  <action name="action_autoselect_rods">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Autoselect rods</string>
    </property>
   </action>
  </widget>

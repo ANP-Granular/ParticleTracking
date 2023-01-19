@@ -151,6 +151,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         for cam in self.cameras:
             cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
             cam.setPixmap(QtGui.QPixmap(fl.icon_path()))
+            cam.autoselect = self.ui.action_autoselect_rods.isChecked()
 
         self.logger = self.ui.lv_actions_list.get_new_logger(self.logger_id)
         self.ui.sa_camera_0.verticalScrollBar().installEventFilter(self)
@@ -270,6 +271,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.loaded_rods.connect(
                 lambda n: self.ui.le_rod_disp.setText(
                     f"Loaded Particles: {n}"))
+            self.ui.action_autoselect_rods.toggled.connect(cam.set_autoselect)
 
         # Data manipulation
         self.ui.action_cleanup.triggered.connect(self.rod_data.clean_data)

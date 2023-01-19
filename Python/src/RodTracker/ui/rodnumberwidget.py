@@ -14,9 +14,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5 import QtCore, QtGui, QtWidgets
 from enum import Enum
 from typing import List
+import numpy as np
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class RodStyle(str, Enum):
@@ -77,6 +78,9 @@ class RodNumberWidget(QtWidgets.QLineEdit):
     rod_points : List[int]
         The starting and ending points of the rod in UNSCALED form.
         [x1, y1, x2, y2]
+    rod_center : np.array[float]
+        Center of the rod in SCALED form, i.e. adjusted to zoom levels and
+        offsets.
     color : str
         The color of the rod being represented.
     settings_signal : QtCore.pyqtBoundSignal
@@ -130,6 +134,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         self._rod_id = None
         self._rod_state = RodState.NORMAL
         self.rod_points = [0, 0, 0, 0]
+        self.rod_center = np.array([0, 0])
         self.color = color
 
         # Set initial visual appearance & function

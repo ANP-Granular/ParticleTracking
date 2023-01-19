@@ -102,6 +102,7 @@ class RodImageWidget(QLabel):
         [lg.NumberChangeActions, int, int, str, str, int],
         name="number_switches")
     loaded_rods = QtCore.pyqtSignal(int, name="loaded_rods")
+    autoselect: bool = True
 
     rods: List[rn.RodNumberWidget]
     _logger: lg.ActionLogger = None
@@ -263,6 +264,16 @@ class RodImageWidget(QLabel):
         """
         if self._logger is not None:
             self._logger.frame = frame
+
+    def set_autoselect(self, state: bool):
+        """En-/Disable autoselection of rods based on the mouse distance.
+
+        Parameters
+        ----------
+        state : bool
+            New state of the autoselection.
+        """
+        self.autoselect = state
 
     # Display manipulation ====================================================
     def _scale_image(self) -> None:
@@ -444,6 +455,19 @@ class RodImageWidget(QLabel):
             qp.drawLine(self.startPos, end)
             qp.end()
             self.setPixmap(pixmap)
+        elif self.rods is not None and self.autoselect:
+            # activate rod that is closes to the cursor
+            mouse_pos = np.array([
+                mouse_event.pos().x(), mouse_event.pos().y()])
+            closest_rod = None
+            min_dist = np.inf
+            for rod in self.rods:
+                distance = np.linalg.norm(rod.rod_center - mouse_pos)
+                if distance < min_dist:
+                    min_dist = distance
+                    closest_rod = rod
+                    _logger.info(f"ID: {rod.rod_id}, dist: {distance}")
+            self.rod_activated(closest_rod.rod_id)
 
     def save_line(self, start: QtCore.QPoint, end: QtCore.QPoint):
         """Saves a line selected by the user to be a rod with a rod number.
@@ -886,7 +910,8 @@ class RodImageWidget(QLabel):
         rod_pos = rod.rod_points
         rod_pos = [int(self._position_scaling * self._scale_factor * coord)
                    for coord in rod_pos]
-
+        rod.rod_center = (np.array(rod_pos[0:2]) + np.array(rod_pos[2:])) / 2
+        rod.rod_center += np.array(self._offset)
         # Update rod number positions
         x = rod_pos[2] - rod_pos[0]
         y = rod_pos[3] - rod_pos[1]
