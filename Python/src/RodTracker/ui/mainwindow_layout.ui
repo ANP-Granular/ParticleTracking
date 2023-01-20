@@ -51,7 +51,7 @@
          <x>0</x>
          <y>0</y>
          <width>1204</width>
-         <height>511</height>
+         <height>512</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -760,8 +760,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>693</width>
-                     <height>341</height>
+                     <width>644</width>
+                     <height>349</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -850,8 +850,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>693</width>
-                     <height>341</height>
+                     <width>100</width>
+                     <height>30</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -1091,8 +1091,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>431</width>
-                        <height>442</height>
+                        <width>255</width>
+                        <height>485</height>
                        </rect>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -1526,7 +1526,7 @@
      <x>0</x>
      <y>0</y>
      <width>1204</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -1741,6 +1741,9 @@
    </property>
    <property name="text">
     <string>Autoselect rods</string>
+   </property>
+   <property name="shortcut">
+    <string>G</string>
    </property>
   </action>
  </widget>

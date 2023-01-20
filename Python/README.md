@@ -99,12 +99,13 @@
 | Open images                  |                  `Ctrl + O`                   |
 | Save rod position data       |                  `Ctrl + S`                   |
 | Switch to next/previous view |               `Tab`/ `Ctrl+Tab`               |
-| Zoom in/out                  | `+`/`-` <br /> (MacOS: `Ctrl + H`/`Ctrl + =`) |
+| Zoom in/out                  | `+`/`-` <br /> (MacOS: `Ctrl+H`/`Ctrl+=`) <br /> `Ctrl+Wheel` |
 | Show in original size        |                  `Ctrl + R`                   |
 | Next/previous image          |                `Right`/`Left`                 |
 | Undo                         |                  `Ctrl + Z`                   |
 | Lengthen/Shorten a rod       |                    `A`/`S`                    |
 | Lengthen/Shorten all rods in current view    |                    `R`/`T`                    |
+| Toggle automatic rod selection mode | `G` |
 
 #### Miscellaneous
 - the visual display properties of rods and their number can be changed 
