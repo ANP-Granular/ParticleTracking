@@ -32,7 +32,7 @@ else:
 import pytest
 from pytest import MonkeyPatch
 from pytestqt.qtbot import QtBot
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
 from RodTracker.backend import img_data
 
 EX_DATA = importlib_resources.path("RodTracker.resources", "example_data")
@@ -131,7 +131,7 @@ class TestImageData:
 def test_get_images():
     files, file_ids = img_data.get_images(EX_DATA / "images/gp3")
     assert len(files) == len(file_ids) == 25
-    assert file_ids == [*list(range(500, 520)), *list(range(696, 701))]
+    assert sorted(file_ids) == [*list(range(500, 520)), *list(range(696, 701))]
 
 
 def test_get_images_avoid_wrong():

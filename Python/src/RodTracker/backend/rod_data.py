@@ -360,9 +360,10 @@ class RodData(QtCore.QObject):
             df_out = rod_data.loc[rod_data.color == color].copy()
             df_out = df_out.astype({"frame": 'int', "particle": 'int'})
             df_out.to_csv(out_file, index_label="")
-            action = lg.FileAction(out_file, lg.FileActions.SAVE)
-            action.parent_id = self._logger_id
-            self._logger.add_action(action)
+            if self._logger is not None:
+                action = lg.FileAction(out_file, lg.FileActions.SAVE)
+                action.parent_id = self._logger_id
+                self._logger.add_action(action)
         lock.unlock()
         self.saved.emit()
 
@@ -659,9 +660,10 @@ class RodData(QtCore.QObject):
                     dataset = data_chunk.copy()
                 else:
                     dataset = pd.concat([dataset, data_chunk])
-        dataset.sort_values(["color", "frame", "particle"], inplace=True)
-        dataset.reset_index(drop=True, inplace=True)
-        dataset.fillna(0, inplace=True)
+        if dataset is not None:
+            dataset.sort_values(["color", "frame", "particle"], inplace=True)
+            dataset.reset_index(drop=True, inplace=True)
+            dataset.fillna(0, inplace=True)
         return dataset, found_colors
 
     @staticmethod
