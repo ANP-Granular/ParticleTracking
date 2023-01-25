@@ -609,7 +609,7 @@ def test_change_data(qtbot: QtBot, rod_manager: RodData):
         previous.loc[
             (previous.frame == frame) & (previous.particle == particle) &
             (previous.color == color), cam_cols
-        ] != [*position, seen]).any(None)
+        ] != [*position, seen]).any(axis=None)
 
     rod_data.change_data(test_data)
     changed = rod_data.rod_data
@@ -651,7 +651,7 @@ def test_change_data_multiple(qtbot: QtBot, rod_manager: RodData):
             previous.loc[
                 (previous.frame == frame) & (previous.particle == particle) &
                 (previous.color == color), cam_cols
-            ] != [*position, seen]).any(None)
+            ] != [*position, seen]).any(axis=None)
 
     rod_data.change_data(test_data)
     changed = rod_data.rod_data
@@ -754,8 +754,8 @@ def test_rod_number_swap(qtbot: QtBot, rod_manager: RodData,
                 changed_old.reset_index(drop=True)).all(None)
 
     elif mode == lg.NumberChangeActions.ALL_ONE_CAM:
-        changed_cols = {col for col in prev_data.columns if cam in col}
-        unchanged_cols = {col for col in prev_data.columns if cam not in col}
+        changed_cols = [col for col in prev_data.columns if cam in col]
+        unchanged_cols = [col for col in prev_data.columns if cam not in col]
 
         unchanged = rod_data.rod_data.loc[rod_data.rod_data.frame >= frame,
                                           unchanged_cols]

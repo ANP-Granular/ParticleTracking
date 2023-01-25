@@ -1,18 +1,36 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of RodTracker.
+#  RodTracker is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  RodTracker is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """Pre- and post-user-action test code."""
 import pathlib
+import logging
 from typing import Union
 import numpy as np
 from PyQt5 import QtCore
 from RodTracker.ui.mainwindow import RodTrackWindow
-import RodTracker.backend.data_operations as d_ops
-import RodTracker.backend.file_operations as f_ops
 import RodTracker.ui.rodnumberwidget as rn
 from RodTracker.backend.logger import NumberChangeActions
+import RodTracker.backend.rod_data as r_data
+_logger = logging.getLogger()
 
 
 def get_rod_position(main_window: RodTrackWindow, rod_id: int):
-    rods = main_window.current_camera.edits
-    for rod in rods:
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
+    for rod in cam.rods:
         if rod.rod_id == rod_id:
             return rod.rod_points
     return None
@@ -20,7 +38,8 @@ def get_rod_position(main_window: RodTrackWindow, rod_id: int):
 
 def compute_desired_position(main_window: RodTrackWindow, start: QtCore.QPoint,
                              end: QtCore.QPoint) -> np.ndarray:
-    cam = main_window.current_camera
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
     position_scaling = cam._position_scaling
     image_scaling = cam._scale_factor
     image_offset = np.asarray(cam._offset)
@@ -31,33 +50,35 @@ def compute_desired_position(main_window: RodTrackWindow, start: QtCore.QPoint,
 
 
 def pre_create(main_window: RodTrackWindow, new_id: int):
-    cam = main_window.current_camera
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
     frame = main_window.logger.frame
     color = main_window.get_selected_color()
     # rod not loaded on the screen
-    rod_ids = [rod.rod_id for rod in cam.edits]
+    rod_ids = [rod.rod_id for rod in cam.rods]
     assert new_id not in rod_ids
     # rod not in loaded dataset
-    with QtCore.QReadLocker(d_ops.lock):
-        relevant_data = d_ops.rod_data.loc[
-            (d_ops.rod_data.frame == frame) &
-            (d_ops.rod_data.color == color), "particle"]
+    with QtCore.QReadLocker(r_data.lock):
+        relevant_data = r_data.rod_data.loc[
+            (r_data.rod_data.frame == frame) &
+            (r_data.rod_data.color == color), "particle"]
         assert new_id not in relevant_data
     return
 
 
 def post_create(main_window: RodTrackWindow, new_id: int,
                 start: QtCore.QPoint, end: QtCore.QPoint):
-    cam = main_window.current_camera
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
     frame = main_window.logger.frame
     color = main_window.get_selected_color()
 
     # rod loaded on the screen
-    rod_ids = [rod.rod_id for rod in cam.edits]
+    rod_ids = [rod.rod_id for rod in cam.rods]
     assert new_id in rod_ids
 
     # rod is still selected
-    selected_id = [rod.rod_id for rod in cam.edits if rod.rod_state ==
+    selected_id = [rod.rod_id for rod in cam.rods if rod.rod_state ==
                    rn.RodState.SELECTED]
     assert (len(selected_id) == 1) and (selected_id[0] == new_id)
 
@@ -72,11 +93,14 @@ def post_create(main_window: RodTrackWindow, new_id: int,
     np.testing.assert_allclose(np.asarray(new_pos), intended_pos)
 
     # rod is inserted in the loaded dataset
-    with QtCore.QReadLocker(d_ops.lock):
-        relevant_data = d_ops.rod_data.loc[
-            (d_ops.rod_data.frame == frame) &
-            (d_ops.rod_data.color == color)]
-        assert new_id in relevant_data.particle
+    with QtCore.QReadLocker(r_data.lock):
+        relevant_data = r_data.rod_data.loc[
+            (r_data.rod_data.frame == frame) &
+            (r_data.rod_data.color == color)]
+
+        saved_ids = relevant_data.particle.values
+        _logger.info(f"new_id:{new_id}, saved:{saved_ids}")
+        assert new_id in saved_ids
         data_pos = relevant_data.loc[relevant_data.particle == new_id,
                                      [f"x1_{cam.cam_id}", f"y1_{cam.cam_id}",
                                       f"x2_{cam.cam_id}", f"y2_{cam.cam_id}"]]
@@ -86,14 +110,16 @@ def post_create(main_window: RodTrackWindow, new_id: int,
 
 
 def pre_delete(main_window: RodTrackWindow, rod_id: int):
-    cam = main_window.current_camera
-    rod_ids = [rod.rod_id for rod in cam.edits]
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
+    rod_ids = [rod.rod_id for rod in cam.rods]
     assert rod_id in rod_ids
 
 
 def post_delete(main_window: RodTrackWindow, rod_id: int):
-    cam = main_window.current_camera
-    for rod in cam.edits:
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
+    for rod in cam.rods:
         if rod.rod_id == rod_id:
             assert rod.rod_points == 4 * [0]
             return
@@ -102,8 +128,9 @@ def post_delete(main_window: RodTrackWindow, rod_id: int):
 
 
 def pre_pos_change(main_window: RodTrackWindow, rod_id: int):
-    cam = main_window.current_camera
-    rod_ids = [rod.rod_id for rod in cam.edits]
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
+    rod_ids = [rod.rod_id for rod in cam.rods]
     assert rod_id in rod_ids
 
 
@@ -116,12 +143,13 @@ def post_pos_change(main_window: RodTrackWindow, rod_id: int,
 
 def pre_number_switch(main_window: RodTrackWindow, rod_id: int, new_id: int)\
         -> dict:
-    cam = main_window.current_camera
-    rod_ids = [rod.rod_id for rod in cam.edits]
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
+    rod_ids = [rod.rod_id for rod in cam.rods]
     assert rod_id in rod_ids
     initial_state = {}
-    with QtCore.QReadLocker(d_ops.lock):
-        data = d_ops.rod_data.copy()
+    with QtCore.QReadLocker(r_data.lock):
+        data = r_data.rod_data.copy()
         initial_state["dataset"] = data.loc[data.color ==
                                             main_window.get_selected_color()]
     initial_state["rod1_pos"] = get_rod_position(main_window, rod_id)
@@ -143,8 +171,9 @@ def post_number_switch(main_window: RodTrackWindow, rod_id: int, new_id: int,
         assert rod1_new_pos == initial_state["rod2_pos"]
         assert rod2_new_pos == initial_state["rod1_pos"]
     else:
-        cam = main_window.current_camera
-        rod_ids = [rod.rod_id for rod in cam.edits]
+        cam_idx = main_window.ui.camera_tabs.currentIndex()
+        cam = main_window.cameras[cam_idx]
+        rod_ids = [rod.rod_id for rod in cam.rods]
         if new_id in rod_ids:
             rod2_new_pos = get_rod_position(main_window, new_id)
             assert rod1_new_pos == initial_state["rod1_pos"]
@@ -152,11 +181,13 @@ def post_number_switch(main_window: RodTrackWindow, rod_id: int, new_id: int,
         else:
             assert rod1_new_pos == initial_state["rod1_pos"]
 
-    with QtCore.QReadLocker(d_ops.lock):
-        new_data = d_ops.rod_data.copy()
+    with QtCore.QReadLocker(r_data.lock):
+        new_data = r_data.rod_data.copy()
     new_data = new_data.loc[new_data.color == main_window.get_selected_color()]
     frame = main_window.logger.frame
-    cam_id = main_window.current_camera.cam_id
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
+    cam_id = cam.cam_id
     if cam_id == "gp3":
         cam2_id = "gp4"
     elif cam_id == "gp4":
@@ -305,22 +336,23 @@ def post_save(main_window: RodTrackWindow, save_path: pathlib.Path,
     # Written data matches currently loaded data
     out_dir = save_path / "unused"
     out_dir.mkdir(exist_ok=True)
-    w_data, _ = f_ops.get_color_data(save_path, out_dir)
+    w_data, _ = r_data.RodData.get_color_data(save_path)
     # Replace truth values represented as strings
     w_data.replace(["True", "1", "1.0"], 1., inplace=True)
     w_data.replace(["False", "0", "0.0"], 0., inplace=True)
     w_data.sort_values(by=["color", "frame", "particle"], inplace=True)
     w_data.reset_index(drop=True, inplace=True)
-    w_data_np = w_data.drop(columns="color").to_numpy()
-    with QtCore.QReadLocker(d_ops.lock):
-        rod_data = d_ops.rod_data
+    w_data_np = w_data.drop(columns="color").to_numpy(dtype=float,
+                                                      na_value=np.nan)
+    with QtCore.QReadLocker(r_data.lock):
+        rod_data = r_data.rod_data
         rod_data.sort_values(by=["color", "frame", "particle"], inplace=True)
         rod_data.reset_index(drop=True, inplace=True)
         rod_data_np = rod_data.drop(columns="color").to_numpy(
-            dtype=float, na_value=np.nan)
+            dtype=float, na_value=0.0)
         # accounts for loss of precision during saving
         np.testing.assert_allclose(w_data_np, rod_data_np, equal_nan=True)
-        assert (w_data.color == d_ops.rod_data.color).all()
+        assert (w_data.color == r_data.rod_data.color).all()
 
 
 def pre_undo(main_window: RodTrackWindow):
@@ -345,23 +377,28 @@ def post_redo(main_window: RodTrackWindow, inital_state):
 
 def pre_switch_frame(main_window: RodTrackWindow):
     initial_state = {
-        "frame": main_window.logger.frame,
+        "frame": main_window.rod_data.frame,
     }
     return initial_state
 
 
 def post_switch_frame(main_window: RodTrackWindow, direction: int,
                       inital_state: dict):
-    id_idx = main_window.current_file_ids.index(inital_state["frame"])
-    intended_frame = main_window.current_file_ids[id_idx + direction]
-    assert main_window.current_camera.logger.frame == intended_frame
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    img_manager = main_window.image_managers[cam_idx]
+    id_idx = img_manager.frames.index(inital_state["frame"])
+    intended_frame = img_manager.frames[id_idx + direction]
+    cam = main_window.cameras[cam_idx]
+    assert cam.logger.frame == intended_frame
     assert main_window.logger.frame == intended_frame
 
 
 def pre_switch_color(main_window: RodTrackWindow):
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
     initial_state = {
         "rb_color": main_window.get_selected_color(),
-        "rod_color": main_window.current_camera.edits[0].color
+        "rod_color": cam.rods[0].color
     }
     assert initial_state["rb_color"] == initial_state["rod_color"]
     return initial_state
@@ -370,14 +407,17 @@ def pre_switch_color(main_window: RodTrackWindow):
 def post_switch_color(main_window: RodTrackWindow, color: str,
                       initial_state: dict):
     assert main_window.get_selected_color() == color
-    for rod in main_window.current_camera.edits:
+    cam_idx = main_window.ui.camera_tabs.currentIndex()
+    cam = main_window.cameras[cam_idx]
+    for rod in cam.rods:
         assert rod.color == color
 
 
 def pre_switch_cam(main_window: RodTrackWindow) -> dict:
+    tab_idx = main_window.ui.camera_tabs.currentIndex()
     initial_state = {
-        "tab_pos": main_window.ui.camera_tabs.currentIndex(),
-        "cam_id": main_window.current_camera.cam_id
+        "tab_pos": tab_idx,
+        "cam_id": main_window.cameras[tab_idx].cam_id
     }
     return initial_state
 

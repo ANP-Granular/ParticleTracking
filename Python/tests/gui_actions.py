@@ -1,3 +1,19 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of RodTracker.
+#  RodTracker is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  RodTracker is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """A collection of actions performed by users in the GUI."""
 import pathlib
 from typing import Protocol
@@ -38,12 +54,8 @@ class CreateRod:
         if self.assertions:
             aa.pre_create(main_window, self.new_id)
 
-        cam = main_window.current_camera
-        act_count = main_window.ui.lv_actions_list.count()
-
-        def increased_count():
-            """Callback for waiting until a new action has been logged."""
-            assert main_window.ui.lv_actions_list.count() > act_count
+        cam_idx = main_window.ui.camera_tabs.currentIndex()
+        cam = main_window.cameras[cam_idx]
 
         with monkeypatch.context() as mp:
             # Mock number selection
@@ -51,12 +63,13 @@ class CreateRod:
                        lambda *args, **kwargs:
                        (self.new_id, QtWidgets.QDialog.Accepted))
             # Create rod
-            qtbot.mouseClick(cam, QtCore.Qt.MouseButton.LeftButton,
-                             pos=self.start)
-            qtbot.mouseMove(cam, self.end)
-            qtbot.mouseClick(cam, QtCore.Qt.MouseButton.LeftButton,
-                             pos=self.end)
-            qtbot.waitUntil(increased_count)
+            with qtbot.wait_signals([main_window.rod_data.data_2d,
+                                     main_window.rod_data.data_update]):
+                qtbot.mouseClick(cam, QtCore.Qt.MouseButton.LeftButton,
+                                 pos=self.start)
+                qtbot.mouseMove(cam, self.end)
+                qtbot.mouseClick(cam, QtCore.Qt.MouseButton.LeftButton,
+                                 pos=self.end)
         if self.assertions:
             aa.post_create(main_window, self.new_id, self.start, self.end)
         return main_window
@@ -76,7 +89,9 @@ class DeleteRod:
         """Delete the rod with the given ID in the currently active camera."""
         if self.assertions:
             aa.pre_delete(main_window, self.rod_id)
-        rods = main_window.current_camera.edits
+        cam_idx = main_window.ui.camera_tabs.currentIndex()
+        cam = main_window.cameras[cam_idx]
+        rods = cam.rods
         act_count = main_window.ui.lv_actions_list.count()
 
         def increase_count():
@@ -114,8 +129,9 @@ class ChangeRodPosition:
             -> RodTrackWindow:
         if self.assertions:
             aa.pre_pos_change(main_window, self.rod_id)
-        cam = main_window.current_camera
-        rods = cam.edits
+        cam_idx = main_window.ui.camera_tabs.currentIndex()
+        cam = main_window.cameras[cam_idx]
+        rods = cam.rods
         act_count = main_window.ui.lv_actions_list.count()
 
         def increased_count():
@@ -158,8 +174,9 @@ class SwitchRodNumber:
             -> RodTrackWindow:
         if self.assertions:
             state = aa.pre_number_switch(main_window, self.rod_id, self.new_id)
-        cam = main_window.current_camera
-        rods = cam.edits
+        cam_idx = main_window.ui.camera_tabs.currentIndex()
+        cam = main_window.cameras[cam_idx]
+        rods = cam.rods
         act_count = main_window.ui.lv_actions_list.count()
 
         def increased_count():
@@ -218,7 +235,7 @@ class SaveChanges:
 
         main_window.ui.le_save_dir.clear()
         qtbot.keyClicks(main_window.ui.le_save_dir, str(tmp_path))
-        with qtbot.wait_signal(main_window.saving_finished):
+        with qtbot.wait_signal(main_window.rod_data.saved):
             qtbot.keyClick(main_window, QtCore.Qt.Key_S,
                            modifier=QtCore.Qt.ControlModifier)
         qtbot.waitUntil(contents_written)
@@ -241,7 +258,8 @@ class Undo:
         if self.assertions:
             state = aa.pre_undo(main_window)
 
-        cam = main_window.current_camera
+        cam_idx = main_window.ui.camera_tabs.currentIndex()
+        cam = main_window.cameras[cam_idx]
         prev_act_count = main_window.ui.lv_actions_list.count()
 
         def decrease_count():
@@ -271,7 +289,8 @@ class Redo:
         if self.assertions:
             state = aa.pre_redo(main_window)
 
-        cam = main_window.current_camera
+        cam_idx = main_window.ui.camera_tabs.currentIndex()
+        cam = main_window.cameras[cam_idx]
         prev_act_count = main_window.ui.lv_actions_list.count()
 
         def increased_count():
@@ -360,8 +379,8 @@ class SwitchCamera:
         if self.assertions:
             state = aa.pre_switch_cam(main_window)
 
-        qtbot.keyClick(main_window, QtCore.Qt.Key_Tab)
-        qtbot.wait(150)
+        with qtbot.wait_signal(main_window.ui.camera_tabs.currentChanged):
+            qtbot.keyClick(main_window, QtCore.Qt.Key_Tab)
 
         if self.assertions:
             aa.post_switch_cam(main_window, state)
@@ -390,7 +409,9 @@ class LengthAdjustment:
         if self.assertions:
             state = aa.pre_length_adjustment(main_window)
         if self.rod is not None:
-            rods = main_window.current_camera.edits
+            cam_idx = main_window.ui.camera_tabs.currentIndex()
+            cam = main_window.cameras[cam_idx]
+            rods = cam.rods
             for rod in rods:
                 if rod.rod_id == self.rod:
                     qtbot.mouseClick(rod, QtCore.Qt.MouseButton.LeftButton)

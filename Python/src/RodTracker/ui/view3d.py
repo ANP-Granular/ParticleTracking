@@ -155,48 +155,54 @@ class View3D(QtWidgets.QWidget):
             dzs = np.diff(zs, axis=1)
             k = 0
             for idx in range(len(c_data)):
-                if i + k >= available_rods:
-                    cm_rod = QCylinderMesh()
-                    transformation = Qt3DCore.QTransform()
-                    material = QPhongMaterial(self.scene)
-                    rod = Qt3DCore.QEntity(self.scene)
+                if i + k < available_rods:
+                    try:
+                        rod = self.rods[i + k]
+                        cm_rod, transformation, material = self._components[
+                            i + k]
+                        cm_rod.setRadius(ROD_RADIUS)
+                        cm_rod.setLength(
+                            np.linalg.norm(
+                                np.array((dxs[idx], dys[idx], dzs[idx]))))
+                        new_pos = QtGui.QVector3D(xs[idx, 0] + dxs[idx] / 2,
+                                                  ys[idx, 0] + dys[idx] / 2,
+                                                  zs[idx, 0] + dzs[idx] / 2)
+                        transformation.setTranslation(new_pos)
+                        rod_rot = QtGui.QQuaternion.rotationTo(
+                            QtGui.QVector3D(0., 1., 0.),
+                            QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]))
+                        transformation.setRotation(rod_rot)
+                        material.setDiffuse(rod_color)
+                        k += 1
+                        continue
+                    except RuntimeError as e:
+                        if "wrapped C/C++ object" not in e.args[0]:
+                            raise e
+                cm_rod = QCylinderMesh()
+                transformation = Qt3DCore.QTransform()
+                material = QPhongMaterial(self.scene)
+                rod = Qt3DCore.QEntity(self.scene)
 
-                    cm_rod.setRadius(ROD_RADIUS)
-                    material.setDiffuse(rod_color)
-                    cm_rod.setLength(
-                        np.linalg.norm(
-                            np.array((dxs[idx], dys[idx], dzs[idx]))))
-                    new_pos = QtGui.QVector3D(xs[idx, 0] + dxs[idx] / 2,
-                                              ys[idx, 0] + dys[idx] / 2,
-                                              zs[idx, 0] + dzs[idx] / 2)
-                    transformation.setTranslation(new_pos)
-                    rod_rot = QtGui.QQuaternion.rotationTo(
-                        QtGui.QVector3D(0., 1., 0.),
-                        QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]))
-                    transformation.setRotation(rod_rot)
+                cm_rod.setRadius(ROD_RADIUS)
+                material.setDiffuse(rod_color)
+                cm_rod.setLength(
+                    np.linalg.norm(
+                        np.array((dxs[idx], dys[idx], dzs[idx]))))
+                new_pos = QtGui.QVector3D(xs[idx, 0] + dxs[idx] / 2,
+                                          ys[idx, 0] + dys[idx] / 2,
+                                          zs[idx, 0] + dzs[idx] / 2)
+                transformation.setTranslation(new_pos)
+                rod_rot = QtGui.QQuaternion.rotationTo(
+                    QtGui.QVector3D(0., 1., 0.),
+                    QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]))
+                transformation.setRotation(rod_rot)
 
-                    rod.addComponent(cm_rod)
-                    rod.addComponent(transformation)
-                    rod.addComponent(material)
-                    self._components.append([cm_rod, transformation, material])
-                    rod.setEnabled(True)
-                    self.rods.append(rod)
-                else:
-                    rod = self.rods[i + k]
-                    cm_rod, transformation, material = self._components[i + k]
-                    cm_rod.setRadius(ROD_RADIUS)
-                    cm_rod.setLength(
-                        np.linalg.norm(
-                            np.array((dxs[idx], dys[idx], dzs[idx]))))
-                    new_pos = QtGui.QVector3D(xs[idx, 0] + dxs[idx] / 2,
-                                              ys[idx, 0] + dys[idx] / 2,
-                                              zs[idx, 0] + dzs[idx] / 2)
-                    transformation.setTranslation(new_pos)
-                    rod_rot = QtGui.QQuaternion.rotationTo(
-                        QtGui.QVector3D(0., 1., 0.),
-                        QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]))
-                    transformation.setRotation(rod_rot)
-                    material.setDiffuse(rod_color)
+                rod.addComponent(cm_rod)
+                rod.addComponent(transformation)
+                rod.addComponent(material)
+                self._components.append([cm_rod, transformation, material])
+                rod.setEnabled(True)
+                self.rods.append(rod)
                 k += 1
             i += len(c_data)
 
@@ -484,6 +490,10 @@ class View3D(QtWidgets.QWidget):
     def clear(self):
         """Discard all currently loaded rods."""
         for rod in self.rods:
-            rod.setParent(None)
+            try:
+                rod.setParent(None)
+            except RuntimeError as e:
+                if "wrapped C/C++ object" not in e.args[0]:
+                    raise e
         self.rods = []
         self._components = []
