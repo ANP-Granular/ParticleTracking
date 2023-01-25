@@ -473,6 +473,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             else:
                 row = 1
         group_layout.itemAtPosition(0, 0).widget().toggle()
+        if platform.system() == "Windows":
+            self.color_change(True)
 
     @QtCore.pyqtSlot(bool)
     def method_2D_changed(self, _: bool) -> None:
