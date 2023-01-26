@@ -84,7 +84,7 @@ This experiment trains an object detection network for 8 classes of rods,
 distinguished by their colour. The c4m dataset was used.
 The procedure is an extended version of a previously used network that has been implemented using the Matterport implementation of the mask RCNN network architecture.
 Instead of the standard mask head, this network uses a PointRend network for the segmentation mask generation.
-![Rod Detection Output Image](experiments/rod_detection/detection_example.jpg)
+![Rod Detection Output Image](https://user-images.githubusercontent.com/34780470/214838680-4474e35c-4277-4ac9-8649-3940aa122eeb.jpg)
 
 
 # 3D-Reconstruction
