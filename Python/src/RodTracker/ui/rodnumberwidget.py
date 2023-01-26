@@ -215,9 +215,8 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         pen.setWidth(self._rod_thickness)
         if self.rod_state == RodState.NORMAL:
             pen.setColor(QtGui.QColor(*self._rod_color))
-        elif self.rod_state == RodState.SELECTED:
-            pen.setColor(QtCore.Qt.white)
-        elif self.rod_state == RodState.EDITING:
+        elif (self.rod_state == RodState.SELECTED or
+              self.rod_state == RodState.EDITING):
             new_color = QtGui.QColor(QtCore.Qt.white)
             new_color.setAlphaF(0.5)
             pen.setColor(new_color)
