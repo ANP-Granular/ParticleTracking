@@ -1,0 +1,38 @@
+# Work directories to be ignored
+/datasets/
+/experiments/*
+/models/
+!/experiments/scripts/
+
+# Python related ignores
+/venv/
+__pycache__/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDE related ignores
+/.idea/
+/.vscode/
+.spyderproject
+.spyproject
