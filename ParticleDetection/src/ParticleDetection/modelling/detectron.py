@@ -61,7 +61,7 @@ class CustomTrainer(DefaultTrainer):
             tasks = ["segm"]
 
         if "keypoints" in tasks:
-            sigmas = (np.array([0.25, 0.25])/10.0)
+            sigmas = (np.array([0.25, 0.25]) / 10.0)
             sigmas = sigmas.tolist()
         else:
             sigmas = []
@@ -249,7 +249,7 @@ class EvalLossHook(HookBase):
         total_loss = 0
         for loss, values in losses.items():
             next_loss = np.mean(values)
-            self.trainer.storage.put_scalar("test/"+loss, next_loss)
+            self.trainer.storage.put_scalar("test/" + loss, next_loss)
             total_loss += next_loss
         self.trainer.storage.put_scalar('test/total_loss', total_loss)
         comm.synchronize()
@@ -298,10 +298,10 @@ class CustomTensorboardWriter(EventWriter):
         self._window_size = window_size
         from torch.utils.tensorboard import SummaryWriter
 
-        self._writer = SummaryWriter(log_dir+"/test", **kwargs)
+        self._writer = SummaryWriter(log_dir + "/test", **kwargs)
         self._writers = {
-            "test": SummaryWriter(log_dir+"/test"),
-            "train": SummaryWriter(log_dir+"/train")}
+            "test": SummaryWriter(log_dir + "/test"),
+            "train": SummaryWriter(log_dir + "/train")}
         self._last_write = -1
         self.train_kw = ["fast_rcnn"]
 

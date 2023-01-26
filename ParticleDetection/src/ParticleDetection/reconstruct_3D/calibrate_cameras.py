@@ -41,7 +41,7 @@ def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
     corner_distance = 5     # mm
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
                 1000, 1e-6)     # Termination criteria: (type, count, eps)
-    obj_p = np.zeros((4*5, 3), np.float32)
+    obj_p = np.zeros((4 * 5, 3), np.float32)
     obj_p[:, :2] = np.mgrid[0:4, 0:5].T.reshape(-1, 2)
     obj_p = corner_distance * obj_p
 

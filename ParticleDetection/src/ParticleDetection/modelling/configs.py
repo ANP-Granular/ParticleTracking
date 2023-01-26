@@ -30,14 +30,14 @@ PORTED_AUGMENTATIONS = [
                ca.GaussianBlurAugmentation(sigmas=(0.0, 2.0)),
                ca.SharpenAugmentation(alpha=(0.4, 0.6), lightness=(0.9, 1.1))
                ], lower=0, upper=3)
-    ]
+]
 
 
 def get_epochs(cfg: CfgNode, image_count: int) -> float:
     """Computes the achieved number of epochs with given settings and data."""
     batch_size = cfg.SOLVER.IMS_PER_BATCH
     iterations = cfg.SOLVER.MAX_ITER
-    return iterations / (image_count/batch_size)
+    return iterations / (image_count / batch_size)
 
 
 def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
@@ -45,7 +45,7 @@ def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
     epochs.
     """
     batch_size = cfg.SOLVER.IMS_PER_BATCH
-    return desired_epochs*(image_count/batch_size)
+    return desired_epochs * (image_count / batch_size)
 
 
 def write_configs(cfg: CfgNode, directory: str,

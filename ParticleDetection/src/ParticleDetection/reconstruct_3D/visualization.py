@@ -377,13 +377,13 @@ def match_nd(weights: np.ndarray, whr: tuple[np.ndarray], show: bool = True)\
         pairs = list(zip(whi[:-1], whi[1:]))
         # loop over consecutive node pairs along path
         for idp, (id0, id1) in enumerate(pairs):
-            edges.append(((idp+0, id0), (idp+1, id1), {'weight': weight}))
+            edges.append(((idp + 0, id0), (idp + 1, id1), {'weight': weight}))
     graph.add_edges_from(edges)
 
     # set path weights as edge widths for plotting
     width = np.array([edge['weight'] for id0, id1, edge in
                       graph.edges(data=True)])
-    width = 3.0*width/max(width)
+    width = 3.0 * width / max(width)
 
     # plot network
     fig = plt.figure(figsize=(16, 9))

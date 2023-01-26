@@ -126,7 +126,7 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
 
     def get_colors(len_data, class_data=None):
         if class_data is None:
-            return len_data*["black"]
+            return len_data * ["black"]
         else:
             return [colors[lbl] for lbl in class_data]
     try:

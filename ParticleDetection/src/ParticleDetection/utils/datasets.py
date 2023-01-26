@@ -35,7 +35,7 @@ class DataSet:
 
     def __init__(self, name: str, folder: str, annotation_file: str):
         self.name = name
-        self.annotation = os.path.abspath(folder+annotation_file)
+        self.annotation = os.path.abspath(folder + annotation_file)
         self.folder = os.path.abspath(folder)
 
 
@@ -117,7 +117,7 @@ def insert_missing_rods(dataset: pd.DataFrame, expected_rods: int,
                  np.nan, np.nan, np.nan, -1, -1, -1, -1, -1, -1, -1, -1, frame,
                  0, 0, color]],
                 columns=columns
-                )
+            )
             empty_rods["particle"] = np.arange(rod_no, expected_rods,
                                                dtype=int)
             dataset = pd.concat([dataset, empty_rods], ignore_index=True)
@@ -212,8 +212,8 @@ def replace_missing_rods(dataset: pd.DataFrame, cam1_id: str = "gp1",
     cols_2d = [col for col in dataset.columns
                if cam1_id in col or cam2_id in col]
     cols_seen = [col for col in dataset.columns if "seen" in col]
-    dataset[cols_2d] = dataset[cols_2d].fillna(-1.)
     dataset[cols_seen] = dataset[cols_seen].fillna(0)
+    dataset[cols_2d] = dataset[cols_2d].fillna(-1.)
     return dataset
 
 

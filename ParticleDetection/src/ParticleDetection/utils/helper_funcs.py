@@ -30,7 +30,7 @@ def configure_logging(level: int = logging.INFO):
     formatter = logging.Formatter(
         "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
         datefmt="%m/%d %H:%M:%S"
-        )
+    )
     ch.setFormatter(formatter)
     lg.addHandler(ch)
 

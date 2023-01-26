@@ -179,7 +179,7 @@ def load_calib_from_json(file_name: str) -> \
                       "calibrations. Use `load_camera_calibration` instead.",
                       DeprecationWarning)
         cam1 = extract_cam_params(all_calibs["stereoParams"][
-                                         "CameraParameters1"])
+            "CameraParameters1"])
         cam2 = extract_cam_params(
             all_calibs["stereoParams"]["CameraParameters2"])
         stereo_params = extract_stereo_params(all_calibs["stereoParams"])

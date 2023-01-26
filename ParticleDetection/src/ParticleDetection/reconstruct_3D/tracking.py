@@ -93,7 +93,7 @@ def tracking_global_assignment(data: pd.DataFrame) \
     # TODO: double weight/distance, if rods were "unseen"
 
     cost = np.min(distances, axis=0)
-    cost = np.reshape(cost, (len(frames)-1, data_p1.shape[1],
+    cost = np.reshape(cost, (len(frames) - 1, data_p1.shape[1],
                              data_p2.shape[1]))
     results = [[linear_sum_assignment(f_c)] for f_c in cost]
     results = np.asarray(results).squeeze()

@@ -153,8 +153,8 @@ def create_weights_0(p_3D: np.ndarray, p_3D_prev: np.ndarray) -> np.ndarray:
     delta_s = np.linalg.norm(delta_s, axis=-1)
     delta_s = np.sum(delta_s, axis=-1)
 
-    weights = np.concatenate(rods_prev*[delta_s, ], axis=-1)
-    weights = 1/weights
+    weights = np.concatenate(rods_prev * [delta_s, ], axis=-1)
+    weights = 1 / weights
 
     return weights
 
@@ -206,11 +206,11 @@ def create_weights_1(p_3D: np.ndarray, p_3D_prev: np.ndarray,
     costs = np.repeat(np.expand_dims(costs, axis=0),
                       rods_prev, axis=0)
     costs = np.concatenate(
-        [costs[i]*repr_errs_prev[i] for i in range(len(repr_errs_prev))]
+        [costs[i] * repr_errs_prev[i] for i in range(len(repr_errs_prev))]
     )
     costs = costs.reshape((rods_prev, rods1, rods2, -1))
 
-    costs = np.concatenate(rods_prev*[costs, ], axis=-1)
+    costs = np.concatenate(rods_prev * [costs, ], axis=-1)
 
     weights = weights * (1 / costs)
     return weights
@@ -256,7 +256,7 @@ def create_weights_2(p_3D: np.ndarray, p_3D_prev: np.ndarray,
             axis=-2
         ),
         axis=-1)
-    len_diff = np.abs(10-len_diff)
+    len_diff = np.abs(10 - len_diff)
     # FIXME: remove hard-coded shape
     # weights = weights * (1 / len_diff.reshape(12, 48))
     weights = weights * len_diff.reshape(12, 48)
@@ -264,13 +264,12 @@ def create_weights_2(p_3D: np.ndarray, p_3D_prev: np.ndarray,
     return weights
 
 
-def assign(
-        input_folder: str, output_folder: str, colors: Iterable[str],
-        cam1_name: str = "gp1", cam2_name: str = "gp2",
-        frame_numbers: Iterable[int] = None, calibration_file: str = None,
-        transformation_file: str = None,
-        solver: pulp.LpSolver = pulp.PULP_CBC_CMD(msg=False)
-        ) -> Tuple[np.ndarray]:
+def assign(input_folder: str, output_folder: str, colors: Iterable[str],
+           cam1_name: str = "gp1", cam2_name: str = "gp2",
+           frame_numbers: Iterable[int] = None, calibration_file: str = None,
+           transformation_file: str = None,
+           solver: pulp.LpSolver = pulp.PULP_CBC_CMD(msg=False)
+           ) -> Tuple[np.ndarray]:
     """Matches, triangulates and tracks rods over frames from *.csv data files.
 
     The function matches rods over multiple frames using npartite matching and
@@ -348,7 +347,7 @@ def assign(
     rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
     roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
     rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
-    rot_comb = rotz*roty*rotx
+    rot_comb = rotz * roty * rotx
     tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
     tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
 
@@ -411,7 +410,7 @@ def assign(
                 P1, P2,
                 pairs_all[:, 0, :].squeeze().transpose(),
                 pairs_all[:, 1, :].squeeze().transpose())
-            p_triang = np.asarray([p[0:3]/p[3] for p in
+            p_triang = np.asarray([p[0:3] / p[3] for p in
                                    p_triang.transpose()])
 
             # Reprojection to the image plane for point matching
@@ -462,7 +461,7 @@ def assign(
                                              4, 3))
 
                 # Accumulation of the data for saving
-                out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
+                out = np.zeros((len(cam1_ind), 2 * 3 + 3 + 1 + 4 + 4))
                 for idx_r in range(len(cam1_ind)):
                     i2 = cam2_ind[idx_r]
                     if point_choices[idx_r, i2]:
@@ -470,7 +469,7 @@ def assign(
                         out[idx_r, 0:6] = p_triang[
                             idx_r, i2, 0::3, :].flatten()
                         out[idx_r, 6:9] = p_triang[
-                            idx_r, i2, 0::3, :].sum(axis=0)/2
+                            idx_r, i2, 0::3, :].sum(axis=0) / 2
                         out[idx_r, 9] = np.linalg.norm(
                             np.diff(p_triang[idx_r, i2, 0::3, :], axis=0))
                         out[idx_r, 10:14] = rods_cam1[idx_r, :].flatten()
@@ -503,7 +502,7 @@ def assign(
                 rep_errs = np.reshape(rep_errs, (len(rods_cam1),
                                       len(rods_cam2), 4, 2))
 
-                last_points = df_out.loc[df_out.frame == frame_numbers[fn-1],
+                last_points = df_out.loc[df_out.frame == frame_numbers[fn - 1],
                                          ["x1", "y1", "z1", "x2", "y2", "z2"]]
                 last_points = last_points.to_numpy()
                 last_points = last_points.reshape((-1, 2, 3))
@@ -511,7 +510,7 @@ def assign(
                 # p_triang: (rod_id(cam1), rod_id(cam2), end-combo, 3D-coordinates)     # noqa: E501
                 # last_points: (rod_id, end-point, 3D-coordinates)
 
-                prev_repr_errs = all_repr_errs[fn-1]
+                prev_repr_errs = all_repr_errs[fn - 1]
                 weights = create_weights_1(p_triang, last_points, rep_errs,
                                            prev_repr_errs)
 
@@ -538,7 +537,7 @@ def assign(
 
                 p_triang = np.concatenate((p_triang, p_triang), axis=2)
                 p_out = p_triang.reshape((*p_triang.shape[0:2], -1, 2, 3))
-                out = np.zeros((idx_out.shape[1], 2*3+3+1+4+4))
+                out = np.zeros((idx_out.shape[1], 2 * 3 + 3 + 1 + 4 + 4))
                 for rod_id in range(idx_out.shape[1]):
                     idx_r = idx_out[0, rod_id]
                     i1 = idx_out[1, rod_id]
@@ -546,11 +545,12 @@ def assign(
                     i3 = idx_out[3, rod_id]
 
                     out[idx_r, 0:6] = np.concatenate(
-                        (p_out[i1, i2, i3, 0], p_out[i1, i2, 3-i3, 1]))
+                        (p_out[i1, i2, i3, 0], p_out[i1, i2, 3 - i3, 1]))
                     out[idx_r, 6:9] = \
                         p_out[i1, i2, i3, :].sum(axis=0) / 2
                     out[idx_r, 9] = np.linalg.norm(
-                        p_out[i1, i2, i3, 0] - p_out[i1, i2, 3-i3, 1], axis=0)
+                        p_out[i1, i2, i3, 0] - p_out[i1, i2, 3 - i3, 1],
+                        axis=0)
                     out[idx_r, 10:14] = rods_cam1[i1, :].flatten()
                     out[idx_r, 14:] = rods_cam2[i2, :].flatten()
 

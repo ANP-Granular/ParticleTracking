@@ -83,7 +83,7 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
     rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
     roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
     rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
-    rot_comb = rotz*roty*rotx
+    rot_comb = rotz * roty * rotx
     tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
     tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
 
@@ -97,17 +97,17 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
                                           calibration["dist2"]).squeeze()
         if sampson:
             # Use Sampson distance as an additional correction
-            Fn = calibration["F"]/np.linalg.norm(calibration["F"])
+            Fn = calibration["F"] / np.linalg.norm(calibration["F"])
             r = np.append(point2.T, 1) @ Fn @ np.append(point1, 1)
             fd0 = Fn[0:2, 0:2].T @ point2 + Fn[2, 0:2].T
             fd1 = Fn[0:2, 0:2].T @ point1 + Fn[2, 0:2].T
             g = fd0.T @ fd0 + fd1.T @ fd1
-            e = r/g
-            point1 = point1 - e*fd0
-            point2 = point2 - e*fd1
+            e = r / g
+            point1 = point1 - e * fd0
+            point2 = point2 - e * fd1
 
         wp = cv2.triangulatePoints(P1, P2, point1, point2)
-        wp = wp[0:3]/wp[3]
+        wp = wp[0:3] / wp[3]
         rp1 = cv2.projectPoints(wp, r1, t1, calibration["CM1"],
                                 distCoeffs=calibration["dist1"])[0]
         rp2 = cv2.projectPoints(wp, r2, t2, calibration["CM2"],
@@ -158,7 +158,7 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
                 np.min(np.sum(rep_errs, (-2, -1)), 2))
             summed_errs = np.min(np.sum(rep_errs, (3, 4)), 2)
             all_repr_errs.append(summed_errs[cam1_ind, cam2_ind])
-            out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
+            out = np.zeros((len(cam1_ind), 2 * 3 + 3 + 1 + 4 + 4))
             for i, j in zip(cam1_ind, cam2_ind):
                 c1_p1 = rods_cam1[i, 0]
                 c1_p2 = rods_cam1[i, 1]
@@ -172,7 +172,7 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
                                              [rep_e3, rep_e4]])
                 lengths[i, j, 0] = np.linalg.norm(wp1_1 - wp1_2)
                 lengths[i, j, 1] = np.linalg.norm(wp2_1 - wp2_2)
-                if rep_e1+rep_e2 < rep_e3+rep_e4:
+                if rep_e1 + rep_e2 < rep_e3 + rep_e4:
                     out[i, 0:6] = np.concatenate((wp1_1, wp1_2),
                                                  axis=0).squeeze()
                     out[i, 6:9] = ((wp1_1 + wp1_2) / 2).squeeze()
@@ -284,7 +284,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
     rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
     roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
     rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
-    rot_comb = rotz*roty*rotx
+    rot_comb = rotz * roty * rotx
     tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
     tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
 
@@ -342,7 +342,8 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
                 P1, P2,
                 pairs_all[:, 0, :].squeeze().transpose(),
                 pairs_all[:, 1, :].squeeze().transpose())
-            p_triang = np.asarray([p[0:3]/p[3] for p in p_triang.transpose()])
+            p_triang = np.asarray(
+                [p[0:3] / p[3] for p in p_triang.transpose()])
 
             # Reprojection to the image plane for point matching
             repr_cam1 = cv2.projectPoints(
@@ -367,11 +368,11 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
             #   block: re11, re12, re21, re22
             repr_errs = np.reshape(repr_errs, (-1, 4))
             costs = np.reshape(
-                    np.min(
-                        [np.sum(repr_errs[:, 0::3], axis=1),
-                         np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
-                    (len(undist_cam1), len(undist_cam2))
-                )
+                np.min(
+                    [np.sum(repr_errs[:, 0::3], axis=1),
+                        np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
+                (len(undist_cam1), len(undist_cam2))
+            )
 
             cam1_ind, cam2_ind = linear_sum_assignment(costs)
             assignment_cost = costs[cam1_ind, cam2_ind]
@@ -387,7 +388,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
             p_triang = rot_comb.apply((p_triang + tw1)) + tw2
             p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2), 4, 3))
 
-            out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
+            out = np.zeros((len(cam1_ind), 2 * 3 + 3 + 1 + 4 + 4))
             idx_out = 0     # TODO: remove the use of idx_out
             for m in range(len(cam1_ind)):
                 k = cam1_ind[m]
@@ -395,7 +396,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
                 if point_choices[k, j]:
                     # use point matching of (p11,p21) and (p12,p22)
                     out[idx_out, 0:6] = p_triang[k, j, 0::3, :].flatten()
-                    out[idx_out, 6:9] = p_triang[k, j, 0::3, :].sum(axis=0)/2
+                    out[idx_out, 6:9] = p_triang[k, j, 0::3, :].sum(axis=0) / 2
                     out[idx_out, 9] = np.linalg.norm(
                         np.diff(p_triang[k, j, 0::3, :], axis=0))
                     out[idx_out, 10:14] = rods_cam1[k, :].flatten()
@@ -492,7 +493,7 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
     rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
     roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
     rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
-    rot_comb = rotz*roty*rotx
+    rot_comb = rotz * roty * rotx
     tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
     tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
 
@@ -562,7 +563,8 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
                 P1, P2,
                 pairs_all[:, 0, :].squeeze().transpose(),
                 pairs_all[:, 1, :].squeeze().transpose())
-            p_triang = np.asarray([p[0:3]/p[3] for p in p_triang.transpose()])
+            p_triang = np.asarray(
+                [p[0:3] / p[3] for p in p_triang.transpose()])
 
             # Reprojection to the image plane for point matching
             repr_cam1 = cv2.projectPoints(
@@ -591,11 +593,11 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
             repr_errs = np.reshape(repr_errs, (-1, 4))
             if rematching:
                 costs = np.reshape(
-                        np.min(
-                            [np.sum(repr_errs[:, 0::3], axis=1),
-                             np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
-                        (len(undist_cam1), len(undist_cam2))
-                    )
+                    np.min(
+                        [np.sum(repr_errs[:, 0::3], axis=1),
+                            np.sum(repr_errs[:, 1:3], axis=1)], axis=0),
+                    (len(undist_cam1), len(undist_cam2))
+                )
 
                 cam1_ind, cam2_ind = linear_sum_assignment(costs)
                 assignment_cost = costs[cam1_ind, cam2_ind]
@@ -621,13 +623,13 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
             p_triang = p_triang.reshape((len(rods_cam1), len(rods_cam2), 4, 3))
 
             # Accumulation of the data for saving
-            out = np.zeros((len(cam1_ind), 2*3+3+1+4+4))
+            out = np.zeros((len(cam1_ind), 2 * 3 + 3 + 1 + 4 + 4))
             for i1 in range(len(cam1_ind)):
                 i2 = cam2_ind[i1]
                 if point_choices[i1, i2]:
                     # use point matching of (p11,p21) and (p12,p22)
                     out[i1, 0:6] = p_triang[i1, i2, 0::3, :].flatten()
-                    out[i1, 6:9] = p_triang[i1, i2, 0::3, :].sum(axis=0)/2
+                    out[i1, 6:9] = p_triang[i1, i2, 0::3, :].sum(axis=0) / 2
                     out[i1, 9] = np.linalg.norm(
                         np.diff(p_triang[i1, i2, 0::3, :], axis=0))
                     out[i1, 10:14] = rods_cam1[i1, :].flatten()

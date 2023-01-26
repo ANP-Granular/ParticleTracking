@@ -43,7 +43,7 @@ def remove_duplicate_regions(dataset: ds.DataSet) -> None:
                 used.append(item)
         annotations[img]["regions"] = used
         _logger.info(f"origial: {len(regions)}, new: {len(used)}")
-        deleted_duplicates += (len(regions)-len(used))
+        deleted_duplicates += (len(regions) - len(used))
 
     with open(dataset.annotation, 'w') as metadata:
         json.dump(annotations, metadata, indent=2)
@@ -175,7 +175,7 @@ def create_keypoints(file_name: str, single_class=True, order_x=True) -> None:
                 to_insert = [*key_points[0:2], 2, *key_points[2:], 2]
             except UnboundLocalError as e:
                 # no endpoints were found
-                to_insert = 6*[-1]
+                to_insert = 6 * [-1]
                 _logger.info(f"No endpoints found. The following error "
                              f"occurred:\n{e}")
             annotations[key]["regions"][idx_r]["keypoints"] = to_insert

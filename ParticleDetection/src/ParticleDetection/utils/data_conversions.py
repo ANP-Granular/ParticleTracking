@@ -197,9 +197,9 @@ def csv_split_by_frames(input_file: str, cut_frames: List[int]) -> List[str]:
     written = []
     data_main = pd.read_csv(input_file, sep=",", index_col=0)
     base_path = os.path.splitext(input_file)[0]
-    for i in range(0, len(cut_frames)+1):
-        if (i-1) >= 0:
-            next_min = cut_frames[i-1]
+    for i in range(0, len(cut_frames) + 1):
+        if (i - 1) >= 0:
+            next_min = cut_frames[i - 1]
         else:
             next_min = data_main.frame.min()
         try:
