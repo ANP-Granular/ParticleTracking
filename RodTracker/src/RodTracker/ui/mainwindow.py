@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -33,6 +33,7 @@ import RodTracker.ui.rodnumberwidget as rn
 import RodTracker.ui.mainwindow_layout as mw_l
 from RodTracker.ui import dialogs
 from RodTracker.ui.settings_setup import init_settings
+from RodTracker.ui.reconstruction import init_reconstruction
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
@@ -168,6 +169,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         init_settings(self.ui, self.settings)
         rn.RodNumberWidget.settings_signal = self.settings.settings_changed
+        self.reconstructor = init_reconstruction(self.ui)
         self.connect_signals()
         self.settings.send_settings()
 
@@ -222,6 +224,20 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.rod_data.data_2d.connect(self.cameras[tab_idx].extract_rods)
         self.rod_data.data_3d.connect(self.ui.view_3d.update_rods)
         self.rod_data.data_update.connect(self.ui.tv_rods.update_tree)
+
+        if self.reconstructor is not None:
+            self.rod_data.data_loaded[int, int, list].connect(
+                self.reconstructor.data_loaded)
+            self.rod_data.data_loaded[str, str].connect(
+                self.reconstructor.set_cam_ids)
+            self.reconstructor.request_data.connect(
+                lambda frames, colors: self.rod_data.get_data(
+                    frames, colors)
+            )
+            self.rod_data.requested_data.connect(
+                self.reconstructor.data_update)
+            self.reconstructor.updated_data.connect(
+                self.rod_data.receive_updated_data)
 
         # Display methods
         self.ui.le_disp_one.textChanged.connect(self.display_rod_changed)
@@ -296,6 +312,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             rn.RodNumberWidget.update_defaults)
         self.settings.settings_changed.connect(self.ui.view_3d.update_settings)
         self.settings.settings_changed.connect(self.rod_data.update_settings)
+        if self.reconstructor is not None:
+            self.settings.settings_changed.connect(
+                self.reconstructor.update_settings)
 
         # Logging
         self.logger.notify_unsaved.connect(self.tab_has_changes)
@@ -824,10 +843,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         event = QWheelEvent(event)
         if not event.modifiers() == QtCore.Qt.ControlModifier:
             return False
+        factor = 1.0
         if event.angleDelta().y() < 0:
-            self.scale_image(factor=0.8)
+            factor = 0.8
         elif event.angleDelta().y() > 0:
-            self.scale_image(factor=1.25)
+            factor = 1.25
+        self.scale_image(factor)
         return True
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:

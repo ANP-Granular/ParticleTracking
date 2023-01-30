@@ -16,3 +16,4 @@ formatter = logging.Formatter(
 )
 f_handle.setFormatter(formatter)
 logger.addHandler(f_handle)
+logging.captureWarnings(True)

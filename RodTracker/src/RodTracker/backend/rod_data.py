@@ -27,9 +27,9 @@ import RodTracker.backend.file_locations as fl
 import RodTracker.backend.parallelism as pl
 import RodTracker.ui.dialogs as dialogs
 
-RE_COLOR_DATA = re.compile('rods_df_\w+\.csv')                # noqa: W605
-RE_SEEN = re.compile('seen_gp\d+')                            # noqa: W605
-RE_2D_POS = re.compile('[xy][12]_gp\d+')                      # noqa: W605
+RE_COLOR_DATA = re.compile('rods_df_\\w+\\.csv')                # noqa: W605
+RE_SEEN = re.compile('seen_gp\\d+')                            # noqa: W605
+RE_2D_POS = re.compile('[xy][12]_gp\\d+')                      # noqa: W605
 RE_3D_POS = re.compile('[xyz][12]')                           # noqa: W605
 POSITION_SCALING = 1.0
 
@@ -124,10 +124,12 @@ class RodData(QtCore.QObject):
     data_2d = QtCore.pyqtSignal([pd.DataFrame, str], name="data_2d")
     data_3d = QtCore.pyqtSignal([pd.DataFrame], name="data_3d")
     data_loaded = QtCore.pyqtSignal([Path, Path, list], [int, int, list],
+                                    [str, str],
                                     name="data_loaded")
     seen_loaded = QtCore.pyqtSignal((dict, list), name="seen_loaded")
     data_update = QtCore.pyqtSignal((dict), name="data_update")
     saved = QtCore.pyqtSignal(name="saved")
+    requested_data = QtCore.pyqtSignal([pd.DataFrame], name="requested_data")
 
     _logger: lg.ActionLogger = None
     _logger_id: str = "RodData"
@@ -293,6 +295,8 @@ class RodData(QtCore.QObject):
         columns = list(rod_data.columns)
         lock.unlock()
 
+        cams = [col.split("_")[-1] for col in columns
+                if re.fullmatch(RE_SEEN, col)]
         cols_pos_2d = [col for col in columns if re.fullmatch(RE_2D_POS, col)]
         cols_seen = [col for col in columns if re.fullmatch(RE_SEEN, col)]
         cols_pos_3d = [col for col in columns if re.fullmatch(RE_3D_POS, col)]
@@ -303,6 +307,7 @@ class RodData(QtCore.QObject):
             self.folder, self.out_folder, found_colors)
         self.data_loaded[int, int, list].emit(
             frame_min, frame_max, found_colors)
+        self.data_loaded[str, str].emit(*cams)
 
         # Display as a tree
         worker = pl.Worker(self.extract_seen_information)
@@ -491,7 +496,9 @@ class RodData(QtCore.QObject):
             self.data_3d.emit(out_3d)
 
     def get_data(self, frames: List[int] = None, colors: List[str] = None,
-                 rod: List[int] = None) -> pd.DataFrame:
+                 rods: List[int] = None, callback: callable = None,
+                 data_2d: bool = True, data_3d: bool = True) -> pd.DataFrame:
+
         """Get part of the loaded rod position data.
 
         Currently not implemented.
@@ -506,7 +513,7 @@ class RodData(QtCore.QObject):
             List of colors to select from the loaded dataset. All are returned,
             if no list is given.
             By default None.
-        rod : List[int], optional
+        rods : List[int], optional
             List of rod numbers to select from the loaded dataset. All are
             returned, if no list is given.
             By default None.
@@ -521,7 +528,44 @@ class RodData(QtCore.QObject):
         NotImplementedError
         """
         # Provide data as requested, will return the requested data
-        raise NotImplementedError
+        lock.lockForRead()
+        out_data = rod_data
+        lock.unlock()
+        if out_data is None:
+            return
+
+        if frames is not None:
+            out_data = rod_data.loc[rod_data.frame.isin(frames)]
+        if colors is not None:
+            out_data = out_data.loc[out_data.color.isin(colors)]
+        if rods is not None:
+            out_data = out_data.loc[out_data.particle.isin(rods)]
+
+        if data_3d and data_2d:
+            self.requested_data.emit(out_data.copy())
+        elif data_3d:
+            self.requested_data.emit(out_data[self.cols_3D].copy())
+        elif data_2d:
+            self.requested_data.emit(out_data[self.cols_2D].copy())
+
+    @QtCore.pyqtSlot(pd.DataFrame)
+    def receive_updated_data(self, data: pd.DataFrame):
+        """Receives an updated part of the rod position data.
+
+        Integrates the received rod position data into the previously loaded
+        dataset, i.e. replacing updated data and appending new data.
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            Updated/New rod position data
+        """
+        with QtCore.QWriteLocker(lock):
+            rod_data.set_index(["color", "frame", "particle"], inplace=True)
+            rod_data.update(data.set_index(["color", "frame", "particle"]))
+            rod_data.reset_index(inplace=True)
+        if self.frame in data.frame.unique():
+            self.provide_data()
 
     @QtCore.pyqtSlot(lg.Action)
     def catch_data(self, change: lg.Action) -> None:
