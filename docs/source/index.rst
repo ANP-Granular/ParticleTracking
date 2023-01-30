@@ -7,18 +7,15 @@ Welcome to RodTracker's documentation!
 ======================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
-   examples/index
    installation/index
+   examples/index
    api-reference
    changelog/changelog
 
 .. include:: quickstart.md
-   :parser: myst_parser.sphinx_
-
-.. include:: ../../README.md
    :parser: myst_parser.sphinx_
 
 Indices and tables
