@@ -1,6 +1,8 @@
 import os
+from typing import Tuple
 import cv2
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 
 def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
@@ -96,3 +98,119 @@ def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
         flags=stereocalibration_flags)
 
     return ret, CM1, dist1, CM2, dist2, R, T, E, F
+
+
+def project_points(p_cam1: np.ndarray, p_cam2: np.ndarray, calibration: dict,
+                   transforms: dict | None):
+    """Project points from a stereocamera system to 3D coordinates.
+
+    Parameters
+    ----------
+    p_cam1 : np.ndarray
+        Point coordinates on camera 1.
+        Shape: (2, n)
+    p_cam2 : np.ndarray
+        Point coordinates on camera 2.
+        Shape: (2, n)
+    calibration : dict
+        Stereocamera calibration parameters with the required fields:
+        "CM1": camera matrix of cam1
+        "R": rotation matrix between cam1 & cam2
+        "T": translation vector between cam1 & cam2
+        "CM2": camera matrix of cam2
+    transforms : dict | None
+        Coordinate system transformation matrices from camera 1 coordinates to
+        'world'/'experiment' coordinates. Must contain the following fields:
+        ["M_rotate_x", "M_rotate_y", "M_rotate_z", "M_trans", "M_trans2"]
+        Transformation of 3D coordinates to 'world'/'experiment' coordinates is
+        omitted if `transforms` is None.
+
+    Returns
+    -------
+    np.ndarray
+        3D point coordinates in either the 'world'/'experiment' coordinates or
+        camera 1 coordinates, depending on whether `transforms` is given.
+        Shape: (3, n)
+    """
+    # Derive projection matrices from the calibration
+    r1 = np.eye(3)
+    t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+    P1 = np.vstack((r1.T, t1.T)) @ calibration["CM1"].T
+    P1 = P1.T
+
+    r2 = calibration["R"]
+    t2 = calibration["T"]
+    P2 = np.vstack((r2.T, t2.T)) @ calibration["CM2"].T
+    P2 = P2.T
+
+    p3d = cv2.triangulatePoints(P1, P2, p_cam1, p_cam2)
+    p3d = p3d[0:3] / p3d[3]
+
+    if transforms is not None:
+        rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
+        roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
+        rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
+        tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
+        tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
+        rot = rotz * roty * rotx
+        p3d = rot.apply(p3d + tw1) + tw2
+
+    return p3d
+
+
+def reproject_points(points: np.ndarray, calibration: dict,
+                     transforms: dict | None) -> Tuple[np.ndarray, np.ndarray]:
+    """Project 3D coordinates to 2D stereocamera coordinates.
+
+    Parameters
+    ----------
+    points : np.ndarray
+        3D point coordinates in either the 'world'/'experiment' coordinates or
+        camera 1 coordinates, depending on whether `transforms` is given.
+        Shape = (3, n) or (n, 3)
+    calibration : dict
+        Stereocamera calibration parameters with the required fields:
+        "CM1": camera matrix of cam1
+        "R": rotation matrix between cam1 & cam2
+        "T": translation vector between cam1 & cam2
+        "CM2": camera matrix of cam2
+    transforms : dict | None
+        Coordinate system transformation matrices from camera 1 coordinates to
+        'world'/'experiment' coordinates. Must contain the following fields:
+        ["M_rotate_x", "M_rotate_y", "M_rotate_z", "M_trans", "M_trans2"]
+        Transformation of 3D coordinates from 'world'/'experiment' coordinates
+        is omitted if `transforms` is None.
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        2D image plane coordinates of camera 1 & 2.
+    """
+    # Derive projection matrices from the calibration
+    r1 = np.eye(3)
+    t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+    P1 = np.vstack((r1.T, t1.T)) @ calibration["CM1"].T
+    P1 = P1.T
+
+    r2 = calibration["R"]
+    t2 = calibration["T"]
+    P2 = np.vstack((r2.T, t2.T)) @ calibration["CM2"].T
+    P2 = P2.T
+
+    if transforms is not None:
+        rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
+        roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
+        rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
+        tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
+        tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
+        rot_inv = (rotz * roty * rotx).inv()
+        points = rot_inv.apply(points - tw2) - tw1
+
+    repr_cam1 = cv2.projectPoints(
+        points, r1, t1, calibration["CM1"],
+        calibration["dist1"])[0].squeeze()
+    repr_cam2 = cv2.projectPoints(
+        points, r2, t2, calibration["CM2"],
+        calibration["dist2"])[0].squeeze()
+
+    return repr_cam1, repr_cam2

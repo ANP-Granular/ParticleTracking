@@ -6,7 +6,8 @@ Authors:    Adrian Niemann (adrian.niemann@ovgu.de)
 Date:       01.11.2022
 
 """
-from typing import List, Tuple
+import logging
+from typing import Iterable, List, Tuple
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -15,8 +16,10 @@ from matplotlib.widgets import Slider
 from mpl_toolkits.mplot3d.art3d import Line3D
 import matplotlib.animation as animation
 
+_logger = logging.getLogger(__name__)
 
-def matching_results(reprojetion_errors: np.ndarray,
+
+def matching_results(reprojection_errors: np.ndarray,
                      rod_lengths: np.ndarray, show: bool = True)\
         -> None | Tuple[Figure]:
     """Plot the reprojection errors and rod lengths after the matching process.
@@ -26,7 +29,7 @@ def matching_results(reprojetion_errors: np.ndarray,
 
     Parameters
     ----------
-    reprojetion_errors : np.ndarray
+    reprojection_errors : np.ndarray
     rod_lengths : np.ndarray
     show : bool, optional
         Flag, whether to show the figure immediately or to return it instead.
@@ -42,25 +45,8 @@ def matching_results(reprojetion_errors: np.ndarray,
     # rep_norm = (112/1082)   # scaling constant taken from MATLAB script
     # reprojetion_errors *= rep_norm
 
-    fig1 = plt.figure()
-    plt.hist(reprojetion_errors, alpha=.5,
-             bins=np.arange(0, 50, 0.25), edgecolor="black")
-    plt.axvline(np.median(reprojetion_errors), color="r")
-    plt.xlim(left=0)
-    plt.legend(["median", "errors"])
-    plt.xlabel("Reprojection error (in px)")
-    plt.ylabel("Number of rods")
-    plt.title("Distribution of reprojection errors.")
-
-    fig2 = plt.figure()
-    plt.hist(rod_lengths, alpha=.5, bins=np.arange(0, rod_lengths.max(), 0.1),
-             edgecolor="black")
-    plt.axvline(np.median(rod_lengths), color="r")
-    plt.xlim(left=0)
-    plt.legend(["median", "lengths"])
-    plt.xlabel("Rod length (in mm)")
-    plt.ylabel("Number of rods")
-    plt.title("Distribution of detected particle lengths")
+    fig1 = reprojection_errors_hist(reprojection_errors)
+    fig2 = length_hist(rod_lengths)
 
     if not show:
         return fig1, fig2
@@ -68,8 +54,70 @@ def matching_results(reprojetion_errors: np.ndarray,
     return
 
 
-def displacement_fwise(data_3d: np.ndarray, show: bool = True)\
-        -> None | Figure:
+def length_hist(rod_lengths: np.ndarray) -> Figure:
+    """Plot a histogram of rod lengths (after the matching process).
+
+    Parameters
+    ----------
+    rod_lengths : np.ndarray
+
+    Returns
+    -------
+    Figure
+    """
+    fig = plt.figure()
+    try:
+        plt.hist(rod_lengths, alpha=.5,
+                 bins=np.arange(0, rod_lengths.max(), 0.1), edgecolor="black")
+    except ValueError as e:
+        if "Maximum allowed size exceeded" in str(e):
+            _logger.warning(f"{e}\nUsing a different binning strategy.")
+            plt.hist(rod_lengths, alpha=.5, bins="doane", edgecolor="black")
+        else:
+            raise e
+    plt.axvline(np.median(rod_lengths), color="r")
+    plt.xlim(left=0)
+    plt.legend(["median", "lengths"])
+    plt.xlabel("Rod length (in mm)")
+    plt.ylabel("Number of rods")
+    plt.title("Distribution of detected particle lengths")
+    return fig
+
+
+def reprojection_errors_hist(reprojection_errors: np.ndarray) -> Figure:
+    """Plot a histogram of reprojection errors (after the matching process).
+
+    Parameters
+    ----------
+    reprojection_errors : np.ndarray
+
+    Returns
+    -------
+    Figure
+    """
+    fig = plt.figure()
+    try:
+        plt.hist(reprojection_errors, alpha=.8,
+                 bins=np.arange(0, reprojection_errors.max(), 0.25))
+    except ValueError as e:
+        if "Maximum allowed size exceeded" in str(e):
+            _logger.warning(f"{e}\nUsing a different binning strategy.")
+            plt.hist(reprojection_errors, alpha=.8,
+                     bins=np.arange(0, 2 * np.median(reprojection_errors), 5))
+        else:
+            raise e
+
+    plt.axvline(np.median(reprojection_errors), color="r")
+    plt.xlim(left=0)
+    plt.legend(["median", "errors"])
+    plt.xlabel("Reprojection error (in px)")
+    plt.ylabel("Number of rods")
+    plt.title("Distribution of reprojection errors.")
+    return fig
+
+
+def displacement_fwise(data_3d: np.ndarray, frames: Iterable[int] = None,
+                       show: bool = True) -> None | Figure:
     """Plot the frame-wise (minimum) displacement per rod and average of rods.
 
     From the 3D positions of rods the between frames displacement is calculated
@@ -91,6 +139,10 @@ def displacement_fwise(data_3d: np.ndarray, show: bool = True)\
     None | Figure
         Returns the figure only, if `show` was set to False.
     """
+    if frames is None:
+        frames = np.arange(0, len(data_3d) - 1)
+    else:
+        frames = np.asarray(frames)
     combo1 = np.linalg.norm(
         np.diff(data_3d, axis=0).squeeze(), axis=2).squeeze()
     switched_data_3d = data_3d[:, :, :, ::-1]
@@ -102,9 +154,10 @@ def displacement_fwise(data_3d: np.ndarray, show: bool = True)\
                               np.sum(combo2, axis=-1)])
     min_disp = np.min(displacements, axis=0)
     fig = plt.figure()
-    plt.plot(min_disp, alpha=0.3,
+    plt.plot(frames, min_disp, alpha=0.3,
              label=[f"p{p}" for p in range(min_disp.shape[1])])
-    plt.plot(np.mean(min_disp, axis=-1), color="black", label="mean")
+    plt.plot(frames, np.mean(min_disp, axis=-1), color="black", label="mean")
+    plt.xlim(frames.min(), frames.max())
     plt.xlabel("Frame")
     plt.ylabel("Displacement [mm]")
     plt.legend()
