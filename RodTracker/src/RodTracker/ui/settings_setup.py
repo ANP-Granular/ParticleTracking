@@ -62,6 +62,13 @@ def init_settings(ui: mw_l.Ui_MainWindow, settings: Settings):
         lambda: handle_color_pick(ui.number_color, settings,
                                   "visual", "number_color")
     )
+    ui.cb_recalc_3D.stateChanged.connect(
+        handle_checkbox
+    )
+    ui.lbl_recalc_3D.setToolTip("Recalculate particles' 3D position "
+                                "immediately after a change was made in 2D.")
+    ui.cb_recalc_3D.setEnabled(False)
+    ui.lbl_recalc_3D.setEnabled(False)
 
 
 def clear_select(ui: mw_l.Ui_MainWindow):
@@ -132,6 +139,10 @@ def draw_icon(color: QtGui.QColor, target: QtWidgets.QToolButton):
     painter.end()
     target.setIcon(QtGui.QIcon(to_icon))
     target.setIconSize(QtCore.QSize(28, 15))
+
+
+def handle_checkbox(state: int):
+    raise NotImplementedError
 
 
 def set_all_values(se: dict, ui: mw_l.Ui_MainWindow):
