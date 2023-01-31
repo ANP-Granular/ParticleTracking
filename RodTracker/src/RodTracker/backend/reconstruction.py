@@ -195,7 +195,7 @@ class Tracker(QtCore.QRunnable):
                 tmp = match_frame(self.data, self.cams[0], self.cams[1],
                                   self.frames[i],
                                   self.color, self.calibration, P1, P2, rot,
-                                  tw1, tw2, r1, r2, t1, t2, renumber=False)
+                                  tw1, tw2, r1, r2, t1, t2, renumber=False)[0]
                 df_out = pd.concat([df_out, tmp])
                 self.signals.progress.emit(1 / num_frames)
             df_out.reset_index(drop=True, inplace=True)
