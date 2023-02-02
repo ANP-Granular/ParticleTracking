@@ -16,7 +16,7 @@ if sys.version_info < (3, 10):
 else:
     import torch
     import ParticleDetection.utils.datasets as ds
-    from RodTracker.backend.detection import Detector
+    from RodTracker.backend.detection import Detector, RodDetection
     # Don't remove the following imports, see GitHub issue as reference
     # https://github.com/pytorch/pytorch/issues/48932#issuecomment-803957396
     import cv2                                                  # noqa: F401
@@ -39,6 +39,7 @@ class DetectorUI(QtWidgets.QWidget):
     active_detections: int = 0
     start_frame: int = 0
     end_frame: int = 0
+    _logger: lg.ActionLogger = None
 
     def __init__(self, ui: QtWidgets.QWidget, image_managers: List[ImageData],
                  *args, **kwargs) -> None:
@@ -159,21 +160,25 @@ class DetectorUI(QtWidgets.QWidget):
                                 img_manager.frames[idx_start:idx_end + 1],
                                 self.used_colors)
             detector.signals.progress.connect(self.progress_update)
-            detector.signals.result.connect(self.debug_results)
+            detector.signals.finished.connect(self.detection_finished)
             detector.signals.error.connect(
                 lambda ret: lg.exception_logger(*ret))
             self._threads.start(detector)
         self.pb_detect.setEnabled(False)
 
-    def debug_results(self, data: pd.DataFrame):
+    def detection_finished(self, cam_id: str):
         self.active_detections -= 1
         if self.active_detections == 0:
             self.pb_detect.setEnabled(True)
 
-    def progress_update(self, val: float, data: pd.DataFrame):
+    def progress_update(self, val: float, data: pd.DataFrame, cam_id: str):
         # BUG: once one of the active detections finishes there will be a jump
         #  fix by fixing the number as 'last_started_detections'
         self.progress.setValue(int(100 * val / self.active_detections))
+        if self._logger is not None:
+            frame = data["frame"].unique()[0]
+            action = RodDetection(frame, cam_id, len(data))
+            self._logger.add_action(action)
         self.detected_data.emit(data)
 
     @QtCore.pyqtSlot(dict)

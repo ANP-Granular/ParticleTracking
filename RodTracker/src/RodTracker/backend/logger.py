@@ -85,6 +85,11 @@ class NumberChangeActions(Enum):
     CURRENT = auto()
 
 
+class NotInvertableError(Exception):
+    """Raised when a not invertable action is attempted to be inverted."""
+    pass
+
+
 class Action(QListWidgetItem):
     """Base class for all Actions that are loggable by an `ActionLogger`."""
 
@@ -992,7 +997,8 @@ class ActionLogger(QtCore.QObject):
         """Registers the actions performed by its parent and propagates them
         for visual display in the GUI."""
         last_action.parent_id = self.parent_id
-        last_action.frame = self.frame
+        if last_action.frame is None:
+            last_action.frame = self.frame
         self.logged_actions.append(last_action)
         if self.repeatable_changes:
             self.repeatable_changes = []

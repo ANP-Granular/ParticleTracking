@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import List, Dict
 import torch
@@ -5,12 +6,33 @@ import pandas as pd
 from PyQt5 import QtCore
 from ParticleDetection.utils import (detection, helper_funcs as hf,
                                      datasets as ds)
+from RodTracker.backend.logger import Action, NotInvertableError
+
+_logger = logging.getLogger(__name__)
+
+
+class RodDetection(Action):
+    cam_id: str
+
+    def __init__(self, frame: int, cam_id: str, num_detected: int, *args,
+                 **kwargs):
+        self.cam_id = cam_id
+        self.num_detected = num_detected
+        self._frame = frame
+        super().__init__(str(self), *args, **kwargs)
+
+    def __str__(self):
+        return (f"({self.cam_id}, {self._frame}) Detected {self.num_detected} "
+                f"rods.")
+
+    def undo(self, _):
+        raise NotInvertableError
 
 
 class DetectorSignals(QtCore.QObject):
     error = QtCore.pyqtSignal(tuple, name="error")
-    progress = QtCore.pyqtSignal([float, pd.DataFrame], name="progress")
-    result = QtCore.pyqtSignal(pd.DataFrame, name="result")
+    progress = QtCore.pyqtSignal([float, pd.DataFrame, str], name="progress")
+    finished = QtCore.pyqtSignal(str, name="result")
 
 
 class Detector(QtCore.QRunnable):
@@ -46,8 +68,7 @@ class Detector(QtCore.QRunnable):
             if "pred_masks" in outputs:
                 points = hf.rod_endpoints(outputs, self.classes)
                 tmp_data = ds.add_points(points, data, self.cam_id, frame)
-            self.signals.progress.emit((i + 1) / num_frames, tmp_data)
+            self.signals.progress.emit((i + 1) / num_frames, tmp_data,
+                                       self.cam_id)
         data.reset_index(drop=True, inplace=True)
-        # TODO: change the signature, currently it just outputs an empty
-        # dataframe
-        self.signals.result.emit(data)
+        self.signals.finished.emit(self.cam_id)
