@@ -501,8 +501,6 @@ class RodData(QtCore.QObject):
 
         """Get part of the loaded rod position data.
 
-        Currently not implemented.
-
         Parameters
         ----------
         frames : List[int], optional
@@ -566,6 +564,64 @@ class RodData(QtCore.QObject):
             rod_data.reset_index(inplace=True)
         if self.frame in data.frame.unique():
             self.provide_data()
+
+    @QtCore.pyqtSlot(pd.DataFrame)
+    def add_data(self, data: pd.DataFrame):
+        global rod_data
+        if rod_data is None:
+            with QtCore.QWriteLocker(lock):
+                rod_data = data.copy()
+                colors = list(rod_data.color.unique())
+            frame_min = rod_data.frame.min()
+            frame_max = rod_data.frame.max()
+            columns = list(rod_data.columns)
+
+            # TODO: finish updating/setting all class variables
+            # cams = [col.split("_")[-1] for col in columns
+            #         if re.fullmatch(RE_SEEN, col)]
+            cols_pos_2d = [
+                col for col in columns if re.fullmatch(RE_2D_POS, col)]
+            cols_seen = [
+                col for col in columns if re.fullmatch(RE_SEEN, col)]
+            cols_pos_3d = [
+                col for col in columns if re.fullmatch(RE_3D_POS, col)]
+            self.cols_2D = [*cols_pos_2d, *cols_seen, "particle", "frame"]
+            self.cols_3D = [*cols_pos_3d, "particle", "frame", "color"]
+            self.data_loaded[Path, Path, list].emit(
+                Path(), Path(), colors)
+            # self.data_loaded[int, int, list].emit(
+            #     frame_min, frame_max, colors)
+            return
+
+        else:
+            if not data.columns.isin(rod_data.columns).all():
+                candidates = data.columns[~data.columns.isin(rod_data.columns)]
+                to_add = [col for col in candidates
+                          if re.fullmatch(RE_2D_POS, col)]
+                to_add.extend([col for col in candidates
+                               if re.fullmatch(RE_SEEN, col)])
+                self.cols_2D.extend(to_add)
+                with QtCore.QWriteLocker(lock):
+                    rod_data.set_index(["color", "frame", "particle"],
+                                       inplace=True)
+                    rod_data = rod_data.join(
+                        data.set_index(["color", "frame", "particle"]),
+                        how="outer", rsuffix="delete")
+                    rod_data.drop(
+                        columns=[col for col in rod_data.columns
+                                 if "delete" in col],
+                        inplace=True)
+                    rod_data.reset_index(inplace=True)
+                    return
+
+            with QtCore.QWriteLocker(lock):
+                rod_data.set_index(["color", "frame", "particle"],
+                                   inplace=True)
+                data.set_index(["color", "frame", "particle"], inplace=True)
+                idx_exists = data.index.isin(rod_data.index)
+                rod_data.update(data.loc[idx_exists])
+                rod_data = pd.concat(
+                    [rod_data, data.loc[~idx_exists]]).reset_index()
 
     @QtCore.pyqtSlot(lg.Action)
     def catch_data(self, change: lg.Action) -> None:

@@ -152,7 +152,7 @@ class TrackerSignals(QtCore.QObject):
     result = QtCore.pyqtSignal(pd.DataFrame, name="result")
 
 
-class Tracker(QtCore.QRunnable):
+class Reconstructor(QtCore.QRunnable):
     def __init__(self, data: pd.DataFrame, frames: list[int],
                  calibration: dict, transformation: dict, cams: list[str],
                  color: str):
@@ -192,6 +192,48 @@ class Tracker(QtCore.QRunnable):
             num_frames = len(self.frames)
             for i in range(num_frames):
                 # TODO: evaluate, whether its renumber should be "True"
+                tmp = match_frame(self.data, self.cams[0], self.cams[1],
+                                  self.frames[i],
+                                  self.color, self.calibration, P1, P2, rot,
+                                  tw1, tw2, r1, r2, t1, t2, renumber=False)[0]
+                df_out = pd.concat([df_out, tmp])
+                self.signals.progress.emit(1 / num_frames)
+            df_out.reset_index(drop=True, inplace=True)
+            self.signals.result.emit(df_out)
+        except:                                                 # noqa: E722
+            exctype, value, tb = sys.exc_info()
+            self.signals.error.emit((exctype, value, tb))
+
+
+class Tracker(Reconstructor):
+    def run(self):
+        try:
+            # Derive projection matrices from the calibration
+            r1 = np.eye(3)
+            t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+            P1 = np.vstack((r1.T, t1.T)) @ self.calibration["CM1"].T
+            P1 = P1.T
+
+            r2 = self.calibration["R"]
+            t2 = self.calibration["T"]
+            P2 = np.vstack((r2.T, t2.T)) @ self.calibration["CM2"].T
+            P2 = P2.T
+
+            rotx = R.from_matrix(
+                np.asarray(self.transform["M_rotate_x"])[0:3, 0:3])
+            roty = R.from_matrix(
+                np.asarray(self.transform["M_rotate_y"])[0:3, 0:3])
+            rotz = R.from_matrix(
+                np.asarray(self.transform["M_rotate_z"])[0:3, 0:3])
+            tw1 = np.asarray(self.transform["M_trans"])[0:3, 3]
+            tw2 = np.asarray(self.transform["M_trans2"])[0:3, 3]
+            rot = rotz * roty * rotx
+
+            df_out = pd.DataFrame()
+            num_frames = len(self.frames)
+
+            raise NotImplementedError
+            for i in range(num_frames):
                 tmp = match_frame(self.data, self.cams[0], self.cams[1],
                                   self.frames[i],
                                   self.color, self.calibration, P1, P2, rot,

@@ -32,17 +32,18 @@ if sys.version_info < (3, 10):
                     "reinstall the application.")
 else:
     import ParticleDetection.utils.data_loading as dl
-    from RodTracker.backend.reconstruction import Plotter, Tracker
+    from RodTracker.backend.reconstruction import (Plotter, Tracker,
+                                                   Reconstructor)
 
 
 def init_reconstruction(ui: mw_l.Ui_MainWindow):
     if sys.version_info < (3, 10):
         ui.tab_reconstruct.setEnabled(False)
         return
-    return Reconstructor(ui.tab_reconstruct)
+    return ReconstructorUI(ui.tab_reconstruct)
 
 
-class Reconstructor(QtWidgets.QWidget):
+class ReconstructorUI(QtWidgets.QWidget):
     position_scaling: float = 1.0
     request_data = QtCore.pyqtSignal([list, list])
     updated_data = QtCore.pyqtSignal(pd.DataFrame)
@@ -167,27 +168,29 @@ class Reconstructor(QtWidgets.QWidget):
             QtWidgets.QCheckBox, "cb_tracking").isChecked()
         if self.data is None or len(self.data) == 0:
             return
-        if track:
-            raise NotImplementedError
-        else:
-            frames = list(range(self.start_frame, self.end_frame + 1))
-            self._progress_val = 0.
-            self.progress.setValue(0)
-            self.pb_solve.setEnabled(False)
-            num_colors = len(self.used_colors)
-            self._colors_to_solve = num_colors
-            for i in range(num_colors):
-                color = self.used_colors[i]
-                tmp = self.data.loc[self.data.color == color]
+        frames = list(range(self.start_frame, self.end_frame + 1))
+        self._progress_val = 0.
+        self.progress.setValue(0)
+        self.pb_solve.setEnabled(False)
+        num_colors = len(self.used_colors)
+        self._colors_to_solve = num_colors
+        for i in range(num_colors):
+            color = self.used_colors[i]
+            tmp = self.data.loc[self.data.color == color]
+            if track:
                 tracker = Tracker(tmp, frames, self._calibration,
                                   self._transformation, self.cam_ids, color)
-                tracker.signals.progress.connect(
-                    lambda val: self.progress_update(val / num_colors)
-                )
-                tracker.signals.error.connect(
-                    lambda ret: lg.exception_logger(*ret))
-                tracker.signals.result.connect(self.solver_result)
-                self._threads.start(tracker)
+            else:
+                tracker = Reconstructor(tmp, frames, self._calibration,
+                                        self._transformation, self.cam_ids,
+                                        color)
+            tracker.signals.progress.connect(
+                lambda val: self.progress_update(val / num_colors)
+            )
+            tracker.signals.error.connect(
+                lambda ret: lg.exception_logger(*ret))
+            tracker.signals.result.connect(self.solver_result)
+            self._threads.start(tracker)
 
     def solver_result(self, result: pd.DataFrame):
         self._colors_to_solve -= 1

@@ -34,6 +34,7 @@ import RodTracker.ui.mainwindow_layout as mw_l
 from RodTracker.ui import dialogs
 from RodTracker.ui.settings_setup import init_settings
 from RodTracker.ui.reconstruction import init_reconstruction
+from RodTracker.ui.detection import init_detection
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
@@ -170,6 +171,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         init_settings(self.ui, self.settings)
         rn.RodNumberWidget.settings_signal = self.settings.settings_changed
         self.reconstructor = init_reconstruction(self.ui)
+        self.detector = init_detection(self.ui, self.image_managers)
         self.connect_signals()
         self.settings.send_settings()
 
@@ -238,6 +240,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.reconstructor.data_update)
             self.reconstructor.updated_data.connect(
                 self.rod_data.receive_updated_data)
+
+        if self.detector is not None:
+            self.detector.detected_data.connect(
+                self.rod_data.add_data)
 
         # Display methods
         self.ui.le_disp_one.textChanged.connect(self.display_rod_changed)

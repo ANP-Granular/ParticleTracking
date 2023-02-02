@@ -229,7 +229,7 @@ class RodImageWidget(QLabel):
 
     @cam_id.setter
     def cam_id(self, cam_id: str):
-        id_regex = re.compile('gp\d+')                          # noqa: W605
+        id_regex = re.compile('gp\\d+')                          # noqa: W605
         if re.fullmatch(id_regex, cam_id) is None:
             cam_id = "gp3"
         self._cam_id = cam_id
@@ -1099,7 +1099,8 @@ class RodImageWidget(QLabel):
             return
 
         new_rods = []
-        for _, rod in data.iterrows():
+        cleaned = data.fillna(-1)
+        for _, rod in cleaned.iterrows():
             x1 = rod[f'x1_{self.cam_id}']
             x2 = rod[f'x2_{self.cam_id}']
             y1 = rod[f'y1_{self.cam_id}']
