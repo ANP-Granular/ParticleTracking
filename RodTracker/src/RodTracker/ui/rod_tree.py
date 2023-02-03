@@ -121,6 +121,47 @@ class RodTree(QtWidgets.QTreeWidget):
                         break
                 break
 
+    def batch_update_tree(self, new_data: dict, cam_ids: list):
+        header = self.headerItem()
+        headings = []
+        for i in range(1, header.columnCount()):
+            headings.append(header.text(i))
+        insert_idx = headings.index(cam_ids[0])
+        for frame in new_data.keys():
+            try:
+                current_frame = self.findItems(
+                    str(frame), QtCore.Qt.MatchFlag.MatchEndsWith)[0]
+            except IndexError:
+                current_frame = QtWidgets.QTreeWidgetItem(self)
+                current_frame.setText(0, f"Frame: {frame}")
+                self.rod_info[frame] = {}
+            for color in new_data[frame].keys():
+                current_color = None
+                for c_idx in range(current_frame.childCount()):
+                    c_child = current_frame.child(c_idx)
+                    if c_child.text(0) == color:
+                        current_color = c_child
+                if current_color is None:
+                    current_color = QtWidgets.QTreeWidgetItem(current_frame)
+                    current_color.setText(0, color)
+                    self.rod_info[frame][color] = {}
+                for particle in new_data[frame][color].keys():
+                    current_particle = None
+                    for p_idx in range(current_color.childCount()):
+                        p_child = current_color.child(p_idx)
+                        if p_child.text(0) == f"Rod{particle:3d}: ":
+                            current_particle = p_child
+                    if current_particle is None:
+                        current_particle = QtWidgets.QTreeWidgetItem(
+                            current_color)
+                        current_particle.setText(
+                            0, f"Rod{particle:3d}: "
+                        )
+                        self.rod_info[frame][color][particle] = \
+                            len(headings) * ["unseen"]
+                    current_particle.setText(
+                        insert_idx + 1, new_data[frame][color][particle][0])
+
     def update_tree_folding(self, frame: int, color: str):
         """Updates the folding of the tree view.
 

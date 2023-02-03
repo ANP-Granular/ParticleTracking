@@ -228,6 +228,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.rod_data.data_2d.connect(self.cameras[tab_idx].extract_rods)
         self.rod_data.data_3d.connect(self.ui.view_3d.update_rods)
         self.rod_data.data_update.connect(self.ui.tv_rods.update_tree)
+        self.rod_data.batch_update.connect(self.ui.tv_rods.batch_update_tree)
 
         if self.reconstructor is not None:
             self.rod_data.data_loaded[int, int, list].connect(

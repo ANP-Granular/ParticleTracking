@@ -128,6 +128,7 @@ class RodData(QtCore.QObject):
                                     name="data_loaded")
     seen_loaded = QtCore.pyqtSignal((dict, list), name="seen_loaded")
     data_update = QtCore.pyqtSignal((dict), name="data_update")
+    batch_update = QtCore.pyqtSignal((dict, list))
     saved = QtCore.pyqtSignal(name="saved")
     requested_data = QtCore.pyqtSignal([pd.DataFrame], name="requested_data")
 
@@ -587,6 +588,14 @@ class RodData(QtCore.QObject):
                 col for col in columns if re.fullmatch(RE_3D_POS, col)]
             self.cols_2D = [*cols_pos_2d, *cols_seen, "particle", "frame"]
             self.cols_3D = [*cols_pos_3d, "particle", "frame", "color"]
+
+            # Display as a tree
+            worker = pl.Worker(self.extract_seen_information)
+            worker.signals.result.connect(
+                lambda ret: self.seen_loaded.emit(*ret))
+            worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+            self.threads.start(worker)
+
             self.data_loaded[Path, Path, list].emit(
                 Path(), Path(), colors)
             # self.data_loaded[int, int, list].emit(
@@ -612,7 +621,15 @@ class RodData(QtCore.QObject):
                                  if "delete" in col],
                         inplace=True)
                     rod_data.reset_index(inplace=True)
-                    return
+
+                # Update/regenerate tree
+                worker = pl.Worker(self.extract_seen_information)
+                worker.signals.result.connect(
+                    lambda ret: self.seen_loaded.emit(*ret))
+                worker.signals.error.connect(
+                    lambda ret: lg.exception_logger(*ret))
+                self.threads.start(worker)
+                return
 
             with QtCore.QWriteLocker(lock):
                 rod_data.set_index(["color", "frame", "particle"],
@@ -622,6 +639,16 @@ class RodData(QtCore.QObject):
                 rod_data.update(data.loc[idx_exists])
                 rod_data = pd.concat(
                     [rod_data, data.loc[~idx_exists]]).reset_index()
+
+                # update of the tree display
+                data = data.reset_index(inplace=True)
+                worker = pl.Worker(
+                    lambda: self.extract_seen_information(data))
+                worker.signals.result.connect(
+                    lambda ret: self.batch_update.emit(*ret))
+                worker.signals.error.connect(
+                    lambda ret: lg.exception_logger(*ret))
+                self.threads.start(worker)
 
     @QtCore.pyqtSlot(lg.Action)
     def catch_data(self, change: lg.Action) -> None:
@@ -767,7 +794,8 @@ class RodData(QtCore.QObject):
         return dataset, found_colors
 
     @staticmethod
-    def extract_seen_information() -> Tuple[Dict[int, Dict[str, dict]], list]:
+    def extract_seen_information(data: pd.DataFrame = None) -> \
+            Tuple[Dict[int, Dict[str, dict]], list]:
         """Extracts the seen/unseen parameter for all rods in `rod_data`.
 
         Returns
@@ -777,7 +805,10 @@ class RodData(QtCore.QObject):
         list
             out_list = ["gp1_seen", "gp2_seen"]
         """
-        global rod_data
+        if data is None:
+            global rod_data
+        else:
+            rod_data = data
         lock.lockForRead()
         seen_data = {}
         col_list = ["particle", "frame", "color"]
