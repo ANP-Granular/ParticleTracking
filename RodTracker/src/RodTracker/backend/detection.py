@@ -40,7 +40,7 @@ class Detector(QtCore.QRunnable):
 
     def __init__(self, cam_id: str, model: torch.ScriptModule,
                  images: List[Path], frames: List[int],
-                 colors: Dict[int, str]):
+                 colors: Dict[int, str], threshold: float = 0.5):
         super().__init__()
         self.cam_id = cam_id
         self.model = model
@@ -54,6 +54,11 @@ class Detector(QtCore.QRunnable):
             current_class = list(ds.DEFAULT_CLASSES.keys())[
                 list(ds.DEFAULT_CLASSES.values()).index(color)]
             self.classes[current_class] = color
+        if threshold > 1.:
+            threshold = 1.
+        elif threshold < 0.:
+            threshold = 0.
+        self.threshold = threshold
 
     def run(self):
         cols = [col.format(id1=self.cam_id, id2=self.cam_id)

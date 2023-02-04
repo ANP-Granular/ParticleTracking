@@ -40,6 +40,7 @@ class DetectorUI(QtWidgets.QWidget):
     start_frame: int = 0
     end_frame: int = 0
     _logger: lg.ActionLogger = None
+    threshold: float = 0.5
 
     def __init__(self, ui: QtWidgets.QWidget, image_managers: List[ImageData],
                  *args, **kwargs) -> None:
@@ -54,6 +55,10 @@ class DetectorUI(QtWidgets.QWidget):
         self.le_model = ui.findChild(QtWidgets.QLineEdit, "le_model")
         self.tb_model.clicked.connect(self.load_model)
         self.le_threshold = ui.findChild(QtWidgets.QLineEdit, "le_threshold")
+        self.le_threshold.setText(str(self.threshold))
+        self.le_threshold.textChanged.connect(self.set_threshold)
+        lbl_threshold = ui.findChild(QtWidgets.QLabel, "lbl_threshold")
+        lbl_threshold.setText("Confidence Threshold [0.0, 1.0]: ")
         threshold_validator = QtGui.QDoubleValidator(0.0, 1.0, 2)
         self.le_threshold.setValidator(threshold_validator)
 
@@ -90,6 +95,21 @@ class DetectorUI(QtWidgets.QWidget):
         self.spb_end_f = ui.findChild(QtWidgets.QSpinBox,
                                       "end_frame_detection")
         self.spb_end_f.valueChanged.connect(self.change_end_frame)
+
+    def set_threshold(self, val: str):
+        try:
+            new_threshold = float(val)
+            if new_threshold < 0.0:
+                new_threshold = 0.0
+                self.le_threshold.setText(str(new_threshold))
+            elif new_threshold > 1.00:
+                new_threshold = 1.0
+                self.le_threshold.setText(str(new_threshold))
+            self.threshold = new_threshold
+            _logger.info(self.threshold)
+        except ValueError:
+            self.threshold = 0.0
+            self.le_threshold.setText(str(self.threshold))
 
     def change_start_frame(self, new_val: int):
         self.start_frame = new_val
@@ -158,7 +178,7 @@ class DetectorUI(QtWidgets.QWidget):
             detector = Detector(img_manager.data_id, self.model,
                                 img_manager.files[idx_start:idx_end + 1],
                                 img_manager.frames[idx_start:idx_end + 1],
-                                self.used_colors)
+                                self.used_colors, self.threshold)
             detector.signals.progress.connect(self.progress_update)
             detector.signals.finished.connect(self.detection_finished)
             detector.signals.error.connect(
