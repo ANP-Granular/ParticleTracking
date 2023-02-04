@@ -135,6 +135,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.le_disp_one.setText("00")
 
         self.ui.action_autoselect_rods.setChecked(False)
+        self.ui.action_fit_to_window.setShortcut(QtGui.QKeySequence("F"))
 
         self.setWindowState(QtCore.Qt.WindowMaximized)
         self.setFocus()
