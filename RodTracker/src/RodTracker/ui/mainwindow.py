@@ -191,6 +191,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         # Data loading
         self.rod_data.data_loaded.connect(self.rods_loaded)
+        self.rod_data.data_loaded[list].connect(
+            lambda colors: self.rods_loaded(None, None, colors))
         self.rod_data.seen_loaded.connect(self.ui.tv_rods.setup_tree)
 
         # Saving
@@ -248,6 +250,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if self.detector is not None:
             self.detector.detected_data.connect(
                 self.rod_data.add_data)
+            self.rod_data.saved.connect(self.detector._logger.actions_saved)
 
         # Display methods
         self.ui.le_disp_one.textChanged.connect(self.display_rod_changed)
@@ -480,8 +483,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             Colors for which data is available in the loaded dataset.
         """
         # Update visual elements
-        self.ui.le_rod_dir.setText(str(input))
-        self.ui.le_save_dir.setText(str(output))
+        if input is not None:
+            self.ui.le_rod_dir.setText(str(input))
+        if output is not None:
+            self.ui.le_save_dir.setText(str(output))
 
         rb_colors = self.ui.group_rod_color.findChildren(
             QtWidgets.QRadioButton)

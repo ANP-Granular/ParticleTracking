@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -123,8 +123,8 @@ class RodData(QtCore.QObject):
     """
     data_2d = QtCore.pyqtSignal([pd.DataFrame, str], name="data_2d")
     data_3d = QtCore.pyqtSignal([pd.DataFrame], name="data_3d")
-    data_loaded = QtCore.pyqtSignal([Path, Path, list], [int, int, list],
-                                    [str, str],
+    data_loaded = QtCore.pyqtSignal([Path, Path, list], [list],
+                                    [int, int, list], [str, str],
                                     name="data_loaded")
     seen_loaded = QtCore.pyqtSignal((dict, list), name="seen_loaded")
     data_update = QtCore.pyqtSignal((dict), name="data_update")
@@ -346,7 +346,46 @@ class RodData(QtCore.QObject):
         # Clean up data from unused rods before permanent saving
         if not temp_only:
             self.clean_data()
-        if self.out_folder == self.folder and not self._allow_overwrite:
+        if self.out_folder is None:
+            try_again = True
+            while try_again:
+                chosen_folder = QtWidgets.QFileDialog.getExistingDirectory(
+                    None, 'Save as')
+                if chosen_folder == '':
+                    return
+                chosen_folder = Path(chosen_folder).resolve()
+                data_files = self.folder_has_data(chosen_folder)
+                if data_files:
+                    # Potentially data containing files were found
+                    msg = QMessageBox()
+                    msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+                    msg.setIcon(QMessageBox.Warning)
+                    msg.setWindowTitle("Rod Tracker")
+                    msg.setText("There were files found, that might get "
+                                "overwritten. Do you want to overwrite these?")
+                    msg.addButton("Overwrite", QMessageBox.ActionRole)
+                    btn_try_again = msg.addButton(
+                        "Try again", QMessageBox.ActionRole)
+                    btn_cancel = msg.addButton(
+                        "Cancel", QMessageBox.ActionRole)
+                    msg.exec()
+                    user_decision = msg.clickedButton()
+                    if user_decision == btn_try_again:
+                        # Try again
+                        continue
+                    elif user_decision == btn_cancel:
+                        # Abort saving
+                        return
+                self.out_folder = chosen_folder
+                self.folder = chosen_folder
+                self._allow_overwrite = True
+                try_again = False
+                lock.lockForRead()
+                colors = list(rod_data["color"].unique())
+                self.data_loaded[Path, Path, list].emit(
+                    chosen_folder, chosen_folder, colors)
+
+        elif self.out_folder == self.folder and not self._allow_overwrite:
             msg = QMessageBox()
             msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
             msg.setIcon(QMessageBox.Warning)
@@ -578,8 +617,6 @@ class RodData(QtCore.QObject):
             columns = list(rod_data.columns)
 
             # TODO: finish updating/setting all class variables
-            # cams = [col.split("_")[-1] for col in columns
-            #         if re.fullmatch(RE_SEEN, col)]
             cols_pos_2d = [
                 col for col in columns if re.fullmatch(RE_2D_POS, col)]
             cols_seen = [
@@ -596,8 +633,7 @@ class RodData(QtCore.QObject):
             worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
             self.threads.start(worker)
 
-            self.data_loaded[Path, Path, list].emit(
-                Path(), Path(), colors)
+            self.data_loaded[list].emit(colors)
             # self.data_loaded[int, int, list].emit(
             #     frame_min, frame_max, colors)
             return
