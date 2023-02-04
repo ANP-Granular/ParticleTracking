@@ -66,14 +66,13 @@ class Detector(QtCore.QRunnable):
         data = pd.DataFrame(columns=cols)
         data = data.loc[:, ~data.columns.duplicated()]
         num_frames = len(self.images)
-        for i in range(len(self.images)):
+        for i in range(num_frames):
             img = self.images[i]
             frame = self.frames[i]
             outputs = detection._run_detection(self.model, img)
             if "pred_masks" in outputs:
                 points = hf.rod_endpoints(outputs, self.classes)
                 tmp_data = ds.add_points(points, data, self.cam_id, frame)
-            self.signals.progress.emit((i + 1) / num_frames, tmp_data,
-                                       self.cam_id)
+            self.signals.progress.emit(1 / num_frames, tmp_data, self.cam_id)
         data.reset_index(drop=True, inplace=True)
         self.signals.finished.emit(self.cam_id)

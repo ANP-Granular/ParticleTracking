@@ -36,7 +36,9 @@ class DetectorUI(QtWidgets.QWidget):
     number_rods: int = 1
     model: torch.ScriptModule = None
     detected_data = QtCore.pyqtSignal(pd.DataFrame)
-    active_detections: int = 0
+    _active_detections: int = 0
+    _started_detections: int = 0
+    _progress: float = 1.
     start_frame: int = 0
     end_frame: int = 0
     _logger: lg.ActionLogger = None
@@ -168,11 +170,13 @@ class DetectorUI(QtWidgets.QWidget):
             _logger.info("No model selected yet.")
             return
         self.progress.setValue(0)
+        self._progress = 0.
 
         for img_manager in self.managers:
             if not img_manager.data_id:
                 continue
-            self.active_detections += 1
+            self._active_detections += 1
+            self._started_detections += 1
             idx_start = img_manager.frames.index(self.start_frame)
             idx_end = img_manager.frames.index(self.end_frame)
             detector = Detector(img_manager.data_id, self.model,
@@ -187,14 +191,16 @@ class DetectorUI(QtWidgets.QWidget):
         self.pb_detect.setEnabled(False)
 
     def detection_finished(self, cam_id: str):
-        self.active_detections -= 1
-        if self.active_detections == 0:
+        self._active_detections -= 1
+        if self._active_detections == 0:
             self.pb_detect.setEnabled(True)
+            self._started_detections = 0
+            self._progress = 1.0
+            self.progress.setValue(100)
 
     def progress_update(self, val: float, data: pd.DataFrame, cam_id: str):
-        # BUG: once one of the active detections finishes there will be a jump
-        #  fix by fixing the number as 'last_started_detections'
-        self.progress.setValue(int(100 * val / self.active_detections))
+        self._progress += (val / self._started_detections)
+        self.progress.setValue(int(100 * self._progress))
         if self._logger is not None:
             frame = data["frame"].unique()[0]
             action = RodDetection(frame, cam_id, len(data))
