@@ -93,6 +93,8 @@ class ReconstructorUI(QtWidgets.QWidget):
 
         self.stacked_plots = ui.findChild(QtWidgets.QStackedWidget,
                                           "stacked_plots")
+        self.lbl_current_plot = ui.findChild(QtWidgets.QLabel,
+                                             "lbl_current_plot")
         tb_left = self.ui.findChild(QtWidgets.QToolButton, "tb_plots_left")
         tb_left.clicked.connect(lambda: self.switch_plot_page(-1))
         tb_right = self.ui.findChild(QtWidgets.QToolButton, "tb_plots_right")
@@ -218,6 +220,8 @@ class ReconstructorUI(QtWidgets.QWidget):
         elif idx_new < 0:
             idx_new = idx_max
         self.stacked_plots.setCurrentIndex(idx_new)
+        self.lbl_current_plot.setText(f"({self.stacked_plots.currentIndex()+1}"
+                                      f"/{self.stacked_plots.count()})")
 
     @QtCore.pyqtSlot(str, str)
     def set_cam_ids(self, cam1: str, cam2: str):
@@ -313,6 +317,8 @@ class ReconstructorUI(QtWidgets.QWidget):
         widget.layout().addWidget(nav_bar)
         self.stacked_plots.insertWidget(self.stacked_plots.count(), widget)
         fig.tight_layout()
+        self.lbl_current_plot.setText(f"({self.stacked_plots.currentIndex()+1}"
+                                      f"/{self.stacked_plots.count()})")
         return
 
     @QtCore.pyqtSlot(dict)

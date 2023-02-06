@@ -850,8 +850,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>100</width>
-                     <height>30</height>
+                     <width>630</width>
+                     <height>424</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -1094,7 +1094,7 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>255</width>
+                        <width>476</width>
                         <height>508</height>
                        </rect>
                       </property>
@@ -1942,6 +1942,19 @@
                        </property>
                        <property name="arrowType">
                         <enum>Qt::LeftArrow</enum>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="lbl_current_plot">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>(0/0)</string>
                        </property>
                       </widget>
                      </item>

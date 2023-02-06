@@ -306,9 +306,9 @@ class RodData(QtCore.QObject):
 
         self.data_loaded[Path, Path, list].emit(
             self.folder, self.out_folder, found_colors)
+        self.data_loaded[str, str].emit(*cams)
         self.data_loaded[int, int, list].emit(
             frame_min, frame_max, found_colors)
-        self.data_loaded[str, str].emit(*cams)
 
         # Display as a tree
         worker = pl.Worker(self.extract_seen_information)
