@@ -152,6 +152,10 @@ class ReconstructorUI(QtWidgets.QWidget):
 
     def data_update(self, data: pd.DataFrame):
         self.data = data
+        if any([cam == "" for cam in self.cam_ids]):
+            # insufficient data for plotting given
+            _logger.info("Insufficient data for plotting given. Skipping...")
+            return
         if self.first_update:
             self.update_plots()
             self.pb_plots.setEnabled(False)
@@ -166,7 +170,10 @@ class ReconstructorUI(QtWidgets.QWidget):
     def solve(self):
         track = self.ui.findChild(
             QtWidgets.QCheckBox, "cb_tracking").isChecked()
-        if self.data is None or len(self.data) == 0:
+        if (self.data is None or len(self.data) == 0 or
+                any([cam == "" for cam in self.cam_ids])):
+            # insufficient data for 3D reconstruction given
+            _logger.info("Insufficient data for 3D reconstruction given.")
             return
         frames = list(range(self.start_frame, self.end_frame + 1))
         self._progress_val = 0.
@@ -225,8 +232,7 @@ class ReconstructorUI(QtWidgets.QWidget):
         end.setRange(f_min, f_max)
         end.setValue(f_max)
         self.update_colors(colors)
-        if self.data is None:
-            self.first_update = True
+        self.first_update = True
         self.select_data()
 
     def update_colors(self, colors: List[str]):

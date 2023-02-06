@@ -612,6 +612,10 @@ class RodData(QtCore.QObject):
             frame_max = rod_data.frame.max()
             columns = list(rod_data.columns)
 
+            cams = [col.split("_")[-1] for col in columns
+                    if re.fullmatch(RE_SEEN, col)]
+            while len(cams) < 2:
+                cams.append('')
             cols_pos_2d = [
                 col for col in columns if re.fullmatch(RE_2D_POS, col)]
             cols_seen = [
@@ -629,6 +633,7 @@ class RodData(QtCore.QObject):
             self.threads.start(worker)
 
             self.data_loaded[list].emit(colors)
+            self.data_loaded[str, str].emit(*cams)
             self.data_loaded[int, int, list].emit(
                 frame_min, frame_max, colors)
             return
@@ -652,6 +657,14 @@ class RodData(QtCore.QObject):
                                  if "delete" in col],
                         inplace=True)
                     rod_data.reset_index(inplace=True)
+
+                # Update the 'available' cameras in other parts of the app
+                columns = list(rod_data.columns)
+                cams = [col.split("_")[-1] for col in columns
+                        if re.fullmatch(RE_SEEN, col)]
+                while len(cams) < 2:
+                    cams.append('')
+                self.data_loaded[str, str].emit(*cams)
 
                 # Update the 'available' frames in other parts of the app
                 frame_min = rod_data.frame.min()
