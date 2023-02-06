@@ -560,10 +560,6 @@ class RodData(QtCore.QObject):
         -------
         pd.DataFrame
             Copy of a slice of the loaded data.
-
-        Raises
-        ------
-        NotImplementedError
         """
         # Provide data as requested, will return the requested data
         lock.lockForRead()
@@ -616,7 +612,6 @@ class RodData(QtCore.QObject):
             frame_max = rod_data.frame.max()
             columns = list(rod_data.columns)
 
-            # TODO: finish updating/setting all class variables
             cols_pos_2d = [
                 col for col in columns if re.fullmatch(RE_2D_POS, col)]
             cols_seen = [
@@ -634,8 +629,8 @@ class RodData(QtCore.QObject):
             self.threads.start(worker)
 
             self.data_loaded[list].emit(colors)
-            # self.data_loaded[int, int, list].emit(
-            #     frame_min, frame_max, colors)
+            self.data_loaded[int, int, list].emit(
+                frame_min, frame_max, colors)
             return
 
         else:
@@ -658,6 +653,13 @@ class RodData(QtCore.QObject):
                         inplace=True)
                     rod_data.reset_index(inplace=True)
 
+                # Update the 'available' frames in other parts of the app
+                frame_min = rod_data.frame.min()
+                frame_max = rod_data.frame.max()
+                colors = list(rod_data.color.unique())
+                self.data_loaded[int, int, list].emit(
+                    frame_min, frame_max, colors)
+
                 # Update/regenerate tree
                 worker = pl.Worker(self.extract_seen_information)
                 worker.signals.result.connect(
@@ -676,15 +678,22 @@ class RodData(QtCore.QObject):
                 rod_data = pd.concat(
                     [rod_data, data.loc[~idx_exists]]).reset_index()
 
-                # update of the tree display
-                data = data.reset_index(inplace=True)
-                worker = pl.Worker(
-                    lambda: self.extract_seen_information(data))
-                worker.signals.result.connect(
-                    lambda ret: self.batch_update.emit(*ret))
-                worker.signals.error.connect(
-                    lambda ret: lg.exception_logger(*ret))
-                self.threads.start(worker)
+            # Update the 'available' frames in other parts of the app
+            frame_min = rod_data.frame.min()
+            frame_max = rod_data.frame.max()
+            colors = list(rod_data.color.unique())
+            self.data_loaded[int, int, list].emit(
+                frame_min, frame_max, colors)
+
+            # Update of the tree display
+            data = data.reset_index(inplace=True)
+            worker = pl.Worker(
+                lambda: self.extract_seen_information(data))
+            worker.signals.result.connect(
+                lambda ret: self.batch_update.emit(*ret))
+            worker.signals.error.connect(
+                lambda ret: lg.exception_logger(*ret))
+            self.threads.start(worker)
 
     @QtCore.pyqtSlot(lg.Action)
     def catch_data(self, change: lg.Action) -> None:

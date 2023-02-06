@@ -85,6 +85,10 @@ class Plotter(QtCore.QRunnable):
             start_frame = data["frame"].min()
         if end_frame is None:
             end_frame = data["frame"].max()
+        if start_frame == end_frame:
+            _logger.error("Only received data for one frame. "
+                          "Cannot compute a 3D displacement plot.")
+            return
         for color in colors:
             c_data = data.loc[data.color == color]
             to_plot = dl.extract_3d_data(c_data)
@@ -99,7 +103,11 @@ class Plotter(QtCore.QRunnable):
                          None):
         if position_scaling is None:
             position_scaling = 1.0
-        rod_lens = data["l"].to_numpy() * position_scaling
+        rod_lens = data["l"].dropna().to_numpy() * position_scaling
+        if not len(rod_lens):
+            _logger.error("Did not receive any valid particle length data. "
+                          "Cannot compute histogram of lengths.")
+            return
         len_fig = vis.length_hist(rod_lens.reshape((-1)))
         self.signals.result_plot.emit(len_fig)
 
@@ -125,6 +133,20 @@ class Plotter(QtCore.QRunnable):
                        position_scaling: float = 1.0, transformation: dict =
                        None):
         if calibration is None:
+            return
+        # check all columns are present and in order, such that the below code
+        # works
+        cols = list(data.columns)
+        cols_ok = (cols[0:3] == ["x1", "y1", "z1"])
+        cols_ok = cols_ok or (cols[3:6] == ["x2", "y2", "z2"])
+        cols_3d = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l']
+        cols_2d = ['x1_', 'y1_', 'x2_', 'y2_']
+        cols_2d_ok = [(intended in col)
+                      for col, intended in zip(cols[10:18], 2 * cols_2d)]
+        if not ((cols[0:10] == cols_3d) and all(cols_2d_ok)):
+            _logger.error(f"Incorrect columns/order provided. "
+                          f"Data must adhere to the following column order: "
+                          f"{[*cols_3d, *(2*cols_2d)]}")
             return
         e1_3d = data.iloc[:, 0:3].to_numpy() * position_scaling
         e2_3d = data.iloc[:, 3:6].to_numpy() * position_scaling

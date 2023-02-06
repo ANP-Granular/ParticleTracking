@@ -225,7 +225,8 @@ class ReconstructorUI(QtWidgets.QWidget):
         end.setRange(f_min, f_max)
         end.setValue(f_max)
         self.update_colors(colors)
-        self.first_update = True
+        if self.data is None:
+            self.first_update = True
         self.select_data()
 
     def update_colors(self, colors: List[str]):
