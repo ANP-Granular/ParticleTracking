@@ -3,8 +3,8 @@ Collection of function to convert between different file formats used over the
 course of the particle detection project, e.g. camera calibrations from MATLAB
 to the now used json-format.
 
-Authors:    Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       02.11.2022
+**Authors:**    Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       02.11.2022
 
 """
 import os
@@ -25,28 +25,29 @@ _logger = logging.getLogger(__name__)
 def txt2mat(input_folder: Path, frames: Iterable[int], expected_rods: int,
             cam1_id: str = "gp1", cam2_id: str = "gp2",
             output_folder: Path = None) -> None:
-    """Read rod position data in old *.txt format and save it in *.mat format.
+    """Read rod position data in old ``*.txt`` format and save it in ``*.mat``
+    format.
 
-    Converts the rod positions from the *.txt format to *.mat format assuming,
-    that only one color is saved in the given input folder.
+    Converts the rod positions from the ``*.txt`` format to ``*.mat`` format
+    assuming, that only one color is saved in the given input folder.
     The converted files are then saved to two subfolders of the output folder,
-    named after `cam1_id` and `cam2_id`.
+    named after ``cam1_id`` and ``cam2_id``.
 
     Parameters
     ----------
     input_folder : Path
         Folder containing the 3D data in txt-files of format:
-        {frame:05d}.txt
+        ``{frame:05d}.txt``
     frames : Iterable[int]
         Frame numbers found in the input folder and intended to be converted.
     expected_rods : int
         Number of rods to expect in one frame.
     cam1_id : str, optional
         First camera's identifier in the given dataset.
-        By default "gp1".
+        By default ``"gp1"``.
     cam2_id : str, optional
         Second camera's identifier in the given dataset.
-        By default "gp2".
+        By default ``"gp2"``.
     output_folder : Path, optional
         Parent folder of the two output folders.
         By default set to the parent folder of the input folder.
@@ -88,10 +89,12 @@ def txt2mat(input_folder: Path, frames: Iterable[int], expected_rods: int,
 
 
 def mat2csv(input_folders: str, output_file: str):
+    """**Not implemented.**"""
     raise NotImplementedError
 
 
 def csv2mat(input_file: str, output_folders: List[str]):
+    """**Not implemented.**"""
     raise NotImplementedError
 
 
@@ -100,13 +103,13 @@ def csv_extract_colors(input_file: str) -> List[str]:
 
     This functions saves a new file for each color that is present in the given
     data. The original file name is thereby extended by the name of the
-    respective color, i.e. "old_name_foundcolor.csv"
+    respective color, i.e. ``old_name_foundcolor.csv``.
 
     Parameters
     ----------
     input_file : str
-        *.csv file that contains rod position data for multiple colors, i.e.
-        has a column "color".
+        ``*.csv`` file that contains rod position data for multiple colors,
+        i.e. has a column ``"color"``.
 
     Returns
     -------
@@ -129,7 +132,7 @@ def csv_extract_colors(input_file: str) -> List[str]:
 
 def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
         -> str:
-    """Concatenates multiple *.csv files to a single one.
+    """Concatenates multiple ``*.csv`` files to a single one.
 
     The given input files are combined into a single one. The function does not
     distinguish what data it is given and might fail, if it is not rod position
@@ -138,12 +141,12 @@ def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
     Parameters
     ----------
     input_files : List[str]
-        *.csv files that contains rod position data.
+        ``*.csv`` files that contains rod position data.
     output_file : str, optional
         Path to the output file. If this is just a file name without a path,
         the parent directory of the first input file is taken as the intended
         file location.
-        By default "rods_df.csv"
+        By default ``"rods_df.csv"``.
 
     Returns
     -------
@@ -172,17 +175,19 @@ def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
 def csv_split_by_frames(input_file: str, cut_frames: List[int]) -> List[str]:
     """Splits the rod data at the given frames.
 
-    Splits the given *.csv file into individual files at the given frame
+    Splits the given ``*.csv`` file into individual files at the given frame
     numbers.
-    Example:
-    The data has frames from 0 to 33.
-    cut_frames = [15, 20, 25] -> out_0_14.csv, out_15_19.csv, out_20_24.csv,
-                                 out_25_33.csv
+
+    Example:\n
+    The data has frames from 0 to 33.\n
+    ``cut_frames = [15, 20, 25]``\n
+    -> ``out_0_14.csv``, ``out_15_19.csv``, ``out_20_24.csv``,
+    ``out_25_33.csv``
 
     Parameters
     ----------
     input_file : str
-        Path to a *.csv file containing rod position data.
+        Path to a ``*.csv file`` containing rod position data.
     cut_frames : List[int]
         Frames at which to partition the data. All frames in the original data
         are perserved.
@@ -219,21 +224,23 @@ def csv_split_by_frames(input_file: str, cut_frames: List[int]) -> List[str]:
 
 
 def convert_txt_config(folder: Path):
-    """Convert camera calibrations from MATLAB's *.txt/*.mat to *.json format.
+    """Convert camera calibrations from MATLAB's ``*.txt``/``*.mat`` to
+    ``*.json`` format.
 
-    This function converts a stereo camera calibration saved by MATLAB to *.txt
-    and *.mat files into the *.json format used by functions in this package.
+    This function converts a stereo camera calibration saved by MATLAB to
+    ``*.txt`` and ``*.mat`` files into the ``*.json`` format used by functions
+    in this package.
 
-    The resulting files are saved as 'converted.json' and
-    'world_transformations_converted.json'.
+    The resulting files are saved as ``converted.json`` and
+    ``world_transformations_converted.json``.
 
     Parameters
     ----------
     folder : Path
         Folder containing the stereo calibration output, consisting of the
-        following files:
-        c.txt, f.txt, c2.txt, f2.txt, kc.txt, kc2.txt, R.txt, transvek.txt,
-        transformations.mat
+        following files: \n
+        ``c.txt``, ``f.txt``, ``c2.txt``, ``f2.txt``, ``kc.txt``, ``kc2.txt``,
+        ``R.txt``, ``transvek.txt``, ``transformations.mat``
     """
     cm1 = np.zeros((3, 3))
     cm1[[0, 1], [2, 2]] = np.loadtxt(folder / "c.txt")

@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -36,6 +36,12 @@ class ImageData(QtCore.QObject):
     cam_number : int
         The 'index' of the camera in the GUI this object is associated with.
 
+
+    .. admonition:: Signals
+
+        - :attr:`next_img`
+        - :attr:`data_loaded`
+
     Attributes
     ----------
     folder : Path
@@ -54,21 +60,27 @@ class ImageData(QtCore.QObject):
     frame_idx : int
         Index of the currently displayed frame/image.
         By default None.
-
-    Signals
-    -------
-    next_img([QImage, ], [int, int])
-        Is emitted after successful loading of an image file. Two different
-        variants are sent. The first carries the loaded image as a`QImage`.
-        The second variant carries the frame number and the index of the
-        loaded frame.
-    data_loaded(int, str, Path)
-        Is emitted after successful loading of an image containing folder. It
-        sends the number of loaded frames, the 'ID' of the loaded folder, and
-        the absolute path of the loaded folder.
     """
     data_loaded = QtCore.pyqtSignal((int, str, Path))
+    """pyqtSignal(int, str, Path) : A new image containing folder has been
+    loaded successfully.
+
+    Is emitted after successful loading of an image containing folder. It
+    sends\n
+    - the number of loaded frames,
+    - the 'ID' of the loaded folder, and
+    - the absolute path of the loaded folder.
+    """
+
     next_img = QtCore.pyqtSignal([int, int], [QtGui.QImage], name="next_img")
+    """pyqtSignal([QImage], [int, int]) : Loading of the *next* image file has
+    been successful.
+
+    Is emitted after successful loading of an image file. Two different
+    variants are sent. The first carries the loaded image as a ``QImage``.
+    The second variant carries the frame number and the index of the
+    loaded frame.
+    """
 
     _logger: lg.ActionLogger = None
     _logger_id: str
@@ -129,6 +141,15 @@ class ImageData(QtCore.QObject):
         Returns
         -------
         None
+
+
+        .. Hint::
+
+            **Emits**
+
+            - :attr:`next_img` [QImage]
+            - :attr:`next_img` [int, int]
+            - :attr:`data_loaded`
         """
         if not chosen_file:
             return
@@ -196,14 +217,22 @@ class ImageData(QtCore.QObject):
         ----------
         direction : int
             Direction of the image to open next. Its the index relative to
-            the currently opened image.
-            a) direction = 3    ->  opens the image three positions further
-            b) direction = -1   ->  opens the previous image
-            c) direction = 0    ->  keeps the current image open
+            the currently opened image.\n
+            | a) direction = 3    ->  opens the image three positions further
+            | b) direction = -1   ->  opens the previous image
+            | c) direction = 0    ->  keeps the current image open
 
         Returns
         -------
         None
+
+
+        .. Hint::
+
+            **Emits**
+
+            - :attr:`next_img` [QImage]
+            - :attr:`next_img` [int, int]
         """
         if direction == 0:
             # No change necessary

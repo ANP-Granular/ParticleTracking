@@ -2,8 +2,8 @@
 Functions to run inference with a trained and exported network and save
 the results for further computations.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       07.11.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       07.11.2022
 
 """
 import logging
@@ -37,23 +37,24 @@ def _run_detection(model: torch.ScriptModule, img: Path,
     Parameters
     ----------
     model : torch.ScriptModule
-        Model used for the detection process. It must return a tuple of:
-        [0] -> ROI boxes
-        [1] -> predicted classes
-        [2] -> ROI masks
-        [3] -> prediction scores (confidence)
-        [4] -> image dimensions (height, width)
+        Model used for the detection process. It must return a tuple of:\n
+        | [0] -> ROI boxes
+        | [1] -> predicted classes
+        | [2] -> ROI masks
+        | [3] -> prediction scores (confidence)
+        | [4] -> image dimensions (height, width)
     img : Path
         Path to an image the detection shall be run on.
     threshold : float, optional
-        Threshold for the minimum score of predicted instances.
-        By default 0.5.
+        Threshold for the minimum score of predicted instances.\n
+        By default ``0.5``.
 
     Returns
     -------
     dict
-        Has the following keys:
-        {"pred_boxes", "pred_classes", "pred_masks", "scores", "input_size"}
+        Has the following keys:\n
+        ``"pred_boxes"``, ``"pred_classes"``, ``"pred_masks"``, ``"scores"``,
+        ``"input_size"``
     """
     input = dl.read_image(img)
     with torch.no_grad():
@@ -86,54 +87,55 @@ def run_detection(model: torch.ScriptModule, dataset_format: str,
                   output_dir: Path = Path("./"), threshold: float = 0.5,
                   frames: List[int] = [],
                   cam1_name: str = "gp1", cam2_name: str = "gp2") -> None:
-    """Runs inference on a given set of images and saves the output to a *.csv.
+    """Runs inference on a given set of images and saves the output to a
+    ``*.csv``.
 
     This function runs a rod detection on images and generates rod enpoints
     from the generated masks, if the network predicted these. Finally, these
-    endpoints are saved to a single `rods_df.csv` file in the specified output
-    folder.
+    endpoints are saved to a single ``rods_df.csv`` file in the specified
+    output folder.
 
     Parameters
     ----------
-    model : torch.ScriptModule
-        Model used for the detection process. It must return a tuple of:
-        [0] -> ROI boxes
-        [1] -> predicted classes
-        [2] -> ROI masks
-        [3] -> prediction scores (confidence)
-        [4] -> image dimensions (height, width)
+    model : ScriptModule
+        Model used for the detection process. It must return a tuple of:\n
+        | [0] -> ROI boxes
+        | [1] -> predicted classes
+        | [2] -> ROI masks
+        | [3] -> prediction scores (confidence)
+        | [4] -> image dimensions (height, width)
     dataset_format : str
         String that can be formatted to specify the file locations of images,
         that shall be used for inference.
-        For this the string must contain a `frame` and a `cam_id` field that
-        can be formatted.
-        Example:
-        `"my/dataset/path/{cam_id:s}/experiment_{frame:05d}.png"`
+        For this the string must contain a ``frame`` and a ``cam_id`` field
+        that can be formatted.\n
+        Example:\n
+        ``"my/dataset/path/{cam_id:s}/experiment_{frame:05d}.png"``
     classes : dict, optional
-        Dictionary of classes detectable by the model with
-        {key}  ->  Index of class in the model
-        {value} ->  Name of the class
-        By default None.
+        Dictionary of classes detectable by the model with\n
+        ``{key}``  ->  Index of class in the model\n
+        ``{value}`` ->  Name of the class\n
+        By default ``None``.
     output_dir : Path, optional
         Path to the intended output directory. It's parent directory must exist
-        prior to running this function.
-        By default Path("./").
+        prior to running this function.\n
+        By default ``Path("./")``.
     threshold : float, optional
-        Threshold for the minimum score of predicted instances.
-        By default 0.5.
+        Threshold for the minimum score of predicted instances.\n
+        By default ``0.5``.
     frames : List[int], optional
-        A list of frames, that shall be used for rod detection.
-        By default [].
+        A list of frames, that shall be used for rod detection.\n
+        By default ``[]``.
     cam1_name : str, optional
         The name/ID of the first camera in the experiment. This name will be
-        used for image discovery (see `dataset_format`) and naming of the
-        output *.csv file's columns.
-        By default "gp1".
+        used for image discovery (see ``dataset_format``) and naming of the
+        output ``*.csv`` file's columns.\n
+        By default ``"gp1"``.
     cam2_name : str, optional
         The name/ID of the second camera in the experiment. This name will be
-        used for image discovery (see `dataset_format`) and naming of the
-        output *.csv file's columns.
-        By default "gp2".
+        used for image discovery (see ``dataset_format``) and naming of the
+        output ``*.csv file`` columns.\n
+        By default ``"gp2"``.
     """
     cols = [col.format(id1=cam1_name, id2=cam2_name)
             for col in ds.DEFAULT_COLUMNS]

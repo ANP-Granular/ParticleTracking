@@ -19,9 +19,6 @@ Welcome to RodTracker's documentation!
    api-reference
    changelog/changelog
 
-.. include:: quickstart.md
-   :parser: myst_parser.sphinx_
-
 Indices and tables
 ==================
 

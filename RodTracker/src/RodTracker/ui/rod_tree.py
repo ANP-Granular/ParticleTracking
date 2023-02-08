@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -13,25 +13,27 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
+"""**TBD**"""
 from PyQt5 import QtCore, QtWidgets
 
 
 class RodTree(QtWidgets.QTreeWidget):
-    """A custom QTreeWidget to display all loaded rods as a tree.
+    """A custom ``QTreeWidget`` to display all loaded rods as a tree.
 
     Parameters
     ----------
     *args : iterable
-        Positional arguments for the `QTreeWidget` superclass.
+        Positional arguments for the ``QTreeWidget`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QTreeWidget` superclass.
+        Keyword arguments for the ``QTreeWidget`` superclass.
 
     Attributes
     ----------
     rod_info : None | Dict[Dict[Dict[list]]]
         Holds the loaded information of the rod dataset about a rod being
-        'seen' or 'unseen'.
-        Dimensions: (frame, color, particle, camera)
+        ``'seen'`` or ``'unseen'``.\n
+        Dimensions: ``(frame, color, particle, camera)``
 
     """
     def __init__(self, *args, **kwargs) -> None:
@@ -42,16 +44,17 @@ class RodTree(QtWidgets.QTreeWidget):
     def setup_tree(self, rod_info: dict, columns: list):
         """Handles the setup of the treeview from extracted rod data.
 
-        Accepts a new `rod_info` dataset and (re-)sets the tree display of it.
+        Accepts a new ``rod_info`` dataset and (re-)sets the tree display of
+        it.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         rod_info : Dict[Dict[Dict[list]]]
-            Information of the rod dataset about a rod being 'seen' or
-            'unseen'.
-            Dimensions: (frame, color, particle, camera)
+            Information of the rod dataset about a rod being ``'seen'`` or
+            ``'unseen'``.\n
+            Dimensions: ``(frame, color, particle, camera)``
         columns : list
-            List of 'camera' IDs on which a rod can be "seen"/"unseen".
+            List of *camera* IDs on which a rod can be ``'seen'``/``'unseen'``.
         """
         self.rod_info = rod_info
         self.clear()
@@ -83,13 +86,14 @@ class RodTree(QtWidgets.QTreeWidget):
 
     @QtCore.pyqtSlot(dict)
     def update_tree(self, new_data: dict):
-        """Update the "seen" status in the rod data tree.
+        """Update the *seen* status in the rod data tree.
 
         Parameters
         ----------
         new_data : dict
-            Information about the rod, whos 'seen' status has changed.
-            Mandatory keys: "frame", "cam_id", "color", "seen", "rod_id"
+            Information about the rod, whos *seen* status has changed.
+            Mandatory keys:\n
+            ``"frame"``, ``"cam_id"``, ``"color"``, ``"seen"``, ``"rod_id"``
         """
         header = self.headerItem()
         headings = []
@@ -122,6 +126,15 @@ class RodTree(QtWidgets.QTreeWidget):
                 break
 
     def batch_update_tree(self, new_data: dict, cam_ids: list):
+        """**TBD**
+
+        Parameters
+        ----------
+        new_data : dict
+            **TBD**
+        cam_ids : list
+            **TBD**
+        """
         header = self.headerItem()
         headings = []
         for i in range(1, header.columnCount()):

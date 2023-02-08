@@ -3,8 +3,8 @@ Collection of helper functions to be used with CfgNode configuration objects
 for a Detectron2 network. Additionally, defines a ported version of a
 previously used R-CNN from an older implementation.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       31.10.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       31.10.2022
 
 """
 import pickle
@@ -50,7 +50,8 @@ def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
 
 def write_configs(cfg: CfgNode, directory: str,
                   augmentations: List[T.Augmentation] = None) -> None:
-    """Write a configuration to a 'config.yaml' file in a target directory."""
+    """Write a configuration to a ``config.yaml`` file in a target directory.
+    """
     with open(directory + "/config.yaml", "w") as f:
         f.write(cfg.dump())
     if augmentations is not None:

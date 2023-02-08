@@ -2,8 +2,8 @@
 Collection of plotting functions to evaluate automatic 3D rod position
 reconstruction from images of a stereocamera system.
 
-Authors:    Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       01.11.2022
+**Authors:**    Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       01.11.2022
 
 """
 import logging
@@ -32,15 +32,15 @@ def matching_results(reprojection_errors: np.ndarray,
     reprojection_errors : np.ndarray
     rod_lengths : np.ndarray
     show : bool, optional
-        Flag, whether to show the figure immediately or to return it instead.
-        Default is True.
+        Flag, whether to show the figure immediately or to return it instead.\n
+        Default is ``True``.
 
     Returns
     -------
     None | Tuple[Figure]
-        Returns the figures only, if `show` was set to False.
-        -> [0]: reprojection errors histogram
-        -> [1]: rod lengths histogram
+        Returns the figures only, if ``show`` was set to ``False``.\n
+        [0]: reprojection errors histogram\n
+        [1]: rod lengths histogram
     """
     # rep_norm = (112/1082)   # scaling constant taken from MATLAB script
     # reprojetion_errors *= rep_norm
@@ -59,7 +59,7 @@ def length_hist(rod_lengths: np.ndarray) -> Figure:
 
     Parameters
     ----------
-    rod_lengths : np.ndarray
+    rod_lengths : ndarray
 
     Returns
     -------
@@ -89,7 +89,7 @@ def reprojection_errors_hist(reprojection_errors: np.ndarray) -> Figure:
 
     Parameters
     ----------
-    reprojection_errors : np.ndarray
+    reprojection_errors : ndarray
 
     Returns
     -------
@@ -128,16 +128,16 @@ def displacement_fwise(data_3d: np.ndarray, frames: Iterable[int] = None,
 
     Parameters
     ----------
-    data_3d : np.ndarray
-        [frame, particle, coordinate(3), endpoint(2)]
+    data_3d : ndarray
+        Dimensions: ``[frame, particle, coordinate(3), endpoint(2)]``
     show : bool, optional
-        Flag, whether to show the figure immediately or to return it instead.
-        Default is True.
+        Flag, whether to show the figure immediately or to return it instead.\n
+        Default is ``True``.
 
     Returns
     -------
     None | Figure
-        Returns the figure only, if `show` was set to False.
+        Returns the figure only, if ``show`` was set to ``False``.
     """
     if frames is None:
         frames = np.arange(0, len(data_3d) - 1)
@@ -180,19 +180,19 @@ def compare_diplacements(data: List[np.ndarray], labels: List[str] = None,
 
     Parameters
     ----------
-    data : List[np.ndarray]
-        Dimensions: [dataset, frame, particle, coordinate(3), endpoint(2)]
+    data : List[ndarray]
+        Dimensions: ``[dataset, frame, particle, coordinate(3), endpoint(2)]``
     labels : List[str], optional
-        List of names/IDs for the datasets given.
-        By default None.
+        List of names/IDs for the datasets given.\n
+        By default ``None``.
     show : bool, optional
-        Flag, whether to show the figure immediately or to return it instead.
-        Default is True.
+        Flag, whether to show the figure immediately or to return it instead.\n
+        Default is ``True``.
 
     Returns
     -------
     None | Figure
-        Returns the figure only, if `show` was set to False.
+        Returns the figure only, if ``show`` was set to ``False``.
     """
     fig = plt.figure()
     frames = len(data[0])
@@ -224,26 +224,26 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None,
             show: bool = True) -> None | Figure:
     """Create/show a plot of rods in 3D with/without a comparison dataset.
 
-    The data will be plotted in blue and the comparison in green. `Right` and
-    `Left` can control the displayed frame.
+    The data will be plotted in blue and the comparison in green. ``Right`` and
+    ``Left`` can control the displayed frame.
 
     Parameters
     ----------
-    data : np.ndarray
-        3D coordinates of rods over multiple frames.
-        Dimensions: [frame, 3, 2]
+    data : ndarray
+        3D coordinates of rods over multiple frames.\n
+        Dimensions: ``[frame, 3, 2]``
     comparison : np.ndarray, optional
-        3D coordinates of comparison rods over the same frames as `data`.
-        Dimensions: [frame, 3, 2]
-        By default None.
+        3D coordinates of comparison rods over the same frames as ``data``.\n
+        Dimensions: ``[frame, 3, 2]``\n
+        By default ``None``.
     show : bool, optional
-        Flag, whether to show the figure immediately or to return it instead.
-        Default is True.
+        Flag, whether to show the figure immediately or to return it instead.\n
+        Default is ``True``.
 
     Returns
     -------
     None | Figure
-        Returns the figure only, if `show` was set to False.
+        Returns the figure only, if ``show`` was set to ``False``.
     """
     f1 = data[0]
     fig = plt.figure()
@@ -316,20 +316,20 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
     Parameters
     ----------
     data : np.ndarray
-        3D coordinates of rods over multiple frames.
-        Dimensions: [frame, particle, 3, 2]
+        3D coordinates of rods over multiple frames.\n
+        Dimensions: ``[frame, particle, 3, 2]``
     comparison : np.ndarray, optional
-        3D coordinates of comparison rods over the same frames as `data`.
-        Dimensions: [frame, particle, 3, 2]
-        By default None.
+        3D coordinates of comparison rods over the same frames as ``data``.\n
+        Dimensions: ``[frame, particle, 3, 2]``\n
+        By default ``None``.
     show : bool, optional
-        Flag, whether to show the figure immediately or to return it instead.
-        Default is True.
+        Flag, whether to show the figure immediately or to return it instead.\n
+        Default is ``True``.
 
     Returns
     -------
     None | Figure
-        Returns the figure only, if `show` was set to False.
+        Returns the figure only, if ``show`` was set to ``False``.
     """
     f1 = data[0]
     fig = plt.figure()
@@ -379,30 +379,30 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
 
 def match_nd(weights: np.ndarray, whr: tuple[np.ndarray], show: bool = True)\
         -> None | Figure:
-    """Plot the result `npartite_matching` as all nodes with edges between the
-    matched nodes.
+    """Plot the result :func:`.npartite_matching` as all nodes with edges
+    between the matched nodes.
 
     Parameters
     ----------
-    weights : np.ndarray
-        Multidimensional weight matrix used for ND_matching.
-        Example dimensions (dictates `whr` dimensions):
-        a) [12, 4, 8]
-        b) [12, 12, 12, 48]
-    whr : tuple[np.ndarray]
-        Output of the `npartite_matching` process, i.e. the matched indeces
-        per dimension.
-        Example dimensions (see `weights` dimensions):
-        a) (4, 4, 4) -> tuple of 3 arrays with len=4
-        b) (12, 12, 12, 12) -> tuple of 4 arrays with len=12
+    weights : ndarray
+        Multidimensional weight matrix used for ND_matching.\n
+        Example dimensions (dictates ``whr`` dimensions):\n
+        a) ``[12, 4, 8]``\n
+        b) ``[12, 12, 12, 48]``\n
+    whr : Tuple[ndarray]
+        Output of the :func:`.npartite_matching` process, i.e. the matched
+        indeces per dimension.\n
+        Example dimensions (see ``weights`` dimensions):\n
+        a) ``(4, 4, 4)`` -> tuple of ``3`` arrays with ``len=4``\n
+        b) ``(12, 12, 12, 12)`` -> tuple of ``4`` arrays with ``len=12``\n
     show : bool, optional
-        Flag, whether to show the figure immediately or to return it instead.
-        Default is True.
+        Flag, whether to show the figure immediately or to return it instead.\n
+        Default is ``True``.
 
     Returns
     -------
     None | Figure
-        Returns the figure only, if `show` was set to False.
+        Returns the figure only, if ``show`` was set to ``False``.
 
     Note
     ----

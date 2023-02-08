@@ -3,8 +3,8 @@ Functions to prepare datasets for the use by the Detectron2 framework, as well
 as functions to get basic information about a dataset, i.e. size and thing
 classes.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       31.10.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       31.10.2022
 
 """
 import os
@@ -100,12 +100,13 @@ def register_dataset(dataset: DataSet,
     ----------
     dataset : DataSet
     generation_function : Callable, optional
-        Function, that transforms a given `DataSet` into a Detectron2 readable
-        format.
-        By default `load_custom_data(...)`.
+        Function, that transforms a given :class:`.DataSet` into a Detectron2
+        readable format.\n
+        By default :func:`load_custom_data`.
     classes : List[str], optional
-        Names of the classes present in the loaded dataset.
-        By default None, which results in class names like 0, 1, 2, ...
+        Names of the classes present in the loaded dataset.\n
+        By default ``None``, which results in class names like
+        ``0, 1, 2, ...``.
     """
     DatasetCatalog.register(dataset.name,
                             lambda: generation_function(dataset))
@@ -117,7 +118,7 @@ def register_dataset(dataset: DataSet,
 
 
 def get_dataset_size(dataset: DataSet) -> int:
-    """Compute the number of annotated images in a dataset (excluding
+    """Compute the number of annotated images in a :class:`.DataSet` (excluding
     augmentation)."""
     with open(dataset.annotation) as metadata:
         annotations = json.load(metadata)

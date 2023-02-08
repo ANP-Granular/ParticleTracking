@@ -1,4 +1,4 @@
-#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@ class Configuration(QtCore.QObject):
         path : str, optional
             Path of the file to read. If no path is given the classes saved
             path is used, this might be the default path or a programmatically
-            exchanged path
+            exchanged path.
 
         Returns
         -------
@@ -69,16 +69,17 @@ class Configuration(QtCore.QObject):
 
     @classmethod
     def save(cls, new_path: str = None, new_data: dict = None):
-        """Saves the `contents` to a location on disk.
+        """Saves the :attr:`contents` to a location on disk.
 
-        The saving location is determined by the objects property `path` if
-        the parameter is left out.
+        The saving location is determined by the objects property :attr:`path`
+        if the parameter is left out.
 
         Parameters
         ----------
         new_path : str, optional
             Location to save the contents to. If this parameter is left
-            blank the Configuration objects path property is used.
+            blank the :class:`Configuration` object's :attr:`path` property is
+            used.
         new_data : dict, optional
             Configuration data, that is supposed to be saved and therefore
             replace the old configuration data.
@@ -102,20 +103,22 @@ class Settings(Configuration):
     Parameters
     ----------
     path : str, optional
-        Location and name where the settings are saved as a *.json file. The
-        default location is used, if no path is given.
+        Location and name where the settings are saved as a ``*.json`` file.
+        The default location is used, if no path is given.
+
+
+    .. admonition:: Signals
+
+        - :attr:`settings_changed`
 
     Attributes
     ----------
-    path : str
-        Location and name where the settings are saved as a *.json file.
     parent : QWidget
-
-    Signals
-    -------
-    settings_changed(dict)
     """
     path = str(TEMP_DIR / "settings.json")
+    """str : Location and name where the settings are saved as a ``*.json``
+    file.
+    """
     _default = {
         "visual": {
             "rod_thickness": 3,
@@ -143,6 +146,7 @@ class Settings(Configuration):
     _contents = _default
     parent: QtWidgets.QMainWindow
     settings_changed = QtCore.pyqtSignal([dict], name="settings_changed")
+    """pyqtSignal(dict) : **TBD**"""
 
     def __init__(self, path: str = None):
         super().__init__()
@@ -166,9 +170,14 @@ class Settings(Configuration):
         self.send_settings()
 
     def send_settings(self):
-        """Notifies subscribers of `settings_changed` about settings changes.
+        """Sends the current settings as one signal per settings category.
 
-        Emits a `settings_changed` signal for every category of settings.
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`settings_changed`          **(potentially repeatedly)**
         """
         for _, category in self._contents.items():
             self.settings_changed.emit(category)

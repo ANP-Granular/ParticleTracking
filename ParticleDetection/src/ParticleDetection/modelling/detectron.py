@@ -2,8 +2,8 @@
 Collection of custom Detectron2 objects to provide a customized training
 process with more sophisticated outputs.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       31.10.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       31.10.2022
 
 """
 import time
@@ -38,14 +38,14 @@ class CustomTrainer(DefaultTrainer):
         Parameters
         ----------
         cfg : CfgNode
-            Detectron2 network configuration with allowed TASK field of:
-            "None" -> will be changed to "segm"
-            "segm" -> results in an evaluator for a segmentation task
-            "keypoints" -> results in an evaluator for a keypoint detection
-                           task
+            Detectron2 network configuration with allowed TASK field of:\n
+            ``"None"`` -> will be changed to ``"segm"``\n
+            ``"segm"`` -> results in an evaluator for a segmentation task\n
+            ``"keypoints"`` -> results in an evaluator for a keypoint detection
+            task
         dataset_name : str
             Name of a dataset that is registered in the Detectron2 framework,
-            that is used as the 'test' dataset of the constructed evaluator.
+            that is used as the ``test`` dataset of the constructed evaluator.
 
         Returns
         -------
@@ -80,8 +80,8 @@ class CustomTrainer(DefaultTrainer):
 
     def build_hooks(self):
         """
-        Build a list of hooks, including the DefaultTrainer default hooks and
-        a custom loss hook used during evaluation.
+        Build a list of hooks, including the ``DefaultTrainer`` default hooks
+        and a custom loss hook used during evaluation.
         """
         hooks = super().build_hooks()
         hooks.insert(-1, EvalLossHook(
@@ -95,12 +95,6 @@ class CustomTrainer(DefaultTrainer):
         ))
         return hooks
 
-    # # TODO: finish this (it worked without it too)
-    # @classmethod
-    # def build_test_loader(cls, cfg, dataset_name):
-    #     return build_detection_test_loader(cfg, dataset_name,
-    #                                        mapper=CompleteMapper)
-
     @classmethod
     def build_train_loader(cls, cfg):
         """Custom loader for training data.
@@ -108,7 +102,7 @@ class CustomTrainer(DefaultTrainer):
         Parameters
         ----------
         cfg : CfgNode
-            Detectron2 network configuration
+            Detectron2 network configuration.
 
         Returns
         -------
@@ -158,7 +152,7 @@ class CompleteMapper(DatasetMapper):
     def __call__(self, dataset_dict):
         """
         Args:
-            dataset_dict (dict): Metadata of one image, in Detectron2 Dataset
+            dataset_dict (dict): Metadata of one image, in Detectron2 dataset
             format.
 
         Returns:
@@ -208,6 +202,7 @@ class CompleteMapper(DatasetMapper):
 
 
 class EvalLossHook(HookBase):
+    """**TBD**"""
     def __init__(self, eval_period, model, data_loader):
         self._model = model
         self._period = eval_period
@@ -293,7 +288,7 @@ class CustomTensorboardWriter(EventWriter):
 
             kwargs:
                 Other arguments passed to
-                `torch.utils.tensorboard.SummaryWriter(...)`
+                ``torch.utils.tensorboard.SummaryWriter()``
         """
         self._window_size = window_size
         from torch.utils.tensorboard import SummaryWriter

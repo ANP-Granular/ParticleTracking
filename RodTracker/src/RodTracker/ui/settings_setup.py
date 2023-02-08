@@ -1,3 +1,21 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of RodTracker.
+#  RodTracker is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  RodTracker is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
+"""**TBD**"""
+
 import copy
 from PyQt5 import QtWidgets, QtGui, QtCore
 from RodTracker.backend.settings import Settings
@@ -72,7 +90,7 @@ def init_settings(ui: mw_l.Ui_MainWindow, settings: Settings):
 
 
 def clear_select(ui: mw_l.Ui_MainWindow):
-    """Helper to clear selections of QSpinBoxes after values changed."""
+    """Helper to clear selections of ``QSpinBox`` after values changed."""
     ui.number_size.lineEdit().deselect()
     ui.offset.lineEdit().deselect()
     ui.thickness.lineEdit().deselect()
@@ -80,18 +98,18 @@ def clear_select(ui: mw_l.Ui_MainWindow):
 
 def handle_line_edit_changes(obj: QtWidgets.QLineEdit, settings: Settings,
                              category: str, field: str):
-    """Handler function to extract the users' input from a `QLineEdit`.
+    """Handler function to extract the users' input from a ``QLineEdit``.
 
     Parameters
     ----------
-    obj : QtWidgets.QLineEdit
+    obj : QLineEdit
         The visual object, that has undergone a change.
     settings : Settings
         Settings object of the current session of the RodTracker.
     category : str
         Category of settings.
     field : str
-        Field/setting within the `category`.
+        Field/setting within the ``category``.
     """
     try:
         converted_val = float(obj.displayText())
@@ -106,14 +124,14 @@ def handle_color_pick(obj: QtWidgets.QToolButton, settings: Settings,
 
     Parameters
     ----------
-    obj : QtWidgets.QToolButton
+    obj : QToolButton
         The visual object, that has been clicked.
     settings : Settings
         Settings object of the current session of the RodTracker.
     category : str
         Category of settings.
     field : str
-        Field/setting within the `category`.
+        Field/setting within the ``category``.
     """
     color_vals = settings._contents[category][field]
     color = QtWidgets.QColorDialog(QtGui.QColor(*color_vals), obj)
@@ -129,8 +147,8 @@ def draw_icon(color: QtGui.QColor, target: QtWidgets.QToolButton):
 
     Parameters
     ----------
-    color : QtGui.QColor
-    target : QtWidgets.QToolButton
+    color : QColor
+    target : QToolButton
     """
     to_icon = QtGui.QPixmap(35, 25)
     painter = QtGui.QPainter(to_icon)
@@ -152,7 +170,7 @@ def set_all_values(se: dict, ui: mw_l.Ui_MainWindow):
     ----------
     se : dict
         Nested settings dictionary.
-    ui : mw_l.Ui_MainWindow
+    ui : Ui_MainWindow
         Object containing all visual elements of the RodTracker's main window.
     """
     ui.offset.setValue(se["visual"]["number_offset"])
@@ -175,7 +193,7 @@ def restore_defaults(ui: mw_l.Ui_MainWindow, settings: Settings):
 
     Parameters
     ----------
-    ui : mw_l.Ui_MainWindow
+    ui : Ui_MainWindow
         Object containing all visual elements of the RodTracker's main window.
     settings : Settings
         Settings object of the current session of the RodTracker.

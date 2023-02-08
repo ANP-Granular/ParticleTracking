@@ -22,7 +22,7 @@ def configure_logging(level: int = logging.INFO):
     Parameters
     ----------
     level : int, optional
-        By default logging.INFO.
+        By default ``logging.INFO``.
     """
     lg = logging.getLogger()
     ch = logging.StreamHandler(sys.stdout)
@@ -169,17 +169,17 @@ def rod_endpoints(prediction, classes: dict[int, str], method: str = "simple")\
     ----------
     prediction : dict
         Prediction output of a Detectron2 network with the actual results
-        present in `prediction["instances"]` as a torch.Tensor.
+        present in ``prediction["instances"]`` as a ``torch.Tensor``.
     classes : dict[int, str]
         Dictionary of classes expected/possible in the prediction. The key
         being the class ID as an integer, that is the output of the
         inferring network. The value being an arbitrary string associated with
-        the class, e.g. {1: "blue", 2: "green"}.
+        the class, e.g. ``{1: "blue", 2: "green"}``.
     method : str
-        Selection of endpoint extraction method:
-            "simple"    ->  Creates a bounding box around the masks.
-            "advanced" ->  Creates Hough lines and clusters these.
-        Default is "simple".
+        Selection of endpoint extraction method:\n
+            ``"simple"``   ->  Creates a bounding box around the masks.\n
+            ``"advanced"`` ->  Creates Hough lines and clusters these.\n
+        Default is ``"simple"``.
     Returns
     -------
     dict[int, np.ndarray]
@@ -220,8 +220,8 @@ def line_estimator(segmentation: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    segmentation : np.ndarray
-        Boolean segmentation (bit)mask.
+    segmentation : ndarray
+        Boolean segmentation (bit-)mask.
     Returns
     -------
     np.ndarray
@@ -304,8 +304,8 @@ def line_estimator_simple(segmentation: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    segmentation : np.ndarray
-        Boolean segmentation (bit)mask.
+    segmentation : ndarray
+        Boolean segmentation (bit-)mask.
     Returns
     -------
     np.ndarray
@@ -351,7 +351,7 @@ def paste_mask_in_image_old(mask: torch.Tensor, box: torch.Tensor, img_h: int,
                             img_w: int, threshold: float = 0.5):
     """Paste a single mask in an image.
 
-    This is a per-box implementation of `paste_masks_in_image`. This function
+    This is a per-box implementation of ``paste_masks_in_image``. This function
     has larger quantization error due to incorrect pixel modeling and is not
     used any more.
 
@@ -359,27 +359,27 @@ def paste_mask_in_image_old(mask: torch.Tensor, box: torch.Tensor, img_h: int,
     ----------
     mask : Tensor
         A tensor of shape (Hmask, Wmask) storing the mask of a single object
-        instance. Values are in [0, 1].
+        instance. Values are :math:`\\in [0, 1]`.
     box : Tensor
-        A tensor of shape (4, ) storing the x0, y0, x1, y1 box corners of the
-        object instance.
+        A tensor of shape ``(4, )`` storing the ``x0, y0, x1, y1`` box corners
+        of the object instance.
     img_h : int
         Image height.
     img_w : int
         Image width.
     threshold : float
-        Mask binarization threshold in [0, 1].
-        Default is 0.5.
+        Mask binarization threshold :math:`\\in [0, 1]`.\n
+        Default is ``0.5``.
 
     Returns
     -------
     Tensor :
         The resized and binarized object mask pasted into the original
-        image plane (a tensor of shape (img_h, img_w)).
+        image plane (a tensor of shape ``(img_h, img_w)``).
 
     Note
     ----
-    This function is copied from `detectron2.layers.mask_ops`.
+    This function is copied from ``detectron2.layers.mask_ops``.
     """
     # Conversion from continuous box coordinates to discrete pixel coordinates
     # via truncation (cast to int32). This determines which pixels to paste the

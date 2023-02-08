@@ -14,6 +14,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+""" **TBD**
+
+Attributes
+----------
+rod_data : DataFrame | None
+    **TBD**
+lock : QReadWriteLock
+    **TBD**
+"""
+
 import re
 import math
 import logging
@@ -27,11 +37,20 @@ import RodTracker.backend.file_locations as fl
 import RodTracker.backend.parallelism as pl
 import RodTracker.ui.dialogs as dialogs
 
-RE_COLOR_DATA = re.compile('rods_df_\\w+\\.csv')                # noqa: W605
-RE_SEEN = re.compile('seen_gp\\d+')                            # noqa: W605
-RE_2D_POS = re.compile('[xy][12]_gp\\d+')                      # noqa: W605
-RE_3D_POS = re.compile('[xyz][12]')                           # noqa: W605
-POSITION_SCALING = 1.0
+RE_COLOR_DATA: re.Pattern = re.compile(r'rods_df_\w+\.csv')
+"""Pattern : Pattern how the rod position data file names are expected."""
+RE_SEEN: re.Pattern = re.compile(r'seen_gp\d+')
+"""Pattern : Pattern for columns indicating a particle's *seen* status.
+
+Pattern for column names in the rod position data indicating whether a
+particle was seen in the a specific camera.
+"""
+RE_2D_POS: re.Pattern = re.compile(r'[xy][12]_gp\d+')
+"""Pattern : Pattern for columns containing 2D position information."""
+RE_3D_POS: re.Pattern = re.compile(r'[xyz][12]')
+"""Pattern : Pattern for columns containing 3D position information."""
+POSITION_SCALING: float = 1.0
+"""float : Scale factor for loaded position data."""
 
 rod_data: pd.DataFrame = None
 lock = QtCore.QReadWriteLock(QtCore.QReadWriteLock.Recursive)
@@ -41,16 +60,39 @@ _logger = logging.getLogger(__name__)
 class RodData(QtCore.QObject):
     """Object for rod position data management.
 
-    A `RodData` object handles the loading, selection, changing and saving of
-    rod position data, that are meant to be displayed by `RodImageWidget`s and
-    `View3D` objects.
+    A :class:`RodData` object handles the loading, selection, changing and
+    saving of rod position data, that are meant to be displayed by
+    :class:`.RodImageWidget` and :class:`.View3D` objects.
 
     Parameters
     ----------
     *args : iterable
-        Positional arguments for the `QObject` superclass.
+        Positional arguments for the ``QObject`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QObject` superclass.
+        Keyword arguments for the ``QObject`` superclass.
+
+
+    .. admonition:: Signals
+
+        - :attr:`data_2d`
+        - :attr:`data_3d`
+        - :attr:`seen_loaded`
+        - :attr:`data_update`
+        - :attr:`saved`
+        - :attr:`batch_update`
+
+    .. admonition:: Slots
+
+        - :meth:`catch_data`
+        - :meth:`catch_number_switch`
+        - :meth:`save_changes`
+        - :meth:`select_rods`
+        - :meth:`update_frame`
+        - :meth:`update_color_2D`
+        - :meth:`update_color_3D`
+        - :meth:`update_rod_2D`
+        - :meth:`update_rod_3D`
+        - :meth:`update_settings`
 
     Attributes
     ----------
@@ -66,71 +108,62 @@ class RodData(QtCore.QObject):
     color_2D : str | None
         Color of the currently provided 2D position data.
     color_3D : str | None
-        Color of the currently provided 3D position data. None, if all colors
-        are provided.
+        Color of the currently provided 3D position data. ``None``, if all
+        colors are provided.
     rod_2D : str | None
-        Rod number of the corrently provided 2D position data. None, if all
+        Rod number of the corrently provided 2D position data. ``None``, if all
         rods are provided.
     rod_3D : str | None
-        Rod number of the corrently provided 3D position data. None, if all
+        Rod number of the corrently provided 3D position data. ``None``, if all
         rods are provided.
     cols_2D : List[str]
-        Columns of the loaded DataFrame relevant for 2D data display.
+        Columns of the loaded ``DataFrame`` relevant for 2D data display.
     cols_3D : List[str]
-        Columns of the loaded DataFrame relevant for 3D data display.
-    show_2D : bool
-        Flag, whether to provide 2D data.
-        Default is True.
-    show_3D : bool
-        Flag, whether to provide 3D data.
-        Default is True.
+        Columns of the loaded ``DataFrame`` relevant for 3D data display.
 
-    Signals
-    -------
-    data_2d(DataFrame, str)
-        Provide 2D rod position data for other objects to display, defined by
-        'frame', 'color_2D', and 'rod_2D'.
-    data_3d(DataFrame)
-        Provide 2D rod position data for other objects to display, defined by
-        'frame', 'color_3D', and 'rod_3D'.
-    seen_loaded(dict, list)
-        Information of the rod dataset about a rod being 'seen' or 'unseen' for
-        display as a tree.
-        Dict[Dict[Dict[list]]] -> (frame, color, particle, camera)
-        list -> List of 'camera' IDs on which a rod can be "seen"/"unseen".
-    data_update(dict)
-        Notify objects about updates in the 'seen'/'unseen' status of rods.
-        dict -> Information about the rod, whos 'seen' status has changed.
-                Mandatory keys: "frame", "cam_id", "color", "seen", "rod_id"
-    saved()
-        Notify objects, that all changed data has been saved successfully.
 
-    Slots
-    -----
-    catch_data(Action)
-    catch_number_switch(NumberChangeActions, int, int, str)
-    catch_number_switch(NumberChangeActions, int, int, str, str, int)
-    save_changes()
-    save_changes(bool)
-    select_rods()
-    select_rods(str)
-    update_frame(int, int)
-    update_color_2D(str)
-    update_color_3D(str, bool)
-    update_rod_2D(int)
-    update_rod_3D(int, bool)
-    update_settings(dict)
+
     """
     data_2d = QtCore.pyqtSignal([pd.DataFrame, str], name="data_2d")
+    """pyqtSignal : Provide 2D rod position data for other objects to display,
+    defined by 'frame', 'color_2D', and 'rod_2D'.
+    """
+
     data_3d = QtCore.pyqtSignal([pd.DataFrame], name="data_3d")
+    """pyqtSignal[DataFrame] : Provide 2D rod position data for other objects
+    to display, defined by 'frame', 'color_3D', and 'rod_3D'.
+    """
+
     data_loaded = QtCore.pyqtSignal([Path, Path, list], [list],
                                     [int, int, list], [str, str],
                                     name="data_loaded")
+    """pyqtSignal : **TBD**"""
+
     seen_loaded = QtCore.pyqtSignal((dict, list), name="seen_loaded")
+    """pyqtSignal : Information of the rod dataset about a rod being 'seen' or
+    'unseen' for display as a tree.
+
+    | Dict[Dict[Dict[list]]] -> (frame, color, particle, camera)
+    | list -> List of 'camera' IDs on which a rod can be "seen"/"unseen"
+    """
+
     data_update = QtCore.pyqtSignal((dict), name="data_update")
+    """pyqtSignal : Notify objects about updates in the 'seen'/'unseen' status
+    of rods.
+
+    dict -> Information about the rod, whos 'seen' status has changed.\n
+    Mandatory keys: "frame", "cam_id", "color", "seen", "rod_id"
+    """
+
     batch_update = QtCore.pyqtSignal((dict, list))
+    """pyqtSignal : **TBD**"""
+
     saved = QtCore.pyqtSignal(name="saved")
+    """pyqtSignal : Notify objects, that all changed data has been saved
+    successfully.
+    """
     requested_data = QtCore.pyqtSignal([pd.DataFrame], name="requested_data")
+    """pyqtSignal : **TBD**"""
 
     _logger: lg.ActionLogger = None
     _logger_id: str = "RodData"
@@ -207,7 +240,7 @@ class RodData(QtCore.QObject):
         Parameters
         ----------
         pre_selection : str
-            Path to a folder that the `QFileDialog` is attempted to be opened
+            Path to a folder that the ``QFileDialog`` is attempted to be opened
             with. By default and as a fallback the current working directory is
             used.
             Default is "".
@@ -255,13 +288,23 @@ class RodData(QtCore.QObject):
         Parameters
         ----------
         chosen_folder : Path
-            Path to a folder with files in the format of `RE_COLOR_DATA`.
+            Path to a folder with files in the format of
+            :const:`RE_COLOR_DATA`.
 
         Returns
         -------
         bool
-            True, if loading successful.
-            False, if loading aborted.
+            ``True``, if loading successful.
+            ``False``, if loading aborted.
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`data_loaded` [Path, Path, list]
+            - :attr:`data_loaded` [str, str]
+            - :attr:`data_loaded` [int, int, list]
         """
         self._allow_overwrite = False
         # Check whether there is already corrected data
@@ -338,7 +381,15 @@ class RodData(QtCore.QObject):
         temp_only : bool
             Flag to either save to the temporary files only or permanently
             to the (user-)chosen location.
-            (Default is False)
+            (Default is ``False``)
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`data_loaded` [Path, Path, list]
+            - :attr:`saved`
         """
         # TODO: move saving to different Thread(, if it still takes too long)
         if rod_data is None:
@@ -435,7 +486,7 @@ class RodData(QtCore.QObject):
         ----------
         color : str | None
             Color to display in 2D.
-            Default is None.
+            Default is ``None``.
         """
         self.color_2D = color
         self.provide_data(data_3d=False)
@@ -449,7 +500,7 @@ class RodData(QtCore.QObject):
         rod : int | None
             Rod number to display in 2D. If no number is given all rods are
             selected.
-            Default is None.
+            Default is ``None``.
         """
         self.rod_2D = rod
         self.provide_data(data_3d=False)
@@ -463,10 +514,10 @@ class RodData(QtCore.QObject):
         rod : int | None
             Rod number to display in 3D. If no number is given all rods are
             selected.
-            Default is None.
+            Default is ``None``.
         send : bool
             Flag, whether to send a signal with the updated 3D data.
-            Default is True.
+            Default is ``True``.
         """
         self.rod_3D = rod
         if send:
@@ -481,30 +532,39 @@ class RodData(QtCore.QObject):
         color : str | None
             Color to display in 3D. If no color is given all colors are
             selected.
-            Default is None.
+            Default is ``None``.
         send : bool
             Flag, whether to send a signal with the updated 3D data.
-            Default is True.
+            Default is ``True``.
         """
         self.color_3D = color
         if send:
             self.provide_data(data_2d=False)
 
     def provide_data(self, data_2d: bool = True, data_3d: bool = True):
-        """Slice the loaded `DataFrame` and send update signals for 2D/3D data.
+        """Slice the loaded ``DataFrame`` and send update signals for 2D/3D
+        data.
 
-        Slice the loaded data according to `frame`, `color_2D`, `rod_2D`,
-        `color_3D`, `rod_3D` and send signals with this payload for
-        2D and 3D display.
+        Slice the loaded data according to :attr:`frame`, :attr:`color_2D`,
+        :attr:`rod_2D`, :attr:`color_3D`, :attr:`rod_3D` and send signals with
+        this payload for 2D and 3D display.
 
         Parameters
         ----------
         data_2d : bool, optional
             Flag, whether to send 2D data.
-            By default True.
+            By default ``True``.
         data_3d : bool, optional
             Flag, whether to send 3D data.
-            By default True.
+            By default ``True``.
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`data_2d`
+            - :attr:`data_3d`
         """
         if self.frame is None or rod_data is None:
             return
@@ -546,20 +606,27 @@ class RodData(QtCore.QObject):
         frames : List[int], optional
             List of frames to select from the loaded dataset. All are returned,
             if no list is given.
-            By default None.
+            By default ``None``.
         colors : List[str], optional
             List of colors to select from the loaded dataset. All are returned,
             if no list is given.
-            By default None.
+            By default ``None``.
         rods : List[int], optional
             List of rod numbers to select from the loaded dataset. All are
             returned, if no list is given.
-            By default None.
+            By default ``None``.
 
         Returns
         -------
         pd.DataFrame
             Copy of a slice of the loaded data.
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`requested_data`
         """
         # Provide data as requested, will return the requested data
         lock.lockForRead()
@@ -603,6 +670,22 @@ class RodData(QtCore.QObject):
 
     @QtCore.pyqtSlot(pd.DataFrame)
     def add_data(self, data: pd.DataFrame):
+        """**TBD**
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            _description_
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`data_loaded` [list]
+            - :attr:`data_loaded` [str, str]
+            - :attr:`data_loaded` [int, int, list]
+        """
         global rod_data
         if rod_data is None:
             with QtCore.QWriteLocker(lock):
@@ -710,14 +793,21 @@ class RodData(QtCore.QObject):
 
     @QtCore.pyqtSlot(lg.Action)
     def catch_data(self, change: lg.Action) -> None:
-        """Change the loaded data according to the performed `Action`.
+        """Change the loaded data according to the performed :class:`.Action`.
 
-        Change the loaded data according to the performed `Action` and notify
-        other objects about this update.
+        Change the loaded data according to the performed :class:`.Action` and
+        notify other objects about this update.
 
         Parameters
         ----------
         change : Action
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`data_update`               **(potentially repeatedly)**
         """
         new_data = change.to_save()
         if new_data is None:
@@ -757,14 +847,17 @@ class RodData(QtCore.QObject):
         Parameters
         ----------
         mode : NumberChangeActions
-            Possible modes are `ALL`, `ALL_ONE_CAM`, and `ONE_BOTH_CAMS`.
+            Possible modes are:\n
+            - :attr:`ALL`,
+            - :attr:`ALL_ONE_CAM`, and
+            - :attr:`ONE_BOTH_CAMS`.
         old_id : int
         new_id : int
         cam_id : str
         color : str, optional
-            By default None.
+            By default ``None``.
         frame : int, optional
-            By default None.
+            By default ``None``.
         """
         if color is None:
             color = self.color_2D
@@ -788,13 +881,13 @@ class RodData(QtCore.QObject):
         ----------
         path : Path
             Folder path that shall be checked for files matching the pattern in
-            `RE_COLOR_DATA`.
+            :const:`RE_COLOR_DATA`.
 
         Returns
         -------
         bool
-            True, if at least 1 file matching the pattern was found.
-            False, if no file was found or the folder does not exist.
+            ``True``, if at least 1 file matching the pattern was found.
+            ``False``, if no file was found or the folder does not exist.
 
         Raises
         ------
@@ -816,9 +909,9 @@ class RodData(QtCore.QObject):
     def get_color_data(read_dir: Path) -> Tuple[pd.DataFrame, List[str]]:
         """Reads rod data files from a directory.
 
-        Checks all *.csv files for the rod data naming convention
-        (see `RE_COLOR_DATA`), loads and concatenates them, and extracts the
-        corresponding color from the file names.
+        Checks all ``*.csv`` files for the rod data naming convention
+        (see :const:`RE_COLOR_DATA`), loads and concatenates them, and extracts
+        the corresponding color from the file names.
 
         Parameters
         ----------
@@ -854,14 +947,14 @@ class RodData(QtCore.QObject):
     @staticmethod
     def extract_seen_information(data: pd.DataFrame = None) -> \
             Tuple[Dict[int, Dict[str, dict]], list]:
-        """Extracts the seen/unseen parameter for all rods in `rod_data`.
+        """Extracts the seen/unseen parameter for all rods in :data:`rod_data`.
 
         Returns
         -------
         Dict[Dict[dict]]
-            Frame[Color[RodNo.]] -> out[501]["red"][1] = ["seen", "unseen"]
+            Frame[Color[RodNo.]] -> ``out[501]["red"][1] = ["seen", "unseen"]``
         list
-            out_list = ["gp1_seen", "gp2_seen"]
+            ``out_list = ["gp1_seen", "gp2_seen"]``
         """
         if data is None:
             global rod_data
@@ -896,8 +989,8 @@ class RodData(QtCore.QObject):
         """Deletes unused rods from the loaded dataset.
 
         Unused rods are identified by not having positional data in the
-        *gp_* columns of the dataset. This assumed when only NaN or 0 is
-        present in all these columns for a given rod/row. The user is asked
+        **gp_** columns of the dataset. This assumed when only ``NaN`` or ``0``
+        is present in all these columns for a given rod/row. The user is asked
         to confirm these deletions and has the opportunity to exclude
         identified candidates from deletion. All confirmed rows are then
         deleted from the main dataset in RAM and therefore propagated to
@@ -942,10 +1035,10 @@ class RodData(QtCore.QObject):
 
     @staticmethod
     def find_unused_rods() -> pd.DataFrame:
-        """Searches for unused rods in the `rod_data` dataset.
+        """Searches for unused rods in the :data:`rod_data` dataset.
 
-        Marks and returns unused rods by verifying that the columns "*_gp*"
-        in the dataset contain only 0 or NaN.
+        Marks and returns unused rods by verifying that the columns **_gp**
+        in the dataset contain only ``0`` or ``NaN``.
 
         Returns
         -------
@@ -969,7 +1062,7 @@ class RodData(QtCore.QObject):
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict):
-        """Catches updates of the settings from a `Settings` class.
+        """Catches updates of the settings from a :class:`.Settings` class.
 
         Checks for the keys relevant to itself and updates the corresponding
         attributes. Redraws itself with the new settings in place, if
@@ -995,13 +1088,13 @@ class RodData(QtCore.QObject):
 
 
 def change_data(new_data: dict) -> None:
-    """Changes or extends the `rod_data` dataset with the given new data.
+    """Changes or extends the :data:`rod_data` dataset with the given new data.
 
     Parameters
     ----------
     new_data : dict
         Dictionary describing the new/changed rod data. Must contain the fields
-        ["frame", "cam_id", "color", "position", "rod_id"]
+        ``"frame"``, ``"cam_id"``, ``"color"``, ``"position"``, ``"rod_id"``.
     """
     global rod_data
     lock.lockForWrite()
@@ -1059,13 +1152,16 @@ def rod_number_swap(mode: lg.NumberChangeActions, previous_id: int,
     Parameters
     ----------
     mode: NumberChangeActions
-        Possible modes are `ALL`, `ALL_ONE_CAM`, and `ONE_BOTH_CAMS`.
+        Possible modes are\n
+         - :attr:`.ALL`,
+         - :attr:`.ALL_ONE_CAM`, and
+         - :attr:`.ONE_BOTH_CAMS`.
     previous_id : int
     new_id : int
     color : str
     frame : int
     cam_id : str, optional
-        Default is None.
+        Default is ``None``.
     """
     global rod_data
     lock.lockForWrite()

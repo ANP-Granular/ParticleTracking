@@ -1,8 +1,8 @@
 """
 Functions to visualize predictions of Detectron2 models.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       11.08.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       11.08.2022
 
 """
 import os
@@ -29,21 +29,22 @@ def visualize(prediction, original: Union[dict, str],
         documentation.
     original : Union[dict, str]
         Is either the full dataset entry with all metadata or just the path to
-        the image file used during inference.
-        dict    --->    full dataset entry
-        str     --->    path to image
+        the image file used during inference.\n
+        ``dict``    --->    full dataset entry\n
+        ``str``     --->    path to image\n
     hide_tags : bool, optional
-        Flag to remove the "scores" field, such that it is not visualized.
-        By default True.
+        Flag to remove the ``"scores"`` field, such that it is not
+        visualized.\n
+        By default ``True``.
     output_dir : str, optional
         Path to the intended output directory. This directory must exist prior
-        to running this function.
-        By default "".
+        to running this function.\n
+        By default ``""``.
     colors : Iterable, optional
         Specifies the color used during plotting for each class that is
-        predictable by the model. The colors of the "tab10" colormap will be
-        used by default.
-        By default None.
+        predictable by the model. The colors of the ``"tab10"`` colormap will
+        be used by default.\n
+        By default ``None``.
     """
     if isinstance(original, dict):
         im = cv2.imread(original["file_name"])
@@ -87,18 +88,18 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
     Parameters
     ----------
     img : ndarray
-        Loaded image file with dimensions [h, w, c].
+        Loaded image file with dimensions ``[h, w, c]``.
     predictions
         Predictions of a one image, for details see the Detectron2
         documentation.
     gt : dict, optional
-        A full ground-truth dataset entry with all metadata, e.g. keypoints.
-        By default None.
+        A full ground-truth dataset entry with all metadata, e.g. keypoints.\n
+        By default ``None``.
     colors : Iterable, optional
         Specifies the color used during plotting for each class that is
         predictable by the model. The colors of the "tab10" colormap will be
-        used by default.
-        By default None.
+        used by default.\n
+        By default ``None``.
 
     Returns
     -------

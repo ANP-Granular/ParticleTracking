@@ -1,8 +1,8 @@
 """
 Functions to export a Detectron2 model as a pure pytorch model.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       31.10.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       31.10.2022
 
 """
 import logging
@@ -44,8 +44,8 @@ def export_model(config_path: Path, weights_path: Path, sample_img: Path,
         Image to be used to trace the model.
     option : EXPORT_OPTIONS, optional
         Option whether to restrict the exported model to be used on the CPU or
-        to also allow the use of a GPU.
-        By default "cuda".
+        to also allow the use of a GPU.\n
+        By default ``"cuda"``.
 
     Note
     ----

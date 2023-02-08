@@ -1,10 +1,10 @@
 """
-Function(s) to reconstruct 3D rod endpoints from images of a stereocamera
+Functions to reconstruct 3D rod endpoints from images of a stereocamera
 system by solving an n-partite matching problem between the rods within one
-frame and the respective previous frame.
+frame and the respective previous frame .
 
-Authors:    Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       31.10.2022
+**Authors:**    Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       31.10.2022
 
 """
 import os
@@ -36,32 +36,33 @@ def npartite_matching(weights: np.ndarray, maximize: bool = True,
 
     Parameters
     ----------
-    weights : np.ndarray
+    weights : ndarray
         A n-dimensional matrix where each entry is the cost associated with
         choosing the combination of indeces. The number of dimensions represent
         the number of groups and the size of each dimension the number of
         members in this group.
     maximize : bool, optional
-        By default True.
-    solver : pulp.LpSolver, optional
-        A solver for the matching problem.
-        By default pulp.PULP_CBC_CMD(msg=False).
+        By default ``True``.
+    solver : LpSolver, optional
+        A solver for the matching problem.\n
+        By default ``PULP_CBC_CMD(msg=False)``.
 
     Returns
     -------
-    Tuple[np.ndarray]
+    Tuple[ndarray]
         The length of the tuple is equal to the number of dimensions of
-        `weights`. Each element of the tuple has a maximum size of the smallest
-        dimension of `weights`. The elements of the arrays represent the index
-        of the groups paired member.
+        ``weights``. Each element of the tuple has a maximum size of the
+        smallest dimension of ``weights``. The elements of the arrays represent
+        the index of the groups paired member.
 
     Examples
     --------
-    The following weights are defined: weights.shape -> [12, 12, 4]
+    The following weights are defined: ``weights.shape`` -> ``[12, 12, 4]``
     This means three groups must be associated to each other, with four
-    paths, because the smallest dimension has size 4.
-    weights[0, 5, 2] then represents the cost of pairing element 0 of group
-    0 with element 5 of group 1 and element 2 of group 2.
+    paths, because the smallest dimension has size ``4``.
+    ``weights[0, 5, 2]`` then represents the cost of pairing element ``0`` of
+    group ``0`` with element ``5`` of group ``1`` and element ``2`` of group
+    ``2``.
 
     >>> npartite_matching(np.random((12, 12, 4)))
     (array([2, 9, 4, 11]), array([6, 9, 1, 0]), array([2, 1, 0, 3]))
@@ -125,19 +126,19 @@ def create_weights_0(p_3D: np.ndarray, p_3D_prev: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    p_3D : np.ndarray
-        Shape must be in (rod_ids(cam1), rod_ids(cam2), 4, 3)
-        Dimension explanations:
-        (rod_id(cam1), rod_id(cam2), endpoint-combination, 3D-coordinates)
-    p_3D_prev : np.ndarray
-        Shape must be in (rod_ids, 2, 3).
-        Dimension explanations:
-        (rod_id, end-point, 3D-coordinates)
+    p_3D : ndarray
+        Shape must be in ``(rod_ids(cam1), rod_ids(cam2), 4, 3)``.
+        Dimension explanations:\n
+        ``(rod_id(cam1), rod_id(cam2), endpoint-combination, 3D-coordinates)``
+    p_3D_prev : ndarray
+        Shape must be in ``(rod_ids, 2, 3)``.
+        Dimension explanations:\n
+        ``(rod_id, end-point, 3D-coordinates)``
 
     Returns
     -------
-    np.ndarray
-        Weights in the shape of (rod_id, rod_ids(cam1), rod_ids(cam2))
+    ndarray
+        Weights in the shape of ``(rod_id, rod_ids(cam1), rod_ids(cam2))``.
     """
     rods1, rods2 = p_3D.shape[0:2]
     rods_prev = p_3D_prev.shape[0]
@@ -170,26 +171,26 @@ def create_weights_1(p_3D: np.ndarray, p_3D_prev: np.ndarray,
 
     Parameters
     ----------
-    p_3D : np.ndarray
-        Shape must be in (rod_ids(cam1), rod_ids(cam2), 4, 3)
-        Dimension explanations:
-        (rod_id(cam1), rod_id(cam2), endpoint-combination, 3D-coordinates)
-    p_3D_prev : np.ndarray
-        Shape must be in (rod_ids, 2, 3).
-        Dimension explanations:
-        (rod_id, end-point, 3D-coordinates)
-    repr_errs : np.ndarray
-        Shape must be in (rod_ids(cam1), rod_ids(cam2), 4, 2)
-        Dimension explanations:
-        (rod_id(cam1), rod_id(cam2), end-combo, err{cam1, cam2})
-    repr_errs_prev : np.ndarray
-        Shape must be in (rod_id,), with rod_id representing the rods from the
-        previous frame.
+    p_3D : ndarray
+        Shape must be in ``(rod_ids(cam1), rod_ids(cam2), 4, 3)``
+        Dimension explanations:\n
+        ``(rod_id(cam1), rod_id(cam2), endpoint-combination, 3D-coordinates)``
+    p_3D_prev : ndarray
+        Shape must be in ``(rod_ids, 2, 3)``.
+        Dimension explanations:\n
+        ``(rod_id, end-point, 3D-coordinates)``
+    repr_errs : ndarray
+        Shape must be in ``(rod_ids(cam1), rod_ids(cam2), 4, 2)``
+        Dimension explanations:\n
+        ``(rod_id(cam1), rod_id(cam2), end-combo, err{cam1, cam2})``
+    repr_errs_prev : ndarray
+        Shape must be in ``(rod_id,)``, with rod_id representing the rods from
+        the previous frame.
 
     Returns
     -------
     np.ndarray
-        Weights in the shape of (rod_id, rod_ids(cam1), rod_ids(cam2))
+        Weights in the shape of ``(rod_id, rod_ids(cam1), rod_ids(cam2))``
     """
 
     rods1, rods2 = p_3D.shape[0:2]
@@ -227,26 +228,26 @@ def create_weights_2(p_3D: np.ndarray, p_3D_prev: np.ndarray,
 
     Parameters
     ----------
-    p_3D : np.ndarray
-        Shape must be in (rod_ids(cam1), rod_ids(cam2), 4, 3)
-        Dimension explanations:
-        (rod_id(cam1), rod_id(cam2), endpoint-combination, 3D-coordinates)
-    p_3D_prev : np.ndarray
-        Shape must be in (rod_ids, 2, 3).
-        Dimension explanations:
-        (rod_id, end-point, 3D-coordinates)
-    repr_errs : np.ndarray
-        Shape must be in (rod_ids(cam1), rod_ids(cam2), 4, 2)
-        Dimension explanations:
-        (rod_id(cam1), rod_id(cam2), end-combo, err{cam1, cam2})
-    repr_errs_prev : np.ndarray
-        Shape must be in (rod_id,), with rod_id representing the rods from the
-        previous frame.
+    p_3D : ndarray
+        Shape must be in ``(rod_ids(cam1), rod_ids(cam2), 4, 3)``.
+        Dimension explanations:\n
+        ``(rod_id(cam1), rod_id(cam2), endpoint-combination, 3D-coordinates)``
+    p_3D_prev : ndarray
+        Shape must be in ``(rod_ids, 2, 3)``.
+        Dimension explanations:\n
+        ``(rod_id, end-point, 3D-coordinates)``
+    repr_errs : ndarray
+        Shape must be in ``(rod_ids(cam1), rod_ids(cam2), 4, 2)``.
+        Dimension explanations:\n
+        ``(rod_id(cam1), rod_id(cam2), end-combo, err{cam1, cam2})``
+    repr_errs_prev : ndarray
+        Shape must be in ``(rod_id,)``, with rod_id representing the rods from
+        the previous frame.
 
     Returns
     -------
-    np.ndarray
-        Weights in the shape of (rod_id, rod_ids(cam1), rod_ids(cam2))
+    ndarray
+        Weights in the shape of ``(rod_id, rod_ids(cam1), rod_ids(cam2))``
     """
     weights = create_weights_1(p_3D, p_3D_prev, repr_errs, repr_errs_prev)
     p_3D = np.concatenate((p_3D, p_3D), axis=2)
@@ -270,53 +271,57 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
            transformation_file: str = None,
            solver: pulp.LpSolver = pulp.PULP_CBC_CMD(msg=False)
            ) -> Tuple[np.ndarray]:
-    """Matches, triangulates and tracks rods over frames from *.csv data files.
+    """Matches, triangulates and tracks rods over frames from ``*.csv data``
+    files.
 
     The function matches rods over multiple frames using npartite matching and
     a combination of 3D displacement and 2D reprojection error as the weights.
     This results in 3D reconstructed rods, that are tracked over the course of
     the given frames.
-    It takes *.csv files with the columns from `datasets.DEFAULT_COLUMNS` as
-    input and also outputs the results in this format.
-    The resulting dataset is saved in the given output folder.
+    It takes ``*.csv files`` with the columns from
+    :const:`~ParticleDetection.utils.datasets.DEFAULT_COLUMNS` as input and
+    also outputs the results in this format. The resulting dataset is saved in
+    the given output folder.
 
     Parameters
     ----------
     input_folder : str
-        Folder containing the *.csv files for all colors given in `colors`s.
+        Folder containing the ``*.csv`` files for all colors given in
+        ``colors``.
     output_folder : str
         Folder to write the output to. The parent folder of this must exist
         already.
     colors : Iterable[str]
         Names of the colors present in the dataset.
-        See `datasets.DEFAULT_CLASSES`.
+        See :const:`~ParticleDetection.utils.datasets.DEFAULT_COLUMNS`.
     cam1_name : str, optional
-        First camera's identifier in the given dataset.
-        By default "gp1".
+        First camera's identifier in the given dataset.\n
+        By default ``"gp1"``.
     cam2_name : str, optional
-        Second camera's identifier in the given dataset.
-        By default "gp2".
+        Second camera's identifier in the given dataset.\n
+        By default ``"gp2"``.
     frame_numbers : Iterable[int], optional
-        An iterable of frame numbers present in the data.
+        An iterable of frame numbers present in the data.\n
+        By default ``None``.
     calibration_file : str, optional
-        Path to a *.json file with stereocalibration data for the cameras which
-        produced the images for the rod position data.
+        Path to a ``*.json`` file with stereocalibration data for the cameras
+        which produced the images for the rod position data.\n
         By default the calibration constructed with Matlab for GP1 and GP2 is
         used.
     transformation_file : str, optional
-        Path to a *.json file with transformation matrices expressing the
+        Path to a ``*.json`` file with transformation matrices expressing the
         transformation from the first camera's coordinate system to the
-        world/box coordinate system.
+        world/box coordinate system.\n
         By default the transformation constructed with Matlab is used.
-    solver : pulp.LpSolver, optional
-        Solver that is used for the n-partite matching problem
-        Default is pulp.PULP_CBC_CMD(msg=False).
+    solver : LpSolver, optional
+        Solver that is used for the n-partite matching problem.\n
+        Default is ``PULP_CBC_CMD(msg=False)``.
 
     Returns
     -------
-    Tuple[np.ndarray]
-        -> [0]: reprojection errors
-        -> [1]: rod lengths
+    Tuple[ndarray]
+        [0]: reprojection errors\n
+        [1]: rod lengths
     """
     if calibration_file is None:
         this_dir = pathlib.Path(__file__).parent.resolve()

@@ -1,8 +1,8 @@
 """
 Functions and classes for dataset information and manipulation.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       31.10.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       31.10.2022
 
 """
 import os
@@ -21,14 +21,19 @@ DEFAULT_CLASSES = {
     0: 'blue', 1: 'green', 2: 'orange', 3: 'purple', 4: 'red',
     5: 'yellow', 6: 'black', 7: 'lilac', 8: 'brown'
 }
+"""**TBD**"""
 DEFAULT_COLUMNS = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
                    'x1_{id1:s}', 'y1_{id1:s}', 'x2_{id1:s}', 'y2_{id1:s}',
                    'x1_{id2:s}', 'y1_{id2:s}', 'x2_{id2:s}', 'y2_{id2:s}',
                    'frame', 'seen_{id1:s}', 'seen_{id2:s}', 'color']
+"""**TBD**"""
+
 RNG_SEED = 1
+"""**TBD**"""
 
 
 class DataSet:
+    """**TBD**"""
     folder: str
     annotation: str
     name: str
@@ -41,6 +46,7 @@ class DataSet:
 
 @dataclass
 class DataGroup:
+    """**TBD**"""
     train: DataSet
     val: DataSet
 
@@ -84,22 +90,22 @@ def get_object_counts(dataset: DataSet) -> List[int]:
 def insert_missing_rods(dataset: pd.DataFrame, expected_rods: int,
                         cam1_id: str = "gp1", cam2_id: str = "gp2") \
         -> pd.DataFrame:
-    """Inserts 'empty' rods into a dataset, depending on how many are expected.
+    """Inserts *empty* rods into a dataset, depending on how many are expected.
 
     Parameters
     ----------
     dataset : pd.DataFrame
-        Dataset with the column format from `DEFAULT_COLUMNS`.
+        Dataset with the column format from :const:`DEFAULT_COLUMNS`.
     expected_rods : int
         The expected number of rods per frame (and color).
     cam1_id : str
-        Default is "gp1".
+        Default is ``"gp1"``.
     cam2_id : str
-        Default is "gp2".
+        Default is ``"gp2"``.
 
     Returns
     -------
-    pd.DataFrame
+    DataFrame
     """
     columns = [col.format(id1=cam1_id, id2=cam2_id) for col in DEFAULT_COLUMNS]
     for color in dataset.color.unique():
@@ -125,16 +131,16 @@ def insert_missing_rods(dataset: pd.DataFrame, expected_rods: int,
 
 
 def randomize_particles(file: Path) -> None:
-    """Randomizes particle numbers per frame of a given *.csv dataset.
+    """Randomizes particle numbers per frame of a given ``*.csv`` dataset.
 
     The dataset with randomized particle numbers is saved with
-    'rand_particles_' as a prefix to the file's name.
+    ``'rand_particles_'`` as a prefix to the file's name.
 
     Parameters
     ----------
     file : Path
-        Path to a *.csv file containing data in the format of
-        `DEFAULT_COLUMNS`, but at minimum with column `frame`.
+        Path to a ``*.csv`` file containing data in the format of
+        :const:`DEFAULT_COLUMNS`, but at minimum with column ``'frame'``.
     """
     file = file.resolve()
     out = file.parent / ("rand_particles_" + str(file.name))
@@ -153,16 +159,16 @@ def randomize_endpoints(file: Path, cam_ids: List[str] = None) -> None:
     """Randomize the order of particles/endpoints in a dataset/-file.
 
     The dataset with randomized particle numbers is saved with
-    'rand_endpoints_' as a prefix to the file's name.
+    ``'rand_endpoints_'`` as a prefix to the file's name.
 
     Parameters
     ----------
     file : Path
-        Path to a *.csv file containing data in the format of
-        `DEFAULT_COLUMNS`.
+        Path to a ``*.csv`` file containing data in the format of
+        :const:`DEFAULT_COLUMNS`.
     cam_ids : List[str]
         Cam IDs present in the dataset.
-        Default is ["gp1", "gp2"]
+        Default is ``["gp1", "gp2"]``.
 
     Returns
     -------
@@ -189,25 +195,25 @@ def randomize_endpoints(file: Path, cam_ids: List[str] = None) -> None:
 
 def replace_missing_rods(dataset: pd.DataFrame, cam1_id: str = "gp1",
                          cam2_id: str = "gp2") -> pd.DataFrame:
-    """Fills missing data in 'seen_...' and '[xy][12]_...' columns.
+    """Fills missing data in ``'seen_...'`` and ``'[xy][12]_...'`` columns.
 
-    Replaces NaN values in columns of the format 'seen_...' and '[xy][12]_...',
-    see `DEFAULT_COLUMNS` for more information.
-    NaNs in 'seen_...' are replaced by `0`, NaNs in '[xy][12]_...' are replaced
-    by `-1.`.
+    Replaces ``NaN`` values in columns of the format ``'seen_...'`` and
+    ``'[xy][12]_...'``, see :const:`DEFAULT_COLUMNS` for more information.
+    ``NaN``s in ``'seen_...'`` are replaced by ``0``, ``NaN``s in
+    ``'[xy][12]_...'`` are replaced by ``-1.``.
 
     Parameters
     ----------
-    dataset : pd.DataFrame
-        Dataset with the column format from `DEFAULT_COLUMNS`.
+    dataset : DataFrame
+        Dataset with the column format from :const:`DEFAULT_COLUMNS`.
     cam1_id : str
-        Default is "gp1".
+        Default is ``"gp1"``.
     cam2_id : str
-        Default is "gp2".
+        Default is ``"gp2"``.
 
     Returns
     -------
-    pd.DataFrame
+    DataFrame
     """
     cols_2d = [col for col in dataset.columns
                if cam1_id in col or cam2_id in col]
@@ -219,15 +225,16 @@ def replace_missing_rods(dataset: pd.DataFrame, cam1_id: str = "gp1",
 
 def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
                cam_id: str, frame: int):
-    """Updates a dataframe with new rod endpoint data for one camera and frame.
+    """Updates a ``DataFrame`` with new rod endpoint data for one camera and
+    frame.
 
     Parameters
     ----------
     points : Dict[str, np.ndarray]
         Rod endpoints in the format obtained from
-        `ParticleDetection.utils.helper_funcs.rod_endpoints`.
-    data : pd.DataFrame
-        Dataframe for the rods to be saved in.
+        :func:`.rod_endpoints`.
+    data : DataFrame
+        ``DataFrame`` for the rods to be saved in.
     cam_id : str
         ID/Name of the camera, that produced the image the rod endpoints were
         computed on.
@@ -237,7 +244,7 @@ def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
     Returns
     -------
     pd.DataFrame
-        Returns the updated `data` dataframe.
+        Returns the updated ``data``.
     """
     cols = [col for col in data.columns if cam_id in col]
     for color, v in points.items():

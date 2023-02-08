@@ -1,4 +1,4 @@
-#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -25,10 +25,11 @@ _logger = logging.getLogger(__name__)
 
 
 class LoggerWidget(QtWidgets.QListWidget):
-    """A custom Widget to maintain loggers and display Actions in the GUI.
+    """A custom widget to maintain :class:`.ActionLogger` objects and display
+    :class:`.Action` objects in the GUI.
 
-    This class maintains the `ActionLogger` objects that are used in the
-    program. It also manages the location for any temporary files that are
+    This class maintains the :class:`.ActionLogger` objects that are used in
+    the program. It also manages the location for any temporary files that are
     program session specific. This widget displays the logged actions in the
     GUI. Use an instance of this class to create new loggers for other
     objects of the GUI that perform actions that can be logged or reverted.
@@ -36,31 +37,15 @@ class LoggerWidget(QtWidgets.QListWidget):
     Parameters
     ----------
     *args : iterable
-        Positional arguments for the QListWidget superclass.
+        Positional arguments for the ``QListWidget`` superclass.
     **kwargs : dict
-        Keyword arguments for the QListWidget superclass.
+        Keyword arguments for the ``QListWidget`` superclass.
 
-    Attributes
-    ----------
-    temp_manager : TemporaryDirectory
-    unsaved_changes : List[Action]
-        An ordered list of all actions that were logged by the
-        `ActionLogger` objects maintained by this `LoggerWidget`
-        instance. Do NOT try to insert performed actions in here directly.
-        This property only derives its contents from the `ActionLogger`
-        objects.
-    repeatable_changes : List[Action]
-        An ordered list of all currently redoable/repeatable actions that were
-        logged by the `ActionLogger` objects maintained by this
-        `LoggerWidget` instance. Do NOT try to insert performed actions
-        in here directly. This property only derives its contents from the
-        `ActionLogger` objects.
 
-    Slots
-    -----
-    add_action(Action)
-    remove_action(Action)
+    .. admonition:: Slots
 
+        - :meth:`add_action`
+        - :meth:`remove_action`
     """
 
     temp_manager: tempfile.TemporaryDirectory
@@ -77,6 +62,12 @@ class LoggerWidget(QtWidgets.QListWidget):
         """Collects the unsaved changes from all loggers and returns them
         collectively.
 
+        An ordered list of all actions that were logged by the
+        :class:`.ActionLogger` objects maintained by this :class:`LoggerWidget`
+        instance. Do NOT try to insert performed actions in here directly.
+        This property only derives its contents from the :class:`.ActionLogger`
+        objects.
+
         Returns
         -------
         List[Action]
@@ -90,6 +81,12 @@ class LoggerWidget(QtWidgets.QListWidget):
         """Collects the repeatable changes from all loggers and returns them
         collectively.
 
+        An ordered list of all currently redoable/repeatable actions that were
+        logged by the :class:`.ActionLogger` objects maintained by this
+        :class:`LoggerWidget` instance. Do NOT try to insert performed actions
+        in here directly. This property only derives its contents from the
+        :class:`.ActionLogger` objects.
+
         Returns
         -------
         List[Action]
@@ -100,14 +97,14 @@ class LoggerWidget(QtWidgets.QListWidget):
 
     def get_new_logger(self, parent_id: str) -> lg.ActionLogger:
         """
-        Creates a new ActionLogger, registers its signals for displaying the
-        actions logged by it and returns it.
+        Creates a new :class:`ActionLogger`, registers its signals for
+        displaying the actions logged by it and returns it.
 
         Parameters
         ----------
         parent_id : str
             A unique name that indicates the object from which actions will
-            be logged in the ActionLogger.
+            be logged in the :class:`ActionLogger`.
 
         Returns
         -------
@@ -140,6 +137,7 @@ class LoggerWidget(QtWidgets.QListWidget):
         self.scrollToBottom()
 
     def discard_changes(self):
-        """Discard unsaved changes in all maintained `ActionLogger`s."""
+        """Discard unsaved changes in all maintained :class`ActionLogger`
+        objects."""
         for logger in self._loggers:
             logger.discard_changes()

@@ -20,24 +20,23 @@ def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
         Absolute path to a folder containing only the calibration images from
         camera two.
     visualize : bool, optional
-        Boolean flag to draw corner detection results for camera one images.
-        By default False.
+        Boolean flag to draw corner detection results for camera one images.\n
+        By default ``False``.
 
     Returns
     -------
-    Tuple :
-        Return values of OpenCV's `stereoCalibrate()` function.
-        [0] : reprojection error
-        [1] : camera matrix 1
-        [2] : distortion coefficients 1
-        [3] : camera matrix 2
-        [4] : distortion coefficients 2
+    Tuple
+        Return values of OpenCV's ``stereoCalibrate()`` function.\n
+        [0] : reprojection error\n
+        [1] : camera matrix 1\n
+        [2] : distortion coefficients 1\n
+        [3] : camera matrix 2\n
+        [4] : distortion coefficients 2\n
         [5] : rotation matrix (R) -> with T can transform points in camera
-              one's coordinate system to points in camear two's coordinate
-              system
-        [6] : translation vector (T)
-        [7] : essential matrix (E)
-        [8] : fundamental matrix (F)
+        one's coordinate system to points in camear two's coordinate system\n
+        [6] : translation vector (T)\n
+        [7] : essential matrix (E)\n
+        [8] : fundamental matrix (F)\n
     """
     # Setup
     corner_distance = 5     # mm
@@ -106,31 +105,33 @@ def project_points(p_cam1: np.ndarray, p_cam2: np.ndarray, calibration: dict,
 
     Parameters
     ----------
-    p_cam1 : np.ndarray
+    p_cam1 : ndarray
         Point coordinates on camera 1.
-        Shape: (2, n)
-    p_cam2 : np.ndarray
+        Shape: ``(2, n)``
+    p_cam2 : ndarray
         Point coordinates on camera 2.
-        Shape: (2, n)
+        Shape: ``(2, n)``
     calibration : dict
         Stereocamera calibration parameters with the required fields:
-        "CM1": camera matrix of cam1
-        "R": rotation matrix between cam1 & cam2
-        "T": translation vector between cam1 & cam2
-        "CM2": camera matrix of cam2
+        ``"CM1"``: camera matrix of cam1\n
+        ``"R"``: rotation matrix between cam1 & cam2\n
+        ``"T"``: translation vector between cam1 & cam2\n
+        ``"CM2"``: camera matrix of cam2
     transforms : dict | None
         Coordinate system transformation matrices from camera 1 coordinates to
-        'world'/'experiment' coordinates. Must contain the following fields:
-        ["M_rotate_x", "M_rotate_y", "M_rotate_z", "M_trans", "M_trans2"]
-        Transformation of 3D coordinates to 'world'/'experiment' coordinates is
-        omitted if `transforms` is None.
+        *world*/*experiment* coordinates.
+        **Must contain the following fields:**\n
+        ``"M_rotate_x"``, ``"M_rotate_y"``, ``"M_rotate_z"``, ``"M_trans"``,
+        ``"M_trans2"``\n
+        Transformation of 3D coordinates to *world*/*experiment* coordinates is
+        omitted if ``transforms`` is ``None``.
 
     Returns
     -------
-    np.ndarray
-        3D point coordinates in either the 'world'/'experiment' coordinates or
-        camera 1 coordinates, depending on whether `transforms` is given.
-        Shape: (3, n)
+    ndarray
+        3D point coordinates in either the *world*/*experiment* coordinates or
+        camera 1 coordinates, depending on whether ``transforms`` is given.
+        Shape: ``(3, n)``
     """
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
@@ -165,25 +166,27 @@ def reproject_points(points: np.ndarray, calibration: dict,
     Parameters
     ----------
     points : np.ndarray
-        3D point coordinates in either the 'world'/'experiment' coordinates or
-        camera 1 coordinates, depending on whether `transforms` is given.
-        Shape = (3, n) or (n, 3)
+        3D point coordinates in either the *world*/*experiment* coordinates or
+        camera 1 coordinates, depending on whether ``transforms`` is given.
+        Shape: ``(3, n)`` or ``(n, 3)``
     calibration : dict
-        Stereocamera calibration parameters with the required fields:
-        "CM1": camera matrix of cam1
-        "R": rotation matrix between cam1 & cam2
-        "T": translation vector between cam1 & cam2
-        "CM2": camera matrix of cam2
+        Stereocamera calibration parameters with the required fields:\n
+        ``"CM1"``: camera matrix of cam1\n
+        ``"R"``: rotation matrix between cam1 & cam2\n
+        ``"T"``: translation vector between cam1 & cam2\n
+        ``"CM2"``: camera matrix of cam2
     transforms : dict | None
         Coordinate system transformation matrices from camera 1 coordinates to
-        'world'/'experiment' coordinates. Must contain the following fields:
-        ["M_rotate_x", "M_rotate_y", "M_rotate_z", "M_trans", "M_trans2"]
-        Transformation of 3D coordinates from 'world'/'experiment' coordinates
-        is omitted if `transforms` is None.
+        *world*/*experiment* coordinates.
+        **Must contain the following fields:**\n
+        ``"M_rotate_x"``, ``"M_rotate_y"``, ``"M_rotate_z"``, ``"M_trans"``,
+        ``"M_trans2"``\n
+        Transformation of 3D coordinates from *world*/*experiment* coordinates
+        is omitted if ``transforms`` is ``None``.
 
     Returns
     -------
-    Tuple[np.ndarray, np.ndarray]
+    Tuple[ndarray, ndarray]
         2D image plane coordinates of camera 1 & 2.
     """
     # Derive projection matrices from the calibration

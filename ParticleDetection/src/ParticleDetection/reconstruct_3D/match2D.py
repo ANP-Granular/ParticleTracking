@@ -1,11 +1,12 @@
 """
-Function(s) to reconstruct 3D rod endpoints from images of a stereocamera
-system on a per-frame basis, without knowledge about positions in other frames.
+Functions to reconstruct 3D rod endpoints from images of a stereocamera system
+on a perframe basis, without knowledge about positions in other frames.
 Some functions are directly ported from a MATLAB implementation to python.
 
-Authors:    Adrian Niemann (adrian.niemann@ovgu.de),
-            Dmitry Puzyrev (dmitry.puzyrev@ovgu.de)
-Date:       01.11.2022
+**Authors**: Adrian Niemann (adrian.niemann@ovgu.de), Dmitry Puzyrev
+(dmitry.puzyrev@ovgu.de)
+
+**Date**:       01.11.2022
 
 """
 import os
@@ -32,18 +33,18 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
                         transformation_file=None,
                         cam1_convention="{idx:05d}_{color:s}.mat",
                         cam2_convention="{idx:05d}_{color:s}.mat"):
-    """Ported Matlab script from `match_rods_2020mix_gp12_cl1.m`.
+    """Ported Matlab script from ``match_rods_2020mix_gp12_cl1.m``.
     This function takes the same input file format and outputs the same file
     formats as the previous implementation in MATLAB. Use this function for a
     consistent behaviour to previous data processings.
 
     Parameters
     ----------
-    See `match_matlab_complex(...)`
+    See :func:`match_matlab_complex`
 
     Returns
     -------
-    See `match_matlab_complex(...)`
+    See :func:`match_matlab_complex`
 
     Note
     ----
@@ -205,7 +206,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
     minimal.
     This function takes the same input file format and outputs the same file
     formats as the previous implementation in MATLAB. The inputs and outputs
-    are equivalent to `match_matlab_simple()` but makes heavy use of matrix
+    are equivalent to :func:`match_matlab_simple` but makes heavy use of matrix
     operations to increase computational efficiency.
 
     Parameters
@@ -222,35 +223,35 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
     frame_numbers : Iterable[int]
         An iterable of frame numbers present in the data.
     calibration_file : str, optional
-        Path to a *.json file with stereocalibration data for the cameras which
-        produced the images for the rod position data.
+        Path to a ``*.json`` file with stereocalibration data for the cameras
+        which produced the images for the rod position data.\n
         By default the calibration constructed with Matlab for GP1 and GP2 is
         used.
     transformation_file : str, optional
-        Path to a *.json file with transformation matrices expressing the
+        Path to a ``*.json`` file with transformation matrices expressing the
         transformation from the first camera's coordinate system to the
-        world/box coordinate system.
+        world/box coordinate system.\n
         By default the transformation constructed with Matlab is used.
     cam1_convention : str, optional
         Naming convention for the first camera's position data files defined
         by a formattable string, that accepts some of the following
-        variables: {idx, color}.
-        By default "{idx:05d}_{color:s}.mat"
+        variables: ``{idx, color}``.\n
+        By default ``"{idx:05d}_{color:s}.mat"``.
     cam2_convention : str, optional
         Naming convention for the second camera's position data files defined
         by a formattable string, that accepts some of the following
-        variables: {idx, color}.
-        By default "{idx:05d}_{color:s}.mat"
+        variables: ``{idx, color}``.\n
+        By default ``"{idx:05d}_{color:s}.mat"``.
 
     Returns
     -------
-    np.ndarray, np.ndarray
+    ndarray, ndarray
         Reprojection errors, rod lengths of the matched rod endpoints.
 
     Note
     ----
     This function currently saves the 3D points in the first camera's
-    coordinate system, NOT the world/box coordinate system.
+    coordinate system, **NOT** the world/box coordinate system.
     """
     warnings.warn("match_matlab_*() functions are deprecated."
                   " Use functions for csv instead.", DeprecationWarning)
@@ -427,45 +428,47 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
                       cam2_name="gp2", frame_numbers=None,
                       calibration_file=None, transformation_file=None,
                       rematching=True):
-    """Matches and triangulates rods from *.csv data files.
+    """Matches and triangulates rods from ``*.csv`` data files.
 
     The function matches rod endpoints per frame such that the reprojection
-    error is minimal. It takes *.csv files with the columns from
-    `datasets.DEFAULT_COLUMNS` as input and also outputs the results in this
-    format.
+    error is minimal. It takes ``*.csv`` files with the columns from
+    :const:`~ParticleDetection.utils.datasets.DEFAULT_COLUMNS` as input and
+    also outputs the results in this format.
 
     Parameters
     ----------
     input_folder : str
-        Folder containing the *.csv files for all colors given in `colors`s.
+        Folder containing the ``*.csv`` files for all colors given in
+        ``colors``.
     output_folder : str
         Folder to write the output to. The parent folder of this must exist
         already.
     colors : Iterable[str]
         Names of the colors present in the dataset.
-        See `datasets.DEFAULT_CLASSES`.
+        See :const:`~ParticleDetection.utils.datasets.DEFAULT_CLASSES`.
     cam1_name : str, optional
-        First camera's identifier in the given dataset.
-        By default "gp1".
+        First camera's identifier in the given dataset.\n
+        By default ``"gp1"``.
     cam2_name : str, optional
-        Second camera's identifier in the given dataset.
-        By default "gp2".
+        Second camera's identifier in the given dataset.\n
+        By default ``"gp2"``.
     frame_numbers : Iterable[int], optional
         An iterable of frame numbers present in the data.
+        By default ``None``.
     calibration_file : str, optional
-        Path to a *.json file with stereocalibration data for the cameras which
-        produced the images for the rod position data.
+        Path to a ``*.json`` file with stereocalibration data for the cameras
+        which produced the images for the rod position data.\n
         By default the calibration constructed with Matlab for GP1 and GP2 is
         used.
     transformation_file : str, optional
-        Path to a *.json file with transformation matrices expressing the
+        Path to a ``*.json`` file with transformation matrices expressing the
         transformation from the first camera's coordinate system to the
-        world/box coordinate system.
+        world/box coordinate system.\n
         By default the transformation constructed with Matlab is used.
 
     Returns
     -------
-    np.ndarray, np.ndarray
+    ndarray, ndarray
         Reprojection errors, rod lengths of the matched rod endpoints.
     """
     if calibration_file is None:
@@ -525,46 +528,48 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
 def match_complex(data: pd.DataFrame, frame_numbers: Iterable[int], color: str,
                   calibration: dict, transform: dict, cam1_name="gp1",
                   cam2_name="gp2", renumber: bool = True):
-    """Matches and triangulates rods from a `DataFrame`.
+    """Matches and triangulates rods from a ``DataFrame``.
 
     The function matches rod endpoints per frame such that the reprojection
     error is minimal.
 
     Parameters
     ----------
-    data : pd.DataFrame
+    data : DataFrame
         Dataset of rod positions.
     frame_numbers : Iterable[int]
         An iterable of frame numbers present in the data.
     color : str
-        Color of the rods in `data` to match.
+        Color of the rods in ``data`` to match.
     calibration : dict
-        Stereocamera calibration parameters with the required fields:
-        "CM1": camera matrix of cam1
-        "R": rotation matrix between cam1 & cam2
-        "T": translation vector between cam1 & cam2
-        "CM2": camera matrix of cam2
+        Stereocamera calibration parameters with the required fields:\n
+        ``"CM1"``: camera matrix of cam1\n
+        ``"R"``: rotation matrix between cam1 & cam2\n
+        ``"T"``: translation vector between cam1 & cam2\n
+        ``"CM2"``: camera matrix of cam2
     transform : dict
         Coordinate system transformation matrices from camera 1 coordinates to
-        'world'/'experiment' coordinates. Must contain the following fields:
-        ["M_rotate_x", "M_rotate_y", "M_rotate_z", "M_trans", "M_trans2"]
+        *world*/*experiment* coordinates.
+        **Must contain the following fields:**\n
+        ``"M_rotate_x"``, ``"M_rotate_y"``, ``"M_rotate_z"``, ``"M_trans"``,
+        ``"M_trans2"``
     cam1_name : str, optional
-        First camera's identifier in the given dataset.
-        By default "gp1".
+        First camera's identifier in the given dataset.\n
+        By default ``"gp1"``.
     cam2_name : str, optional
-        Second camera's identifier in the given dataset.
-        By default "gp2".
+        Second camera's identifier in the given dataset.\n
+        By default ``"gp2"``.
     renumber : bool, optional
         Flag, whether to keep the already assigned combinations between
-        camera 1 and camera 2.
-        True:   Only the endpoint combinations are (re-)evaluated.
-        False:  Rod combinations between camera 1 and camera 1 as well as their
-                respective endpoint combinations are (re-)evaluated.
-        By default True.
+        camera 1 and camera 2.\n
+        ``True``:   Only the endpoint combinations are (re-)evaluated.\n
+        ``False``:  Rod combinations between camera 1 and camera 1 as well as
+        their respective endpoint combinations are (re-)evaluated.\n
+        By default ``True``.
 
     Returns
     -------
-    Tuple(pd.DataFrame, np.ndarray, np.ndarray)
+    Tuple[DataFrame, ndarray, ndarray]
         Returns the endpoint matched `DataFrame` together with the reprojection
         errors and the resulted rod lengths.
     """
@@ -607,59 +612,59 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
                 rot: R, tw1: np.ndarray, tw2: np.ndarray, r1: np.ndarray,
                 r2: np.ndarray, t1: np.ndarray, t2: np.ndarray,
                 renumber: bool = True):
-    """Matches and triangulates rods from a `DataFrame`.
+    """Matches and triangulates rods from a ``DataFrame``.
 
     Parameters
     ----------
-    data : pd.DataFrame
+    data : DataFrame
         Dataset of rod positions.
     cam1_name : str
-        First camera's identifier in the given dataset, e.g. "gp1".
+        First camera's identifier in the given dataset, e.g. ``"gp1"``.
     cam2_name : str
-        Second camera's identifier in the given dataset, e.g. "gp2".
+        Second camera's identifier in the given dataset, e.g. ``"gp2"``.
     frame : int
-        Frame in `data` who's endpoints shall be (re-)evaluated.
+        Frame in ``data`` who's endpoints shall be (re-)evaluated.
     color : str
-        Color of the rods in `data` to match.
+        Color of the rods in ``data`` to match.
     calibration : dict
-        Stereocamera calibration parameters with the required fields:
-        "CM1": camera matrix of cam1
-        "R": rotation matrix between cam1 & cam2
-        "T": translation vector between cam1 & cam2
-        "CM2": camera matrix of cam2
-    P1 : np.ndarray
+        Stereocamera calibration parameters with the required fields:\n
+        ``"CM1"``: camera matrix of cam1\n
+        ``"R"``: rotation matrix between cam1 & cam2\n
+        ``"T"``: translation vector between cam1 & cam2\n
+        ``"CM2"``: camera matrix of cam2
+    P1 : ndarray
         Projection matrix for camera 1.
-    P2 : np.ndarray
+    P2 : ndarray
         Projection matrix for camera 2.
     rot : Rotation
-        Rotation from camera 1 coordinates to 'world'/'experiment' coordinates.
-    tw1 : np.ndarray
+        Rotation from camera 1 coordinates to *world*/*experiment* coordinates.
+    tw1 : ndarray
         First translation vector as part of the transformation to
-        'world'/'experiment' coordinates.
-    tw2 : np.ndarray
+        *world*/*experiment* coordinates.
+    tw2 : ndarray
         Second translation vector as part of the transformation to
-        'world'/'experiment' coordinates.
-    r1 : np.ndarray
+        *world*/*experiment* coordinates.
+    r1 : ndarray
         Rotation matrix of camera 1.
-    r2 : np.ndarray
+    r2 : ndarray
         Rotation matrix of camera 2.
-    t1 : np.ndarray
+    t1 : ndarray
         Translation vector of camera 1.
-    t2 : np.ndarray
+    t2 : ndarray
         Translation vector of camera 2.
     renumber : bool, optional
         Flag, whether to keep the already assigned combinations between
-        camera 1 and camera 2.
-        True:   Only the endpoint combinations are (re-)evaluated.
-        False:  Rod combinations between camera 1 and camera 1 as well as their
-                respective endpoint combinations are (re-)evaluated.
-        By default True.
+        camera 1 and camera 2.\n
+        ``True``: Only the endpoint combinations are (re-)evaluated.\n
+        ``False``: Rod combinations between camera 1 and camera 1 as well as
+        their respective endpoint combinations are (re-)evaluated.\n
+        By default ``True``.
 
     Returns
     -------
-    pd.DataFrame
-        Returns the `DataFrame` with (re-)matched endpoints for `frame` of
-        `color`.
+    DataFrame
+        Returns the ``DataFrame`` with (re-)matched endpoints for ``frame`` of
+        ``color``.
     """
     # Load data
     cols_cam1 = [f'x1_{cam1_name}', f'y1_{cam1_name}',

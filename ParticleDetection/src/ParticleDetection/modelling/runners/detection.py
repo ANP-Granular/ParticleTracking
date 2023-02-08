@@ -1,9 +1,9 @@
 """
-Script to run inference with a trained network and save the results for further
-computations.
+Functions to run inference with a trained network and save the results for
+further computations.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       11.08.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       11.08.2022
 
 """
 import os
@@ -39,7 +39,7 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
                   threshold: float = 0.5, **kwargs) -> list:
     """Runs inference on a given set of images and can visualize the output.
 
-    In addition to running inference this script also generates rod enpoints
+    In addition to running inference this script also generates rod endpoints
     from the generated masks, if the network predicted these.
 
     Parameters
@@ -49,39 +49,39 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
         list of paths to image files intended for running inference on.
     configuration : Union[CfgNode, str]
         Configuration for the Detectron2 model and inferences settings given as
-        a CfgNode or path to a *.yaml file in the Detectron2 configuration
+        a CfgNode or path to a ``*.yaml`` file in the Detectron2 configuration
         format.
     weights : str, optional
-        Path to a *.pkl model file. Is optional, if the weights are already
+        Path to a ``*.pkl`` model file. Is optional, if the weights are already
         given in the configuration.
     classes : dict, optional
-        Dictionary of classes detectable by the model with
-        {key}  ->  Index of class in the model
-        {value} ->  Name of the class
-        By default None.
+        Dictionary of classes detectable by the model with\n
+        ``{key}``  ->  Index of class in the model\n
+        ``{value}`` ->  Name of the class\n
+        By default ``None``.
     output_dir : str, optional
         Path to the intended output directory. It's parent directory must exist
-        prior to running this function.
-        By default "./".
+        prior to running this function.\n
+        By default ``"./"``.
     log_name : str, optional
-        Filename for logging output in the output directory.
-        By default "detection.log".
+        Filename for logging output in the output directory.\n
+        By default ``"detection.log"``.
     visualize : bool, optional
-        Flag for allowing visualization.
-        By default True.
+        Flag for allowing visualization.\n
+        By default ``True``.
     vis_random_samples : int, optional
         Specifies the number of randomly chosen visualized samples when
-        `visualize` is True.
-        -1      ->  All images are viszalized.
-        n > 0   ->  Chooses n images of the given set to be visualized after
-                    inference.
-        By default -1.
+        ``visualize`` is ``True``.\n
+        ``-1``   -> All images are viszalized.\n
+        ``n > 0``-> Chooses ``n`` images of the given set to be visualized
+        after inference.\n
+        By default ``-1``.
     threshold : float, optional
-        Threshold for the minimum score of predicted instances.
-        By default 0.5.
+        Threshold for the minimum score of predicted instances.\n
+        By default ``0.5``.
     **kwargs
-        Keyword arguments for `visualization.visualize()`, except for
-        `prediction`, `original`, and `output_dir`.
+        Keyword arguments for :func:`.visualization.visualize()`, except for
+        ``prediction``, ``original``, and ``output_dir``.
 
     Returns
     -------
@@ -164,57 +164,58 @@ def run_detection_csv(dataset_format: str,
                       threshold: float = 0.5,
                       frames: List[int] = [], cam1_name: str = "gp1",
                       cam2_name: str = "gp2") -> None:
-    """Runs inference on a given set of images and saves the output to a *.csv.
+    """Runs inference on a given set of images and saves the output to a
+    ``*.csv``.
 
     This function runs a rod detection on images and generates rod enpoints
     from the generated masks, if the network predicted these. Finally, these
-    endpoints are saved to a single `rods_df.csv` file in the specified output
-    folder.
+    endpoints are saved to a single ``rods_df.csv`` file in the specified
+    output folder.
 
     Parameters
     ----------
     dataset_format : str
         String that can be formatted to specify the file locations of images,
         that shall be used for inference.
-        For this the string must contain a `frame` and a `cam_id` field that
-        can be formatted.
-        Example:
-        `"my/dataset/path/{cam_id:s}/experiment_{frame:05d}.png"`
+        For this the string must contain a ``frame`` and a ``cam_id`` field
+        that can be formatted.\n
+        Example:\n
+        ``"my/dataset/path/{cam_id:s}/experiment_{frame:05d}.png"``
     configuration : Union[CfgNode, str]
         Configuration for the Detectron2 model and inferences settings given as
-        a CfgNode or path to a *.yaml file in the Detectron2 configuration
-        format.
+        a ``CfgNode`` or path to a ``*.yaml`` file in the Detectron2
+        configuration format.
     weights : str, optional
-        Path to a *.pkl model file. Is optional, if the weights are already
+        Path to a ``*.pkl`` model file. Is optional, if the weights are already
         given in the configuration.
     classes : dict, optional
-        Dictionary of classes detectable by the model with
-        {key}  ->  Index of class in the model
-        {value} ->  Name of the class
-        By default None.
+        Dictionary of classes detectable by the model with\n
+        ``{key}``  ->  Index of class in the model\n
+        ``{value}`` ->  Name of the class\n
+        By default ``None``.
     output_dir : str, optional
         Path to the intended output directory. It's parent directory must exist
-        prior to running this function.
-        By default "./".
+        prior to running this function.\n
+        By default ``"./"``.
     log_name : str, optional
-        Filename for logging output in the output directory.
-        By default "detection.log".
+        Filename for logging output in the output directory.\n
+        By default ``"detection.log"``.
     threshold : float, optional
-        Threshold for the minimum score of predicted instances.
-        By default 0.5.
+        Threshold for the minimum score of predicted instances.\n
+        By default ``0.5``.
     frames : List[int], optional
-        A list of frames, that shall be used for rod detection.
-        By default [].
+        A list of frames, that shall be used for rod detection.\n
+        By default ``[]``.
     cam1_name : str, optional
         The name/ID of the first camera in the experiment. This name will be
-        used for image discovery (see `dataset_format`) and naming of the
-        output *.csv file's columns.
-        By default "gp1".
+        used for image discovery (see ``dataset_format``) and naming of the
+        output ``*.csv`` file's columns.\n
+        By default ``"gp1"``.
     cam2_name : str, optional
         The name/ID of the second camera in the experiment. This name will be
-        used for image discovery (see `dataset_format`) and naming of the
-        output *.csv file's columns.
-        By default "gp2".
+        used for image discovery (see ``dataset_format``) and naming of the
+        output ``*.csv`` file's columns.\n
+        By default ``"gp2"``.
 
     Returns
     -------
@@ -280,10 +281,10 @@ def save_to_mat(file_name: str, points: dict):
     ----------
     file_name : str
         Output file name, that will be extended by the colors present in
-        `points`.
+        ``points``.
     points : dict
         Rod endpoint data in the output format of
-        `helper_funcs.rod_endpoints()`.
+        :func:`.helper_funcs.rod_endpoints`.
     """
     for idx, vals in points.items():
         if not vals.size:

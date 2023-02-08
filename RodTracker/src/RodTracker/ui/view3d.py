@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
+"""**TBD**"""
 
 import logging
 from typing import List, Tuple
@@ -33,30 +35,34 @@ _logger = logging.getLogger(__name__)
 
 
 class View3D(QtWidgets.QWidget):
-    """A custom `QWidget` for display of 3D rod data.
+    """A custom ``QWidget`` for display of 3D rod data.
 
     Parameters
     ----------
     *args : iterable
-        Positional arguments for the `QWidget` superclass.
+        Positional arguments for the ``QWidget`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QWidget` superclass.
+        Keyword arguments for the ``QWidget`` superclass.
+
+
+    .. admonition:: Slots
+
+        - :meth:`update_rods`
+        - :meth:`update_settings`
 
     Attributes
     ----------
-    rods : List[QEntity]
-        Entities that resemble a rod each.
     view : Qt3DWindow
     camera : QOrbitCameraController
     scene : QEntity
         Root entity for the 3D scene.
 
-    Slots
-    -----
-    update_rods(DataFrame)
-    update_settings(dict)
     """
     rods: List[Qt3DCore.QEntity] = []
+    """List[QEntity] : Entities that resemble a rod each.
+
+    Default is ``[]``.
+    """
     _components: List[List[Qt3DCore.QEntity]] = []
 
     def __init__(self, *args, **kwargs):
@@ -129,8 +135,9 @@ class View3D(QtWidgets.QWidget):
         Parameters
         ----------
         data : DataFrame
-            3D position data of one frame. Required columns:
-            "x1", "x2", "y1", "y2", "z1", "z2", "color"
+            3D position data of one frame. Required columns:\n
+            ``"x1"``, ``"x2"``, ``"y1"``, ``"y2"``, ``"z1"``, ``"z2"``,
+            ``"color"``
         """
         if not len(data):
             self.clear()
@@ -458,7 +465,7 @@ class View3D(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict):
-        """Catches updates of the settings from a `Settings` class.
+        """Catches updates of the settings from a :class:`.Settings` class.
 
         Checks for the keys relevant to itself and updates the corresponding
         attributes. Redraws itself with the new settings in place, if

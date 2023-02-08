@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+"""**TBD**"""
 
 import sys
 import os
@@ -37,6 +38,18 @@ else:
 
 
 def init_reconstruction(ui: mw_l.Ui_MainWindow):
+    """**TBD**
+
+    Parameters
+    ----------
+    ui : mw_l.Ui_MainWindow
+        **TBD**
+
+    Returns
+    -------
+    None | ReconstructorUI
+        **TBD**
+    """
     if sys.version_info < (3, 10):
         ui.tab_reconstruct.setEnabled(False)
         return
@@ -44,11 +57,52 @@ def init_reconstruction(ui: mw_l.Ui_MainWindow):
 
 
 class ReconstructorUI(QtWidgets.QWidget):
+    """**TBD**
+
+    Parameters
+    ----------
+    ui : QWidget
+        **TBD**
+    *args : iterable
+        **TBD**
+    **kwargs: dict
+        **TBD**
+
+
+    .. admonition:: Signals
+
+        - :attr:`request_data`
+        - :attr:`updated_data`
+
+    .. admonition:: Slots
+
+        - /
+    """
     position_scaling: float = 1.0
+    """float : **TBD**
+
+    Default is ``1.0``.
+    """
+
     request_data = QtCore.pyqtSignal([list, list])
+    """pyqtSignal(list, list) : **TBD**"""
+
     updated_data = QtCore.pyqtSignal(pd.DataFrame)
+    """pyqtSignal(DataFrame) : **TBD**
+    """
+
     data: pd.DataFrame = None
+    """DataFrame : **TBD**
+
+    Default is ``None``.
+    """
+
     cam_ids: List[str] = ["", ""]
+    """List[str] : **TBD**
+
+    Default is ``["", ""]``.
+    """
+
     _calibration = QtCore.pyqtSignal([dict])
     _progress_val: float = 0.
     _colors_to_solve: int = 0
@@ -121,6 +175,13 @@ class ReconstructorUI(QtWidgets.QWidget):
         self.progress.setValue(100)
 
     def set_calibration(self, path: str):
+        """**TBD**
+
+        Parameters
+        ----------
+        path : str
+            **TBD**
+        """
         self._calibration = dl.load_camera_calibration(path)
         if self._calibration and self._transformation:
             self.ui.findChild(
@@ -129,6 +190,13 @@ class ReconstructorUI(QtWidgets.QWidget):
             self.pb_plots.setEnabled(True)
 
     def set_transformation(self, path: str):
+        """**TBD**
+
+        Parameters
+        ----------
+        path : str
+            **TBD**
+        """
         self._transformation = dl.load_calib_from_json(path)
         if self._calibration and self._transformation:
             self.ui.findChild(
@@ -152,7 +220,15 @@ class ReconstructorUI(QtWidgets.QWidget):
     def solver(self, path: str):
         raise NotImplementedError
 
+    @QtCore.pyqtSlot(pd.DataFrame)
     def data_update(self, data: pd.DataFrame):
+        """**TBD**
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            **TBD**
+        """
         self.data = data
         if any([cam == "" for cam in self.cam_ids]):
             # insufficient data for plotting given
@@ -166,6 +242,15 @@ class ReconstructorUI(QtWidgets.QWidget):
             self.pb_plots.setEnabled(True)
 
     def select_data(self):
+        """**TBD**
+
+
+        .. hint::
+
+            **Emits**:
+
+                - :attr:`request_data`
+        """
         self.request_data.emit(list(range(self.start_frame,
                                     self.end_frame + 1)), self.used_colors)
 
@@ -202,6 +287,20 @@ class ReconstructorUI(QtWidgets.QWidget):
             self._threads.start(tracker)
 
     def solver_result(self, result: pd.DataFrame):
+        """**TBD**
+
+        Parameters
+        ----------
+        result : pd.DataFrame
+            **TBD**
+
+
+        .. hint::
+
+            **Emits:**
+
+                - :attr:`updated_data`
+        """
         self._colors_to_solve -= 1
         if self._colors_to_solve == 0:
             self.pb_solve.setEnabled(True)
@@ -209,10 +308,24 @@ class ReconstructorUI(QtWidgets.QWidget):
         self.updated_data.emit(result)
 
     def progress_update(self, update: float):
+        """**TBD**
+
+        Parameters
+        ----------
+        update : float
+            **TBD**
+        """
         self._progress_val += 100 * update
         self.progress.setValue(int(self._progress_val))
 
     def switch_plot_page(self, direction: int):
+        """**TBD**
+
+        Parameters
+        ----------
+        direction : int
+            **TBD**
+        """
         idx_max = self.stacked_plots.count() - 1
         idx_new = self.stacked_plots.currentIndex() + direction
         if idx_new > idx_max:
@@ -308,6 +421,13 @@ class ReconstructorUI(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot(Figure)
     def add_plot(self, fig: Figure):
+        """**TBD**
+
+        Parameters
+        ----------
+        fig : Figure
+            **TBD**
+        """
         canvas = b_qt.FigureCanvasQTAgg(fig)
         nav_bar = b_qt.NavigationToolbar2QT(canvas, None)
         widget = QtWidgets.QWidget()
@@ -323,7 +443,7 @@ class ReconstructorUI(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict) -> None:
-        """Catches updates of the settings from a `Settings` class.
+        """Catches updates of the settings from a :class:`.Settings` class.
 
         Checks for the keys relevant to itself and updates the corresponding
         attributes. Redraws itself with the new settings in place.
@@ -347,6 +467,19 @@ class ReconstructorUI(QtWidgets.QWidget):
 
 def choose_calibration(line_edit: QtWidgets.QLineEdit,
                        destination_func: callable):
+    """**TBD**
+
+    Parameters
+    ----------
+    line_edit : QLineEdit
+        **TBD**
+    destination_func : callable
+        **TBD**
+
+    Returns
+    -------
+    None
+    """
     # check for a directory
     ui_dir = line_edit.text()
     # opens directory to select image

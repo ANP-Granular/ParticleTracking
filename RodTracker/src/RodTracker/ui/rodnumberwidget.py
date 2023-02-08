@@ -1,4 +1,4 @@
-#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
+"""**TBD**"""
 
 from enum import Enum
 from typing import List
@@ -46,7 +48,8 @@ class RodState(Enum):
 
 
 class RodStateError(ValueError):
-    """Custom error that is raised when an unknown RodState is encountered."""
+    """Custom error that is raised when an unknown :class:`RodState` is
+    encountered."""
     def __init__(self):
         self.message = "The assigned RodState is invalid. Please assign a " \
                        "known RodState."
@@ -54,64 +57,72 @@ class RodStateError(ValueError):
 
 
 class RodNumberWidget(QtWidgets.QLineEdit):
-    """A custom QLineEdit to display rod numbers and have associated rods.
+    """A custom ``QLineEdit`` to display rod numbers and have associated rods.
 
     Parameters
     ----------
     color : str
         The color of the rod that this widget represents.
     parent : QWidget, optional
-        The widgets parent widget. Default is None.
+        The widgets parent widget. Default is ``None``.
     text : str, optional
-        The text displayed by the widget. Default is "".
+        The text displayed by the widget. Default is ``""``.
     pos : QPoint, optional
-        The position of the widget (relative to its parent widget). Default
-        is QPoint(0, 0)
+        The position of the widget (relative to its parent widget).
+        Default is ``QPoint(0, 0)``.
+
+
+    .. admonition:: Signals
+
+        - :attr:`activated`
+        - :attr:`dropped`
+        - :attr:`id_changed`
+        - :attr:`request_delete`
+
+    .. admonition:: Slots
+
+        - :meth:`update_settings`
 
     Attributes
     ----------
     initial_text : str
     initial_pos : QPoint
-    rod_id : str
-        The number of the rod.
-    rod_state : RodState
     rod_points : List[int]
         The starting and ending points of the rod in UNSCALED form.
         [x1, y1, x2, y2]
     rod_center : np.array[float]
-        Center of the rod in SCALED form, i.e. adjusted to zoom levels and
+        Center of the rod in **SCALED** form, i.e. adjusted to zoom levels and
         offsets.
     color : str
         The color of the rod being represented.
-    settings_signal : QtCore.pyqtBoundSignal
-        Signal to connect to for receiving updates of settings. Must be set
-        before the creation of an instance to be used by that instance.
-        By default None.
-
-    Signals
-    -------
-    gotActivated(int)
-    droppedRodNumber(QPoint)
-    changedRodNumber(QLineEdit, int)
-    request_delete(QLineEdit)
-
-    Slots
-    -----
-    update_settings(dict)
     """
 
     __pyqtSignals__ = ("gotActivated(int)", "droppedRodNumber(QPoint)",
                        "changedRodNumber(QLineEdit, int)")
     # Create custom signals
-    activated = QtCore.pyqtSignal(int, name="gotActivated")
-    dropped = QtCore.pyqtSignal(QtCore.QPoint, name="droppedRodNumber")
+    activated = QtCore.pyqtSignal(int, name="activated")
+    """pyqtSignal(int) : **TBD**"""
+
+    dropped = QtCore.pyqtSignal(QtCore.QPoint, name="dropped")
+    """pyqtSignal(QPoint) : **TBD**"""
+
     id_changed = QtCore.pyqtSignal(QtWidgets.QLineEdit, int,
-                                   name="changedRodNumber")
+                                   name="id_changed")
+    """pyqtSignal(QLineEdit, int) : **TBD**"""
+
     request_delete = QtCore.pyqtSignal(QtWidgets.QLineEdit,
                                        name="request_delete")
+    """pyqtSignal(QLineEdit) : **TBD**"""
+
     rod_state: RodState
     seen: bool = False
     settings_signal: QtCore.pyqtBoundSignal = None
+    """pyqtBoundSignal : Signal to connect to for receiving updates of
+    settings.
+
+    Must be set before the creation of an instance to be used by that
+    instance.\n
+    By default ``None``."""
 
     _boundary_offset: int = 5
     _number_size: int = 12
@@ -207,6 +218,17 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     @property
     def pen(self):
+        """**TBD**
+
+        Returns
+        -------
+        QPen
+            **TBD**
+
+        Raises
+        ------
+        RodStateError
+        """
         pen = QtGui.QPen()
         if self.seen:
             pen.setStyle(QtCore.Qt.SolidLine)
@@ -230,7 +252,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     # Controlling "editing" behaviour
     def mouseDoubleClickEvent(self, e: QtGui.QMouseEvent) -> None:
-        """ Reimplements QLineEdit.mouseDoubleClickEvent(e).
+        """ Reimplements ``QLineEdit.mouseDoubleClickEvent(e)``.
 
         Handles the selection of a rod number for editing.
 
@@ -246,7 +268,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         self.selectAll()
 
     def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
-        """ Reimplements QLineEdit.keyPressEvent(e).
+        """ Reimplements ``QLineEdit.keyPressEvent(e)``.
 
         Handles the confirmation and exiting during rod number editing using
         keyboard keys.
@@ -258,6 +280,14 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         Returns
         -------
         None
+
+
+        .. hint::
+
+            **Emits:**
+
+            - :attr:`request_delete`
+            - :attr:`id_changed`
         """
         if e.key() == QtCore.Qt.Key_Return or e.key() == QtCore.Qt.Key_Enter:
             # Confirm & end editing (keep changes)
@@ -283,7 +313,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     # Controlling "movement" behaviour
     def mouseMoveEvent(self, e: QtGui.QMouseEvent) -> None:
-        """ Reimplements QLineEdit.mouseMoveEvent(e).
+        """ Reimplements ``QLineEdit.mouseMoveEvent(e)``.
 
         Handles the position updating during drag&drop of this widget by the
         user.
@@ -311,7 +341,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
             return
 
     def mousePressEvent(self, event):
-        """ Reimplements QLineEdit.mousePressEvent(event).
+        """ Reimplements ``QLineEdit.mousePressEvent(event)``.
 
         Handles the selection of a rod for corrections and drag&drop of this
         widget by the user.
@@ -323,6 +353,13 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         Returns
         -------
         None
+
+
+        .. hint::
+
+            **Emits:**
+
+            - :attr:`activated`
         """
 
         # Propagate regular event (otherwise blocks functions relying on it)
@@ -337,7 +374,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
                 self.activated.emit(self.rod_id)
 
     def mouseReleaseEvent(self, event) -> None:
-        """ Reimplements QLineEdit.mouseReleaseEvent(event).
+        """ Reimplements ``QLineEdit.mouseReleaseEvent(event)``.
 
         Handles ending of drag&drop of this widget by the user.
 
@@ -348,6 +385,13 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         Returns
         -------
         None
+
+
+        .. hint::
+
+            **Emits:**
+
+            - :attr:`dropped`
         """
         if self.__mousePressPos is not None:
             moved = event.globalPos() - self.__mousePressPos
@@ -371,7 +415,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         self.setReadOnly(True)
 
     def copy(self):
-        """Copies this instance of a RodNumberWidget.
+        """Copies this instance of a :class:`RodNumberWidget`.
 
         Returns
         -------
@@ -401,7 +445,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict):
-        """Catches updates of the settings from a `Settings` class.
+        """Catches updates of the settings from a :class:`.Settings` class.
 
         Checks for the keys relevant to itself and updates the corresponding
         attributes. Redraws itself with the new settings in place, if
@@ -451,11 +495,11 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     @classmethod
     def update_defaults(cls, settings: dict) -> None:
-        """Catches updates of the settings from a `Settings` class.
+        """Catches updates of the settings from a :class:`.Settings` class.
 
         Checks for the keys relevant to itself and updates the corresponding
         class attributes. Updates those attributes to already have the
-        correct values when new RodNumberWidgets are created.
+        correct values when a new :class:`RodNumberWidget` is created.
 
         Parameters
         ----------

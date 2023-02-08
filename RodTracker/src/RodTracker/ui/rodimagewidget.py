@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -32,76 +32,93 @@ _logger = logging.getLogger(__name__)
 
 
 class RodImageWidget(QLabel):
-    """A custom `QLabel` that displays an image and can overlay rods.
+    """A custom ``QLabel`` that displays an image and can overlay rods.
 
     Parameters
     ----------
     *args : iterable
-        Positional arguments for the `QLabel` superclass.
+        Positional arguments for the ``QLabel`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QLabel` superclass.
+        Keyword arguments for the ``QLabel`` superclass.
+
+
+    .. admonition:: Signals
+
+        - :attr:`loaded_rods`
+        - :attr:`normal_frame_change`
+        - :attr:`notify_undone`
+        - :attr:`number_switches`
+        - :attr:`request_color_change`
+        - :attr:`request_frame_change`
+
+    .. admonition:: Slots
+
+        - :meth:`adjust_rod_length`
+        - :meth:`delete_rod`
+        - :meth:`extract_rods`
+        - :meth:`undo_action`
+        - :meth:`update_settings`
 
     Attributes
     ----------
-    active_rod : int | None
     base_pixmap : QPixmap
-        A "clean" image in the correct scaled size.
-    cam_id : str
-        ID of the GUI object. It must be human readable as it is used for
-        labelling the performed actions displayed in the GUI.
-    logger : ActionLogger
-    rods : List[RodNumberWidget]
+        A *clean* image in the correct scaled size.
     rod_pixmap : QPixmap
         Image that is temporarily painted on when rod corrections are put in
         by the user.
-    scale_factor : float
     startPos : QtCore.QPoint
         Start position for new rod position.
-
-    Signals
-    -------
-    loaded_rods(int)
-        Notifies objects, how many rods have just been loaded for display.
-    normal_frame_change(int)
-        Requests a normal change of frame. The payload is the index of the
-        desired frame, relative to the current one, e.g. -1 to request the
-        previous image.
-    notify_undone(Action)
-        Notifies objects, that the `Action` in the payload has been reverted.
-    number_switches(NumberChangeActions, int, int, str)
-        Notifies data maintainance objects, that the user attempts to change
-        rod IDs in more than just the frame displayed by this `RodImageWidget`.
-        Payload: type of the attempted change, previous rod ID, new rod ID,
-                 camera ID
-    number_switches(NumberChangeActions, int, int, str, str, int)
-        See above.
-        Payload: type of the attempted change, previous rod ID, new rod ID,
-                 camera ID, rod color, frame
-    request_color_change(str)
-        Request to change the displayed colors. Currently this is used to
-        revert actions performed on a color other than the displayed one.
-    request_frame_change(int)
-        Request to change the displayed frames. Currently this is used to
-        revert actions performed on a frame other than the displayed one.
-
-    Slots
-    -----
-    adjust_rod_length(float, bool)
-    delete_rod(RodNumberWidget)
-    extract_rods(DataFrame, str)
-    undo_action(Union[Action, ChangeRodPositionAction, ChangedRodNumberAction,
-                      DeleteRodAction])
-    update_settings(dict)
     """
     request_color_change = QtCore.pyqtSignal(str, name="request_color_change")
+    """pyqtSignal(str): Request to change the displayed colors.
+
+    Currently this is used to revert actions performed on a color other than
+    the displayed one.
+    """
+
     request_frame_change = QtCore.pyqtSignal(int, name="request_frame_change")
+    """pyqtSignal(int) : Request to change the displayed frames.
+
+    Currently this is used to revert actions performed on a frame other than
+    the displayed one.
+    """
+
     notify_undone = QtCore.pyqtSignal(lg.Action, name="notify_undone")
+    """pyqtSignal(Action) : Notifies objects, that the :class:`.Action` in the
+    payload has been reverted.
+    """
+
     normal_frame_change = QtCore.pyqtSignal(int, name="normal_frame_change")
+    """pyqtSignal(int) : Requests a normal change of frame.
+
+    The payload is the index of the desired frame, relative to the current one,
+    e.g. ``-1`` to request the previous image.
+    """
+
     number_switches = QtCore.pyqtSignal(
         [lg.NumberChangeActions, int, int, str],
         [lg.NumberChangeActions, int, int, str, str, int],
         name="number_switches")
+    """pyqtSignal([NumberChangeActions, int, int, str]) : Indicates switches of
+    numbers between rods.
+
+    Notifies data maintainance objects, that the user attempts to change
+    rod IDs in more than just the frame displayed by this
+    :class:`RodImageWidget`.\n
+    Payload: type of the attempted change, previous rod ID, new rod ID, and
+    camera ID
+
+    There is a second version of this signal, that will be obsolete:\n
+    (NumberChangeActions, int, int, str, str, int)
+    Payload: type of the attempted change, previous rod ID, new rod ID,
+    camera ID, rod color, and frame
+    """
+
     loaded_rods = QtCore.pyqtSignal(int, name="loaded_rods")
+    """pyqtSignal(int) : Notifies objects, how many rods have just been loaded
+    for display.
+    """
+
     autoselect: bool = True
 
     rods: List[rn.RodNumberWidget]
@@ -131,7 +148,7 @@ class RodImageWidget(QLabel):
     @property
     def rods(self) -> List[rn.RodNumberWidget]:
         """
-        Property that holds `RodNumberWidget`s representing rods that are
+        Property that hold :class:`.RodNumberWidget` representing rods that are
         displayable on the Widget.
 
         Returns
@@ -183,7 +200,7 @@ class RodImageWidget(QLabel):
 
         Parameters
         ----------
-        new_image : QtGui.QImage
+        new_image : QImage
 
         Raises
         ------
@@ -220,6 +237,9 @@ class RodImageWidget(QLabel):
         """
         Property that holds a string used as and ID for logging and data
         selection.
+
+        It must be human readable as it is used for labelling the performed
+        actions displayed in the GUI.
 
         Returns
         -------
@@ -370,7 +390,7 @@ class RodImageWidget(QLabel):
 
     # Interaction callbacks ===================================================
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
-        """Reimplements QLabel.mousePressEvent(event).
+        """Reimplements ``QLabel.mousePressEvent(event)``.
 
         Handles the beginning and ending actions for rod corrections by the
         user.
@@ -432,9 +452,9 @@ class RodImageWidget(QLabel):
                     self.rod_pixmap = None
 
     def mouseMoveEvent(self, mouse_event: QtGui.QMouseEvent) -> None:
-        """Reimplements QLabel.mouseMoveEvent(event).
+        """Reimplements ``QLabel.mouseMoveEvent(event)``.
 
-        Handles the drawing and updating of a "draft" rod during start and end
+        Handles the drawing and updating of a *draft* rod during start and end
         point selection.
 
         Parameters
@@ -472,8 +492,8 @@ class RodImageWidget(QLabel):
         """Saves a line selected by the user to be a rod with a rod number.
 
         The user's selected start and end point are saved in a
-        `RodNumberWidget`. Either in one that was activated prior to the
-        point selection, or that is selected by the user post point
+        :class:`.RodNumberWidget`. Either in one that was activated prior to
+        the point selection, or that is selected by the user post point
         selection as part of this function.
 
         Parameters
@@ -596,6 +616,15 @@ class RodImageWidget(QLabel):
         Returns
         -------
         None
+
+
+        .. hint::
+
+            **Emits**:
+
+                - :attr:`number_switches` [NumberChangeActions, int, int, str]
+                - :attr:`number_switches` [NumberChangeActions, int, int, str,
+                  int, str]
         """
         # Marks any rods that have the same number in RodStyle.CONFLICT
         conflicting = []
@@ -701,9 +730,10 @@ class RodImageWidget(QLabel):
         return action
 
     def check_exchange(self, drop_position):
-        """Evaluates, whether a position is on top of a `RodNumberWidget`.
+        """Evaluates, whether a position is on top of a
+        :class:`.RodNumberWidget`.
 
-        Evaluates, whether a position is on top of a `RodNumberWidget`
+        Evaluates, whether a position is on top of a :class:`.RodNumberWidget`
         maintained by this object."""
         # TODO: check where rod number was dropped and whether an exchange
         #  is needed.
@@ -713,24 +743,34 @@ class RodImageWidget(QLabel):
     def undo_action(self, action: Union[lg.Action, lg.ChangeRodPositionAction,
                                         lg.ChangedRodNumberAction,
                                         lg.DeleteRodAction]):
-        """Reverts an `Action` performed on a rod.
+        """Reverts an :class:`.Action` performed on a rod.
 
-        Reverts the `Action` given this function, if it was constructed by
-        the object. It can handle actions performed on a rod. This includes
+        Reverts the :class:`.Action` given this function, if it was constructed
+        by the object. It can handle actions performed on a rod. This includes
         position changes, number changes and deletions. It returns without
-        further actions, if the `Action` was not originally performed on
-        this object or if it has is of an unknown type.
+        further actions, if the :class:`.Action` was not originally performed
+        on this object or if it has is of an unknown type.
 
         Parameters
         ----------
         action : Union[Action, ChangeRodPositionAction, ChangedRodNumberAction,
                        DeleteRodAction]
-            An `Action` that was logged previously. It will only be
+            An :class:`.Action` that was logged previously. It will only be
             reverted, if it associated with this object.
 
         Returns
         -------
         None
+
+
+        .. hint::
+
+            **Emits**:
+
+            - :attr:`request_frame_change`
+            - :attr:`request_color_change`
+            - :attr:`number_switches` [NumberChangeActions, int, int, str,
+              str, int]
         """
         if action.parent_id != self._cam_id:
             return
@@ -834,17 +874,17 @@ class RodImageWidget(QLabel):
                           only_selected: bool = True):
         """Adjusts rod length(s) by a given amount in px.
 
-        Adds the length (in px) given in `amount` to the active rod or all
+        Adds the length (in px) given in ``amount`` to the active rod or all
         rods. Negative values shorten the rod(s).
 
         Parameters
         ----------
         amount : float, optional
             Amount in px by which the lenght will be adjusted.
-            By default 1.
+            By default ``1``.
         only_selected : bool, optional
             Whether to only adjust the currently active rod's length.
-            By default True.
+            By default ``True``.
         """
         rods = []
         new_pos = []
@@ -892,11 +932,11 @@ class RodImageWidget(QLabel):
     def adjust_rod_position(self, rod: rn.RodNumberWidget) -> List[int]:
         """Adjusts a rod number position to be on the right side of its rod.
 
-        The position of the `RodNumberWidget` is adjusted, such that it is
-        displayed to the right side and in the middle of its corresponding
+        The position of the :class:`.RodNumberWidget` is adjusted, such that it
+        is displayed to the right side and in the middle of its corresponding
         rod. This adjustment is mainly due to scaling of the image. It also
         returns the rods position in the image associated with the moved
-        `RodNumberWidget`.
+        :class:`.RodNumberWidget`.
 
         Parameters
         ----------
@@ -943,7 +983,7 @@ class RodImageWidget(QLabel):
 
     @QtCore.pyqtSlot(rn.RodNumberWidget)
     def delete_rod(self, rod: rn.RodNumberWidget) -> None:
-        """Deletes the given rod, thus sets its position to (0,0).
+        """Deletes the given rod, thus sets its position to ``(0, 0)``.
 
         Parameters
         ----------
@@ -980,7 +1020,7 @@ class RodImageWidget(QLabel):
 
     def eventFilter(self, source: QtCore.QObject, event: QtCore.QEvent) -> \
             bool:
-        """Intercepts events, here QKeyEvents for frame switching and edit
+        """Intercepts events, here ``QKeyEvents`` for frame switching and edit
         aborting.
 
         Parameters
@@ -991,9 +1031,16 @@ class RodImageWidget(QLabel):
         Returns
         -------
         bool
-            True, if the event shall not be propagated further.
-            False, if the event shall be passed to the next object to be
+            ``True``, if the event shall not be propagated further.
+            ``False``, if the event shall be passed to the next object to be
             handled.
+
+
+        .. hint::
+
+            **Emits:**
+
+                - :attr:`normal_frame_change`
         """
 
         if event.type() != QtCore.QEvent.KeyPress:
@@ -1033,7 +1080,7 @@ class RodImageWidget(QLabel):
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict) -> None:
-        """Catches updates of the settings from a `Settings` class.
+        """Catches updates of the settings from a :class:`.Settings` class.
 
         Checks for the keys relevant to itself and updates the corresponding
         attributes. Redraws itself with the new settings in place.
@@ -1065,26 +1112,35 @@ class RodImageWidget(QLabel):
 
     @QtCore.pyqtSlot(pd.DataFrame, str)
     def extract_rods(self, data: pd.DataFrame, color: str) -> None:
-        """Extract rod positions for a color and create the `RodNumberWidget`s.
+        """Extract rod positions for a color and create the
+        :class:`.RodNumberWidget` (s).
 
-        Extracts the rod position data one color in one frame from `rod_data`.
-        It creates the `RodNumberWidget` that is associated with each rod.
-        If a rod has been activated previously, it is attempted to activate a
-        rod with the same number again.
+        Extracts the rod position data one color in one frame from ``data``.
+        It creates the :class:`.RodNumberWidget` that is associated with each
+        rod. If a rod has been activated previously, it is attempted to
+        activate a rod with the same number again.
 
         Parameters
         ----------
         data : DataFrame
             Data from which to extract the 2D rod positions relevant to this
             camera view. Required columns:
-            "x1_{self.cam_id}", "x2_{self.cam_id}", "y1_{self.cam_id}",
-            "y2_{self.cam_id}, "seen_{self.cam_id}", "particle", "frame"
+            ``"x1_{self.cam_id}"``, ``"x2_{self.cam_id}"``,
+            ``"y1_{self.cam_id}"``, ``"y2_{self.cam_id}"``,
+            ``"seen_{self.cam_id}"``, ``"particle"``, ``"frame"``
         color : str
-            Color of the rods given in `data`.
+            Color of the rods given in ``data``.
 
         Returns
         -------
         None
+
+
+        .. hint::
+
+            **Emits:**
+
+                - :attr:`loaded_rods`
         """
         active_rod = self.active_rod
         col_list = ["particle", "frame", f"x1_{self.cam_id}",

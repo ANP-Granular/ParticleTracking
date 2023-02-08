@@ -1,8 +1,8 @@
 """
 Function(s) to train a new model using the Detectron2 framework.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       10.08.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       10.08.2022
 
 """
 import os
@@ -43,39 +43,40 @@ def run_training(train_set: ds.DataSet,
 
     Parameters
     ----------
-    train_set : ds.DataSet
+    train_set : DataSet
         A DataSet already registered to the Detectron2 framework, that is used
         for training the model.
     configuration : Union[str, CfgNode]
         Configuration for the Detectron2 model with training settings given as
-        a CfgNode or path to a *.yaml file in the Detectron2 configuration
-        format.
-    val_set : ds.DataSet, optional
-        A DataSet already registered to the Detectron2 framework, that is used
-        for testing the model during training.
-        By default None.
+        a ``CfgNode`` or path to a ``*.yaml`` file in the Detectron2
+        configuration format.
+    val_set : DataSet, optional
+        A :class:`.DataSet` already registered to the Detectron2 framework,
+        that is used for testing the model during training.\n
+        By default ``None``.
     output_dir : str, optional
         Path to the intended output directory. It's parent directory must exist
-        prior to running this function.
-        By default "./".
+        prior to running this function.\n
+        By default ``"./"``.
     log_name : str, optional
-        Filename for logging output in the output directory.
-        By default "training.log".
+        Filename for logging output in the output directory.\n
+        By default ``"training.log"``.
     resume : bool, optional
-        Flag to continue with previous training progress in the output folder.
-        By default True.
+        Flag to continue with previous training progress in the output
+        folder.\n
+        By default ``True``.
     visualize : bool, optional
         Flag for allowing visualization of one randomly selected image from the
         given training dataset with 10 randomly chosen annotations overlaid on
-        the image.
-        By default False.
-    img_augmentations : List[T.Augmentation], optional
-        Image augmentations to be used during training.
-        By default None.
+        the image.\n
+        By default ``False``.
+    img_augmentations : List[Augmentation], optional
+        Image augmentations to be used during training.\n
+        By default ``None``.
     freeze_layers : List[str], optional
         Layers/layer collections to be frozen during training. The model's
-        layer names are obtained using `model.named_parameters()`.
-        By default None.
+        layer names are obtained using ``model.named_parameters()``.\n
+        By default ``None``.
     """
 
     setup_logger(os.path.join(output_dir, log_name))

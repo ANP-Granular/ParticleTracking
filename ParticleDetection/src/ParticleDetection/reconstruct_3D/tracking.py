@@ -2,9 +2,10 @@
 Collection of previously used automatic rod tracking approaches. These are just
 implemented for comparison with new, more promising methods.
 
-Authors:    Dmitry Puzyrev (dmitry.puzyrev@ovgu.de),
-            Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       31.10.2022
+**Authors:** Dmitry Puzyrev (dmitry.puzyrev@ovgu.de), Adrian Niemann
+(adrian.niemann@ovgu.de)
+
+**Date:** 31.10.2022
 
 """
 import itertools
@@ -16,7 +17,7 @@ from scipy.optimize import linear_sum_assignment
 
 
 def tracking_trackpy(data: pd.DataFrame, report: bool = False) -> pd.DataFrame:
-    """Tracks rods (one colour) over multiple frames using `trackpy`.
+    """Tracks rods (one colour) over multiple frames using ``trackpy``.
 
     Parameters
     ----------
@@ -57,13 +58,13 @@ def tracking_global_assignment(data: pd.DataFrame) \
 
     Parameters
     ----------
-    data : pd.DataFrame
+    data : DataFrame
         Data(-slice) from rod tracking. Must contain at least the following
         columns: x1, y1, z1, x2, y2, z2, frame, particle(, unseen)
 
     Returns
     -------
-    Tuple[pd.DataFrame, np.ndarray]
+    Tuple[DataFrame, ndarray]
         Retuns the tracked data, i.e. the initial data with adjusted particle
         numbers. Additionlly, returns the assignment costs per frame, i.e. the
         distance between the endpoints of all matched rods.

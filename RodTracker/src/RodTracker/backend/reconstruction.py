@@ -33,11 +33,31 @@ _logger = logging.getLogger(__name__)
 
 
 class PlotterSignals(QtCore.QObject):
+    """Helper object to provide :class:`Plotter` access to ``pyqtSignal``."""
+
     result_plot = QtCore.pyqtSignal(Figure, name="result_plot")
+    """pyqtSignal(Figure): Transfers a result ``Figure`` for display elsewhere.
+    """
+
     error = QtCore.pyqtSignal(tuple, name="error")
+    """pyqtSignal(tuple) : Signal for propagating errors occuring in the
+    worker's thread.\n
+    | The transferred tuple should contain the following values:
+    | [0]: Exception type
+    | [1]: Exception value
+    | [2]: Exception traceback
+
+    See Also
+    --------
+    `sys.exc_info()`_
+
+    .. _sys.exc_info():
+        https://docs.python.org/3/library/sys.html#sys.exc_info
+    """
 
 
 class Plotter(QtCore.QRunnable):
+    """**TBD**"""
     def __init__(self, data: pd.DataFrame, **kwargs):
         self.data = data
         self.signals = PlotterSignals()
@@ -45,6 +65,16 @@ class Plotter(QtCore.QRunnable):
         super().__init__()
 
     def run(self):
+        """**TBD**
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`PlotterSignals.error`       **(potentially repeatedly)**
+            - :attr:`PlotterSignals.result_plot` **(potentially repeatedly)**
+        """
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter(action="ignore", category=UserWarning)
@@ -54,6 +84,21 @@ class Plotter(QtCore.QRunnable):
             self.signals.error.emit((exctype, value, tb))
 
     def generate_plots(self, data: pd.DataFrame, **kwargs):
+        """**TBD**
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            **TBD**
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`PlotterSignals.error`       **(potentially repeatedly)**
+            - :attr:`PlotterSignals.result_plot` **(potentially repeatedly)**
+        """
         colors = kwargs.get("colors")
         start_f = kwargs.get("start_frame")
         end_f = kwargs.get("end_frame")
@@ -79,6 +124,33 @@ class Plotter(QtCore.QRunnable):
     def plot_displacements_3d(self, data: pd.DataFrame, colors: List[str] =
                               None, start_frame: int = None, end_frame: int =
                               None):
+        """**TBD**
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            **TBD**
+        colors : List[str], optional
+            **TBD**
+            By default None.
+        start_frame : int, optional
+            **TBD**
+            By default None.
+        end_frame : int, optional
+            **TBD**
+            By default None.
+
+        See also
+        --------
+        :meth:`ParticleDetection.reconstruct_3D.visualization.displacement_fwise`
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`PlotterSignals.result_plot`
+        """
         if colors is None:
             colors = list(data["color"].unique())
         if start_frame is None:
@@ -101,6 +173,27 @@ class Plotter(QtCore.QRunnable):
 
     def plot_rod_lengths(self, data: pd.DataFrame, position_scaling: float =
                          None):
+        """**TBD**
+
+        Parameters
+        ----------
+        data : DataFrame
+            **TBD**
+        position_scaling : float, optional
+            **TBD**
+            By default None.
+
+        See also
+        --------
+        :meth:`ParticleDetection.reconstruct_3D.visualization.length_hist`
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`PlotterSignals.result_plot`
+        """
         if position_scaling is None:
             position_scaling = 1.0
         rod_lens = data["l"].dropna().to_numpy() * position_scaling
@@ -114,6 +207,32 @@ class Plotter(QtCore.QRunnable):
     def plot_reprojection_errors(self, data: pd.DataFrame, calibration: dict,
                                  position_scaling: float = 1.0, transformation:
                                  dict = None):
+        """**TBD**
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            **TBD**
+        calibration : dict
+            **TBD**
+        position_scaling : float, optional
+            **TBD**
+            By default 1.0.
+        transformation : dict, optional
+            **TBD**
+            By default None.
+
+        See also
+        --------
+        :meth:`ParticleDetection.reconstruct_3D.visualization.reprojection_errors_hist`
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`PlotterSignals.result_plot`
+        """
         if data is None:
             _logger.error(f"Insufficient position data was provided: "
                           f"{data}")
@@ -132,6 +251,26 @@ class Plotter(QtCore.QRunnable):
     def reproject_data(data: pd.DataFrame, calibration: dict,
                        position_scaling: float = 1.0, transformation: dict =
                        None):
+        """**TBD**
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            **TBD**
+        calibration : dict
+            **TBD**
+        position_scaling : float, optional
+            **TBD**
+            By default 1.0.
+        transformation : dict, optional
+            **TBD**
+            By default None.
+
+        Returns
+        -------
+        ndarray | None
+            **TBD**
+        """
         if calibration is None:
             return
         # check all columns are present and in order, such that the below code
@@ -169,12 +308,38 @@ class Plotter(QtCore.QRunnable):
 
 
 class TrackerSignals(QtCore.QObject):
+    """Helper object to provide :class:`Reconstructor` and class:`Tracker`
+    access to ``pyqtSignal``."""
     error = QtCore.pyqtSignal(tuple, name="error")
+    """pyqtSignal(tuple) : Signal for propagating errors occuring in the
+    worker's thread.\n
+    | The transferred tuple should contain the following values:
+    | [0]: Exception type
+    | [1]: Exception value
+    | [2]: Exception traceback
+
+    See Also
+    --------
+    `sys.exc_info()`_
+
+    .. _sys.exc_info():
+        https://docs.python.org/3/library/sys.html#sys.exc_info
+    """
+
     progress = QtCore.pyqtSignal(float, name="progress")
+    """pyqtSignal(float) : Reports the progress of the started computation.
+
+    The progress is reported as the ratio of finished iterations over all
+    iterations, so :math:`\\in [0, 1]`.
+    """
+
     result = QtCore.pyqtSignal(pd.DataFrame, name="result")
+    """pyqtSignal(DataFrame) : Reports the result of completed reconstructions.
+    """
 
 
 class Reconstructor(QtCore.QRunnable):
+    """**TBD**"""
     def __init__(self, data: pd.DataFrame, frames: list[int],
                  calibration: dict, transformation: dict, cams: list[str],
                  color: str):
@@ -188,6 +353,17 @@ class Reconstructor(QtCore.QRunnable):
         self.signals = TrackerSignals()
 
     def run(self):
+        """**TBD**
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`TrackerSignals.error`
+            - :attr:`TrackerSignals.progress`
+            - :attr:`TrackerSignals.result`
+        """
         try:
             # Derive projection matrices from the calibration
             r1 = np.eye(3)

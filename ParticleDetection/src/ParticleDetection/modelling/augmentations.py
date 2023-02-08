@@ -3,8 +3,8 @@ Collection of custom image augmentations extending the Detectron2 augmentation
 pool. These augmentations are intended to be used during the training process
 of a neural network using the Detectron2 framework.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       31.10.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       31.10.2022
 
 """
 import random
@@ -17,6 +17,7 @@ from detectron2.data.transforms.augmentation import _transform_to_aug
 
 
 class SomeOf(T.AugmentationList):
+    """**TBD**"""
     def __init__(self, augments, lower, upper):
         self.lower = lower
         self.upper = upper
@@ -36,6 +37,7 @@ class SomeOf(T.AugmentationList):
 
 
 class GaussianBlurAugmentation(T.Augmentation):
+    """**TBD**"""
     def __init__(self, sigmas: tuple = (0.0, 2.0)):
         super().__init__()
         self.sigmas = sigmas
@@ -45,6 +47,7 @@ class GaussianBlurAugmentation(T.Augmentation):
 
 
 class GaussianBlur(T.Transform):
+    """**TBD**"""
     def __init__(self, sigmas: tuple = (0.0, 2.0)):
         super().__init__()
         self.sigmas = sigmas
@@ -61,6 +64,7 @@ class GaussianBlur(T.Transform):
 
 
 class SharpenAugmentation(T.Augmentation):
+    """**TBD**"""
     def __init__(self, alpha: tuple = (0.0, 0.2),
                  lightness: tuple = (0.8, 1.2)):
         self.alpha = alpha
@@ -71,6 +75,7 @@ class SharpenAugmentation(T.Augmentation):
 
 
 class Sharpen(T.Transform):
+    """**TBD**"""
     def __init__(self, alpha: tuple = (0.0, 0.2),
                  lightness: tuple = (0.8, 1.2)):
         super().__init__()
@@ -90,6 +95,7 @@ class Sharpen(T.Transform):
 
 
 class MultiplyAugmentation(T.Augmentation):
+    """**TBD**"""
     def __init__(self, mul: tuple = (0.8, 1.2)):
         super().__init__()
         self.mul = mul
@@ -99,6 +105,7 @@ class MultiplyAugmentation(T.Augmentation):
 
 
 class Multiply(T.Transform):
+    """**TBD**"""
     def __init__(self, mul: tuple = (0.8, 1.2)):
         super().__init__()
         self.mul = mul

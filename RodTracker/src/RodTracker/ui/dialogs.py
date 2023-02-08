@@ -1,4 +1,4 @@
-#  Copyright (c) 2021 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -37,9 +37,9 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
     Attributes
     ----------
     confirmed_delete : List[bool]
-        Entries correspond to a row from the `to_delete` DataFrame.
-        True -> user confirms deletion
-        False -> user denies deletion
+        Entries correspond to a row from the :attr:`to_delete` ``DataFrame``.
+        ``True`` -> user confirms deletion
+        ``False`` -> user denies deletion
     """
     def __init__(self, to_delete: pd.DataFrame, parent: QtWidgets.QWidget):
         super().__init__(parent=parent)

@@ -47,9 +47,33 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     Parameters
     ----------
     *args : iterable
-        Positional arguments for the `QMainWindow` superclass.
+        Positional arguments for the ``QMainWindow`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QMainWindow` superclass.
+        Keyword arguments for the ``QMainWindow`` superclass.
+
+
+    .. admonition:: Signals
+
+        - :attr:`request_undo`
+        - :attr:`request_redo`
+
+    .. admonition:: Slots
+
+        - :meth:`color_change`
+        - :meth:`change_color`
+        - :meth:`display_rod_changed`
+        - :meth:`images_loaded`
+        - :meth:`method_2D_changed`
+        - :meth:`method_3D_changed`
+        - :meth:`next_image`
+        - :meth:`rods_loaded`
+        - :meth:`show_2D_changed`
+        - :meth:`show_3D_changed`
+        - :meth:`slider_moved`
+        - :meth:`tab_has_changes`
+        - :meth:`tree_selection`
+        - :meth:`update_settings`
+        - :meth:`view_changed`
 
     Attributes
     ----------
@@ -59,47 +83,35 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         A copy of all image display objects (views) from the GUI main window.
     image_managers : List[ImageData]
         Manager objects for loaded/selected image datasets. There is one
-        associated with each `RodImageWidget` in `cameras`.
-    logger : ActionLogger
-        A logger object keeping track of users' actions performed on the
-        main window, i.e. data and image loading and saving.
-    logger_id : str
-        The ID provided to the logger for accountability of the actions in
-        the GUI.
-
-    Signals
-    -------
-    request_undo(str)
-        Is emitted when the user wants to revert an action. The payload is
-        the ID of the widget on which the last action shall be reverted.
-    request_redo(str)
-        Is emitted when the user wants to redo a previously reverted action.
-        The payload is the ID of the widget on which the last action shall
-        be redone.
-
-    Slots
-    -----
-    color_change(bool)
-    change_color(str)
-    display_rod_changed(str)
-    images_loaded(int, str, Path)
-    method_2D_changed(bool)
-    method_3D_changed(bool)
-    next_image(int, int)
-    rods_loaded(Path, Path, list)
-    show_2D_changed(int)
-    show_3D_changed(int)
-    slider_moved(int)
-    tab_has_changes(bool, str)
-    tree_selection(QTreeWidgetItem, int)
-    update_settings(dict)
-    view_changed(int)
+        associated with each :class:`.RodImageWidget` in :attr:`cameras`.
     """
     request_undo = QtCore.pyqtSignal(str, name="request_undo")
+    """pyqtSignal(str) : Is emitted when the user wants to revert an action.
+
+    The payload is the ID of the widget on which the last action shall be
+    reverted.
+    """
+
     request_redo = QtCore.pyqtSignal(str, name="request_redo")
+    """pyqtSignal(str) : Is emitted when the user wants to redo a previously
+    reverted action.
+
+    The payload is the ID of the widget on which the last action shall
+    be redone.
+    """
 
     logger_id: str = "main"
+    """str : The ID provided to the logger for accountability of the actions in
+    the GUI.
+
+    Default is ``"main"``.
+    """
+
     logger: lg.ActionLogger
+    """ActionLogger : A logger object keeping track of users' actions performed
+    on the main window, i.e. data and image loading and saving.
+    """
+
     _rod_incr: float = 1.0
     _fit_next_img: bool = False
 
@@ -347,14 +359,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(QTreeWidgetItem, int)
     def tree_selection(self, item: QTreeWidgetItem, col: int):
-        """Handle the selection of a rod & frame in the `RodTree` widget.
+        """Handle the selection of a rod & frame in the :class:`.RodTree`
+        widget.
 
         Parameters
         ----------
         item : QTreeWidgetItem
-            Selected item in the `RodTree` widget.
+            Selected item in the :class:`.RodTree` widget.
         col : int
-            Column of the `RodTree` widget the item was selected in.
+            Column of the :class:`.RodTree` widget the item was selected in.
         """
         if not item.childCount():
             # Change camera
@@ -388,7 +401,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict):
-        """Catches updates of the settings from a `Settings` class.
+        """Catches updates of the settings from a :class:`.Settings` class.
 
         Checks for the keys relevant to itself and updates the corresponding
         attributes. Updates itself with the new settings in place.
@@ -444,7 +457,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             Number of loaded frames.
         cam_id : str
             ID of the loaded dataset/folder/camera.
-        folder : pathlib.Path
+        folder : Path
             Folder from which the images were loaded.
         """
         self._fit_next_img = True
@@ -550,7 +563,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def show_2D_changed(self, state: int):
-        """Catches a `QCheckBox` state change to display or clear rods in 2D.
+        """Catches a ``QCheckBox`` state change to display or clear rods in 2D.
 
         Parameters
         ----------
@@ -568,7 +581,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def show_3D_changed(self, state: int):
-        """Catches a `QCheckBox` state change to display or clear rods in 3D.
+        """Catches a ``QCheckBox`` state change to display or clear rods in 3D.
 
         Parameters
         ----------
@@ -640,8 +653,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         Parameters
         ----------
         factor : float
-            The relative scaling factor. Example:
-            factor=1.1, current scaling=2.0     ->  new scaling=2.2
+            The relative scaling factor. Example:\n
+            ``factor=1.1``, current scaling: ``2.0``  ==>  new scaling: ``2.2``
 
         Returns
         -------
@@ -668,7 +681,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(bool)
     def color_change(self, state: bool) -> None:
-        """Handles changes of the `QRadioButtons` for color selection."""
+        """Handles changes of the ``QRadioButtons`` for color selection."""
         if state:
             color = self.get_selected_color()
             self.rod_data.update_color_2D(color)
@@ -687,8 +700,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         Returns
         -------
         bool
-            True, if changes shall be discarded.
-            False, if the user aborted.
+            ``True``, if changes shall be discarded.
+            ``False``, if the user aborted.
         """
         msg = QMessageBox()
         msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
@@ -796,12 +809,28 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.show_next(idx_diff)
 
     def requesting_undo(self) -> None:
-        """Helper method to emit a request for reverting the last action."""
+        """Helper method to emit a request for reverting the last action.
+
+
+        .. hint::
+
+            **Emits**
+
+                - :attr:`request_undo`
+        """
         cam = self.cameras[self.ui.camera_tabs.currentIndex()]
         self.request_undo.emit(cam.cam_id)
 
     def requesting_redo(self) -> None:
-        """Helper method to emit a request for repeating the last action."""
+        """Helper method to emit a request for repeating the last action.
+
+
+        .. hint::
+
+            **Emits**
+
+                - :attr:`request_redo`
+        """
         cam = self.cameras[self.ui.camera_tabs.currentIndex()]
         self.request_redo.emit(cam.cam_id)
 
@@ -848,8 +877,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         Returns
         -------
         bool
-            True, if the event shall not be propagated further.
-            False, if the event shall be passed to the next object to be
+            ``True``, if the event shall not be propagated further.
+            ``False``, if the event shall be passed to the next object to be
             handled.
         """
         if source not in [self.ui.sa_camera_0.verticalScrollBar(),
@@ -885,7 +914,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         super().resizeEvent(a0)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
-        """Reimplements QMainWindow.closeEvent(a0).
+        """Reimplements ``QMainWindow.closeEvent(a0)``.
 
         In case of unsaved changes, the user is asked to save or discard
         these before closing the application. The closing can be aborted
@@ -936,11 +965,11 @@ def reconnect(signal: QtCore.pyqtSignal, newhandler: Callable = None,
     ----------
     signal : QtCore.pyqtSignal
     newhandler : Callable, optional
-        By default None.
+        By default ``None``.
     oldhandler : Callable, optional
-        Handler function currently connected to `signal`. All connected
-        functions will be removed, if this parameters is None.
-        By default None.
+        Handler function currently connected to ``signal``. All connected
+        functions will be removed, if this parameters is ``None``.
+        By default ``None``.
     """
     try:
         if oldhandler is not None:

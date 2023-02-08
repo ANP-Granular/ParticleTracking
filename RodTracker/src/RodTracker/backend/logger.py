@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of RodTracker.
 #  RodTracker is free software: you can redistribute it and/or modify
@@ -68,7 +68,7 @@ def open_logs():
 
 
 class FileActions(Enum):
-    """Helper class holding all valid kinds of FileActions."""
+    """Helper class holding all valid kinds of :class:`FileActions`."""
 
     SAVE = "Saved changes"
     LOAD_IMAGES = "image file(s) loaded from"
@@ -91,7 +91,8 @@ class NotInvertableError(Exception):
 
 
 class Action(QListWidgetItem):
-    """Base class for all Actions that are loggable by an `ActionLogger`."""
+    """Base class for all Actions that are loggable by an
+    :class:`ActionLogger`."""
 
     action: str
     _parent_id: str = None
@@ -117,7 +118,8 @@ class Action(QListWidgetItem):
 
     @property
     def frame(self) -> int:
-        """Property holding the frame on which this Action was performed."""
+        """Property holding the frame on which this :class:`Action` was
+        performed."""
         return self._frame
 
     @frame.setter
@@ -139,8 +141,8 @@ class Action(QListWidgetItem):
         return None
 
     def invert(self):
-        """Generates an inverted version of the Action (for redoing),
-        None if the Action is not invertible."""
+        """Generates an inverted version of the :class:`Action` (for redoing),
+        None if the :class:`Action` is not invertible."""
         return None
 
 
@@ -162,9 +164,9 @@ class FileAction(Action):
         The ID of the object that is responsible for (reverting) this
         action. (Default is None)
     *args : iterable
-        Positional arguments for the `QListWidgetItem` superclass.
+        Positional arguments for the ``QListWidgetItem`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QListWidgetItem` superclass.
+        Keyword arguments for the ``QListWidgetItem`` superclass.
 
     Attributes
     ----------
@@ -237,13 +239,14 @@ class ChangedRodNumberAction(Action):
     new_id : int
         The new rod number of the changed rod.
     coupled_action : Action, optional
-        The instance of an `Action` that is performed at the same time with
-        this and must be reverted as well, if this `Action` is reverted. For
-        example when the numbers of two rods are exchanged. (Default is None)
+        The instance of an :class:`Action` that is performed at the same time
+        with this and must be reverted as well, if this :class:`Action` is
+        reverted. For example when the numbers of two rods are exchanged.
+        (Default is None)
     *args : iterable
-        Positional arguments for the `QListWidgetItem` superclass.
+        Positional arguments for the ``QListWidgetItem`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QListWidgetItem` superclass.
+        Keyword arguments for the ``QListWidgetItem`` superclass.
 
     Attributes
     ----------
@@ -255,8 +258,9 @@ class ChangedRodNumberAction(Action):
         Description of what kind of action was performed.
         (Default is "Changed rod")
     coupled_action : Union[Action, None]
-        The instance of an `Action` that is performed at the same time with
-        this and must be reverted as well, if this `Action` is reverted.
+        The instance of an :class:`Action` that is performed at the same time
+        with this and must be reverted as well, if this :class:`Action` is
+        reverted.
     """
 
     def __init__(self, old_rod: rn.RodNumberWidget, new_id: int,
@@ -293,13 +297,13 @@ class ChangedRodNumberAction(Action):
 
         Parameters
         ----------
-        rods : [RodNumberWidget]
-            A list of `RodNumberWidget`s in which should be the originally
-            changed rod(s).
+        rods : List[RodNumberWidget]
+            A list of :class:`RodNumberWidget` in which should be the
+            originally changed rod(s).
 
         Returns
         -------
-        [RodNumberWidget]
+        List[RodNumberWidget]
         """
         if rods is None:
             raise Exception("Unable to undo action. No rods supplied.")
@@ -338,8 +342,8 @@ class ChangedRodNumberAction(Action):
         return out
 
     def invert(self):
-        """Generates an inverted version of the ChangedRodNumberAction (for
-        redoing).
+        """Generates an inverted version of the :class:`ChangedRodNumberAction`
+        (for redoing).
 
         Returns
         -------
@@ -365,13 +369,14 @@ class DeleteRodAction(Action):
     old_rod : RodNumberWidget
         A copy of the rod that is deleted.
     coupled_action : Union[Action, ChangedRodNumberAction], optional
-        The instance of an `Action` that is performed at the same time with
-        this and must be reverted as well, if this `Action` is reverted.
+        The instance of an :class:`Action` that is performed at the same time
+        with this and must be reverted as well, if this :class:`Action` is
+        reverted.
         (Default is None)
     *args : iterable
-        Positional arguments for the `QListWidgetItem` superclass.
+        Positional arguments for the ``QListWidgetItem`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QListWidgetItem` superclass.
+        Keyword arguments for the ``QListWidgetItem`` superclass.
 
     Attributes
     ----------
@@ -381,8 +386,9 @@ class DeleteRodAction(Action):
         Description of what kind of action was performed.
         (Default is "Deleted rod")
     coupled_action : Union[Action, ChangeRodNumberAction, None]
-        The instance of an `Action` that is performed at the same time with
-        this and must be reverted as well, if this `Action` is reverted.
+        The instance of an :class:`Action` that is performed at the same time
+        with this and must be reverted as well, if this :class:`Action` is
+        reverted.
 
     """
     def __init__(self, old_rod: rn.RodNumberWidget,
@@ -417,13 +423,13 @@ class DeleteRodAction(Action):
 
         Parameters
         ----------
-        rods : [RodNumberWidget]
-            A list of `RodNumberWidget`s in which should be the originally
-            changed rod(s).
+        rods : List[RodNumberWidget]
+            A list of :class:`RodNumberWidget` in which should be the
+            originally changed rod(s).
 
         Returns
         -------
-        [RodNumberWidget]
+        List[RodNumberWidget]
         """
         if self.coupled_action:
             self.rod.rod_id = self.coupled_action.new_id
@@ -458,7 +464,8 @@ class DeleteRodAction(Action):
         return out
 
     def invert(self):
-        """Generates an inverted version of the DeleteRodAction (for redoing).
+        """Generates an inverted version of the :class:`DeleteRodAction` (for
+        redoing).
 
         Returns
         -------
@@ -482,19 +489,19 @@ class ChangeRodPositionAction(Action):
     ----------
     old_rod : RodNumberWidget
         A copy of the rod whose position was changed, prior to the change.
-    new_postion : [int]
+    new_postion : List[int]
         The newly set starting and ending points of the rod, i.e. [x1, y1,
         x2, y2].
     *args : iterable
-        Positional arguments for the `QListWidgetItem` superclass.
+        Positional arguments for the ``QListWidgetItem`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QListWidgetItem` superclass.
+        Keyword arguments for the ``QListWidgetItem`` superclass.
 
     Attributes
     ----------
     rod : RodNumberWidget
         A copy of the rod whose position was changed, prior to the change.
-    new_pos : [int]
+    new_pos : List[int]
         The newly set starting and ending points of the rod.
     action : str
         Default is "Rod position updated".
@@ -539,13 +546,13 @@ class ChangeRodPositionAction(Action):
 
         Parameters
         ----------
-        rods : [RodNumberWidget]
-            A list of `RodNumberWidget`s in which should be the originally
-            changed rod(s).
+        rods : List[RodNumberWidget]
+            A list of :class:`RodNumberWidget` in which should be the
+            originally changed rod(s).
 
         Returns
         -------
-        [RodNumberWidget]
+        List[RodNumberWidget]
 
         Raises
         ------
@@ -583,8 +590,8 @@ class ChangeRodPositionAction(Action):
         return out
 
     def invert(self):
-        """Generates an inverted version of the ChangeRodPositionAction (for
-        redoing).
+        """Generates an inverted version of the
+        :class:`ChangeRodPositionAction` (for redoing).
 
         Returns
         -------
@@ -606,9 +613,9 @@ class CreateRodAction(Action):
     new_rod : RodNumberWidget
         A copy of the rod which was created.
     *args : iterable
-        Positional arguments for the `QListWidgetItem` superclass.
+        Positional arguments for the ``QListWidgetItem`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QListWidgetItem` superclass.
+        Keyword arguments for the ``QListWidgetItem`` superclass.
 
     Attributes
     ----------
@@ -651,7 +658,8 @@ class CreateRodAction(Action):
         Parameters
         ----------
         rods : List[RodNumberWidget]
-            A list of `RodNumberWidget`s in which should be the created rod.
+            A list of :class:`RodNumberWidget` in which should be the created
+            rod.
 
         Returns
         -------
@@ -696,7 +704,8 @@ class CreateRodAction(Action):
         return out
 
     def invert(self):
-        """Generates an inverted version of the CreateRodAction (for redoing).
+        """Generates an inverted version of the :class:`CreateRodAction` (for
+        redoing).
 
         Returns
         -------
@@ -720,9 +729,9 @@ class PermanentRemoveAction(Action):
     rod_quantity : int
         Number of rods (rows) have been deleted.
     *args : iterable
-        Positional arguments for the `QListWidgetItem` superclass.
+        Positional arguments for the ``QListWidgetItem`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QListWidgetItem` superclass.
+        Keyword arguments for the ``QListWidgetItem`` superclass.
     """
     def __init__(self, rod_quantity: int, *args, **kwargs):
         self.quantity = rod_quantity
@@ -745,13 +754,13 @@ class PruneLength(Action):
     ----------
     old_rod : RodNumberWidget
         A copy of the rod whose position was changed, prior to the change.
-    new_postion : [int]
+    new_postion : List[int]
         The newly set starting and ending points of the rod, i.e. [x1, y1,
         x2, y2].
     *args : iterable
-        Positional arguments for the `QListWidgetItem` superclass.
+        Positional arguments for the ``QListWidgetItem`` superclass.
     **kwargs : dict
-        Keyword arguments for the `QListWidgetItem` superclass.
+        Keyword arguments for the ``QListWidgetItem`` superclass.
 
     Attributes
     ----------
@@ -794,13 +803,13 @@ class PruneLength(Action):
 
         Parameters
         ----------
-        rods : [RodNumberWidget]
-            A list of `RodNumberWidget`s in which should be the originally
-            changed rod(s).
+        rods : List[RodNumberWidget]
+            A list of :class:`.RodNumberWidget` in which should be the
+            originally changed rod(s).
 
         Returns
         -------
-        [RodNumberWidget]
+        List[RodNumberWidget]
 
         Raises
         ------
@@ -920,17 +929,33 @@ class ActionLogger(QtCore.QObject):
 
     Keeps track of actions performed on/by a GUI object that is associated
     with it. It provides a list of the performed actions to a
-    `LoggerWidget` for display in the GUI. It is also used to trigger
+    :class:`.LoggerWidget` for display in the GUI. It is also used to trigger
     reverting of these actions. Do NOT create instances of this class
-    directly but let an instance of the `LoggerWidget` class do that,
+    directly but let an instance of the :class:`.LoggerWidget` class do that,
     if the logged actions shall be displayed in the GUI.
 
     Parameters
     ----------
     *args :
-        Positional arguments for the QObject superclass.
+        Positional arguments for the ``QObject`` superclass.
     **kwargs :
-        Keyword arguments for the QObject superclass.
+        Keyword arguments for the ``QObject`` superclass.
+
+
+    .. admonition:: Signals
+
+        - :attr:`undo_action`
+        - :attr:`undone_action`
+        - :attr:`added_action`
+        - :attr:`notify_unsaved`
+        - :attr:`request_saving`
+        - :attr:`data_changed`
+
+    .. admonition:: Slots
+
+        - :meth:`undo_last`
+        - :meth:`actions_saved`
+        - :meth:`redo_last`
 
     Attributes
     ----------
@@ -946,42 +971,47 @@ class ActionLogger(QtCore.QObject):
     repeatable_changes : List[Action]
         An ordered list of all currently redoable/repeatable actions that were
         logged with this instance.
-
-    Signals
-    -------
-    undo_action(Action)
-        Requests the reverting of the `Action` that is given as the payload.
-    undone_action(Action)
-        Notifies that the `Action` in the payload has been reverted.
-    added_action(Action)
-        Notifies that this object logged the `Action` from the payload.
-    notify_unsaved(bool, str)
-        Notifies, if this objects attribute `unsaved_changes` changes from
-        empty to being filled with one or more items (True) or from filled to
-        being empty (False). The `parent_id` is added to the payload.
-    request_saving(bool)
-        Requests the saving of any unsaved changes.
-        True    ->  permanent saving
-        False   ->  temporary saving
-    data_changed(Action)
-        Notifies, if this object logged, undid, redid something that changed
-        the displayed data.
-
-
-    Slots
-    -----
-    undo_last(str)
-    actions_saved()
-    redo_last(str)
+    frame : int
+        Frame number that is currently relevant to the object this logger is
+        associated with.
+        Default is None.
     """
     __pyqtSignals__ = ("undoAction(Action)",)
     # Create custom signals
     undo_action = QtCore.pyqtSignal(Action, name="undoAction")
+    """pyqtSignal(Action) : Requests the reverting of the `Action` that is
+    given as the payload.
+    """
+
     undone_action = QtCore.pyqtSignal(Action, name="undone_action")
+    """pyqtSignal(Action) : Notifies that the `Action` in the payload has been
+    reverted.
+    """
+
     added_action = QtCore.pyqtSignal(Action, name="added_action")
+    """pyqtSignal(Action) : Notifies that this object logged the `Action` from
+    the payload.
+    """
+
     notify_unsaved = QtCore.pyqtSignal((bool, str), name="notify_unsaved")
+    """pyqtSignal(bool, str) : Notifies, if this objects attribute
+    `unsaved_changes` changes from empty to being filled with one or more items
+    (True) or from filled to being empty (False). The `parent_id` is added to
+    the payload.
+    """
+
     request_saving = QtCore.pyqtSignal(bool, name="request_saving")
+    """pyqtSignal(bool) : Requests the saving of any unsaved changes.
+
+    | True    ->  permanent saving
+    | False   ->  temporary saving
+    """
+
     data_changed = QtCore.pyqtSignal(Action, name="data_changed")
+    """pyqtSignal(Action) : Notifies, if this object logged/undid/redid
+    something that changed the displayed data.
+    """
+
     unsaved_changes: List[Action]
     parent_id: str
     frame: int = None
@@ -995,7 +1025,22 @@ class ActionLogger(QtCore.QObject):
 
     def add_action(self, last_action: Action) -> None:
         """Registers the actions performed by its parent and propagates them
-        for visual display in the GUI."""
+        for visual display in the GUI.
+
+        Parameters
+        ----------
+        last_action : Action
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`added_action`
+            - :attr:`data_changed`
+            - :attr:`notify_unsaved`
+
+        """
         last_action.parent_id = self.parent_id
         if last_action.frame is None:
             last_action.frame = self.frame
@@ -1016,7 +1061,21 @@ class ActionLogger(QtCore.QObject):
     @QtCore.pyqtSlot(str)
     def undo_last(self, parent_id: str) -> None:
         """De-registers the last unsaved action recorded and triggers its
-        undo process."""
+        undo process.
+
+        Parameters
+        ----------
+        parent_id : str
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`data_changed`
+            - :attr:`notify_unsaved`
+            - :attr:`undo_action`
+        """
         if parent_id != self.parent_id:
             return
         if not self.logged_actions:
@@ -1042,7 +1101,21 @@ class ActionLogger(QtCore.QObject):
 
     def register_undone(self, undone_action: Action):
         """Lets the logger know that an action was undone without using its
-        undo method(s)."""
+        undo method(s).
+
+        Parameters
+        ----------
+        undone_action : Action
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`data_changed`
+            - :attr:`notify_unsaved`
+            - :attr:`undone_action`
+        """
         if undone_action in self.logged_actions:
             undone_action.revert = True
             self.data_changed.emit(undone_action)
@@ -1059,7 +1132,18 @@ class ActionLogger(QtCore.QObject):
                 self.notify_unsaved.emit(False, self.parent_id)
 
     def discard_changes(self):
-        """Discards and reverts all unsaved changes made."""
+        """Discards and reverts all unsaved changes made.
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`data_changed`          **(potentially repeatedly)**
+            - :attr:`notify_unsaved`
+            - :attr:`undo_action`           **(potentially repeatedly)**
+            - :attr:`undone_action`         **(potentially repeatedly)**
+        """
         for item in self.unsaved_changes:
             item.revert = True
             self.data_changed.emit(item)
@@ -1073,7 +1157,15 @@ class ActionLogger(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def actions_saved(self):
-        """All unsaved actions were saved"""
+        """All unsaved actions were saved.
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`notify_unsaved`
+        """
         if self.unsaved_changes:
             self.unsaved_changes = []
             self.notify_unsaved.emit(False, self.parent_id)
@@ -1081,7 +1173,23 @@ class ActionLogger(QtCore.QObject):
     @QtCore.pyqtSlot(str)
     def redo_last(self, parent_id: str) -> None:
         """De-registers the last undone action recorded and triggers its
-        undo-(actually redo-)process."""
+        undo-(actually redo-)process.
+
+        Parameters
+        ----------
+        parent_id : str
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`added_action`
+            - :attr:`data_changed`
+            - :attr:`notify_unsaved`
+            - :attr:`undo_action`
+            - :attr:`unsaved_changes`
+        """
         if parent_id != self.parent_id:
             return
 

@@ -3,8 +3,8 @@ Collection of function to manipulate training dataset metadata in json format.
 These functions are mainly to cleanup the metadata, but also to transfer it
 into a form for different detection tasks, i.e. keypoint detection.
 
-Author:     Adrian Niemann (adrian.niemann@ovgu.de)
-Date:       31.10.2022
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       31.10.2022
 
 """
 import os
@@ -28,7 +28,7 @@ def remove_duplicate_regions(dataset: ds.DataSet) -> None:
 
     Parameters
     ----------
-    dataset : ds.DataSet
+    dataset : DataSet
         Dataset to be cleaned from duplicate annotations.
     """
     with open(dataset.annotation) as metadata:
@@ -74,7 +74,7 @@ def change_visibiliy(file: str) -> None:
 
 
 def change_class(file: str) -> None:
-    """Changes all class labels to "0" in a file of keypoint training data.
+    """Changes all class labels to ``0`` in a file of keypoint training data.
 
     Parameters
     ----------
@@ -122,11 +122,12 @@ def create_keypoints(file_name: str, single_class=True, order_x=True) -> None:
     Creates rod endpoints as key points from segmentation, adds it to
     the metadata and saves that as a new file.
 
-    key points (list[float]) in the format of [x1, y1, v1,…, xn, yn, vn].
-    v=0: not labeled (in which case x=y=0),
-    v=1: labeled but not visible
-    v=2: labeled and visible
-    see https://cocodataset.org/#format-data for more details
+    Keypoints (``List[float]``) in the format of
+    ``[x1, y1, v1,…, xn, yn, vn]``.\n
+    ``v=0``: not labeled (in which case ``x=y=0``),\n
+    ``v=1``: labeled but not visible, and\n
+    ``v=2``: labeled and visible.\n
+    See https://cocodataset.org/#format-data for more details.
 
     Parameters
     ----------
@@ -188,7 +189,7 @@ def create_keypoints(file_name: str, single_class=True, order_x=True) -> None:
 
 
 def delete_len_0(file_name: str) -> None:
-    """Deletes annotations with keypoints resulting in 0 lenght rods.
+    """Deletes annotations with keypoints resulting in ``0`` lenght rods.
 
     Parameters
     ----------

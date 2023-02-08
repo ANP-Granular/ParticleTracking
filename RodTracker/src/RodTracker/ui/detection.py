@@ -1,3 +1,19 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of RodTracker.
+#  RodTracker is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  RodTracker is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import sys
 import logging
@@ -25,6 +41,20 @@ else:
 
 
 def init_detection(ui: mw_l.Ui_MainWindow, image_managers: List[ImageData]):
+    """**TBD**
+
+    Parameters
+    ----------
+    ui : mw_l.Ui_MainWindow
+        **TBD**
+    image_managers : List[ImageData]
+        **TBD**
+
+    Returns
+    -------
+    None | DetectorUI
+        **TBD**
+    """
     if sys.version_info < (3, 10):
         ui.tab_detection.setEnabled(False)
         return
@@ -32,17 +62,70 @@ def init_detection(ui: mw_l.Ui_MainWindow, image_managers: List[ImageData]):
 
 
 class DetectorUI(QtWidgets.QWidget):
+    """**TBD**
+
+    Parameters
+    ----------
+    ui : QWidget
+        **TBD**
+    image_managers: List[ImageData]
+        **TBD**
+    *args : Iterable
+        **TBD**
+    **kwargs : dict
+        **TBD**
+
+
+    .. admonition:: Signals
+
+        - :attr:`detected_data`
+
+    .. admonition:: Slots
+
+        - :meth:`update_settings`
+    """
     used_colors: List[str] = []
+    """List[str] : **TBD**
+
+    Default is ``[]``.
+    """
+
     number_rods: int = 1
+    """int : **TBD**
+
+    Default is ``1``.
+    """
+
     model: torch.ScriptModule = None
+    """ScriptModule : **TBD**
+
+    Default is ``None``.
+    """
+
     detected_data = QtCore.pyqtSignal(pd.DataFrame)
+    """pyqtSignal(DataFrame) : **TBD**"""
+
     _active_detections: int = 0
     _started_detections: int = 0
     _progress: float = 1.
     start_frame: int = 0
+    """int : **TBD**
+
+    Default is ``0``.
+    """
+
     end_frame: int = 0
+    """int : **TBD**
+
+    Default is ``0``.
+    """
+
     _logger: lg.ActionLogger = None
     threshold: float = 0.5
+    """float: **TBD**
+
+    Default is ``0.5``.
+    """
 
     def __init__(self, ui: QtWidgets.QWidget, image_managers: List[ImageData],
                  *args, **kwargs) -> None:
@@ -58,7 +141,7 @@ class DetectorUI(QtWidgets.QWidget):
         self.tb_model.clicked.connect(self.load_model)
         self.le_threshold = ui.findChild(QtWidgets.QLineEdit, "le_threshold")
         self.le_threshold.setText(str(self.threshold))
-        self.le_threshold.textChanged.connect(self.set_threshold)
+        self.le_threshold.textChanged.connect(self._set_threshold)
         lbl_threshold = ui.findChild(QtWidgets.QLabel, "lbl_threshold")
         lbl_threshold.setText("Confidence Threshold [0.0, 1.0]: ")
         threshold_validator = QtGui.QDoubleValidator(0.0, 1.0, 2)
@@ -75,7 +158,7 @@ class DetectorUI(QtWidgets.QWidget):
         for color in ds.DEFAULT_CLASSES.values():
             cb = QtWidgets.QCheckBox(text=color.lower())
             cb.setObjectName(f"cb_{color}")
-            cb.stateChanged.connect(self.toggle_color)
+            cb.stateChanged.connect(self._toggle_color)
             cb.setChecked(True)
             group_layout.addWidget(cb, row, col)
             if col == 1:
@@ -93,12 +176,12 @@ class DetectorUI(QtWidgets.QWidget):
 
         self.spb_start_f = ui.findChild(QtWidgets.QSpinBox,
                                         "start_frame_detection")
-        self.spb_start_f.valueChanged.connect(self.change_start_frame)
+        self.spb_start_f.valueChanged.connect(self._change_start_frame)
         self.spb_end_f = ui.findChild(QtWidgets.QSpinBox,
                                       "end_frame_detection")
-        self.spb_end_f.valueChanged.connect(self.change_end_frame)
+        self.spb_end_f.valueChanged.connect(self._change_end_frame)
 
-    def set_threshold(self, val: str):
+    def _set_threshold(self, val: str):
         try:
             new_threshold = float(val)
             if new_threshold < 0.0:
@@ -113,13 +196,13 @@ class DetectorUI(QtWidgets.QWidget):
             self.threshold = 0.0
             self.le_threshold.setText(str(self.threshold))
 
-    def change_start_frame(self, new_val: int):
+    def _change_start_frame(self, new_val: int):
         self.start_frame = new_val
 
-    def change_end_frame(self, new_val: int):
+    def _change_end_frame(self, new_val: int):
         self.end_frame = new_val
 
-    def toggle_color(self, _: int):
+    def _toggle_color(self, _: int):
         """Update whether to use an available color.
 
         Parameters
@@ -155,6 +238,17 @@ class DetectorUI(QtWidgets.QWidget):
         raise NotImplementedError
 
     def images_loaded(self, num_imgs: int, id: str, path):
+        """**TBD**
+
+        Parameters
+        ----------
+        num_imgs : int
+            **TBD**
+        id : str
+            **TBD**
+        path : Any
+            **TBD**
+        """
         for img_manager in self.managers:
             if img_manager.data_id != id:
                 continue
@@ -183,14 +277,21 @@ class DetectorUI(QtWidgets.QWidget):
                                 img_manager.files[idx_start:idx_end + 1],
                                 img_manager.frames[idx_start:idx_end + 1],
                                 self.used_colors, self.threshold)
-            detector.signals.progress.connect(self.progress_update)
-            detector.signals.finished.connect(self.detection_finished)
+            detector.signals.progress.connect(self._progress_update)
+            detector.signals.finished.connect(self._detection_finished)
             detector.signals.error.connect(
                 lambda ret: lg.exception_logger(*ret))
             self._threads.start(detector)
         self.pb_detect.setEnabled(False)
 
-    def detection_finished(self, cam_id: str):
+    def _detection_finished(self, cam_id: str):
+        """**TBD**
+
+        Parameters
+        ----------
+        cam_id : str
+            **TBD**
+        """
         self._active_detections -= 1
         if self._active_detections == 0:
             self.pb_detect.setEnabled(True)
@@ -198,7 +299,25 @@ class DetectorUI(QtWidgets.QWidget):
             self._progress = 1.0
             self.progress.setValue(100)
 
-    def progress_update(self, val: float, data: pd.DataFrame, cam_id: str):
+    def _progress_update(self, val: float, data: pd.DataFrame, cam_id: str):
+        """**TBD**
+
+        Parameters
+        ----------
+        val : float
+            **TBD**
+        data : pd.DataFrame
+            **TBD**
+        cam_id : str
+            **TBD**
+
+
+        .. hint::
+
+            **Emits**
+
+                - :attr:`detected_data`
+        """
         self._progress += (val / self._started_detections)
         self.progress.setValue(int(100 * self._progress))
         if self._logger is not None:
