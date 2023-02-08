@@ -11,12 +11,14 @@ sys.path.append(os.path.abspath("../../src"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'RodTracker'
-copyright = '2022, Adrian Niemann, Dmitry Puzyrev'
+copyright = '2023, Adrian Niemann, Dmitry Puzyrev'
 author = 'Adrian Niemann, Dmitry Puzyrev'
 release = '0.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+
+add_module_names = False
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -33,15 +35,12 @@ source_suffix = {
 
 myst_enable_extensions = [
     "amsmath",
-    "attrs_inline",
     "colon_fence",
     "deflist",
     "dollarmath",
     "fieldlist",
     "html_admonition",
     "html_image",
-    "inv_link",
-    "linkify",
     "replacements",
     "smartquotes",
     "strikethrough",
@@ -50,7 +49,7 @@ myst_enable_extensions = [
 ]
 
 # Napoleon settings
-napoleon_google_docstring = True
+napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
 napoleon_include_private_with_doc = False
@@ -65,13 +64,15 @@ napoleon_preprocess_types = False
 napoleon_type_aliases = None
 napoleon_attr_annotations = True
 
+# autodoc settings
+autodoc_mock_imports = ["detectron2", "imgaug"]
+autodoc_preserve_defaults = True
+
 templates_path = ['_templates']
 exclude_patterns = []
-
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-# html_theme = "alabaster"
 html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']

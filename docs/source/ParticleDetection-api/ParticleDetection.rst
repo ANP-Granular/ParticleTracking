@@ -1,8 +1,11 @@
 ParticleDetection package
 =========================
 
-Subpackages
------------
+.. automodule:: ParticleDetection
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 .. toctree::
    :maxdepth: 2
@@ -10,11 +13,3 @@ Subpackages
    ParticleDetection.modelling
    ParticleDetection.reconstruct_3D
    ParticleDetection.utils
-
-Module contents
----------------
-
-.. automodule:: ParticleDetection
-   :members:
-   :undoc-members:
-   :show-inheritance:

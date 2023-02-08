@@ -6,11 +6,15 @@
 Welcome to RodTracker's documentation!
 ======================================
 
+.. note::
+   This Project is under active development.
+
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
 
    installation/index
+   quickstart
    examples/index
    api-reference
    changelog/changelog
