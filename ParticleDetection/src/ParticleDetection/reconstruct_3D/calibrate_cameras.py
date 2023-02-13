@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import Tuple, Union
 import cv2
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -100,7 +100,7 @@ def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
 
 
 def project_points(p_cam1: np.ndarray, p_cam2: np.ndarray, calibration: dict,
-                   transforms: dict | None):
+                   transforms: Union[dict, None]):
     """Project points from a stereocamera system to 3D coordinates.
 
     Parameters
@@ -160,7 +160,8 @@ def project_points(p_cam1: np.ndarray, p_cam2: np.ndarray, calibration: dict,
 
 
 def reproject_points(points: np.ndarray, calibration: dict,
-                     transforms: dict | None) -> Tuple[np.ndarray, np.ndarray]:
+                     transforms: Union[dict, None]
+                     ) -> Tuple[np.ndarray, np.ndarray]:
     """Project 3D coordinates to 2D stereocamera coordinates.
 
     Parameters

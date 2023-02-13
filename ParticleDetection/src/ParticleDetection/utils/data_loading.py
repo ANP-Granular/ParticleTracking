@@ -9,7 +9,7 @@ data and rod position data.
 import json
 import warnings
 from pathlib import Path
-from typing import List, Tuple, Iterable
+from typing import List, Tuple, Iterable, Union
 import cv2
 import torch
 import numpy as np
@@ -188,7 +188,7 @@ def extract_cam_params(mat_params: dict) -> dict:
 
 
 def load_calib_from_json(file_name: str) -> \
-        Tuple[dict, dict | None, dict | None]:
+        Union[Tuple[dict, dict], Tuple[None, dict], None]:
     """**TBD**
 
     Returns

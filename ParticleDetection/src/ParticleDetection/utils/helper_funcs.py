@@ -3,6 +3,7 @@ Collection of miscellaneous helper functions.
 """
 import sys
 import logging
+from typing import Dict
 from collections import Counter
 import multiprocessing as mp
 
@@ -161,8 +162,8 @@ def _minimum_bounding_rectangle(points):
     return rval
 
 
-def rod_endpoints(prediction, classes: dict[int, str], method: str = "simple")\
-        -> dict[int, np.ndarray]:
+def rod_endpoints(prediction, classes: Dict[int, str], method: str = "simple")\
+        -> Dict[int, np.ndarray]:
     """Calculates the endpoints of rods from the prediction masks.
 
     Parameters

@@ -12,6 +12,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.8",
     "Operating System :: OS Independent",
     "Environment :: GPU :: NVIDIA CUDA",
     "Intended Audience :: Science/Research",
@@ -24,7 +26,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.8"
 scipy = "^1.9.3"
 numpy = "^1.23.4"
 matplotlib = "^3.6.1"

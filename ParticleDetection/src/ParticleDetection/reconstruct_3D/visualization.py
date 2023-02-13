@@ -7,7 +7,7 @@ reconstruction from images of a stereocamera system.
 
 """
 import logging
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Union, Tuple
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ _logger = logging.getLogger(__name__)
 
 def matching_results(reprojection_errors: np.ndarray,
                      rod_lengths: np.ndarray, show: bool = True)\
-        -> None | Tuple[Figure]:
+        -> Union[None, Tuple[Figure]]:
     """Plot the reprojection errors and rod lengths after the matching process.
 
     Plots histograms for the rod endpoint reprojection errors and the rod
@@ -117,7 +117,7 @@ def reprojection_errors_hist(reprojection_errors: np.ndarray) -> Figure:
 
 
 def displacement_fwise(data_3d: np.ndarray, frames: Iterable[int] = None,
-                       show: bool = True) -> None | Figure:
+                       show: bool = True) -> Union[None, Figure]:
     """Plot the frame-wise (minimum) displacement per rod and average of rods.
 
     From the 3D positions of rods the between frames displacement is calculated
@@ -169,7 +169,7 @@ def displacement_fwise(data_3d: np.ndarray, frames: Iterable[int] = None,
 
 
 def compare_diplacements(data: List[np.ndarray], labels: List[str] = None,
-                         show: bool = True) -> None | Figure:
+                         show: bool = True) -> Union[None, Figure]:
     """Compare the frame-wise, average displacement between multiple datasets.
 
     From the 3D positions of rods the between frames displacement is calculated
@@ -221,7 +221,7 @@ def compare_diplacements(data: List[np.ndarray], labels: List[str] = None,
 
 
 def show_3D(data: np.ndarray, comparison: np.ndarray = None,
-            show: bool = True) -> None | Figure:
+            show: bool = True) -> Union[None, Figure]:
     """Create/show a plot of rods in 3D with/without a comparison dataset.
 
     The data will be plotted in blue and the comparison in green. ``Right`` and
@@ -308,7 +308,7 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None,
 
 
 def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
-               show: bool = True) -> None | Figure:
+               show: bool = True) -> Union[None, Figure]:
     """Create/show an animation of rods in 3D with/out a comparison dataset.
 
     The data will be plotted in blue and the comparison in green.
@@ -377,8 +377,8 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
     return
 
 
-def match_nd(weights: np.ndarray, whr: tuple[np.ndarray], show: bool = True)\
-        -> None | Figure:
+def match_nd(weights: np.ndarray, whr: Tuple[np.ndarray], show: bool = True)\
+        -> Union[None, Figure]:
     """Plot the result :func:`.npartite_matching` as all nodes with edges
     between the matched nodes.
 
