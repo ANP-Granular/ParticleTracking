@@ -819,7 +819,8 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
             out[i1, 14:] = rods_cam2[i2, -1::-1].flatten()
 
     # Data preparation for saving as *.csv
-    tmp_df = pd.DataFrame(out, columns=data.columns[:out.shape[1]])
+    cols_3d = ["x1", "y1", "z1", "x2", "y2", "z2", "x", "y", "z", "l"]
+    tmp_df = pd.DataFrame(out, columns=[*cols_3d, *cols_cam1, *cols_cam2])
     tmp_df["frame"] = frame
     tmp_df["color"] = color
     if (not renumber) and ("particle" in data.columns):

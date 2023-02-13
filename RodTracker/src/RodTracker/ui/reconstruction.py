@@ -501,7 +501,7 @@ class ReconstructorUI(QtWidgets.QWidget):
         end.setValue(f_max)
         self._update_colors(colors)
         self.first_update = True
-        self._select_data()
+        self.select_data()
 
     def _update_colors(self, colors: List[str]):
         """Update the checkable colors displayed in the UI."""
