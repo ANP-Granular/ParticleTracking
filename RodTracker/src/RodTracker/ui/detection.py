@@ -85,6 +85,12 @@ class DetectorUI(QtWidgets.QWidget):
     **kwargs : dict
         Keyword arguments for the ``QWidget`` superclass.
 
+    Attributes
+    ----------
+    model : ScriptModule
+        Neural network model that is used for detection.\n
+        Default is ``None``.
+
 
     .. admonition:: Signals
 
@@ -107,11 +113,11 @@ class DetectorUI(QtWidgets.QWidget):
     Default is ``1``.
     """
 
-    model: torch.ScriptModule = None
-    """ScriptModule : Neural network model that is used for detection.
+    # model: torch.ScriptModule = None
+    # """ScriptModule : Neural network model that is used for detection.
 
-    Default is ``None``.
-    """
+    # Default is ``None``.
+    # """
 
     detected_data = QtCore.pyqtSignal(pd.DataFrame)
     """pyqtSignal(DataFrame) : Sends data of detected rods for one frame.
@@ -155,6 +161,7 @@ class DetectorUI(QtWidgets.QWidget):
         super().__init__(*args, **kwargs)
         self.ui = ui
         self._threads = QtCore.QThreadPool()
+        self.model: torch.ScriptModule = None
 
         self.managers = image_managers
         for manager in self.managers:

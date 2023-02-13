@@ -187,8 +187,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         rn.RodNumberWidget.settings_signal = self.settings.settings_changed
         self.reconstructor = init_reconstruction(self.ui)
         self.detector = init_detection(self.ui, self.image_managers)
-        self.detector._logger = self.ui.lv_actions_list.get_new_logger(
-            "Detector")
+        if self.detector is not None:
+            self.detector._logger = self.ui.lv_actions_list.get_new_logger(
+                "Detector")
         self.connect_signals()
         self.settings.send_settings()
 

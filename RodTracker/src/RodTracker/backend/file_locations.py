@@ -32,7 +32,7 @@ _readme_path = "/README.md"
 try:
     _base_path = sys._MEIPASS
 except AttributeError:
-    _base_path = "./Python"
+    _base_path = "./RodTracker"
 
 
 def icon_path() -> str:
