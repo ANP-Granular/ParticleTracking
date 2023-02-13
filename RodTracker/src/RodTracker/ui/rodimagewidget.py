@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+"""**TBD**"""
 
 import math
 import logging
@@ -99,19 +100,19 @@ class RodImageWidget(QLabel):
         [lg.NumberChangeActions, int, int, str],
         [lg.NumberChangeActions, int, int, str, str, int],
         name="number_switches")
-    """pyqtSignal([NumberChangeActions, int, int, str]) : Indicates switches of
-    numbers between rods.
+    """pyqtSignal : Indicates switches of numbers between rods.
 
-    Notifies data maintainance objects, that the user attempts to change
-    rod IDs in more than just the frame displayed by this
-    :class:`RodImageWidget`.\n
-    Payload: type of the attempted change, previous rod ID, new rod ID, and
-    camera ID
+    - **[NumberChangeActions, int, int, str]**:\n
+      Notifies data maintainance objects, that the user attempts to change
+      rod IDs in more than just the frame displayed by this
+      :class:`RodImageWidget`.\n
+      Payload: type of the attempted change, previous rod ID, new rod ID, and
+      camera ID
 
-    There is a second version of this signal, that will be obsolete:\n
-    (NumberChangeActions, int, int, str, str, int)
-    Payload: type of the attempted change, previous rod ID, new rod ID,
-    camera ID, rod color, and frame
+    - **[NumberChangeActions, int, int, str, str, int]**:\n
+      The second version of this signal will be obsolete.\n
+      Payload: type of the attempted change, previous rod ID, new rod ID,
+      camera ID, rod color, and frame
     """
 
     loaded_rods = QtCore.pyqtSignal(int, name="loaded_rods")

@@ -38,17 +38,20 @@ else:
 
 
 def init_reconstruction(ui: mw_l.Ui_MainWindow):
-    """**TBD**
+    """Initialize the functionality of reconstructing 3D particle positions.
 
     Parameters
     ----------
-    ui : mw_l.Ui_MainWindow
-        **TBD**
+    ui : Ui_MainWindow
+        UI object of the main window of the application, i.e. also containing
+        the UI tab/objects for 3D reconstruction tasks.
 
     Returns
     -------
     None | ReconstructorUI
-        **TBD**
+        Returns ``None``, if the system requirements for 3D particle position
+        reconstruction are not met. Otherwise the ``ReconstructorUI`` object
+        handling particle reconstructions is returned.
     """
     if sys.version_info < (3, 10):
         ui.tab_reconstruct.setEnabled(False)
@@ -57,16 +60,36 @@ def init_reconstruction(ui: mw_l.Ui_MainWindow):
 
 
 class ReconstructorUI(QtWidgets.QWidget):
-    """**TBD**
+    """A custom ``QWidget`` to provide access to the reconstruction of 3D
+    particle coordinates.
+
+    This widget interfaces with the :mod:`ParticleDetection.reconstruct_3D`
+    library and provides these functionalities to the GUI, i.e. reconstruction
+    of 3D particle coordinates and tracking of particles over multiple frames.
 
     Parameters
     ----------
     ui : QWidget
-        **TBD**
+        Widget containing the tab that is the GUI for the reconstruction and
+        tracking functionality.
     *args : iterable
-        **TBD**
+        Positional arguments for the ``QWidget`` superclass.
     **kwargs: dict
-        **TBD**
+        Keyword arguments for the ``QWidget`` superclass.
+
+    Attributes
+    ----------
+    used_colors : List[str]
+        Selected colors for reconstruction/tracking/plotting.\n
+        By default ``[]``.
+    start_frame : int
+        Lower bound of the frame range selected for
+        reconstruction/tracking/plotting. The bound is inclusive.\n
+        By default ``0``.
+    end_frame : int
+        Upper bound of the frame range selected for
+        reconstruction/tracking/plotting. The bound is inclusive.\n
+        By default ``0``.
 
 
     .. admonition:: Signals
@@ -76,29 +99,57 @@ class ReconstructorUI(QtWidgets.QWidget):
 
     .. admonition:: Slots
 
-        - /
+        - :meth:`add_plot`
+        - :meth:`data_loaded`
+        - :meth:`data_update`
+        - :meth:`set_calibration`
+        - :meth:`set_cam_ids`
+        - :meth:`set_transformation`
+        - :meth:`switch_plot_page`
+        - :meth:`update_frames`
+        - :meth:`update_settings`
+
     """
     position_scaling: float = 1.0
-    """float : **TBD**
+    """float : Scale factor to scale the loaded data for display (is usually
+    kept as ``1.0``).
 
     Default is ``1.0``.
     """
 
     request_data = QtCore.pyqtSignal([list, list])
-    """pyqtSignal(list, list) : **TBD**"""
+    """pyqtSignal(list, list) : Request a portion of the *main* dataset defined
+    by
+
+    | [0]: a list of frames, and
+    | [1]: a list of colors.
+    """
 
     updated_data = QtCore.pyqtSignal(pd.DataFrame)
-    """pyqtSignal(DataFrame) : **TBD**
+    """pyqtSignal(DataFrame) : Sends an updated slice of the *main* dataset,
+    that has been (re-)tracked or its 3D coordinates updated.
+
+    This signal is emitted once for every color during the
+    reconstruction/tracking process. The ``DataFrame`` in the payload is
+    effectively an updated slice of the *main* dataset and does not contain
+    new rows.
     """
 
     data: pd.DataFrame = None
-    """DataFrame : **TBD**
+    """DataFrame : Slice of the *main* ``DataFrame`` that is used for
+    reconstruction/tracking.
 
     Default is ``None``.
     """
 
     cam_ids: List[str] = ["", ""]
-    """List[str] : **TBD**
+    """List[str] : IDs of the two cameras intended for reconstruction of 3D
+    coordinates.
+
+    The IDs are used to identify the 2D data columns during the reconstruction
+    process. If at least one of them is an empty string, the process of
+    reconstruction or tracking will be immediatly aborted, because the there
+    either is not enough data or the data is not identifiable.
 
     Default is ``["", ""]``.
     """
@@ -136,14 +187,14 @@ class ReconstructorUI(QtWidgets.QWidget):
                                        self.set_transformation)
         )
         start_f = ui.findChild(QtWidgets.QSpinBox, "start_frame")
-        start_f.valueChanged.connect(self.change_start_frame)
+        start_f.valueChanged.connect(self._change_start_frame)
         end_f = ui.findChild(QtWidgets.QSpinBox, "end_frame")
-        end_f.valueChanged.connect(self.change_end_frame)
+        end_f.valueChanged.connect(self._change_end_frame)
 
         for cb in ui.findChildren(QtWidgets.QCheckBox):
             if "tracking" in cb.objectName():
                 continue
-            cb.stateChanged.connect(self.toggle_color)
+            cb.stateChanged.connect(self._toggle_color)
 
         self.stacked_plots = ui.findChild(QtWidgets.QStackedWidget,
                                           "stacked_plots")
@@ -174,13 +225,24 @@ class ReconstructorUI(QtWidgets.QWidget):
                                      "progress_reconstruction")
         self.progress.setValue(100)
 
+    @QtCore.pyqtSlot(str)
     def set_calibration(self, path: str):
-        """**TBD**
+        """Attempts to load a new set of stereo camera calibration data.
+
+        Attempt to load calibration data from the file given in ``path`` and
+        activates the **Solve** button if both, calibration and transformation
+        data, have been loaded. Additionally, the updating of plots is
+        (re-)enabled upon successful loading of the calibration data.
 
         Parameters
         ----------
         path : str
-            **TBD**
+            Path to the stereo camera calibration data that shall be loaded
+            here.
+
+        Returns
+        -------
+        None
         """
         self._calibration = dl.load_camera_calibration(path)
         if self._calibration and self._transformation:
@@ -189,13 +251,21 @@ class ReconstructorUI(QtWidgets.QWidget):
         if self.data is not None:
             self.pb_plots.setEnabled(True)
 
+    @QtCore.pyqtSlot(str)
     def set_transformation(self, path: str):
-        """**TBD**
+        """Attempts to load a new set transformations to world/experiment
+        coordinates.
+
+        Attempts to load transformation matrices fromt the file given in
+        ``path`` and activates the **Solve** button if both, calibration and
+        transformation data, have been loaded. Additionally, the updating of
+        plots is (re-)enabled upon successful loading of the transformation
+        data.
 
         Parameters
         ----------
         path : str
-            **TBD**
+            Path to the transformation data that shall be loaded here.
         """
         self._transformation = dl.load_calib_from_json(path)
         if self._calibration and self._transformation:
@@ -204,16 +274,19 @@ class ReconstructorUI(QtWidgets.QWidget):
         if self.data is not None:
             self.pb_plots.setEnabled(True)
 
-    def change_start_frame(self, new_val: int):
+    def _change_start_frame(self, new_val: int):
+        """Callback for the ``QSpinBox`` handling the start frame selection."""
         self.start_frame = new_val
         self.pb_plots.setEnabled(True)
 
-    def change_end_frame(self, new_val: int):
+    def _change_end_frame(self, new_val: int):
+        """Callback for the ``QSpinBox`` handling the end frame selection."""
         self.end_frame = new_val
         self.pb_plots.setEnabled(True)
 
     @property
     def solver(self):
+        """**Not Implemented.**"""
         raise NotImplementedError
 
     @solver.setter
@@ -222,12 +295,18 @@ class ReconstructorUI(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot(pd.DataFrame)
     def data_update(self, data: pd.DataFrame):
-        """**TBD**
+        """Accepts a new dataset that shall be used for
+        reconstruction/tracking.
+
+        Accepts a new dataset and, depending on whether this is the first time
+        data is given here, updates the plots or (re-)enables the button for
+        updating the plots in the UI.
 
         Parameters
         ----------
         data : pd.DataFrame
-            **TBD**
+            New data that shall be used for plotting, 3D coordinate
+            reconstruction and tracking of particles.
         """
         self.data = data
         if any([cam == "" for cam in self.cam_ids]):
@@ -242,7 +321,15 @@ class ReconstructorUI(QtWidgets.QWidget):
             self.pb_plots.setEnabled(True)
 
     def select_data(self):
-        """**TBD**
+        """Request data defined by the selections in the UI.
+
+        Requests a portion of the *main* data that is defined by the selections
+        of the user in the reconstruction tab, i.e. start/end frame and colors
+        of particles to include.
+
+        Returns
+        -------
+        None
 
 
         .. hint::
@@ -255,6 +342,18 @@ class ReconstructorUI(QtWidgets.QWidget):
                                     self.end_frame + 1)), self.used_colors)
 
     def solve(self):
+        """(Re-)Starts the reconstruction/tracking of particles.
+
+        Starts either the reconstruction or tracking of particles, depending on
+        the state of a ``QCheckBox``. One process/thread for every selected
+        color (:attr:`used_colors`) is started, that will (re-)calculate the
+        3D values (and particle IDs) for all frames in between
+        :attr:`start_frame` and :attr:`end_frame`.
+
+        Returns
+        -------
+        None
+        """
         track = self.ui.findChild(
             QtWidgets.QCheckBox, "cb_tracking").isChecked()
         if (self.data is None or len(self.data) == 0 or
@@ -279,20 +378,27 @@ class ReconstructorUI(QtWidgets.QWidget):
                                         self._transformation, self.cam_ids,
                                         color)
             tracker.signals.progress.connect(
-                lambda val: self.progress_update(val / num_colors)
+                lambda val: self._progress_update(val / num_colors)
             )
             tracker.signals.error.connect(
                 lambda ret: lg.exception_logger(*ret))
-            tracker.signals.result.connect(self.solver_result)
+            tracker.signals.result.connect(self._solver_result)
             self._threads.start(tracker)
 
-    def solver_result(self, result: pd.DataFrame):
-        """**TBD**
+    def _solver_result(self, result: pd.DataFrame):
+        """Hook to handle the result of each reconstruction process.
+
+        Updates the count of active reconstruction/tracking processes/threads
+        and resets the UI for further reconstruction/tracking tasks after all
+        have finished.
+        Propagates the results of the finished task.
 
         Parameters
         ----------
         result : pd.DataFrame
-            **TBD**
+            The ``DataFrame`` containing the result of the process, usually
+            updated data of one color only but for all frames used during
+            the finished process.
 
 
         .. hint::
@@ -307,24 +413,35 @@ class ReconstructorUI(QtWidgets.QWidget):
             self.progress.setValue(100)
         self.updated_data.emit(result)
 
-    def progress_update(self, update: float):
-        """**TBD**
+    def _progress_update(self, update: float):
+        """Update the progressbar during the reconstruction/tracking process.
 
         Parameters
         ----------
         update : float
-            **TBD**
+            Value to add upon the combined progress :math:`\\in [0, 1]`.
+
+        Returns
+        -------
+        None
         """
         self._progress_val += 100 * update
         self.progress.setValue(int(self._progress_val))
 
+    @QtCore.pyqtSlot(int)
     def switch_plot_page(self, direction: int):
-        """**TBD**
+        """Switch the displayed plot page relative to the currently displayed
+        one.
 
         Parameters
         ----------
         direction : int
-            **TBD**
+            Direction of the plot to display next. Its the index relative to
+            the currently displayed plot.\n
+            a) ``direction = 3``->  displays the plot three positions
+            further\n
+            b) ``direction = -1``->  displays the previous plot\n
+            c) ``direction = 0``->  stays on the current plot
         """
         idx_max = self.stacked_plots.count() - 1
         idx_new = self.stacked_plots.currentIndex() + direction
@@ -338,21 +455,56 @@ class ReconstructorUI(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot(str, str)
     def set_cam_ids(self, cam1: str, cam2: str):
+        """Setter function for :attr:`cam_ids`.
+
+        Parameters
+        ----------
+        cam1 : str
+            ID for the first camera of the stereo camera setup.
+        cam2 : str
+            ID for the second camera of the stereo camera setup.
+
+        Returns
+        -------
+        None
+        """
         self.cam_ids = [cam1, cam2]
 
     @QtCore.pyqtSlot(int, int, list)
     def data_loaded(self, f_min: int, f_max: int, colors: List[str]):
+        """Hook to updated the available frame range and colors for
+        reconstruction/tracking.
+
+        This function is intended as a slot for the
+        :attr:`~.RodData.data_loaded` signal. The range of available frames, as
+        well as the available colors in the loaded dataset is updated and
+        presented to users in the UI.
+
+        Parameters
+        ----------
+        f_min : int
+            Lowest frame currently available in the particle position dataset.
+        f_max : int
+            Highest frame currently available in the particle position dataset.
+        colors : List[str]
+            Colors currently available in the particle position dataset.
+
+        Returns
+        -------
+        None
+        """
         start = self.ui.findChild(QtWidgets.QSpinBox, "start_frame")
         start.setRange(f_min, f_max)
         start.setValue(f_min)
         end = self.ui.findChild(QtWidgets.QSpinBox, "end_frame")
         end.setRange(f_min, f_max)
         end.setValue(f_max)
-        self.update_colors(colors)
+        self._update_colors(colors)
         self.first_update = True
-        self.select_data()
+        self._select_data()
 
-    def update_colors(self, colors: List[str]):
+    def _update_colors(self, colors: List[str]):
+        """Update the checkable colors displayed in the UI."""
         color_group = self.ui.findChildren(QtWidgets.QGroupBox)[0]
         color_cbs = color_group.findChildren(QtWidgets.QCheckBox)
         old_colors = [cb.text().lower() for cb in color_cbs]
@@ -370,7 +522,7 @@ class ReconstructorUI(QtWidgets.QWidget):
             except ValueError:
                 cb = QtWidgets.QCheckBox(text=color.lower())
                 cb.setObjectName(f"cb_{color}")
-                cb.stateChanged.connect(self.toggle_color)
+                cb.stateChanged.connect(self._toggle_color)
             cb.setChecked(True)
             group_layout.addWidget(cb, row, col)
             if col == 1:
@@ -379,7 +531,7 @@ class ReconstructorUI(QtWidgets.QWidget):
             else:
                 col = 1
 
-    def toggle_color(self, _: int):
+    def _toggle_color(self, _: int):
         """Update whether to use an available color.
 
         Parameters
@@ -394,13 +546,34 @@ class ReconstructorUI(QtWidgets.QWidget):
                 self.used_colors.append(cb.objectName().split("_")[1])
         self.pb_plots.setEnabled(True)
 
+    @QtCore.pyqtSlot(int, int)
     def update_frames(self, start: int, end: int):
+        """Update the selected frame range for reconstruction/tracking.
+
+        Parameters
+        ----------
+        start : int
+            Lowest selected frame.
+        end : int
+            Highest selected frame.
+        """
         spb_start = self.ui.findChild(QtWidgets.QSpinBox, "start_frame")
         spb_end = self.ui.findChild(QtWidgets.QSpinBox, "end_frame")
         spb_start.setValue(start)
         spb_end.setValue(end)
 
     def update_plots(self):
+        """(Re-)Generate plots for evaluation of the 3D data in the dataset.
+
+        Starts a thread that generates the evaluation plots for the data
+        selected by the state of UI, i.e. selected colors
+        (:attr:`self.used_colors`) and frame range (:attr:`start_frame`,
+        :attr:`end_frame`).
+
+        Returns
+        -------
+        None
+        """
         while self.stacked_plots.count():
             self.stacked_plots.removeWidget(self.stacked_plots.currentWidget())
         plt.close()
@@ -421,12 +594,19 @@ class ReconstructorUI(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot(Figure)
     def add_plot(self, fig: Figure):
-        """**TBD**
+        """Add a figure to the display section.
+
+        Attempts to add the given ``Figure`` as a new *page* for display in the
+        UI.
 
         Parameters
         ----------
         fig : Figure
-            **TBD**
+            ``Figure`` to be added to the stacked plots for display in the UI.
+
+        Returns
+        -------
+        None
         """
         canvas = b_qt.FigureCanvasQTAgg(fig)
         nav_bar = b_qt.NavigationToolbar2QT(canvas, None)
@@ -467,14 +647,19 @@ class ReconstructorUI(QtWidgets.QWidget):
 
 def choose_calibration(line_edit: QtWidgets.QLineEdit,
                        destination_func: callable):
-    """**TBD**
+    """Let a user select a calibration/transformation file and load it.
+
+    Lets a user select a ``*.json`` file that should contain one kind of
+    calibration, i.e. stereo camera calibration or transformtion to
+    world/experiment coordinates. The chosen file is then passed to the given
+    loading function for further processing.
 
     Parameters
     ----------
     line_edit : QLineEdit
-        **TBD**
+        Display object for the desired calibration file.
     destination_func : callable
-        **TBD**
+        Loading function for the desired calibration file.
 
     Returns
     -------

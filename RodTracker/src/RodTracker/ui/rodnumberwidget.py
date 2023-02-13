@@ -85,34 +85,31 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     Attributes
     ----------
-    initial_text : str
-    initial_pos : QPoint
     rod_points : List[int]
-        The starting and ending points of the rod in UNSCALED form.
-        [x1, y1, x2, y2]
+        The starting and ending points of the rod in **UNSCALED** form:\n
+        ``[x1, y1, x2, y2]``
     rod_center : np.array[float]
         Center of the rod in **SCALED** form, i.e. adjusted to zoom levels and
         offsets.
     color : str
         The color of the rod being represented.
     """
-
-    __pyqtSignals__ = ("gotActivated(int)", "droppedRodNumber(QPoint)",
-                       "changedRodNumber(QLineEdit, int)")
-    # Create custom signals
     activated = QtCore.pyqtSignal(int, name="activated")
-    """pyqtSignal(int) : **TBD**"""
+    """pyqtSignal(int) : Notifies, that this rod has been activated."""
 
     dropped = QtCore.pyqtSignal(QtCore.QPoint, name="dropped")
-    """pyqtSignal(QPoint) : **TBD**"""
+    """pyqtSignal(QPoint) : Notifies, that his widget has been dropped after
+    dragging it to a new location."""
 
     id_changed = QtCore.pyqtSignal(QtWidgets.QLineEdit, int,
                                    name="id_changed")
-    """pyqtSignal(QLineEdit, int) : **TBD**"""
+    """pyqtSignal(QLineEdit, int) : Notifies, that this rod has changed its ID
+    (number)."""
 
     request_delete = QtCore.pyqtSignal(QtWidgets.QLineEdit,
                                        name="request_delete")
-    """pyqtSignal(QLineEdit) : **TBD**"""
+    """pyqtSignal(QLineEdit) : Requests the deletion of this rod by the
+    managing object."""
 
     rod_state: RodState
     seen: bool = False
@@ -218,12 +215,12 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     @property
     def pen(self):
-        """**TBD**
+        """Holds the ``QPen`` with the visual settings defined by the current
+        state of this rod.
 
         Returns
         -------
         QPen
-            **TBD**
 
         Raises
         ------

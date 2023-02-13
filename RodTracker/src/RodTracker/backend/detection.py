@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+"""**TBD**"""
+
 import logging
 from pathlib import Path
 from typing import List, Dict
@@ -28,7 +30,30 @@ _logger = logging.getLogger(__name__)
 
 
 class RodDetection(Action):
+    """Representation of the detection of rods on one frame as a loggable
+    action.
+
+    Parameters
+    ----------
+    frame : int
+        Frame the rods have been detected on.
+    cam_id : str
+        ID of the camera the image was produced by.
+    num_detected: int
+        Total number of rods that have been detected, i.e. all colors combined.
+    *args : Iterable
+        Positional arguments after ``text`` of the :class:`.Action`
+        superclass.
+    **kwargs : dict
+        Keyword arguments of the :class:`.Action` superclass.
+
+    Attributes
+    ----------
+    num_detected : int
+        Total number of rods that have been detected, i.e. all colors combined.
+    """
     cam_id: str
+    """str : ID of the camera the image was produced by."""
 
     def __init__(self, frame: int, cam_id: str, num_detected: int, *args,
                  **kwargs):
@@ -42,6 +67,12 @@ class RodDetection(Action):
                 f"rods.")
 
     def undo(self, _):
+        """
+        Raises
+        ------
+        NotInvertableError
+            This action is generally not invertable.
+        """
         raise NotInvertableError
 
 
@@ -87,27 +118,51 @@ class DetectorSignals(QtCore.QObject):
 
 
 class Detector(QtCore.QRunnable):
-    """_summary_
+    """Object for running the detection of rods in a thread different from the
+    main thread.
+
+    **TBD**
 
     Parameters
     ----------
     cam_id : str
+        ID of the camera on whos images the detection of rods shall be run.
     model : ScriptModule
+        Neural network model that shall be used for detection.
     images : List[Path]
+        Paths to the image files the detection of rods shall be performed on.
+        Each entry in :attr:`images` corresponds to one in :attr:`frames`.
     frames : List[int]
+        Frames the detection of rods will be performed on. Each entry in
+        :attr:`frames` corresponds to one in :attr:`images`.
     colors : Dict[int, str]
+        Classes of objects to detect in the images, i.e. rod colors that shall
+        be detected.
     threshold : float, optional
+        Confidence threshold :math:`\\in [0, 1]` below which objects are
+        rejected after detection.\n
         Default is ``0.5``.
 
     Attributes
     ----------
+    cam_id : str
+        ID of the camera on whos images the detection of rods shall be run.
     frames : List[int]
+        Frames the detection of rods will be performed on. Each entry in
+        :attr:`frames` corresponds to one in :attr:`images`.
     images : List[Path]
+        Paths to the image files the detection of rods will be performed on.
+        Each entry in :attr:`images` corresponds to one in :attr:`frames`.
     model : ScriptModule
+        Neural network model that will be used for detection.
     signals : DetectorSignals
+        Signals that can be emitted during the running of a :class:`Detector`
+        object. Their purpose is to report errors, progress, and (intermediate)
+        results.
     threshold : float
+        Confidence threshold :math:`\\in [0, 1]` below which objects are
+        rejected after detection.\n
         :math:`\\in [0, 1]`
-
 
     Raises
     ------
@@ -115,7 +170,10 @@ class Detector(QtCore.QRunnable):
         Is raised when ``len(images) != len(frames)``.
     """
     classes: Dict[int, str] = {}
-    """Dict[int, str] : Default is ``{}``."""
+    """Dict[int, str] : Classes of objects to detect in the images, i.e.
+    rod colors that will be detected.
+
+    Default is ``{}``."""
 
     def __init__(self, cam_id: str, model: torch.ScriptModule,
                  images: List[Path], frames: List[int],
@@ -140,7 +198,13 @@ class Detector(QtCore.QRunnable):
         self.threshold = threshold
 
     def run(self):
-        """
+        """Run the detection of rods with the parameters set in this
+        :class:`Detector` object.
+
+        This function is not intended to be run directly but by invoking it via
+        a ``QThreadPool.start(detector)`` call.
+
+
         .. admonition:: Emits
 
             - :attr:`DetectorSignals.error`

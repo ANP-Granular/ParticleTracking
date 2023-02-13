@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+"""**TBD**"""
+
 import sys
 import warnings
 import logging
@@ -57,7 +59,33 @@ class PlotterSignals(QtCore.QObject):
 
 
 class Plotter(QtCore.QRunnable):
-    """**TBD**"""
+    """Object to run the generation of 3D reconstruction and tracking plots.
+
+    This object should run the generation of evaluation plots for the 3D
+    reconstruction of the whole or a portion of a dataset. It is capable of
+    running it in a thread different from the *main* thread to not keep the
+    application responsive.
+
+    Parameters
+    ----------
+    data : DataFrame
+        Slice of the *main* rod position dataset that shall be used for
+        plotting.
+
+    Attributes
+    ----------
+    data : DataFrame
+        Slice of the *main* rod position dataset that will be used for
+        plotting.
+    signals : PlotterSignals
+        Signals that can be emitted during the running of a :class:`Plotter`
+        object. Their purpose is to report errors and (intermediate) results.
+    kwargs : dict
+        Keyword arguments that will be used by the plotting functions. The
+        currrently recognized keywords are:\n
+        ``"colors"``, ``"start_frame"``, ``"end_frame"``,
+        ``"position_scaling"``, ``"calibration"``, and ``"transformation"``
+    """
     def __init__(self, data: pd.DataFrame, **kwargs):
         self.data = data
         self.signals = PlotterSignals()
@@ -65,7 +93,11 @@ class Plotter(QtCore.QRunnable):
         super().__init__()
 
     def run(self):
-        """**TBD**
+        """Run the plotting of 3D reconstruction and tracking plots in this
+        :class:`Plotter` object.
+
+        This function is not intended to be run directly but by invoking it via
+        a ``QThreadPool.start(plotter)`` call.
 
 
         .. hint::
@@ -84,12 +116,14 @@ class Plotter(QtCore.QRunnable):
             self.signals.error.emit((exctype, value, tb))
 
     def generate_plots(self, data: pd.DataFrame, **kwargs):
-        """**TBD**
+        """Wrapper function for all plotting functions that unpacks options and
+        then runs the plotting with the appropriate settings.
 
         Parameters
         ----------
-        data : pd.DataFrame
-            **TBD**
+        data : DataFrame
+            Slice of the *main* rod position dataset that will be used for
+            plotting.
 
 
         .. hint::
@@ -124,25 +158,44 @@ class Plotter(QtCore.QRunnable):
     def plot_displacements_3d(self, data: pd.DataFrame, colors: List[str] =
                               None, start_frame: int = None, end_frame: int =
                               None):
-        """**TBD**
+        """Plot the frame-wise (minimum) displacement per rod and average of
+        rods for multiple colors.
+
+        From the 3D positions of rods the between frames displacement is
+        calculated for each of the given rods. Both rod endpoint combinations
+        are used to calculate the displacement and the respective minimum is
+        chosen for plotting. The resulting plot then consists of one line per
+        given particle, as well as, the average displacement of all particles
+        between the frames.
+        One ``Figure`` is generated for every color given in ``colors``.
 
         Parameters
         ----------
         data : pd.DataFrame
-            **TBD**
+            (Slice of) a dataset of rod position data. Must contain the
+            columns:\n
+            ``color``, ``"particle"``, ``"frame"``, ``"x1"``, ``"y1"``,
+            ``"z1"``, ``"x2"``, ``"y2"``, ``"z2"``
         colors : List[str], optional
-            **TBD**
-            By default None.
+            List of colors present in ``data`` that for which a plot shall be
+            created. If this is not specified, i.e. set to ``None``, all colors
+            in ``data`` will be used.\n
+            By default ``None``.
         start_frame : int, optional
-            **TBD**
-            By default None.
+            First frame that shall be included in the generated plots. If this
+            is not specified, i.e. set to ``None``, the lowest frame number
+            found in ``data`` will be used.\n
+            By default ``None``.
         end_frame : int, optional
-            **TBD**
-            By default None.
+            Last frame that shall be included in the generated plots. If this
+            is not specified, i.e. set to ``None``, the highest frame number
+            found int ``data`` will be used.\n
+            By default ``None``.
 
         See also
         --------
-        :meth:`ParticleDetection.reconstruct_3D.visualization.displacement_fwise`
+        :meth:`ParticleDetection.reconstruct_3D.visualization.displacement_fwise`,
+        :meth:`ParticleDetection.utils.data_loading.extract_3d_data`
 
 
         .. hint::
@@ -173,15 +226,24 @@ class Plotter(QtCore.QRunnable):
 
     def plot_rod_lengths(self, data: pd.DataFrame, position_scaling: float =
                          None):
-        """**TBD**
+        """Plot a histogram of rod lengths.
+
+        Plot a histogram of all rod lengths present in the given ``DataFrame``.
+        The ``DataFrame`` therefore must contain a column called ``l`` that
+        contains this data.
 
         Parameters
         ----------
         data : DataFrame
-            **TBD**
+            (Slice of) a dataset of rod position data. Must contain the
+            column:\n
+            ``l``
         position_scaling : float, optional
-            **TBD**
-            By default None.
+            Scaling value by which to multiply the given data, in case it has
+            been saved in a scaled form. If this is not specified, i.e. is set
+            to ``None``, a scaling factor of ``1.0`` is chosen and the data
+            will therefore not be changed.\n
+            By default ``None``.
 
         See also
         --------
@@ -204,27 +266,49 @@ class Plotter(QtCore.QRunnable):
         len_fig = vis.length_hist(rod_lens.reshape((-1)))
         self.signals.result_plot.emit(len_fig)
 
-    def plot_reprojection_errors(self, data: pd.DataFrame, calibration: dict,
+    def plot_reprojection_errors(self, data: pd.DataFrame,
+                                 calibration: dict = None,
                                  position_scaling: float = 1.0, transformation:
                                  dict = None):
-        """**TBD**
+        """Plot a histogram of reprojection errors.
+
+        Plot a histogram of reprojection errors from 3D coordinates to 2D
+        image coordinates for all rods present in the given ``DataFrame``.
 
         Parameters
         ----------
         data : pd.DataFrame
-            **TBD**
-        calibration : dict
-            **TBD**
+            (Slice of) a dataset of rod position data. Must contain the
+            columns:\n
+            ``'x1'``, ``'y1'``, ``'z1'``, ``'x2'``, ``'y2'``, ``'z2'``,
+            ``'x1_{cam_id1}'``, ``'y1_{cam_id1}'``, ``'x2_{cam_id1}'``,
+            ``'y2_{cam_id1}'``, ``'x1_{cam_id2}'``, ``'y1_{cam_id2}'``,
+            ``'x2_{cam_id2}'``, ``'y2_{cam_id2}'``
+        calibration : dict, optional
+            Stereo camera calibration data for the camera setup given in
+            ``data``. The calculation reprojection errors depends on this and
+            will therefore fail if this is not given, i.e. set to ``None``.\n
+            By default ``None``.
         position_scaling : float, optional
-            **TBD**
-            By default 1.0.
+            Scaling value by which to multiply the given data, in case it has
+            been saved in a scaled form. If this is not specified, i.e. is set
+            to ``None``, a scaling factor of ``1.0`` is chosen and the data
+            will therefore not be changed.\n
+            By default ``1.0``.
         transformation : dict, optional
-            **TBD**
-            By default None.
+            Transformation from the first camera's coordinate system to the
+            experiment/world coordinate system. Providing a ``transformation``
+            might not be essential, depending on the given ``data``. If
+            ``data`` is given in the first camera's coordinate system this
+            value should either not be set or a neutral transformation, that
+            does not change the coordinate system.\n
+            By default ``None``.
 
         See also
         --------
-        :meth:`ParticleDetection.reconstruct_3D.visualization.reprojection_errors_hist`
+        :meth:`~ParticleDetection.reconstruct_3D.visualization.reprojection_errors_hist`,
+        :meth:`reproject_data`,
+        :meth:`~ParticleDetection.reconstruct_3D.calibrate_cameras.reproject_points`
 
 
         .. hint::
@@ -251,25 +335,48 @@ class Plotter(QtCore.QRunnable):
     def reproject_data(data: pd.DataFrame, calibration: dict,
                        position_scaling: float = 1.0, transformation: dict =
                        None):
-        """**TBD**
+        """Calculate reprojection errors for each row in a rod position data
+        ``DataFrame``.
 
         Parameters
         ----------
         data : pd.DataFrame
-            **TBD**
+            (Slice of) a dataset of rod position data. Must contain the
+            columns:\n
+            ``'x1'``, ``'y1'``, ``'z1'``, ``'x2'``, ``'y2'``, ``'z2'``,
+            ``'x1_{cam_id1}'``, ``'y1_{cam_id1}'``, ``'x2_{cam_id1}'``,
+            ``'y2_{cam_id1}'``, ``'x1_{cam_id2}'``, ``'y1_{cam_id2}'``,
+            ``'x2_{cam_id2}'``, ``'y2_{cam_id2}'``
         calibration : dict
-            **TBD**
+            Stereo camera calibration data for the camera setup given in
+            ``data``. The calculation reprojection errors depends on this and
+            will therefore fail and return if this is not given, i.e. set to
+            ``None``.
         position_scaling : float, optional
-            **TBD**
-            By default 1.0.
+            Scaling value by which to multiply the given data, in case it has
+            been saved in a scaled form. If this is not specified, i.e. is set
+            to ``None``, a scaling factor of ``1.0`` is chosen and the data
+            will therefore not be changed.\n
+            By default ``1.0``.
         transformation : dict, optional
-            **TBD**
-            By default None.
+            Transformation from the first camera's coordinate system to the
+            experiment/world coordinate system.
+            Providing a ``transformation`` might not be essential, depending on
+            the given ``data``. If ``data`` is given in the first camera's
+            coordinate system this value should either not be set or a neutral
+            transformation, that does not change the coordinate system.\n
+            By default ``None``.
 
         Returns
         -------
         ndarray | None
-            **TBD**
+            Absolute reprojection errors, with one value per row in ``data``.
+            This function returns ``None``, if either no calibration data is
+            given or ``data`` does not contain all necessary columns.
+
+        See also
+        --------
+        :meth:`~ParticleDetection.reconstruct_3D.calibrate_cameras.reproject_points`
         """
         if calibration is None:
             return
@@ -339,7 +446,84 @@ class TrackerSignals(QtCore.QObject):
 
 
 class Reconstructor(QtCore.QRunnable):
-    """**TBD**"""
+    """Object for running the reconstruction of 3D rod coordinates in a thread
+    different from the main thread.
+
+    This object runs the reconstruction of 3D coordinates of rods from their
+    2D stereo camera coordinates. The assignment of rod numbers remains
+    untouched in with this method, i.e. there is **NO** automatic tracking of
+    particles over multiple frames and **NO** per frame reprojection error
+    optimization.
+
+    Parameters
+    ----------
+    data : DataFrame
+        data : pd.DataFrame
+            (Slice of) a dataset of rod position data. Must contain at least
+            following the columns:\n
+            ``'x1_{cam_id1}'``, ``'y1_{cam_id1}'``, ``'x2_{cam_id1}'``,
+            ``'y2_{cam_id1}'``, ``'x1_{cam_id2}'``, ``'y1_{cam_id2}'``,
+            ``'x2_{cam_id2}'``, ``'y2_{cam_id2}'``, ``'frame'``
+    frames : List[int]
+        Frames the reconstruction of rods will be performed on.
+    calibration : dict
+        Stereocamera calibration parameters with the required fields:\n
+        ``"CM1"``: camera matrix of cam1\n
+        ``"R"``: rotation matrix between cam1 & cam2\n
+        ``"T"``: translation vector between cam1 & cam2\n
+        ``"CM2"``: camera matrix of cam2
+    transformation : dict
+        Coordinate system transformation matrices from camera 1 coordinates to
+        *world*/*experiment* coordinates.
+        **Must contain the following fields:**\n
+        ``"M_rotate_x"``, ``"M_rotate_y"``, ``"M_rotate_z"``, ``"M_trans"``,
+        ``"M_trans2"``\n
+        If no transformation is desired, either set this value to ``None`` or
+        use as neutral transformation.
+    cams : List[str]
+        IDs of the cameras from whos images the 2D position data was generated.
+    color : str
+        Color of the rods in :attr:`data`. This value will also be written to
+        the output ``DataFrame``.
+
+    Attributes
+    ----------
+    data : DataFrame
+        (Slice of) a dataset of rod position data. Must contain at least
+        following the columns:\n
+        ``'x1_{cam_id1}'``, ``'y1_{cam_id1}'``, ``'x2_{cam_id1}'``,
+        ``'y2_{cam_id1}'``, ``'x1_{cam_id2}'``, ``'y1_{cam_id2}'``,
+        ``'x2_{cam_id2}'``, ``'y2_{cam_id2}'``, ``'frame'``
+    frames : List[int]
+        Frames the reconstruction of rods will be performed on.
+    calibration : dict
+        Stereocamera calibration parameters with the required fields:\n
+        ``"CM1"``: camera matrix of cam1\n
+        ``"R"``: rotation matrix between cam1 & cam2\n
+        ``"T"``: translation vector between cam1 & cam2\n
+        ``"CM2"``: camera matrix of cam2
+    transformation : dict
+        Coordinate system transformation matrices from camera 1 coordinates to
+        *world*/*experiment* coordinates.
+        **Must contain the following fields:**\n
+        ``"M_rotate_x"``, ``"M_rotate_y"``, ``"M_rotate_z"``, ``"M_trans"``,
+        ``"M_trans2"``\n
+        If no transformation is desired, either set this value to ``None`` or
+        use as neutral transformation.
+    cams : List[str]
+        IDs of the cameras from whos images the 2D position data was generated.
+    color : str
+        Color of the rods in :attr:`data`. This value will also be written to
+        the output ``DataFrame``.
+    signals : TrackerSignals
+        Signals that can be emitted during the running of a
+        :class:`Reconstructor` object. Their purpose is to report errors,
+        progress, and (intermediate) results.
+
+    See also
+    --------
+    :meth:`~ParticleDetection.reconstruct_3D.match2D.match_frame`
+    """
     def __init__(self, data: pd.DataFrame, frames: list[int],
                  calibration: dict, transformation: dict, cams: list[str],
                  color: str):
@@ -353,7 +537,15 @@ class Reconstructor(QtCore.QRunnable):
         self.signals = TrackerSignals()
 
     def run(self):
-        """**TBD**
+        """Run the reconstruction of 3D rod coordinates with the parameters set
+        in this :class:`Reconstructor` object.
+
+        This function is not intended to be run directly but by invoking it via
+        a ``QThreadPool.start(reconstructor)`` call.
+
+        See also
+        --------
+        :meth:`~ParticleDetection.reconstruct_3D.match2D.match_frame`
 
 
         .. hint::

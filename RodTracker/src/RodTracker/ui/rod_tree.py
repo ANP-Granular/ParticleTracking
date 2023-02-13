@@ -126,14 +126,24 @@ class RodTree(QtWidgets.QTreeWidget):
                 break
 
     def batch_update_tree(self, new_data: dict, cam_ids: list):
-        """**TBD**
+        """Updates the displayed tree with multiple changed or new particles.
+
+        Unlike :meth:`update_tree` this method is capable of updating multiple
+        particles in a previously setup tree, this includes previously not
+        existing particles.
 
         Parameters
         ----------
-        new_data : dict
-            **TBD**
+        new_data : Dict[int, Dict[str, Dict[int, list]]]
+            Information of the rod dataset about a rod being ``'seen'`` or
+            ``'unseen'``.\n
+            Dimensions: ``(frame, color, particle, camera)``
         cam_ids : list
-            **TBD**
+            List of *camera* IDs on which a rod can be ``'seen'``/``'unseen'``.
+
+        See also
+        --------
+        :meth:`.extract_seen_information`, :meth:`update_tree`
         """
         header = self.headerItem()
         headings = []

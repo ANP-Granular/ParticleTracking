@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+"""**TBD**"""
+
 import os
 import logging
 import pathlib
@@ -68,7 +70,25 @@ def open_logs():
 
 
 class FileActions(Enum):
-    """Helper class holding all valid kinds of :class:`FileActions`."""
+    """Helper class holding all valid kinds of :class:`FileActions`.
+
+    Attributes
+    ----------
+    SAVE : str
+        String representing the base of a saving to file action.
+    LOAD_IMAGES : str
+        String representing the base of a loaded images action.
+    OPEN_IMAGE : str
+        .. deprecated:: 0.1.0
+            Should not be used anymore, because it clutters the displayed log
+            of performed actions.
+    MODIFY : str
+        .. deprecated:: 0.1.0
+            Should not used be anymore, because all changes are made in RAM.
+            Use :attr:`SAVE` instead.
+    LOAD_RODS : str
+        String representing the base of a loaded rod position data action.
+    """
 
     SAVE = "Saved changes"
     LOAD_IMAGES = "image file(s) loaded from"
@@ -78,7 +98,23 @@ class FileActions(Enum):
 
 
 class NumberChangeActions(Enum):
-    """Helper class holding valid kinds of rod number changes."""
+    """Helper class holding valid kinds of rod number changes.
+
+    Attributes
+    ----------
+    ALL : int
+        Indicates a switch of rod numbers in all cameras from the current frame
+        to the last frame of the dataset.
+    ALL_ONE_CAM : int
+        Indicates a switch of rod numbers in the currently displayed camera
+        from the current frame to the last frame of the dataset.
+    ONE_BOTH_CAMS : int
+        Indicates a switch of rod numbers in all cameras for the current frame
+        only.
+    CURRENT : int
+        Indicates a switch of rod numbers in the current camera only and the
+        current frame only.
+    """
     ALL = auto()
     ALL_ONE_CAM = auto()
     ONE_BOTH_CAMS = auto()

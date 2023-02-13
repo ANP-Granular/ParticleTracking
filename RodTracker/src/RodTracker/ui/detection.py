@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+"""**TBD**"""
+
 import os
 import sys
 import logging
@@ -41,19 +43,24 @@ else:
 
 
 def init_detection(ui: mw_l.Ui_MainWindow, image_managers: List[ImageData]):
-    """**TBD**
+    """Initialize the functionality of detecting particles.
 
     Parameters
     ----------
-    ui : mw_l.Ui_MainWindow
-        **TBD**
+    ui : Ui_MainWindow
+        UI object of the main window of the application, i.e. also containing
+        the UI tab/objects for detection tasks.
     image_managers : List[ImageData]
-        **TBD**
+        List of (relevant) image data management objects providing access to
+        loaded image datasets. Only images from these objects will be available
+        for particle detection.
 
     Returns
     -------
     None | DetectorUI
-        **TBD**
+        Returns ``None``, if the system requirements for particle detections
+        are not met. Otherwise the ``DetectorUI`` object handling particle
+        detections is returned.
     """
     if sys.version_info < (3, 10):
         ui.tab_detection.setEnabled(False)
@@ -62,18 +69,21 @@ def init_detection(ui: mw_l.Ui_MainWindow, image_managers: List[ImageData]):
 
 
 class DetectorUI(QtWidgets.QWidget):
-    """**TBD**
+    """A custom ``QWidget`` to interface with a neural network for rod
+    detection.
 
     Parameters
     ----------
     ui : QWidget
-        **TBD**
+        Widget containing the tab that is the GUI for the detection
+        functionality.
     image_managers: List[ImageData]
-        **TBD**
+        List of (relevant) image data management objects providing access to
+        loaded image datasets.
     *args : Iterable
-        **TBD**
+        Positional arguments for the ``QWidget`` superclass.
     **kwargs : dict
-        **TBD**
+        Keyword arguments for the ``QWidget`` superclass.
 
 
     .. admonition:: Signals
@@ -82,47 +92,60 @@ class DetectorUI(QtWidgets.QWidget):
 
     .. admonition:: Slots
 
+        - :meth:`images_loaded`
         - :meth:`update_settings`
     """
     used_colors: List[str] = []
-    """List[str] : **TBD**
+    """List[str] : Colors of rods that are supposed to be detected.
 
     Default is ``[]``.
     """
 
     number_rods: int = 1
-    """int : **TBD**
+    """int : Expected number of rods per color in one frame.
 
     Default is ``1``.
     """
 
     model: torch.ScriptModule = None
-    """ScriptModule : **TBD**
+    """ScriptModule : Neural network model that is used for detection.
 
     Default is ``None``.
     """
 
     detected_data = QtCore.pyqtSignal(pd.DataFrame)
-    """pyqtSignal(DataFrame) : **TBD**"""
+    """pyqtSignal(DataFrame) : Sends data of detected rods for one frame.
+
+    This signal is emitted once for every image during the detection process.
+    The ``DataFrame`` in the payload only contains 2D position data as well as
+    the frame, color and particle numbers.
+
+    See also
+    --------
+    :func:`~RodTracker.backend.detection.Detector.run`,
+    :func:`~ParticleDetection.utils.helper_funcs.rod_endpoints`,
+    :func:`~ParticleDetection.utils.datasets.add_points`
+    """
 
     _active_detections: int = 0
     _started_detections: int = 0
     _progress: float = 1.
     start_frame: int = 0
-    """int : **TBD**
+    """int : First frame for detecting particles in it.
 
     Default is ``0``.
     """
 
     end_frame: int = 0
-    """int : **TBD**
+    """int : Last frame for detecting particles in it.
 
     Default is ``0``.
     """
 
     _logger: lg.ActionLogger = None
     threshold: float = 0.5
-    """float: **TBD**
+    """float: Confidence threshold :math:`\\in [0, 1]` below which objects are
+    rejected after detection.
 
     Default is ``0.5``.
     """
@@ -197,9 +220,11 @@ class DetectorUI(QtWidgets.QWidget):
             self.le_threshold.setText(str(self.threshold))
 
     def _change_start_frame(self, new_val: int):
+        """Callback for the ``QSpinBox`` handling the start frame selection."""
         self.start_frame = new_val
 
     def _change_end_frame(self, new_val: int):
+        """Callback for the ``QSpinBox`` handling the end frame selection."""
         self.end_frame = new_val
 
     def _toggle_color(self, _: int):
@@ -217,6 +242,21 @@ class DetectorUI(QtWidgets.QWidget):
                 self.used_colors.append(cb.objectName().split("_")[1])
 
     def load_model(self):
+        """Show a file selection dialog to a user to select a particle
+        detection model.
+
+        Lets the user select a ``*.pt`` file that should contain their desired
+        particle detection model. The file is then loaded and the contained
+        model set for use in the next detection(s).
+
+        Returns
+        -------
+        None
+
+        See also
+        --------
+        :mod:`ParticleDetection.modelling.export`
+        """
         ui_dir = self.le_model.text()
         # opens directory to select image
         kwargs = {}
@@ -235,19 +275,35 @@ class DetectorUI(QtWidgets.QWidget):
             self.pb_detect.setEnabled(True)
 
     def autoselect_range(self):
+        """**Not Implemented.**"""
         raise NotImplementedError
 
+    @QtCore.pyqtSlot(int, str, object)
     def images_loaded(self, num_imgs: int, id: str, path):
-        """**TBD**
+        """Hook to update the available frame range for detection.
+
+        This function is intended as a slot for the
+        :attr:`~.ImageData.data_loaded` signal which in this case acts as an
+        indicator for new image data availability. The available range of
+        frames is updated with the information stored in the object, that
+        emitted the signal.
 
         Parameters
         ----------
         num_imgs : int
-            **TBD**
+            Variable to match the :attr:`~.ImageData.data_loaded` signal
+            signature. Otherwise not used.
         id : str
-            **TBD**
+            ID of the image management object, that has updated its loaded
+            dataset. This object is then used for updating the available frames
+            for detection of particles.
         path : Any
-            **TBD**
+            Variable to match the :attr:`~.ImageData.data_loaded` signal
+            signature. Otherwise not used.
+
+        Returns
+        -------
+        None
         """
         for img_manager in self.managers:
             if img_manager.data_id != id:
@@ -260,6 +316,19 @@ class DetectorUI(QtWidgets.QWidget):
             self.spb_end_f.setValue(max_f)
 
     def start_detection(self):
+        """(Re-)Start the detection process.
+
+        Starts a detection process for each dataset loaded in the
+        :attr:`managers` attribute. All frames between :attr:`start_frame` and
+        :attr:`end_frame` are used and only the selected colors in
+        :attr:`used_colors` will be detected.
+        This function cannot start the detection without a loaded
+        :attr:`model`.
+
+        Returns
+        -------
+        None
+        """
         if self.model is None:
             _logger.info("No model selected yet.")
             return
@@ -284,13 +353,23 @@ class DetectorUI(QtWidgets.QWidget):
             self._threads.start(detector)
         self.pb_detect.setEnabled(False)
 
+    @QtCore.pyqtSlot(str)
     def _detection_finished(self, cam_id: str):
-        """**TBD**
+        """Hook to clean up after each detection process finished.
+
+        Updates the active detections and resets the UI for more detections
+        after all detection processes/threads have finished.
 
         Parameters
         ----------
         cam_id : str
-            **TBD**
+            ID of the :class:`ImageData` object for which the detection process
+            was started.
+            Is not used.
+
+        Returns
+        -------
+        None
         """
         self._active_detections -= 1
         if self._active_detections == 0:
@@ -299,17 +378,22 @@ class DetectorUI(QtWidgets.QWidget):
             self._progress = 1.0
             self.progress.setValue(100)
 
+    @QtCore.pyqtSlot(float, pd.DataFrame, str)
     def _progress_update(self, val: float, data: pd.DataFrame, cam_id: str):
-        """**TBD**
+        """Accepts progress reports of a detection process, logs and propagates
+        them.
 
         Parameters
         ----------
         val : float
-            **TBD**
+            Progression value of the detection process/thread
+            :math:`\\in [0, 1]`.
         data : pd.DataFrame
-            **TBD**
+            The ``DataFrame`` containing the detected 2D particle position data
+            as well as the frame, color and particle numbers.
         cam_id : str
-            **TBD**
+            ID of the :class:`ImageData` object for which the detection process
+            was started.
 
 
         .. hint::

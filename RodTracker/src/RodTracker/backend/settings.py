@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+"""**TBD**"""
+
 import json
 from abc import abstractmethod
 from PyQt5 import QtWidgets, QtCore
@@ -25,6 +27,7 @@ class Configuration(QtCore.QObject):
     _default: dict = {}
     _contents: dict = {}
     path: str = str(TEMP_DIR / "configurations.json")
+    """str : Path to the file for storing this configuration."""
 
     def read(self, path: str = None):
         """Reads configurations from a file and saves them in this object.
@@ -146,7 +149,9 @@ class Settings(Configuration):
     _contents = _default
     parent: QtWidgets.QMainWindow
     settings_changed = QtCore.pyqtSignal([dict], name="settings_changed")
-    """pyqtSignal(dict) : **TBD**"""
+    """pyqtSignal(dict) : Propagates settings that have potentially been
+    changed.
+    """
 
     def __init__(self, path: str = None):
         super().__init__()

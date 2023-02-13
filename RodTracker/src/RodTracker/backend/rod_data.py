@@ -19,9 +19,12 @@
 Attributes
 ----------
 rod_data : DataFrame | None
-    **TBD**
+    Stores loaded/generated position data of rods. The column naming must
+    comply with :const:`~ParticleDetection.utils.datasets.DEFAULT_COLUMNS`
+    for most functions to work as intended.
 lock : QReadWriteLock
-    **TBD**
+    Lock to protect access to :attr:`rod_data` during read and write
+    operations.
 """
 
 import re
@@ -74,12 +77,14 @@ class RodData(QtCore.QObject):
 
     .. admonition:: Signals
 
+        - :attr:`batch_update`
         - :attr:`data_2d`
         - :attr:`data_3d`
-        - :attr:`seen_loaded`
+        - :attr:`data_loaded`
         - :attr:`data_update`
+        - :attr:`requested_data`
         - :attr:`saved`
-        - :attr:`batch_update`
+        - :attr:`seen_loaded`
 
     .. admonition:: Slots
 
@@ -120,50 +125,70 @@ class RodData(QtCore.QObject):
         Columns of the loaded ``DataFrame`` relevant for 2D data display.
     cols_3D : List[str]
         Columns of the loaded ``DataFrame`` relevant for 3D data display.
-
-
-
     """
     data_2d = QtCore.pyqtSignal([pd.DataFrame, str], name="data_2d")
     """pyqtSignal : Provide 2D rod position data for other objects to display,
-    defined by 'frame', 'color_2D', and 'rod_2D'.
+    defined by :attr:`frame`, :attr:`color_2D`, and :attr:`rod_2D`.
     """
 
     data_3d = QtCore.pyqtSignal([pd.DataFrame], name="data_3d")
     """pyqtSignal[DataFrame] : Provide 2D rod position data for other objects
-    to display, defined by 'frame', 'color_3D', and 'rod_3D'.
+    to display, defined by :attr:`frame`, :attr:`color_3D`, and :attr:`rod_3D`.
     """
 
     data_loaded = QtCore.pyqtSignal([Path, Path, list], [list],
                                     [int, int, list], [str, str],
                                     name="data_loaded")
-    """pyqtSignal : **TBD**"""
+    """pyqtSignal : Propagates information about loaded position data.
+
+    - **[Path, Path, list]**:\n
+      The payload is the folder the loaded data is read from, the folder any
+      data changes will be written to (at that moment), and a list of the rod
+      colors found during reading of the data.
+    - **[list]**:\n
+      The payload is a list of the rod colors found during reading of the data.
+    - **[int, int, list]**:\n
+      The payload is the lowest and highest frame and the rod colors found
+      during reading of the data.
+    - **[str, str]**:\n
+      The payload are the camera IDs that have been identified during reading
+      of the data.
+    """
 
     seen_loaded = QtCore.pyqtSignal((dict, list), name="seen_loaded")
-    """pyqtSignal : Information of the rod dataset about a rod being 'seen' or
-    'unseen' for display as a tree.
+    """pyqtSignal : Information of the rod dataset about a rod being ``'seen'``
+    or ``'unseen'`` for display as a tree.
 
-    | Dict[Dict[Dict[list]]] -> (frame, color, particle, camera)
-    | list -> List of 'camera' IDs on which a rod can be "seen"/"unseen"
+    **Dict[int, Dict[str, Dict[int, list]]]** -> (frame, color, particle,
+    camera)\n
+    **list** -> List of 'camera' IDs on which a rod can be
+    ``'seen'``/``'unseen'``
     """
 
     data_update = QtCore.pyqtSignal((dict), name="data_update")
-    """pyqtSignal : Notify objects about updates in the 'seen'/'unseen' status
-    of rods.
+    """pyqtSignal : Notify objects about updates in the ``'seen'``/``'unseen'``
+    status of rods.
 
-    dict -> Information about the rod, whos 'seen' status has changed.\n
-    Mandatory keys: "frame", "cam_id", "color", "seen", "rod_id"
+    dict -> Information about the rod, whos ``'seen'`` status has changed.\n
+    Mandatory keys: ``"frame"``, ``"cam_id"``, ``"color"``, ``"seen"``,
+    ``"rod_id"``
     """
 
     batch_update = QtCore.pyqtSignal((dict, list))
-    """pyqtSignal : **TBD**"""
+    """pyqtSignal(dict, list) : Send update for seen tree for multiple changed
+    or new particles.
+
+    See also
+    --------
+    :meth:`.batch_update_tree`, :meth:`extract_seen_information`
+    """
 
     saved = QtCore.pyqtSignal(name="saved")
     """pyqtSignal : Notify objects, that all changed data has been saved
     successfully.
     """
     requested_data = QtCore.pyqtSignal([pd.DataFrame], name="requested_data")
-    """pyqtSignal : **TBD**"""
+    """pyqtSignal(DataFrame) : Sends a requested rod position data slice."""
 
     _logger: lg.ActionLogger = None
     _logger_id: str = "RodData"
@@ -242,8 +267,8 @@ class RodData(QtCore.QObject):
         pre_selection : str
             Path to a folder that the ``QFileDialog`` is attempted to be opened
             with. By default and as a fallback the current working directory is
-            used.
-            Default is "".
+            used.\n
+            Default is ``""``.
 
         Returns
         -------
@@ -658,7 +683,7 @@ class RodData(QtCore.QObject):
 
         Parameters
         ----------
-        data : pd.DataFrame
+        data : DataFrame
             Updated/New rod position data
         """
         with QtCore.QWriteLocker(lock):
@@ -670,12 +695,25 @@ class RodData(QtCore.QObject):
 
     @QtCore.pyqtSlot(pd.DataFrame)
     def add_data(self, data: pd.DataFrame):
-        """**TBD**
+        """Integrates new rod position data into the *main* data.
+
+        This method is mainly for receiving newly created position data, i.e.
+        automatically generated data. There are four distinct situations this
+        function is intended for:
+
+        - Receiving detection results without having any data loaded yet.
+        - Receiving detection results for a camera (ID) that is not yet present
+          in the loaded data.
+        - Receiving detection results for frames that are not yet part of the
+          loaded dataset.
+        - Receiving automatic detection results that must be integrated into
+          the already existing dataset, potentially overwriting data.
 
         Parameters
         ----------
-        data : pd.DataFrame
-            _description_
+        data : DataFrame
+            New (automatically generated) data, that needs to be integrated
+            into the (potentially not existing) dataset.
 
 
         .. hint::
@@ -685,6 +723,10 @@ class RodData(QtCore.QObject):
             - :attr:`data_loaded` [list]
             - :attr:`data_loaded` [str, str]
             - :attr:`data_loaded` [int, int, list]
+
+        See also
+        --------
+        :meth:`catch_data`, :meth:`catch_number_switch`
         """
         global rod_data
         if rod_data is None:
@@ -946,12 +988,12 @@ class RodData(QtCore.QObject):
 
     @staticmethod
     def extract_seen_information(data: pd.DataFrame = None) -> \
-            Tuple[Dict[int, Dict[str, dict]], list]:
+            Tuple[Dict[int, Dict[str, Dict[int, list]]], list]:
         """Extracts the seen/unseen parameter for all rods in :data:`rod_data`.
 
         Returns
         -------
-        Dict[Dict[dict]]
+        Dict[int, Dict[str, Dict[int, list]]]
             Frame[Color[RodNo.]] -> ``out[501]["red"][1] = ["seen", "unseen"]``
         list
             ``out_list = ["gp1_seen", "gp2_seen"]``

@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+"""**TBD**"""
+
 import sys
 from PyQt5 import QtCore
 
@@ -47,7 +49,30 @@ class WorkerSignals(QtCore.QObject):
 
 
 class Worker(QtCore.QRunnable):
-    """**TBD**"""
+    """Wrapper object for a function that shall be run in a thread other than
+    the main thread.
+
+    Parameters
+    ----------
+    func : callable
+        Function to be run in a thread other than the main thread.
+    *args : Iterable
+        Positional arguments :attr:`func` shall be run with.
+    **kwargs : dict
+        Keyword arguments :attr:`func` shall be run with.
+
+    Attributes
+    ----------
+    func : callable
+        Function to be run in a thread other than the main thread.
+    args : Iterable
+        Positional arguments :attr:`func` will be run with.
+    kwargs : dict
+        Keyword arguments :attr:`func` will be run with.
+    signals : WorkerSignals
+        Signals that can be emitted after the invocation of the
+        :class:`Worker` object.
+    """
     def __init__(self, func, *args, **kwargs):
         super().__init__()
         self.func = func
@@ -56,7 +81,11 @@ class Worker(QtCore.QRunnable):
         self.signals = WorkerSignals()
 
     def run(self):
-        """**TBD**
+        """Run the :attr:`func` with :attr:`args` and attr:`kwargs` as its
+        parameters.
+
+        This function is not intended to be run directly but by invoking it via
+        a ``QThreadPool.start(worker)`` call.
 
 
         .. hint::
