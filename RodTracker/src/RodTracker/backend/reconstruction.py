@@ -543,8 +543,8 @@ class Reconstructor(QtCore.QRunnable):
     --------
     :meth:`~ParticleDetection.reconstruct_3D.match2D.match_frame`
     """
-    def __init__(self, data: pd.DataFrame, frames: list[int],
-                 calibration: dict, transformation: dict, cams: list[str],
+    def __init__(self, data: pd.DataFrame, frames: List[int],
+                 calibration: dict, transformation: dict, cams: List[str],
                  color: str):
         super().__init__()
         self.data = data

@@ -15,7 +15,6 @@
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 """**TBD**"""
 
-import sys
 import os
 import logging
 from typing import List
@@ -24,17 +23,11 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import matplotlib.backends.backend_qtagg as b_qt
 from PyQt5 import QtWidgets, QtCore
+import ParticleDetection.utils.data_loading as dl
+from RodTracker.backend.reconstruction import Plotter, Tracker, Reconstructor
 import RodTracker.ui.mainwindow_layout as mw_l
 import RodTracker.backend.logger as lg
 _logger = logging.getLogger(__name__)
-if sys.version_info < (3, 10):
-    _logger.warning("3D reconstruction is not available. "
-                    "Please upgrade to Python 3.10 or greater and "
-                    "reinstall the application.")
-else:
-    import ParticleDetection.utils.data_loading as dl
-    from RodTracker.backend.reconstruction import (Plotter, Tracker,
-                                                   Reconstructor)
 
 
 def init_reconstruction(ui: mw_l.Ui_MainWindow):
@@ -53,9 +46,6 @@ def init_reconstruction(ui: mw_l.Ui_MainWindow):
         reconstruction are not met. Otherwise the ``ReconstructorUI`` object
         handling particle reconstructions is returned.
     """
-    if sys.version_info < (3, 10):
-        ui.tab_reconstruct.setEnabled(False)
-        return
     return ReconstructorUI(ui.tab_reconstruct)
 
 

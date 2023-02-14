@@ -17,29 +17,22 @@
 """**TBD**"""
 
 import os
-import sys
 import logging
 from typing import List
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
+import torch
+import ParticleDetection.utils.datasets as ds
 import RodTracker.backend.logger as lg
 import RodTracker.ui.mainwindow_layout as mw_l
 from RodTracker.backend.img_data import ImageData
-
+from RodTracker.backend.detection import Detector, RodDetection
+# Don't remove the following imports, see GitHub issue as reference
+# https://github.com/pytorch/pytorch/issues/48932#issuecomment-803957396
+import cv2                                                  # noqa: F401
+import torchvision                                          # noqa: F401
+import ParticleDetection                                    # noqa: F401
 _logger = logging.getLogger(__name__)
-if sys.version_info < (3, 10):
-    _logger.warning("3D reconstruction is not available. "
-                    "Please upgrade to Python 3.10 or greater and "
-                    "reinstall the application.")
-else:
-    import torch
-    import ParticleDetection.utils.datasets as ds
-    from RodTracker.backend.detection import Detector, RodDetection
-    # Don't remove the following imports, see GitHub issue as reference
-    # https://github.com/pytorch/pytorch/issues/48932#issuecomment-803957396
-    import cv2                                                  # noqa: F401
-    import torchvision                                          # noqa: F401
-    import ParticleDetection                                    # noqa: F401
 
 
 def init_detection(ui: mw_l.Ui_MainWindow, image_managers: List[ImageData]):
@@ -62,9 +55,6 @@ def init_detection(ui: mw_l.Ui_MainWindow, image_managers: List[ImageData]):
         are not met. Otherwise the ``DetectorUI`` object handling particle
         detections is returned.
     """
-    if sys.version_info < (3, 10):
-        ui.tab_detection.setEnabled(False)
-        return
     return DetectorUI(ui.tab_detection, image_managers)
 
 
