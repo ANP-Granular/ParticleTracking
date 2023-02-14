@@ -208,6 +208,7 @@ def reproject_points(points: np.ndarray, calibration: dict,
         tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
         tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
         rot_inv = (rotz * roty * rotx).inv()
+        # BUG: The attempt of applying a rotation to NaN crashes the function
         points = rot_inv.apply(points - tw2) - tw1
 
     repr_cam1 = cv2.projectPoints(

@@ -303,7 +303,8 @@ def extract_3d_data(df_data: pd.DataFrame) -> np.ndarray:
     """
     no_frames = len(df_data.frame.unique())
     no_particles = len(df_data.particle.unique())
-    data3d = np.zeros((no_frames, no_particles, 3, 2))
+    data3d = np.empty((no_frames, no_particles, 3, 2))
+    data3d.fill(np.nan)
     for idx_f, f in enumerate(df_data.frame.unique()):
         frame_data = df_data.loc[df_data.frame == f]
         idx_p = frame_data["particle"].to_numpy()

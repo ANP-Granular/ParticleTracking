@@ -411,7 +411,9 @@ class ReconstructorUI(QtWidgets.QWidget):
         if self._colors_to_solve == 0:
             self.pb_solve.setEnabled(True)
             self.progress.setValue(100)
+        self.data.update(result)
         self.updated_data.emit(result)
+        self.select_data()
 
     def _progress_update(self, update: float):
         """Update the progressbar during the reconstruction/tracking process.
@@ -584,7 +586,7 @@ class ReconstructorUI(QtWidgets.QWidget):
         plotter = Plotter(
             data_plt.copy(), colors=self.used_colors,
             start_frame=self.start_frame, end_frame=self.end_frame,
-            position_scaling=self.position_scaling,
+            position_scaling=self.position_scaling, cam_ids=self.cam_ids,
             calibration=self._calibration, transformation=self._transformation
         )
         plotter.signals.result_plot.connect(self.add_plot)

@@ -84,7 +84,8 @@ class Plotter(QtCore.QRunnable):
         Keyword arguments that will be used by the plotting functions. The
         currrently recognized keywords are:\n
         ``"colors"``, ``"start_frame"``, ``"end_frame"``,
-        ``"position_scaling"``, ``"calibration"``, and ``"transformation"``
+        ``"position_scaling"``, ``"cam_ids"``, ``"calibration"``, and
+        ``"transformation"``
     """
     def __init__(self, data: pd.DataFrame, **kwargs):
         self.data = data
@@ -139,6 +140,7 @@ class Plotter(QtCore.QRunnable):
         scale = kwargs.get("position_scaling")
         calib = kwargs.get("calibration")
         trafo = kwargs.get("transformation")
+        cam_ids = kwargs.get("cam_ids")
         try:
             self.plot_displacements_3d(data, colors, start_f, end_f)
         except:                                                 # noqa: E722
@@ -150,7 +152,7 @@ class Plotter(QtCore.QRunnable):
             exctype, value, tb = sys.exc_info()
             self.signals.error.emit((exctype, value, tb))
         try:
-            self.plot_reprojection_errors(data, calib, scale, trafo)
+            self.plot_reprojection_errors(data, cam_ids, calib, scale, trafo)
         except:                                                 # noqa: E722
             exctype, value, tb = sys.exc_info()
             self.signals.error.emit((exctype, value, tb))
@@ -216,7 +218,13 @@ class Plotter(QtCore.QRunnable):
             return
         for color in colors:
             c_data = data.loc[data.color == color]
+            if not len(c_data):
+                # No plottable data available for this color
+                continue
             to_plot = dl.extract_3d_data(c_data)
+            if np.isnan(to_plot).all():
+                # No plottable data available for this color
+                continue
             fig = vis.displacement_fwise(
                 to_plot, frames=np.arange(start_frame, end_frame),
                 show=False)
@@ -266,7 +274,7 @@ class Plotter(QtCore.QRunnable):
         len_fig = vis.length_hist(rod_lens.reshape((-1)))
         self.signals.result_plot.emit(len_fig)
 
-    def plot_reprojection_errors(self, data: pd.DataFrame,
+    def plot_reprojection_errors(self, data: pd.DataFrame, cam_ids: List[str],
                                  calibration: dict = None,
                                  position_scaling: float = 1.0, transformation:
                                  dict = None):
@@ -284,6 +292,8 @@ class Plotter(QtCore.QRunnable):
             ``'x1_{cam_id1}'``, ``'y1_{cam_id1}'``, ``'x2_{cam_id1}'``,
             ``'y2_{cam_id1}'``, ``'x1_{cam_id2}'``, ``'y1_{cam_id2}'``,
             ``'x2_{cam_id2}'``, ``'y2_{cam_id2}'``
+        cam_ids : List[str]
+            The IDs are used to identify the 2D data columns.
         calibration : dict, optional
             Stereo camera calibration data for the camera setup given in
             ``data``. The calculation reprojection errors depends on this and
@@ -325,16 +335,16 @@ class Plotter(QtCore.QRunnable):
                           f" {calibration}")
         if position_scaling is None:
             position_scaling = 1.0
-        rep_errs = self.reproject_data(data, calibration, position_scaling,
-                                       transformation)
+        rep_errs = self.reproject_data(data, cam_ids, calibration,
+                                       position_scaling, transformation)
         if rep_errs is not None:
             err_fig = vis.reprojection_errors_hist(rep_errs.reshape((-1)))
             self.signals.result_plot.emit(err_fig)
 
     @staticmethod
-    def reproject_data(data: pd.DataFrame, calibration: dict,
-                       position_scaling: float = 1.0, transformation: dict =
-                       None):
+    def reproject_data(data: pd.DataFrame, cam_ids: List[str],
+                       calibration: dict, position_scaling: float = 1.0,
+                       transformation: dict = None):
         """Calculate reprojection errors for each row in a rod position data
         ``DataFrame``.
 
@@ -347,6 +357,8 @@ class Plotter(QtCore.QRunnable):
             ``'x1_{cam_id1}'``, ``'y1_{cam_id1}'``, ``'x2_{cam_id1}'``,
             ``'y2_{cam_id1}'``, ``'x1_{cam_id2}'``, ``'y1_{cam_id2}'``,
             ``'x2_{cam_id2}'``, ``'y2_{cam_id2}'``
+        cam_ids : List[str]
+            The IDs are used to identify the 2D data columns.
         calibration : dict
             Stereo camera calibration data for the camera setup given in
             ``data``. The calculation reprojection errors depends on this and
@@ -380,28 +392,35 @@ class Plotter(QtCore.QRunnable):
         """
         if calibration is None:
             return
-        # check all columns are present and in order, such that the below code
-        # works
-        cols = list(data.columns)
-        cols_ok = (cols[0:3] == ["x1", "y1", "z1"])
-        cols_ok = cols_ok or (cols[3:6] == ["x2", "y2", "z2"])
-        cols_3d = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l']
-        cols_2d = ['x1_', 'y1_', 'x2_', 'y2_']
-        cols_2d_ok = [(intended in col)
-                      for col, intended in zip(cols[10:18], 2 * cols_2d)]
-        if not ((cols[0:10] == cols_3d) and all(cols_2d_ok)):
-            _logger.error(f"Incorrect columns/order provided. "
-                          f"Data must adhere to the following column order: "
-                          f"{[*cols_3d, *(2*cols_2d)]}")
-            return
-        e1_3d = data.iloc[:, 0:3].to_numpy() * position_scaling
-        e2_3d = data.iloc[:, 3:6].to_numpy() * position_scaling
-        e1_2d_c1 = data.iloc[:, 10:12].to_numpy() * position_scaling
-        e2_2d_c1 = data.iloc[:, 12:14].to_numpy() * position_scaling
-        e1_2d_c2 = data.iloc[:, 14:16].to_numpy() * position_scaling
-        e2_2d_c2 = data.iloc[:, 16:18].to_numpy() * position_scaling
+        id1 = cam_ids[0]
+        id2 = cam_ids[1]
+        cols = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
+                f'x1_{id1:s}', f'y1_{id1:s}', f'x2_{id1:s}', f'y2_{id1:s}',
+                f'x1_{id2:s}', f'y1_{id2:s}', f'x2_{id2:s}', f'y2_{id2:s}']
+        data = data[cols]
+        e1_3d = data.iloc[:, 0:3].to_numpy(dtype=float) * position_scaling
+        e2_3d = data.iloc[:, 3:6].to_numpy(dtype=float) * position_scaling
+        e1_2d_c1 = data.iloc[:, 10:12].to_numpy(dtype=float) * position_scaling
+        e2_2d_c1 = data.iloc[:, 12:14].to_numpy(dtype=float) * position_scaling
+        e1_2d_c2 = data.iloc[:, 14:16].to_numpy(dtype=float) * position_scaling
+        e2_2d_c2 = data.iloc[:, 16:18].to_numpy(dtype=float) * position_scaling
 
         repr_errs = []
+
+        # drop rows with nan
+        to_drop_e1 = np.isnan(e1_3d).all(axis=1)
+        to_drop_e2 = np.isnan(e2_3d).all(axis=1)
+        e1_3d = e1_3d[~to_drop_e1]
+        e1_2d_c1 = e1_2d_c1[~to_drop_e1]
+        e1_2d_c2 = e1_2d_c2[~to_drop_e1]
+        e2_3d = e2_3d[~to_drop_e2]
+        e2_2d_c1 = e2_2d_c1[~to_drop_e2]
+        e2_2d_c2 = e2_2d_c2[~to_drop_e2]
+
+        if not len(e1_3d) or not len(e2_3d):
+            # No reconstructable data available.
+            return
+
         e1_repr_c1, e1_repr_c2 = cc.reproject_points(
             e1_3d, calibration, transformation)
         e2_repr_c1, e2_repr_c2 = cc.reproject_points(

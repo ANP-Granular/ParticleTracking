@@ -153,6 +153,9 @@ def displacement_fwise(data_3d: np.ndarray, frames: Iterable[int] = None,
     displacements = np.stack([np.sum(combo1, axis=-1),
                               np.sum(combo2, axis=-1)])
     min_disp = np.min(displacements, axis=0)
+    if len(min_disp.shape) < 2:
+        # Too few frames were given
+        return
     fig = plt.figure()
     plt.plot(frames, min_disp, alpha=0.3,
              label=[f"p{p}" for p in range(min_disp.shape[1])])

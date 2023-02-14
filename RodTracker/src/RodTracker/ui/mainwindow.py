@@ -261,6 +261,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.reconstructor.data_update)
             self.reconstructor.updated_data.connect(
                 self.rod_data.receive_updated_data)
+            self.rod_data.data_loaded[str, str].connect(
+                self.reconstructor.set_cam_ids)
 
         if self.detector is not None:
             self.detector.detected_data.connect(
