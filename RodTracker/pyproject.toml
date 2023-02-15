@@ -38,6 +38,7 @@ numpy = ">=1.21.0"
 PyQt3D = ">=5.15.5"
 matplotlib = ">=3.6.2"
 importlib-resources = {version = ">=1.4", python = "<3.9"}
+ParticleDetection = {path = "../ParticleDetection"}
 
 pyinstaller = {version = ">=5.7", optional = true}
 qt5-applications = {version = ">=5.15", optional = true}
@@ -46,16 +47,22 @@ flake8 = {version = ">=5", optional = true}
 pytest = {version = ">=7.1.2", optional = true}
 pytest-qt = {version = ">=4.0.0", optional = true}
 pytest-cov = {version = ">=3.0.0", optional = true}
+docutils = {version = "==0.16", optional = true}
+Sphinx = {version = "==5.3", optional = true}
+sphinx_rtd_theme = {version = "^0.5.1", optional = true}
+myst_parser = {version = "^0.18.1", optional = true}
 
 [tool.poetry.extras]
-dev = ["pyinstaller", "qt5-applications", "PyQt5-stubs", "flake8"]
+dev = ["qt5-applications", "PyQt5-stubs", "flake8"]
+build = ["pyinstaller"]
 test = ["pytest", "pytest-qt", "pytest-cov"]
+docs = ["Sphinx", "docutils", "sphinx_rtd_theme", "myst_parser"]
 
 [tool.poetry.scripts]
 RodTracker = 'RodTracker.RodTracker:main'
 
 [tool.pytest.ini_options]
-addopts = "--cov=RodTracker"
+addopts = "--cov=src --cov-report=html"
 testpaths = [
-    "tests",
+    "tests/",
 ]
