@@ -30,6 +30,7 @@ from ParticleDetection.reconstruct_3D import calibrate_cameras as cc
 from ParticleDetection.reconstruct_3D import visualization as vis
 from ParticleDetection.utils import data_loading as dl
 from ParticleDetection.reconstruct_3D.match2D import match_frame
+from ParticleDetection. reconstruct_3D import matchND
 
 _logger = logging.getLogger(__name__)
 
@@ -600,7 +601,6 @@ class Reconstructor(QtCore.QRunnable):
             df_out = pd.DataFrame()
             num_frames = len(self.frames)
             for i in range(num_frames):
-                # TODO: evaluate, whether its renumber should be "True"
                 tmp = match_frame(self.data, self.cams[0], self.cams[1],
                                   self.frames[i],
                                   self.color, self.calibration, P1, P2, rot,
@@ -638,19 +638,34 @@ class Tracker(Reconstructor):
             tw2 = np.asarray(self.transform["M_trans2"])[0:3, 3]
             rot = rotz * roty * rotx
 
-            df_out = pd.DataFrame()
             num_frames = len(self.frames)
-
-            raise NotImplementedError
-            for i in range(num_frames):
-                tmp = match_frame(self.data, self.cams[0], self.cams[1],
-                                  self.frames[i],
+            df_out = pd.DataFrame()
+            # TODO: add a check, that the frame has 3D data
+            if self.frames[0] - 1 not in self.data.frame.unique():
+                # Do a 2-dimensional reconstruction of 3D positions, because
+                # there is no initial 3D data to relate to.
+                tmp = match_frame(self.data, self.cams[0],
+                                  self.cams[1], self.frames[0],
                                   self.color, self.calibration, P1, P2, rot,
-                                  tw1, tw2, r1, r2, t1, t2, renumber=False)[0]
+                                  tw1, tw2, r1, r2, t1, t2, renumber=True)[0]
+                df_out = pd.concat([df_out, tmp])
+                self.frames = self.frames[1:]
+                self.signals.progress.emit(1 / num_frames)
+
+            for i in range(len(self.frames)):
+
+                tmp, _, _ = matchND.match_frame(
+                    self.data, self.cams[0], self.cams[1],
+                    self.frames[i], self.color, self.calibration, P1, P2, rot,
+                    tw1, tw2, r1, r2, t1, t2
+                )
                 df_out = pd.concat([df_out, tmp])
                 self.signals.progress.emit(1 / num_frames)
             df_out.reset_index(drop=True, inplace=True)
             self.signals.result.emit(df_out)
+
+            # TODO: evaluate whether rematching is required for better data
+            # quality
         except:                                                 # noqa: E722
             exctype, value, tb = sys.exc_info()
             self.signals.error.emit((exctype, value, tb))

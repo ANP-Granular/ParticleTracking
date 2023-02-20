@@ -18,6 +18,7 @@
 import os
 import logging
 from typing import List
+from functools import partial
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -27,6 +28,7 @@ import ParticleDetection.utils.data_loading as dl
 from RodTracker.backend.reconstruction import Plotter, Tracker, Reconstructor
 import RodTracker.ui.mainwindow_layout as mw_l
 import RodTracker.backend.logger as lg
+from RodTracker.ui.dialogs import show_warning
 _logger = logging.getLogger(__name__)
 
 
@@ -212,8 +214,6 @@ class ReconstructorUI(QtWidgets.QWidget):
         ui.findChild(QtWidgets.QLabel, "lbl_solver").setEnabled(False)
         self.pb_solve.setEnabled(False)
 
-        ui.findChild(QtWidgets.QCheckBox, "cb_tracking").setEnabled(False)
-
         self.progress = ui.findChild(QtWidgets.QProgressBar,
                                      "progress_reconstruction")
         self.progress.setValue(100)
@@ -379,8 +379,16 @@ class ReconstructorUI(QtWidgets.QWidget):
                 lambda ret: lg.exception_logger(*ret))
             tracker.signals.error.connect(
                 lambda ret: self._solver_result(None))
+            tracker.signals.error.connect(
+                lambda ret: partial(self._notify_error, color))
+            tracker.signals.error.connect(partial(self._notify_error, color))
             tracker.signals.result.connect(self._solver_result)
             self._threads.start(tracker)
+
+    def _notify_error(self, color: str):
+        show_warning(f"Something went wrong during 3D reconstruction of "
+                     f"'{color}' particles.\n"
+                     f"Please consult the logs for more information.")
 
     def _solver_result(self, result: pd.DataFrame):
         """Hook to handle the result of each reconstruction process.
