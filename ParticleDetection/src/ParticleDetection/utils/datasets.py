@@ -252,6 +252,10 @@ def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
             continue
         v = np.reshape(v, (len(v), -1))
         seen = np.ones((len(v), 1))
+        # set rods to 'unseen', if all 2D coordinates are negative, i.e.
+        # outside the frame
+        seen[(v < 0).all(axis=1)] = 0.
+
         to_df = np.concatenate((v, seen), axis=1)
         temp_df = pd.DataFrame(to_df, columns=cols)
         if len(data.loc[(data.frame == frame) & (data.color == color)]) == 0:

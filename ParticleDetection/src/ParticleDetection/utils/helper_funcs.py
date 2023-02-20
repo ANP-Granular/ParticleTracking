@@ -3,7 +3,7 @@ Collection of miscellaneous helper functions.
 """
 import sys
 import logging
-from typing import Dict
+from typing import Dict, Union
 from collections import Counter
 import multiprocessing as mp
 
@@ -162,7 +162,8 @@ def _minimum_bounding_rectangle(points):
     return rval
 
 
-def rod_endpoints(prediction, classes: Dict[int, str], method: str = "simple")\
+def rod_endpoints(prediction, classes: Dict[int, str], method: str = "simple",
+                  expected_particles: Union[int, Dict[int, int], None] = None)\
         -> Dict[int, np.ndarray]:
     """Calculates the endpoints of rods from the prediction masks.
 
@@ -199,6 +200,15 @@ def rod_endpoints(prediction, classes: Dict[int, str], method: str = "simple")\
                 for i_m in i_c_list]
             if not len(segmentations):
                 continue
+            if expected_particles is not None:
+                if isinstance(expected_particles, dict):
+                    current_expected = expected_particles[i_c]
+                elif isinstance(expected_particles, int):
+                    current_expected = expected_particles
+                if len(i_c_list) > current_expected:
+                    # remove the detected particles with the least confident
+                    # result from the output
+                    segmentations = segmentations[:current_expected]
             if method == "advanced":
                 if len(segmentations) <= cpu_count:
                     use_processes = len(segmentations)
@@ -212,6 +222,10 @@ def rod_endpoints(prediction, classes: Dict[int, str], method: str = "simple")\
                 raise ValueError("Unknown extraction method. "
                                  "Please choose between 'simple' and "
                                  "'advanced'.")
+            if expected_particles is not None:
+                # add 'empty' points, if not enough have been detected
+                end_points.extend([np.array(2 * [[-1., -1.]])] *
+                                  (current_expected - len(end_points)))
             results[classes[i_c]] = np.array(end_points)
     return results
 

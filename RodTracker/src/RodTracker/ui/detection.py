@@ -204,6 +204,15 @@ class DetectorUI(QtWidgets.QWidget):
         self.spb_end_f = ui.findChild(QtWidgets.QSpinBox,
                                       "end_frame_detection")
         self.spb_end_f.valueChanged.connect(self._change_end_frame)
+        self.spb_expected = ui.findChild(QtWidgets.QSpinBox,
+                                         "expected_particles_default")
+        self.spb_expected.setValue(1)
+        self._expected_particles = 1
+        self.spb_expected.setMinimum(1)
+        self.spb_expected.valueChanged.connect(self._expected_changed)
+
+    def _expected_changed(self, val: int):
+        self._expected_particles = val
 
     def _set_threshold(self, val: str):
         try:
@@ -346,7 +355,8 @@ class DetectorUI(QtWidgets.QWidget):
             detector = Detector(img_manager.data_id, self.model,
                                 img_manager.files[idx_start:idx_end + 1],
                                 img_manager.frames[idx_start:idx_end + 1],
-                                self.used_colors, self.threshold)
+                                self.used_colors, self.threshold,
+                                self._expected_particles)
             detector.signals.progress.connect(self._progress_update)
             detector.signals.finished.connect(self._detection_finished)
             detector.signals.error.connect(

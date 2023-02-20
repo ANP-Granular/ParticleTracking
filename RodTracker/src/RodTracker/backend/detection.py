@@ -177,7 +177,8 @@ class Detector(QtCore.QRunnable):
 
     def __init__(self, cam_id: str, model: torch.ScriptModule,
                  images: List[Path], frames: List[int],
-                 colors: Dict[int, str], threshold: float = 0.5):
+                 colors: Dict[int, str], threshold: float = 0.5,
+                 expected_particles: int = None):
         super().__init__()
         self.cam_id = cam_id
         self.model = model
@@ -185,6 +186,9 @@ class Detector(QtCore.QRunnable):
         if len(images) != len(frames):
             raise ValueError("There must be the same number of images and "
                              "frames.")
+        if (expected_particles is not None) and (expected_particles < 1):
+            raise ValueError("expected_particles must be >0.")
+        self.expected = expected_particles
         self.images = images
         self.frames = frames
         for color in colors:
@@ -221,7 +225,8 @@ class Detector(QtCore.QRunnable):
             frame = self.frames[i]
             outputs = detection._run_detection(self.model, img)
             if "pred_masks" in outputs:
-                points = hf.rod_endpoints(outputs, self.classes)
+                points = hf.rod_endpoints(outputs, self.classes,
+                                          expected_particles=self.expected)
                 tmp_data = ds.add_points(points, data, self.cam_id, frame)
             self.signals.progress.emit(1 / num_frames, tmp_data, self.cam_id)
         data.reset_index(drop=True, inplace=True)
