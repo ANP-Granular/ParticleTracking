@@ -826,6 +826,8 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
     if (not renumber) and ("particle" in data.columns):
         tmp_df["particle"] = df_particles.loc[df_particles.frame == frame,
                                               "particle"].values
+    else:
+        tmp_df["particle"] = list(range(len(tmp_df)))
     seen_cols = [col for col in data.columns if "seen" in col]
     tmp_df[seen_cols] = 1
     return tmp_df, costs, out[:, 9]
