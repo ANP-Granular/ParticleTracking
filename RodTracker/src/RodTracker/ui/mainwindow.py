@@ -175,10 +175,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.logger = self.ui.lv_actions_list.get_new_logger(self.logger_id)
         self.ui.sa_camera_0.verticalScrollBar().installEventFilter(self)
         self.ui.sa_camera_1.verticalScrollBar().installEventFilter(self)
-        self.switch_left = QtWidgets.QShortcut(QtGui.QKeySequence(
-            "Ctrl+tab"), self)
         self.switch_right = QtWidgets.QShortcut(QtGui.QKeySequence(
-            "tab"), self)
+            "Ctrl+tab"), self)
         self.ui.slider_frames.setMinimum(0)
         self.ui.slider_frames.setMaximum(1)
         self.settings = se.Settings()
@@ -190,6 +188,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if self.detector is not None:
             self.detector._logger = self.ui.lv_actions_list.get_new_logger(
                 "Detector")
+
+        # Tab icons for 'busy' indication
+        default_icon = blank_icon()
+        self.ui.right_tabs.setIconSize(QtCore.QSize(7, 16))
+        for tab in range(self.ui.right_tabs.count()):
+            self.ui.right_tabs.setTabIcon(tab, default_icon)
+
         self.connect_signals()
         self.settings.send_settings()
 
@@ -209,6 +214,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.rod_data.data_loaded[list].connect(
             lambda colors: self.rods_loaded(None, None, colors))
         self.rod_data.seen_loaded.connect(self.ui.tv_rods.setup_tree)
+        self.rod_data.is_busy.connect(
+            lambda busy: self.tab_busy_changed(0, busy))
 
         # Saving
         self.ui.pb_save_rods.clicked.connect(self.rod_data.save_changes)
@@ -238,7 +245,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.pb_previous.clicked.connect(
             lambda: self.show_next(direction=-1))
         self.ui.pb_next.clicked.connect(lambda: self.show_next(direction=1))
-        self.switch_left.activated.connect(lambda: self.change_view(-1))
         self.switch_right.activated.connect(lambda: self.change_view(1))
         self.ui.camera_tabs.currentChanged.connect(self.view_changed)
         self.ui.slider_frames.sliderMoved.connect(self.slider_moved)
@@ -249,6 +255,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.rod_data.batch_update.connect(self.ui.tv_rods.batch_update_tree)
 
         if self.reconstructor is not None:
+            self.reconstructor.is_busy.connect(
+                lambda busy: self.tab_busy_changed(5, busy))
             self.rod_data.data_loaded[int, int, list].connect(
                 self.reconstructor.data_loaded)
             self.rod_data.data_loaded[str, str].connect(
@@ -265,6 +273,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.reconstructor.set_cam_ids)
 
         if self.detector is not None:
+            self.detector.is_busy.connect(
+                lambda busy: self.tab_busy_changed(4, busy))
             self.detector.detected_data.connect(
                 self.rod_data.add_data)
             self.rod_data.saved.connect(self.detector._logger.actions_saved)
@@ -870,6 +880,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 new_text = tab_txt[0:-1]
             self.ui.camera_tabs.setTabText(i, new_text)
 
+    def tab_busy_changed(self, tab_idx: int, is_busy: bool):
+        if is_busy:
+            tab_icon = busy_icon()
+        else:
+            tab_icon = blank_icon()
+        self.ui.right_tabs.setTabIcon(tab_idx, tab_icon)
+
     def eventFilter(self, source: QtCore.QObject, event: QtCore.QEvent)\
             -> bool:
         """Intercepts events, here modified scroll events for zooming.
@@ -986,3 +1003,21 @@ def reconnect(signal: QtCore.pyqtSignal, newhandler: Callable = None,
         pass
     if newhandler is not None:
         signal.connect(newhandler)
+
+
+def busy_icon() -> QtGui.QIcon:
+    busy_pix = QtGui.QPixmap(40, 100)
+    busy_pix.fill(QtCore.Qt.transparent)
+    busy_painter = QtGui.QPainter(busy_pix)
+    busy_painter.setBrush(QtGui.QBrush(QtCore.Qt.green,
+                                       QtCore.Qt.SolidPattern))
+    busy_painter.setPen(QtCore.Qt.NoPen)
+    busy_painter.drawEllipse(0, 0, 40, 40)
+    busy_painter.end()
+    return QtGui.QIcon(busy_pix)
+
+
+def blank_icon() -> QtGui.QIcon:
+    blank_pix = QtGui.QPixmap(40, 100)
+    blank_pix.fill(QtCore.Qt.transparent)
+    return QtGui.QIcon(blank_pix)

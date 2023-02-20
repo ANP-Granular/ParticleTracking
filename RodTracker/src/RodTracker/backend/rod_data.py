@@ -190,6 +190,10 @@ class RodData(QtCore.QObject):
     requested_data = QtCore.pyqtSignal([pd.DataFrame], name="requested_data")
     """pyqtSignal(DataFrame) : Sends a requested rod position data slice."""
 
+    is_busy = QtCore.pyqtSignal(bool)
+    """pyqtSignal(bool) : Notifies when a background task is started/finished.
+    """
+
     _logger: lg.ActionLogger = None
     _logger_id: str = "RodData"
 
@@ -199,7 +203,7 @@ class RodData(QtCore.QObject):
         self.folder: Path = None
         self.out_folder: Path = None
         self._allow_overwrite: bool = False
-        self.threads = QtCore.QThreadPool()
+        self.threads = QtCore.QThreadPool.globalInstance()
 
         # Controls which data to provide
         self._show_2D = True
@@ -380,6 +384,9 @@ class RodData(QtCore.QObject):
 
         # Display as a tree
         worker = pl.Worker(self.extract_seen_information)
+        worker.signals.result.connect(lambda ret: self.is_busy.emit(False))
+        worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
+        self.is_busy.emit(True)
         worker.signals.result.connect(lambda ret: self.seen_loaded.emit(*ret))
         worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
         self.threads.start(worker)
@@ -417,6 +424,7 @@ class RodData(QtCore.QObject):
             - :attr:`saved`
         """
         # TODO: move saving to different Thread(, if it still takes too long)
+        global rod_data
         if rod_data is None:
             return
         # Clean up data from unused rods before permanent saving
@@ -458,6 +466,7 @@ class RodData(QtCore.QObject):
                 try_again = False
                 lock.lockForRead()
                 colors = list(rod_data["color"].unique())
+                lock.unlock()
                 self.data_loaded[Path, Path, list].emit(
                     chosen_folder, chosen_folder, colors)
 
@@ -591,6 +600,7 @@ class RodData(QtCore.QObject):
             - :attr:`data_2d`
             - :attr:`data_3d`
         """
+        global rod_data
         if self.frame is None or rod_data is None:
             return
 
@@ -654,6 +664,7 @@ class RodData(QtCore.QObject):
             - :attr:`requested_data`
         """
         # Provide data as requested, will return the requested data
+        global rod_data
         lock.lockForRead()
         out_data = rod_data
         lock.unlock()
@@ -686,10 +697,13 @@ class RodData(QtCore.QObject):
         data : DataFrame
             Updated/New rod position data
         """
+        global rod_data
         with QtCore.QWriteLocker(lock):
             rod_data.set_index(["color", "frame", "particle"], inplace=True)
-            rod_data.update(data.set_index(["color", "frame", "particle"]))
-            rod_data.reset_index(inplace=True)
+            try:
+                rod_data.update(data.set_index(["color", "frame", "particle"]))
+            finally:
+                rod_data.reset_index(inplace=True)
         if self.frame in data.frame.unique():
             self.provide_data()
 
@@ -752,6 +766,9 @@ class RodData(QtCore.QObject):
 
             # Display as a tree
             worker = pl.Worker(self.extract_seen_information)
+            worker.signals.result.connect(lambda ret: self.is_busy.emit(False))
+            worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
+            self.is_busy.emit(True)
             worker.signals.result.connect(
                 lambda ret: self.seen_loaded.emit(*ret))
             worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
@@ -801,6 +818,11 @@ class RodData(QtCore.QObject):
                 # Update/regenerate tree
                 worker = pl.Worker(self.extract_seen_information)
                 worker.signals.result.connect(
+                    lambda ret: self.is_busy.emit(False))
+                worker.signals.error.connect(
+                    lambda ret: self.is_busy.emit(False))
+                self.is_busy.emit(True)
+                worker.signals.result.connect(
                     lambda ret: self.seen_loaded.emit(*ret))
                 worker.signals.error.connect(
                     lambda ret: lg.exception_logger(*ret))
@@ -827,6 +849,9 @@ class RodData(QtCore.QObject):
             data = data.reset_index(inplace=True)
             worker = pl.Worker(
                 lambda: self.extract_seen_information(data))
+            worker.signals.result.connect(lambda ret: self.is_busy.emit(False))
+            worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
+            self.is_busy.emit(True)
             worker.signals.result.connect(
                 lambda ret: self.batch_update.emit(*ret))
             worker.signals.error.connect(
@@ -856,6 +881,9 @@ class RodData(QtCore.QObject):
             return
 
         worker = pl.Worker(change_data, new_data=new_data)
+        worker.signals.result.connect(lambda ret: self.is_busy.emit(False))
+        worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
+        self.is_busy.emit(True)
         worker.signals.result.connect(
             lambda _: self.provide_data(data_3d=False))
         worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
@@ -909,6 +937,9 @@ class RodData(QtCore.QObject):
         worker = pl.Worker(rod_number_swap, mode=mode,
                            previous_id=old_id, new_id=new_id, color=color,
                            frame=frame, cam_id=cam_id)
+        worker.signals.result.connect(lambda ret: self.is_busy.emit(False))
+        worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
+        self.is_busy.emit(True)
         worker.signals.result.connect(
             lambda _: self.provide_data(data_3d=False))
         worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
@@ -1059,6 +1090,11 @@ class RodData(QtCore.QObject):
                     self._logger.add_action(action)
                     # Update rods and tree display
                     worker = pl.Worker(self.extract_seen_information)
+                    worker.signals.result.connect(
+                        lambda ret: self.is_busy.emit(False))
+                    worker.signals.error.connect(
+                        lambda ret: self.is_busy.emit(False))
+                    self.is_busy.emit(True)
                     worker.signals.result.connect(
                         lambda ret: self.seen_loaded.emit(*ret))
                     worker.signals.error.connect(

@@ -123,6 +123,10 @@ class DetectorUI(QtWidgets.QWidget):
     :func:`~ParticleDetection.utils.datasets.add_points`
     """
 
+    is_busy = QtCore.pyqtSignal(bool)
+    """pyqtSignal(bool) : Notifies when a background task is started/finished.
+    """
+
     _active_detections: int = 0
     _started_detections: int = 0
     _progress: float = 1.
@@ -150,7 +154,7 @@ class DetectorUI(QtWidgets.QWidget):
                  *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.ui = ui
-        self._threads = QtCore.QThreadPool()
+        self._threads = QtCore.QThreadPool.globalInstance()
         self.model: torch.ScriptModule = None
 
         self.managers = image_managers
@@ -331,7 +335,7 @@ class DetectorUI(QtWidgets.QWidget):
             return
         self.progress.setValue(0)
         self._progress = 0.
-
+        self.is_busy.emit(True)
         for img_manager in self.managers:
             if not img_manager.data_id:
                 continue
@@ -347,6 +351,8 @@ class DetectorUI(QtWidgets.QWidget):
             detector.signals.finished.connect(self._detection_finished)
             detector.signals.error.connect(
                 lambda ret: lg.exception_logger(*ret))
+            detector.signals.error.connect(
+                lambda: self._detection_finished(None))
             self._threads.start(detector)
         self.pb_detect.setEnabled(False)
 
@@ -370,6 +376,7 @@ class DetectorUI(QtWidgets.QWidget):
         """
         self._active_detections -= 1
         if self._active_detections == 0:
+            self.is_busy.emit(False)
             self.pb_detect.setEnabled(True)
             self._started_detections = 0
             self._progress = 1.0

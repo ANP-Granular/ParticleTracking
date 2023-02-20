@@ -125,6 +125,10 @@ class ReconstructorUI(QtWidgets.QWidget):
     new rows.
     """
 
+    is_busy = QtCore.pyqtSignal(bool)
+    """pyqtSignal(bool) : Notifies when a background task is started/finished.
+    """
+
     data: pd.DataFrame = None
     """DataFrame : Slice of the *main* ``DataFrame`` that is used for
     reconstruction/tracking.
@@ -206,7 +210,6 @@ class ReconstructorUI(QtWidgets.QWidget):
         ui.findChild(QtWidgets.QToolButton, "tb_solver").setEnabled(False)
         ui.findChild(QtWidgets.QLineEdit, "le_solver").setEnabled(False)
         ui.findChild(QtWidgets.QLabel, "lbl_solver").setEnabled(False)
-
         self.pb_solve.setEnabled(False)
 
         ui.findChild(QtWidgets.QCheckBox, "cb_tracking").setEnabled(False)
@@ -267,11 +270,13 @@ class ReconstructorUI(QtWidgets.QWidget):
     def _change_start_frame(self, new_val: int):
         """Callback for the ``QSpinBox`` handling the start frame selection."""
         self.start_frame = new_val
+        self.select_data()
         self.pb_plots.setEnabled(True)
 
     def _change_end_frame(self, new_val: int):
         """Callback for the ``QSpinBox`` handling the end frame selection."""
         self.end_frame = new_val
+        self.select_data()
         self.pb_plots.setEnabled(True)
 
     @property
@@ -357,6 +362,7 @@ class ReconstructorUI(QtWidgets.QWidget):
         self.pb_solve.setEnabled(False)
         num_colors = len(self.used_colors)
         self._colors_to_solve = num_colors
+        self.is_busy.emit(True)
         for i in range(num_colors):
             color = self.used_colors[i]
             tmp = self.data.loc[self.data.color == color]
@@ -368,10 +374,11 @@ class ReconstructorUI(QtWidgets.QWidget):
                                         self._transformation, self.cam_ids,
                                         color)
             tracker.signals.progress.connect(
-                lambda val: self._progress_update(val / num_colors)
-            )
+                lambda val: self._progress_update(val / num_colors))
             tracker.signals.error.connect(
                 lambda ret: lg.exception_logger(*ret))
+            tracker.signals.error.connect(
+                lambda ret: self._solver_result(None))
             tracker.signals.result.connect(self._solver_result)
             self._threads.start(tracker)
 
@@ -399,8 +406,12 @@ class ReconstructorUI(QtWidgets.QWidget):
         """
         self._colors_to_solve -= 1
         if self._colors_to_solve == 0:
+            if self._threads.activeThreadCount() == 0:
+                self.is_busy.emit(False)
             self.pb_solve.setEnabled(True)
             self.progress.setValue(100)
+        if result is None:
+            return
         self.data.update(result)
         self.updated_data.emit(result)
         self.select_data()
@@ -573,6 +584,7 @@ class ReconstructorUI(QtWidgets.QWidget):
             return
         data_plt = self.data.loc[(self.data["frame"] >= self.start_frame) &
                                  (self.data["frame"] <= self.end_frame)]
+        self.is_busy.emit(True)
         plotter = Plotter(
             data_plt.copy(), colors=self.used_colors,
             start_frame=self.start_frame, end_frame=self.end_frame,
@@ -611,6 +623,8 @@ class ReconstructorUI(QtWidgets.QWidget):
         fig.tight_layout()
         self.lbl_current_plot.setText(f"({self.stacked_plots.currentIndex()+1}"
                                       f"/{self.stacked_plots.count()})")
+        if self._threads.activeThreadCount() == 0:
+            self.is_busy.emit(False)
         return
 
     @QtCore.pyqtSlot(dict)
