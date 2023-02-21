@@ -182,6 +182,24 @@ def rod_endpoints(prediction, classes: Dict[int, str], method: str = "simple",
             ``"simple"``   ->  Creates a bounding box around the masks.\n
             ``"advanced"`` ->  Creates Hough lines and clusters these.\n
         Default is ``"simple"``.
+    expected_particles : Union[int, Dict[int, int], None]
+        The number of expected particles defines how many particles will be in
+        the output per frame. This defines how many particles are maximally
+        detected and also up to which number *empty* particles will be
+        inserted to match the expected amount.
+
+        ``int``
+            Only one amount is defined. The same amount is expected for all
+            classes that will be detected.
+        ``Dict[int, int]``
+            One amount must be specified per class that is present in
+            ``prediction``.
+            ``expected_particles[class] = amount``
+        ``None``
+            No restrictions on the amount of particles per class and frame
+            are imposed. How ever many particles were detected will be in the
+            output.
+        Default is ``None``.
     Returns
     -------
     dict[int, np.ndarray]

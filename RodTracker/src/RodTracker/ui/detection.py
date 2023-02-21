@@ -18,7 +18,7 @@
 
 import os
 import logging
-from typing import List
+from typing import List, Dict
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 import torch
@@ -149,6 +149,7 @@ class DetectorUI(QtWidgets.QWidget):
 
     Default is ``0.5``.
     """
+    table_colors: QtWidgets.QTableWidget = None
 
     def __init__(self, ui: QtWidgets.QWidget, image_managers: List[ImageData],
                  *args, **kwargs) -> None:
@@ -170,6 +171,22 @@ class DetectorUI(QtWidgets.QWidget):
         lbl_threshold.setText("Confidence Threshold [0.0, 1.0]: ")
         threshold_validator = QtGui.QDoubleValidator(0.0, 1.0, 2)
         self.le_threshold.setValidator(threshold_validator)
+
+        self.table_colors = ui.findChild(QtWidgets.QTableWidget,
+                                         "table_detect_colors")
+        tab_header = self.table_colors.horizontalHeader()
+        tab_header.setSectionResizeMode(0,
+                                        QtWidgets.QHeaderView.ResizeToContents)
+        tab_header.setSectionResizeMode(1,
+                                        QtWidgets.QHeaderView.ResizeToContents)
+        tab_header.setSectionResizeMode(2,
+                                        QtWidgets.QHeaderView.Stretch)
+        self.spb_expected = ui.findChild(QtWidgets.QSpinBox,
+                                         "expected_particles_default")
+        self.spb_expected.setValue(1)
+        self._expected_particles = 1
+        self.spb_expected.setMinimum(1)
+        self.spb_expected.valueChanged.connect(self._expected_changed)
 
         color_group = ui.findChildren(QtWidgets.QGroupBox)[0]
         group_layout: QtWidgets.QGridLayout = color_group.layout()
@@ -204,15 +221,14 @@ class DetectorUI(QtWidgets.QWidget):
         self.spb_end_f = ui.findChild(QtWidgets.QSpinBox,
                                       "end_frame_detection")
         self.spb_end_f.valueChanged.connect(self._change_end_frame)
-        self.spb_expected = ui.findChild(QtWidgets.QSpinBox,
-                                         "expected_particles_default")
-        self.spb_expected.setValue(1)
-        self._expected_particles = 1
-        self.spb_expected.setMinimum(1)
-        self.spb_expected.valueChanged.connect(self._expected_changed)
+        self._toggle_color(1)
 
     def _expected_changed(self, val: int):
         self._expected_particles = val
+        for i in range(self.table_colors.rowCount()):
+            current_amount = self.table_colors.item(i, 1)
+            if not current_amount.checkState():
+                current_amount.setText(str(val))
 
     def _set_threshold(self, val: str):
         try:
@@ -245,11 +261,36 @@ class DetectorUI(QtWidgets.QWidget):
         _ : int
         """
         self.used_colors = []
+        self.table_colors.clearContents()
+        row_idx = 0
         for cb in self.ui.findChildren(QtWidgets.QCheckBox):
             if "tracking" in cb.objectName():
                 continue
             if cb.checkState():
-                self.used_colors.append(cb.objectName().split("_")[1])
+                color = cb.objectName().split("_")[1]
+                self.used_colors.append(color)
+                # add row to table
+                color_item = QtWidgets.QTableWidgetItem(color)
+                color_item.setFlags(QtCore.Qt.ItemIsEnabled)
+                amount_item = QtWidgets.QTableWidgetItem(
+                    str(self._expected_particles))
+                amount_item.setFlags(QtCore.Qt.ItemIsEnabled |
+                                     QtCore.Qt.ItemIsEditable |
+                                     QtCore.Qt.ItemIsUserCheckable)
+                amount_item.setCheckState(0)
+                class_item = QtWidgets.QTableWidgetItem("auto")
+                class_item.setFlags(QtCore.Qt.ItemFlag.NoItemFlags)
+                class_item.setTextAlignment(QtCore.Qt.AlignHCenter)
+
+                if row_idx == self.table_colors.rowCount():
+                    self.table_colors.insertRow(row_idx)
+                self.table_colors.setItem(row_idx, 0, color_item)
+                self.table_colors.setItem(row_idx, 1, amount_item)
+                self.table_colors.setItem(row_idx, 2, class_item)
+                row_idx += 1
+        while self.table_colors.rowCount() > row_idx and\
+                self.table_colors.rowCount() > 0:
+            self.table_colors.removeRow(row_idx)
 
     def load_model(self):
         """Show a file selection dialog to a user to select a particle
@@ -345,6 +386,12 @@ class DetectorUI(QtWidgets.QWidget):
         self.progress.setValue(0)
         self._progress = 0.
         self.is_busy.emit(True)
+
+        colors: Dict[str, int] = {}
+        for row in range(self.table_colors.rowCount()):
+            color = self.table_colors.item(row, 0).text()
+            amount = int(self.table_colors.item(row, 1).text())
+            colors[color] = amount
         for img_manager in self.managers:
             if not img_manager.data_id:
                 continue
@@ -355,8 +402,7 @@ class DetectorUI(QtWidgets.QWidget):
             detector = Detector(img_manager.data_id, self.model,
                                 img_manager.files[idx_start:idx_end + 1],
                                 img_manager.frames[idx_start:idx_end + 1],
-                                self.used_colors, self.threshold,
-                                self._expected_particles)
+                                colors, self.threshold)
             detector.signals.progress.connect(self._progress_update)
             detector.signals.finished.connect(self._detection_finished)
             detector.signals.error.connect(

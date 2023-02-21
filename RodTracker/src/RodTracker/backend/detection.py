@@ -135,9 +135,10 @@ class Detector(QtCore.QRunnable):
     frames : List[int]
         Frames the detection of rods will be performed on. Each entry in
         :attr:`frames` corresponds to one in :attr:`images`.
-    colors : Dict[int, str]
+    colors : Dict[str, int]
         Classes of objects to detect in the images, i.e. rod colors that shall
-        be detected.
+        be detected, togther with the amount of particles that shall be
+        detected per frame individually for each color.
     threshold : float, optional
         Confidence threshold :math:`\\in [0, 1]` below which objects are
         rejected after detection.\n
@@ -163,6 +164,10 @@ class Detector(QtCore.QRunnable):
         Confidence threshold :math:`\\in [0, 1]` below which objects are
         rejected after detection.\n
         :math:`\\in [0, 1]`
+    expected : Dict[int, int]
+        The amount of particles per frame for each class that shall be
+        detected.
+        ``expected[class] = amount``
 
     Raises
     ------
@@ -177,8 +182,7 @@ class Detector(QtCore.QRunnable):
 
     def __init__(self, cam_id: str, model: torch.ScriptModule,
                  images: List[Path], frames: List[int],
-                 colors: Dict[int, str], threshold: float = 0.5,
-                 expected_particles: int = None):
+                 colors: Dict[str, int], threshold: float = 0.5):
         super().__init__()
         self.cam_id = cam_id
         self.model = model
@@ -186,15 +190,14 @@ class Detector(QtCore.QRunnable):
         if len(images) != len(frames):
             raise ValueError("There must be the same number of images and "
                              "frames.")
-        if (expected_particles is not None) and (expected_particles < 1):
-            raise ValueError("expected_particles must be >0.")
-        self.expected = expected_particles
         self.images = images
         self.frames = frames
-        for color in colors:
+        self.expected: Dict[int, int] = {}
+        for color, amount in colors.items():
             current_class = list(ds.DEFAULT_CLASSES.keys())[
                 list(ds.DEFAULT_CLASSES.values()).index(color)]
             self.classes[current_class] = color
+            self.expected[current_class] = amount
         if threshold > 1.:
             threshold = 1.
         elif threshold < 0.:
