@@ -123,7 +123,9 @@ class Detector(QtCore.QRunnable):
     """Object for running the detection of rods in a thread different from the
     main thread.
 
-    **TBD**
+    This object runs the detection of rods in a set of frames for one camera
+    angle. The desired colors to detect and their expected occurrences must be
+    specified. Only predefined colors are supported at the moment.
 
     Parameters
     ----------
@@ -145,6 +147,15 @@ class Detector(QtCore.QRunnable):
         Confidence threshold :math:`\\in [0, 1]` below which objects are
         rejected after detection.\n
         Default is ``0.5``.
+
+    Raises
+    ------
+    ValueError
+        Is raised when ``len(images) != len(frames)``.
+
+    See also
+    --------
+    :const:`~ParticleDetection.utils.datasets.DEFAULT_CLASSES`
 
     Attributes
     ----------
@@ -170,11 +181,6 @@ class Detector(QtCore.QRunnable):
         The amount of particles per frame for each class that shall be
         detected.
         ``expected[class] = amount``
-
-    Raises
-    ------
-    ValueError
-        Is raised when ``len(images) != len(frames)``.
     """
     classes: Dict[int, str] = {}
     """Dict[int, str] : Classes of objects to detect in the images, i.e.

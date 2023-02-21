@@ -36,16 +36,37 @@ except AttributeError:
 
 
 def icon_path() -> str:
+    """Get a string representation of the path to the application icon.
+
+    Returns
+    -------
+    str
+        String representation of the path to the application icon.
+    """
     return str(importlib_resources.path("RodTracker.resources",
                                         "icon_main.ico"))
 
 
 def readme_path() -> str:
+    """Get a string representation of the path to the application README.
+
+    Returns
+    -------
+    str
+        String representation of the path to the application README.
+    """
     if hasattr(sys, "_MEIPASS"):
         return _base_path + _readme_path
     return _base_path + "/.." + _readme_path
 
 
 def undo_icon_path() -> str:
+    """Get a string representation of the path to the application undo icon.
+
+    Returns
+    -------
+    str
+        String representation of the path to the application undo icon.
+    """
     return str(importlib_resources.path("RodTracker.resources",
                                         "left-arrow-96.png"))

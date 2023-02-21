@@ -498,8 +498,7 @@ class Reconstructor(QtCore.QRunnable):
         Coordinate system transformation matrices from camera 1 coordinates to
         *world*/*experiment* coordinates.
         **Must contain the following fields:**\n
-        ``"M_rotate_x"``, ``"M_rotate_y"``, ``"M_rotate_z"``, ``"M_trans"``,
-        ``"M_trans2"``\n
+        ``"rotation"``, ``"translation"``\n
         If no transformation is desired, either set this value to ``None`` or
         use as neutral transformation.
     cams : List[str]
@@ -528,8 +527,7 @@ class Reconstructor(QtCore.QRunnable):
         Coordinate system transformation matrices from camera 1 coordinates to
         *world*/*experiment* coordinates.
         **Must contain the following fields:**\n
-        ``"M_rotate_x"``, ``"M_rotate_y"``, ``"M_rotate_z"``, ``"M_trans"``,
-        ``"M_trans2"``\n
+       ``"rotation"``, ``"translation"``\n
         If no transformation is desired, either set this value to ``None`` or
         use as neutral transformation.
     cams : List[str]
@@ -619,7 +617,101 @@ class Reconstructor(QtCore.QRunnable):
 
 
 class Tracker(Reconstructor):
+    """Object for running the tracking of rods and reconstruction of 3D rod
+    coordinates in a thread different from the main thread.
+
+    This object runs the tracking of rods and simultaneous reconstruction of 3D
+    coordinates from their 2D stereo camera coordinates. Rod numbers are
+    reassigned in this process.
+
+    Parameters
+    ----------
+    data : DataFrame
+        data : pd.DataFrame
+            (Slice of) a dataset of rod position data. Must contain at least
+            following the columns:\n
+            ``'x1_{cam_id1}'``, ``'y1_{cam_id1}'``, ``'x2_{cam_id1}'``,
+            ``'y2_{cam_id1}'``, ``'x1_{cam_id2}'``, ``'y1_{cam_id2}'``,
+            ``'x2_{cam_id2}'``, ``'y2_{cam_id2}'``, ``'frame'``
+    frames : List[int]
+        Frames the reconstruction of rods will be performed on.
+    calibration : dict
+        Stereocamera calibration parameters with the required fields:\n
+        ``"CM1"``: camera matrix of cam1\n
+        ``"R"``: rotation matrix between cam1 & cam2\n
+        ``"T"``: translation vector between cam1 & cam2\n
+        ``"CM2"``: camera matrix of cam2
+    transformation : dict
+        Coordinate system transformation matrices from camera 1 coordinates to
+        *world*/*experiment* coordinates.
+        **Must contain the following fields:**\n
+        ``"rotation"``, ``"translation"``\n
+        If no transformation is desired, either set this value to ``None`` or
+        use as neutral transformation.
+    cams : List[str]
+        IDs of the cameras from whos images the 2D position data was generated.
+    color : str
+        Color of the rods in :attr:`data`. This value will also be written to
+        the output ``DataFrame``.
+
+    Attributes
+    ----------
+    data : DataFrame
+        (Slice of) a dataset of rod position data. Must contain at least
+        following the columns:\n
+        ``'x1_{cam_id1}'``, ``'y1_{cam_id1}'``, ``'x2_{cam_id1}'``,
+        ``'y2_{cam_id1}'``, ``'x1_{cam_id2}'``, ``'y1_{cam_id2}'``,
+        ``'x2_{cam_id2}'``, ``'y2_{cam_id2}'``, ``'frame'``
+    frames : List[int]
+        Frames the reconstruction of rods will be performed on.
+    calibration : dict
+        Stereocamera calibration parameters with the required fields:\n
+        ``"CM1"``: camera matrix of cam1\n
+        ``"R"``: rotation matrix between cam1 & cam2\n
+        ``"T"``: translation vector between cam1 & cam2\n
+        ``"CM2"``: camera matrix of cam2
+    transformation : dict
+        Coordinate system transformation matrices from camera 1 coordinates to
+        *world*/*experiment* coordinates.
+        **Must contain the following fields:**\n
+        ``"rotation"``, ``"translation"``\n
+        If no transformation is desired, either set this value to ``None`` or
+        use as neutral transformation.
+    cams : List[str]
+        IDs of the cameras from whos images the 2D position data was generated.
+    color : str
+        Color of the rods in :attr:`data`. This value will also be written to
+        the output ``DataFrame``.
+    signals : TrackerSignals
+        Signals that can be emitted during the running of a
+        :class:`Tracker` object. Their purpose is to report errors,
+        progress, and (intermediate) results.
+
+    See also
+    --------
+    :meth:`~ParticleDetection.reconstruct_3D.matchND.match_frame`
+    """
+
     def run(self):
+        """Run the tracking of rods coordinates with the parameters set
+        in this :class:`Tracker` object.
+
+        This function is not intended to be run directly but by invoking it via
+        a ``QThreadPool.start(reconstructor)`` call.
+
+        See also
+        --------
+        :meth:`~ParticleDetection.reconstruct_3D.matchND.match_frame`
+
+
+        .. hint::
+
+            **Emits**
+
+            - :attr:`TrackerSignals.error`
+            - :attr:`TrackerSignals.progress`
+            - :attr:`TrackerSignals.result`
+        """
         global abort_reconstruction, lock
         try:
             # Derive projection matrices from the calibration
