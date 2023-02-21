@@ -27,6 +27,8 @@ from ParticleDetection.utils import (detection, helper_funcs as hf,
 from RodTracker.backend.logger import Action, NotInvertableError
 
 _logger = logging.getLogger(__name__)
+abort_requested: bool = False
+lock = QtCore.QReadWriteLock(QtCore.QReadWriteLock.NonRecursive)
 
 
 class RodDetection(Action):
@@ -218,12 +220,19 @@ class Detector(QtCore.QRunnable):
             - :attr:`DetectorSignals.progress`
             - :attr:`DetectorSignals.finished`
         """
+        global abort_requested
         cols = [col.format(id1=self.cam_id, id2=self.cam_id)
                 for col in ds.DEFAULT_COLUMNS]
         data = pd.DataFrame(columns=cols)
         data = data.loc[:, ~data.columns.duplicated()]
         num_frames = len(self.images)
         for i in range(num_frames):
+            lock.lockForRead()
+            if abort_requested:
+                lock.unlock()
+                self.signals.finished.emit(self.cam_id)
+                return
+            lock.unlock()
             img = self.images[i]
             frame = self.frames[i]
             outputs = detection._run_detection(self.model, img)

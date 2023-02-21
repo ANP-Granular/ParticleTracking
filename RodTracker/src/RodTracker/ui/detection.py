@@ -27,6 +27,7 @@ import RodTracker.backend.logger as lg
 import RodTracker.ui.mainwindow_layout as mw_l
 from RodTracker.backend.img_data import ImageData
 from RodTracker.backend.detection import Detector, RodDetection
+from RodTracker.backend import detection
 # Don't remove the following imports, see GitHub issue as reference
 # https://github.com/pytorch/pytorch/issues/48932#issuecomment-803957396
 import cv2                                                  # noqa: F401
@@ -410,7 +411,10 @@ class DetectorUI(QtWidgets.QWidget):
             detector.signals.error.connect(
                 lambda: self._detection_finished(None))
             self._threads.start(detector)
-        self.pb_detect.setEnabled(False)
+
+        self.pb_detect.setText("Abort")
+        self.pb_detect.clicked.disconnect()
+        self.pb_detect.clicked.connect(self._abort_detection)
 
     @QtCore.pyqtSlot(str)
     def _detection_finished(self, cam_id: str):
@@ -437,6 +441,13 @@ class DetectorUI(QtWidgets.QWidget):
             self._started_detections = 0
             self._progress = 1.0
             self.progress.setValue(100)
+            self.pb_detect.setText("Detect")
+            self.pb_detect.clicked.disconnect()
+            self.pb_detect.clicked.connect(self.start_detection)
+            self.pb_detect.setEnabled(True)
+            detection.lock.lockForWrite()
+            detection.abort_requested = False
+            detection.lock.unlock()
 
     @QtCore.pyqtSlot(float, pd.DataFrame, str)
     def _progress_update(self, val: float, data: pd.DataFrame, cam_id: str):
@@ -469,6 +480,12 @@ class DetectorUI(QtWidgets.QWidget):
             action = RodDetection(frame, cam_id, len(data))
             self._logger.add_action(action)
         self.detected_data.emit(data)
+
+    def _abort_detection(self):
+        detection.lock.lockForWrite()
+        detection.abort_requested = True
+        detection.lock.unlock()
+        self.pb_detect.setEnabled(False)
 
     @QtCore.pyqtSlot(dict)
     def update_settings(self, settings: dict) -> None:

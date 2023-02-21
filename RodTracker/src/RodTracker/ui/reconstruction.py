@@ -26,6 +26,7 @@ import matplotlib.backends.backend_qtagg as b_qt
 from PyQt5 import QtWidgets, QtCore
 import ParticleDetection.utils.data_loading as dl
 from RodTracker.backend.reconstruction import Plotter, Tracker, Reconstructor
+from RodTracker.backend import reconstruction
 import RodTracker.ui.mainwindow_layout as mw_l
 import RodTracker.backend.logger as lg
 from RodTracker.ui.dialogs import show_warning
@@ -359,7 +360,6 @@ class ReconstructorUI(QtWidgets.QWidget):
         frames = list(range(self.start_frame, self.end_frame + 1))
         self._progress_val = 0.
         self.progress.setValue(0)
-        self.pb_solve.setEnabled(False)
         num_colors = len(self.used_colors)
         self._colors_to_solve = num_colors
         self.is_busy.emit(True)
@@ -384,6 +384,16 @@ class ReconstructorUI(QtWidgets.QWidget):
             tracker.signals.error.connect(partial(self._notify_error, color))
             tracker.signals.result.connect(self._solver_result)
             self._threads.start(tracker)
+
+        self.pb_solve.setText("Abort")
+        self.pb_solve.clicked.disconnect()
+        self.pb_solve.clicked.connect(self._abort_reconstruction)
+
+    def _abort_reconstruction(self):
+        self.pb_solve.setEnabled(False)
+        reconstruction.lock.lockForWrite()
+        reconstruction.abort_reconstruction = True
+        reconstruction.lock.unlock()
 
     def _notify_error(self, color: str):
         show_warning(f"Something went wrong during 3D reconstruction of "
@@ -416,8 +426,14 @@ class ReconstructorUI(QtWidgets.QWidget):
         if self._colors_to_solve == 0:
             if self._threads.activeThreadCount() == 0:
                 self.is_busy.emit(False)
+            self.pb_solve.setText("Solve")
+            self.pb_solve.clicked.disconnect()
+            self.pb_solve.clicked.connect(self.solve)
             self.pb_solve.setEnabled(True)
             self.progress.setValue(100)
+            reconstruction.lock.lockForWrite()
+            reconstruction.abort_reconstruction = False
+            reconstruction.lock.unlock()
         if result is None:
             return
         self.data.update(result)

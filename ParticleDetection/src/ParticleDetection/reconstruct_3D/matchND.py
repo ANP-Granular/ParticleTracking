@@ -9,7 +9,6 @@ frame and the respective previous frame .
 """
 import os
 import copy
-import json
 import pathlib
 import warnings
 import itertools

@@ -33,6 +33,8 @@ from ParticleDetection.reconstruct_3D.match2D import match_frame
 from ParticleDetection. reconstruct_3D import matchND
 
 _logger = logging.getLogger(__name__)
+abort_reconstruction: bool = False
+lock = QtCore.QReadWriteLock(QtCore.QReadWriteLock.NonRecursive)
 
 
 class PlotterSignals(QtCore.QObject):
@@ -576,6 +578,7 @@ class Reconstructor(QtCore.QRunnable):
             - :attr:`TrackerSignals.progress`
             - :attr:`TrackerSignals.result`
         """
+        global abort_reconstruction, lock
         try:
             # Derive projection matrices from the calibration
             r1 = np.eye(3)
@@ -594,6 +597,14 @@ class Reconstructor(QtCore.QRunnable):
             df_out = pd.DataFrame()
             num_frames = len(self.frames)
             for i in range(num_frames):
+                lock.lockForRead()
+                if abort_reconstruction:
+                    lock.unlock()
+                    df_out.reset_index(drop=True, inplace=True)
+                    self.signals.result.emit(df_out)
+                    return
+                lock.unlock()
+
                 tmp = match_frame(self.data, self.cams[0], self.cams[1],
                                   self.frames[i],
                                   self.color, self.calibration, P1, P2, rot,
@@ -609,6 +620,7 @@ class Reconstructor(QtCore.QRunnable):
 
 class Tracker(Reconstructor):
     def run(self):
+        global abort_reconstruction, lock
         try:
             # Derive projection matrices from the calibration
             r1 = np.eye(3)
@@ -639,6 +651,13 @@ class Tracker(Reconstructor):
                 self.signals.progress.emit(1 / num_frames)
 
             for i in range(len(self.frames)):
+                lock.lockForRead()
+                if abort_reconstruction:
+                    df_out.reset_index(drop=True, inplace=True)
+                    self.signals.result.emit(df_out)
+                    lock.unlock()
+                    return
+                lock.unlock()
 
                 tmp, _, _ = matchND.match_frame(
                     self.data, self.cams[0], self.cams[1],
