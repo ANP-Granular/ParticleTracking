@@ -14,6 +14,7 @@ import cv2
 import torch
 import numpy as np
 import pandas as pd
+from scipy.spatial.transform import Rotation as R
 
 
 def extract_stereo_params(calibration_params: dict) -> dict:
@@ -214,6 +215,66 @@ def load_calib_from_json(file_name: str) -> \
     elif "transformations" in all_calibs.keys():
         return all_calibs["transformations"]
     return
+
+
+def load_world_transformation(file_name: str) -> dict:
+    """Loads a transformation to world/experiment coordinates from
+    ``*.json`` files.
+
+    It attempts to load a transformation from camera 1 coordinates to
+    world/experiment coordinates. There are two structures this function can
+    load and distinguish between.
+
+    - a legacy version leading to a structure::
+
+        loaded["transformations"]["M_rotate_x"]
+                                 ["M_rotate_y"]
+                                 ["M_rotate_z"]
+                                 ["M_trans2"]
+                                 ["M_trans]
+
+    - a new version that only has one rotation matrix and one translation
+      vector::
+
+        loaded["rotation"]
+              ["translation"]
+
+    The first structure is then transformed into the second one.
+
+    Parameters
+    ----------
+    file_name : str
+        Path to the ``*.json`` file containing the transformation data.
+
+    Returns
+    -------
+    dict
+        Loaded transformation data in the format::
+
+            loaded["rotation"] = ndarray((3, 3))
+                  ["translation"] = ndarray((3,))
+    """
+    with open(file_name, "r") as f:
+        f_trafo = json.load(f)
+    if "transformations" in f_trafo.keys():
+        transform = f_trafo["transformations"]
+        rotx = R.from_matrix(
+            np.asarray(transform["M_rotate_x"])[0:3, 0:3])
+        roty = R.from_matrix(
+            np.asarray(transform["M_rotate_y"])[0:3, 0:3])
+        rotz = R.from_matrix(
+            np.asarray(transform["M_rotate_z"])[0:3, 0:3])
+        tw1 = np.asarray(transform["M_trans"])[0:3, 3]
+        tw2 = np.asarray(transform["M_trans2"])[0:3, 3]
+        rotation = rotz * roty * rotx
+        translation = rotation.apply(tw1) + tw2
+        return {"rotation": rotation.as_matrix(), "translation": translation}
+    elif set(f_trafo.keys()) == {"rotation", "translation"}:
+        return {"rotation": np.array(f_trafo["rotation"]),
+                "translation": np.array(f_trafo["translation"])}
+    else:
+        raise ValueError(f"Incompatible structure of the given file: "
+                         f"{file_name}")
 
 
 def load_camera_calibration(file_name: str) -> dict:

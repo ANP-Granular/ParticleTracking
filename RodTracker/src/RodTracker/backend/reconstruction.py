@@ -588,15 +588,8 @@ class Reconstructor(QtCore.QRunnable):
             P2 = np.vstack((r2.T, t2.T)) @ self.calibration["CM2"].T
             P2 = P2.T
 
-            rotx = R.from_matrix(
-                np.asarray(self.transform["M_rotate_x"])[0:3, 0:3])
-            roty = R.from_matrix(
-                np.asarray(self.transform["M_rotate_y"])[0:3, 0:3])
-            rotz = R.from_matrix(
-                np.asarray(self.transform["M_rotate_z"])[0:3, 0:3])
-            tw1 = np.asarray(self.transform["M_trans"])[0:3, 3]
-            tw2 = np.asarray(self.transform["M_trans2"])[0:3, 3]
-            rot = rotz * roty * rotx
+            rot = R.from_matrix(self.transform["rotation"])
+            trans = self.transform["translation"]
 
             df_out = pd.DataFrame()
             num_frames = len(self.frames)
@@ -604,7 +597,7 @@ class Reconstructor(QtCore.QRunnable):
                 tmp = match_frame(self.data, self.cams[0], self.cams[1],
                                   self.frames[i],
                                   self.color, self.calibration, P1, P2, rot,
-                                  tw1, tw2, r1, r2, t1, t2, renumber=False)[0]
+                                  trans, r1, r2, t1, t2, renumber=False)[0]
                 df_out = pd.concat([df_out, tmp])
                 self.signals.progress.emit(1 / num_frames)
             df_out.reset_index(drop=True, inplace=True)
@@ -628,15 +621,8 @@ class Tracker(Reconstructor):
             P2 = np.vstack((r2.T, t2.T)) @ self.calibration["CM2"].T
             P2 = P2.T
 
-            rotx = R.from_matrix(
-                np.asarray(self.transform["M_rotate_x"])[0:3, 0:3])
-            roty = R.from_matrix(
-                np.asarray(self.transform["M_rotate_y"])[0:3, 0:3])
-            rotz = R.from_matrix(
-                np.asarray(self.transform["M_rotate_z"])[0:3, 0:3])
-            tw1 = np.asarray(self.transform["M_trans"])[0:3, 3]
-            tw2 = np.asarray(self.transform["M_trans2"])[0:3, 3]
-            rot = rotz * roty * rotx
+            rot = R.from_matrix(self.transform["rotation"])
+            trans = self.transform["translation"]
 
             num_frames = len(self.frames)
             df_out = pd.DataFrame()
@@ -647,7 +633,7 @@ class Tracker(Reconstructor):
                 tmp = match_frame(self.data, self.cams[0],
                                   self.cams[1], self.frames[0],
                                   self.color, self.calibration, P1, P2, rot,
-                                  tw1, tw2, r1, r2, t1, t2, renumber=True)[0]
+                                  trans, r1, r2, t1, t2, renumber=True)[0]
                 df_out = pd.concat([df_out, tmp])
                 self.frames = self.frames[1:]
                 self.signals.progress.emit(1 / num_frames)
@@ -657,7 +643,7 @@ class Tracker(Reconstructor):
                 tmp, _, _ = matchND.match_frame(
                     self.data, self.cams[0], self.cams[1],
                     self.frames[i], self.color, self.calibration, P1, P2, rot,
-                    tw1, tw2, r1, r2, t1, t2
+                    trans, r1, r2, t1, t2
                 )
                 df_out = pd.concat([df_out, tmp])
                 self.signals.progress.emit(1 / num_frames)

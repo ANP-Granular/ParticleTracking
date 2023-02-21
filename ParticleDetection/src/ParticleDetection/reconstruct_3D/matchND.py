@@ -269,9 +269,11 @@ def create_weights_2(p_3D: np.ndarray, p_3D_prev: np.ndarray,
 def create_weights_1_m(p_3D: np.ndarray, p_3D_prev: np.ndarray,
                        repr_errs: np.ndarray) -> np.ndarray:
     """Generate weights with 3D-displacement*reprojection-error.
+
     Creates a weight matrix for matching rods between frames, using the rod
     endpoint displacement between frames times the reprojection-error of the
     rod endpoints as the cost of an assignment.
+
     Parameters
     ----------
     p_3D : np.ndarray
@@ -286,6 +288,7 @@ def create_weights_1_m(p_3D: np.ndarray, p_3D_prev: np.ndarray,
         Shape must be in (rod_ids(cam1), rod_ids(cam2), 4, 2)
         Dimension explanations:
         (rod_id(cam1), rod_id(cam2), end-combo, err{cam1, cam2})
+
     Returns
     -------
     weights: np.ndarray
@@ -411,11 +414,7 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
         os.mkdir(output_folder)
 
     calibration = dl.load_camera_calibration(str(calibration_file))
-
-    # transforms = dl.load_calib_from_json(str(transformation_file))
-
-    with open(str(transformation_file), 'r') as fp:
-        transforms = json.load(fp)
+    transforms = dl.load_world_transformation(str(transformation_file))
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
@@ -429,15 +428,8 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
     P2 = P2.T
 
     # Preparation of world transformations
-    # rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
-    # roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
-    # rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
-    # rot_comb = rotz*roty*rotx
-    # tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
-    # tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
-
-    rot_comb = R.from_matrix(np.asarray(transforms["rot_comb"])[0:3, 0:3])
-    trans_vec = np.asarray(transforms["trans_vec"])
+    rot = R.from_matrix(transforms["rotation"])
+    trans = transforms["translation"]
 
     all_repr_errs = []
     all_rod_lengths = []
@@ -517,8 +509,7 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
             repr_errs = np.sum(np.linalg.norm(p_repr, axis=2), axis=1)
 
             # Transformation to world coordinates
-            # p_triang = rot_comb.apply((p_triang + tw1)) + tw2
-            p_triang = rot_comb.apply(p_triang) + trans_vec
+            p_triang = rot.apply(p_triang) + trans
 
             # Consolidate data
             # Caution: the data order is different form the MATLAB script
@@ -678,7 +669,7 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
 def match_frame(data: pd.DataFrame, cam1_name: str,
                 cam2_name: str, frame: int, color: str,
                 calibration: dict, P1: np.ndarray, P2: np.ndarray,
-                rot: R, tw1: np.ndarray, tw2: np.ndarray, r1: np.ndarray,
+                rot: R, trans: np.ndarray, r1: np.ndarray,
                 r2: np.ndarray, t1: np.ndarray, t2: np.ndarray):
     idx = frame
     # Load data
@@ -750,8 +741,7 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
     repr_errs = np.sum(np.linalg.norm(p_repr, axis=2), axis=1)
 
     # Transformation to world coordinates
-    p_triang = rot.apply((p_triang + tw1)) + tw2
-    # p_triang = rot.apply(p_triang) + trans_vec
+    p_triang = rot.apply(p_triang) + trans
 
     # Consolidate data
     # Caution: the data order is different form the MATLAB script

@@ -260,7 +260,7 @@ class ReconstructorUI(QtWidgets.QWidget):
         path : str
             Path to the transformation data that shall be loaded here.
         """
-        self._transformation = dl.load_calib_from_json(path)
+        self._transformation = dl.load_world_transformation(path)
         if self._calibration and self._transformation:
             self.ui.findChild(
                 QtWidgets.QPushButton, "pb_solve").setEnabled(True)

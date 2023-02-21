@@ -483,7 +483,7 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
         os.mkdir(output_folder)
 
     calibration = dl.load_camera_calibration(str(calibration_file))
-    transforms = dl.load_calib_from_json(str(transformation_file))
+    transforms = dl.load_world_transformation(str(transformation_file))
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
@@ -497,12 +497,8 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
     P2 = P2.T
 
     # Preparation of world transformations
-    rotx = R.from_matrix(np.asarray(transforms["M_rotate_x"])[0:3, 0:3])
-    roty = R.from_matrix(np.asarray(transforms["M_rotate_y"])[0:3, 0:3])
-    rotz = R.from_matrix(np.asarray(transforms["M_rotate_z"])[0:3, 0:3])
-    rot_comb = rotz * roty * rotx
-    tw1 = np.asarray(transforms["M_trans"])[0:3, 3]
-    tw2 = np.asarray(transforms["M_trans2"])[0:3, 3]
+    rot = R.from_matrix(transforms["rotation"])
+    trans = transforms["translation"]
 
     all_repr_errs = []
     all_rod_lengths = []
@@ -512,7 +508,7 @@ def match_csv_complex(input_folder, output_folder, colors, cam1_name="gp1",
         df_out = pd.DataFrame()
         for idx in frame_numbers:
             ret = match_frame(data, cam1_name, cam2_name, idx, color,
-                              calibration, P1, P2, rot_comb, tw1, tw2, r1,
+                              calibration, P1, P2, rot, trans, r1,
                               r2, t1, t2, rematching)
             tmp_df, costs, lens = ret
             all_repr_errs.append(costs)
@@ -590,13 +586,14 @@ def match_complex(data: pd.DataFrame, frame_numbers: Iterable[int], color: str,
     tw1 = np.asarray(transform["M_trans"])[0:3, 3]
     tw2 = np.asarray(transform["M_trans2"])[0:3, 3]
     rot = rotz * roty * rotx
+    trans = rot.apply(tw1) + tw2
 
     all_repr_errs = []
     all_rod_lengths = []
     df_out = pd.DataFrame()
     for idx in frame_numbers:
         ret = match_frame(data, cam1_name, cam2_name, idx, color,
-                          calibration, P1, P2, rot, tw1, tw2, r1,
+                          calibration, P1, P2, rot, trans, r1,
                           r2, t1, t2, renumber)
         tmp_df, costs, lens = ret
         all_repr_errs.append(costs)
@@ -609,7 +606,7 @@ def match_complex(data: pd.DataFrame, frame_numbers: Iterable[int], color: str,
 def match_frame(data: pd.DataFrame, cam1_name: str,
                 cam2_name: str, frame: int, color: str,
                 calibration: dict, P1: np.ndarray, P2: np.ndarray,
-                rot: R, tw1: np.ndarray, tw2: np.ndarray, r1: np.ndarray,
+                rot: R, trans: np.ndarray, r1: np.ndarray,
                 r2: np.ndarray, t1: np.ndarray, t2: np.ndarray,
                 renumber: bool = True):
     """Matches and triangulates rods from a ``DataFrame``.
@@ -638,11 +635,8 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
         Projection matrix for camera 2.
     rot : Rotation
         Rotation from camera 1 coordinates to *world*/*experiment* coordinates.
-    tw1 : ndarray
-        First translation vector as part of the transformation to
-        *world*/*experiment* coordinates.
-    tw2 : ndarray
-        Second translation vector as part of the transformation to
+    trans : ndarray
+        Translation vector as part of the transformation to
         *world*/*experiment* coordinates.
     r1 : ndarray
         Rotation matrix of camera 1.
@@ -758,7 +752,7 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
     repr_errs = np.mean(np.linalg.norm(p_repr, axis=2), axis=1)
 
     # Transformation to world coordinates
-    p_triang = rot.apply((p_triang + tw1)) + tw2
+    p_triang = rot.apply(p_triang) + trans
 
     # Consolidate data
     # Caution: the data order is different form the MATLAB script
