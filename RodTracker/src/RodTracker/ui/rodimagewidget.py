@@ -1068,6 +1068,10 @@ class RodImageWidget(QLabel):
             elif event.key() == QtCore.Qt.Key_S:
                 # Shorten rod
                 amount = -self._rod_incr
+            elif event.key() == QtCore.Qt.Key.Key_Delete:
+                # Delete the currently selected rod
+                self.delete_rod(source)
+                return True
             else:
                 # RodNumberWidget is in the process of rod number changing,
                 #  let the widget handle that itself
