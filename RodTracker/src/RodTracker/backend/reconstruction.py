@@ -750,19 +750,20 @@ class Tracker(Reconstructor):
                     lock.unlock()
                     return
                 lock.unlock()
-
-                tmp, _, _ = matchND.match_frame(
+                # Track particles
+                tmp = matchND.match_frame(
                     self.data, self.cams[0], self.cams[1],
                     self.frames[i], self.color, self.calibration, P1, P2, rot,
-                    trans, r1, r2, t1, t2
-                )
+                    trans, r1, r2, t1, t2)[0]
+                # Rematch rod endpoints for better position results
+                tmp = match_frame(tmp, self.cams[0], self.cams[1],
+                                  self.frames[i], self.color, self.calibration,
+                                  P1, P2, rot, trans, r1, r2, t1, t2,
+                                  renumber=False)[0]
                 df_out = pd.concat([df_out, tmp])
                 self.signals.progress.emit(1 / num_frames)
             df_out.reset_index(drop=True, inplace=True)
             self.signals.result.emit(df_out)
-
-            # TODO: evaluate whether rematching is required for better data
-            # quality
         except:                                                 # noqa: E722
             exctype, value, tb = sys.exc_info()
             self.signals.error.emit((exctype, value, tb))
