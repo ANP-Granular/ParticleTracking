@@ -147,11 +147,11 @@ def show_about(parent: QtWidgets.QWidget):
      align="left" style="margin-top:0px;">
         <tr>
             <td width="200", colspan="2"> <h3>Version:</h3> </td>
-            <td width="200"> <p> 0.0.1 - beta </p> </td>
+            <td width="200"> <p> 0.6.0 </p> </td>
         </tr>
         <tr>
             <td width="200", colspan="2"> <h3>Date:</h3> </td>
-            <td width="200"> <p> 20.08.2022 </p> </td>
+            <td width="200"> <p> 22.02.2023 </p> </td>
         </tr>
         <tr>
             <td width="200", colspan="2"> <h3><br>Developers:<br></h3> </td>
@@ -180,10 +180,85 @@ def show_about(parent: QtWidgets.QWidget):
         </tr>
         <tr>
             <td width="50">
+                <p><a href="https://docutils.sourceforge.io/">
+                docutils</a>:</p>
+            </td>
+            <td width="150">0.16</td>
+            <td width="200"><p>BSD 2, GPL, PSF</p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://github.com/pycqa/flake8">flake8</a>:</p>
+            </td>
+            <td width="150">5.0.4</td>
+            <td width="200"><p>MIT</p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://github.com/python/importlib_resources">
+                importlib-resources</a>:</p>
+            </td>
+            <td width="150">1.4.0</td>
+            <td width="200"><p>Apache-2.0</p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://material.io/">Material Design</a>:</p>
+            </td>
+            <td width="150">2</td>
+            <td width="200"><p> Apache-2.0 </p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://matplotlib.org/">matplotlib</a>:</p>
+            </td>
+            <td width="150">3.6.2</td>
+            <td width="200"><p>matplotlib</p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://myst-parser.readthedocs.io/">
+                MyST-Parser</a>:</p>
+            </td>
+            <td width="150">0.18.1</td>
+            <td width="200"><p>MIT</p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://numpy.org/">NumPy</a>:</p>
+            </td>
+            <td width="150">1.21.0</td>
+            <td width="200"><p>BSD 3</p></td>
+        </tr>
+        <tr>
+            <td width="50">
                 <p><a href="https://pandas.pydata.org/">Pandas</a>:</p>
             </td>
             <td width="150">1.2.5</td>
-            <td width="200"><p> BSD3 </p></td>
+            <td width="200"><p> BSD 3 </p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://github.com/ANP-Granular/Track_Gui">
+                particledetection</a>:</p>
+            </td>
+            <td width="150">0.3.1</td>
+            <td width="200"><p> GPLv3 </p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://www.pyinstaller.org/">PyInstaller</a>:</p>
+            </td>
+            <td width="150">5.7</td>
+            <td width="200"><p> GPLv2+ </p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a  href="https://www.riverbankcomputing.com/software
+                /pyqt">PyQt3D</a>:</p>
+            </td>
+            <td width="150">5.15.5</td>
+            <td width="200"><p> GPLv3+ </p></td>
         </tr>
         <tr>
             <td width="50">
@@ -195,6 +270,29 @@ def show_about(parent: QtWidgets.QWidget):
         </tr>
         <tr>
             <td width="50">
+                <p><a href="https://docs.pytest.org/">pytest</a>:</p>
+            </td>
+            <td width="150">7.1.2</td>
+            <td width="200"><p>MIT</p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://github.com/pytest-dev/pytest-cov">
+                pytest-cov</a>:</p>
+            </td>
+            <td width="150">3.0.0</td>
+            <td width="200"><p>MIT</p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://github.com/pytest-dev/pytest-qt">
+                pytest-qt</a>:</p>
+            </td>
+            <td width="150">4.0.0</td>
+            <td width="200"><p>MIT</p></td>
+        </tr>
+        <tr>
+            <td width="50">
                 <p><a href="https://www.qt.io">Qt5</a>:</p>
             </td>
             <td width="150">5.15.2</td>
@@ -202,23 +300,24 @@ def show_about(parent: QtWidgets.QWidget):
         </tr>
         <tr>
             <td width="50">
-                <p><a href="https://material.io/">Material Design</a>:</p>
+                <p><a href="https://www.sphinx-doc.org/">Sphinx</a>:</p>
             </td>
-            <td width="150">2</td>
-            <td width="200"><p> Apache-2.0 </p></td>
+            <td width="150">5.3</td>
+            <td width="200"><p>BSD</p></td>
         </tr>
         <tr>
             <td width="50">
-                <p><a href="https://www.pyinstaller.org/">PyInstaller</a>:</p>
+                <p><a href="https://sphinx-rtd-theme.readthedocs.io/">
+                sphinx_rtd_theme</a>:</p>
             </td>
-            <td width="150">5.3</td>
-            <td width="200"><p> GPLv2+ </p></td>
+            <td width="150">0.5.1</td>
+            <td width="200"><p>MIT</p></td>
         </tr>
     </table>
     <br>
     <br>
     <p>
-        Copyright © 2022 Otto-von-Guericke University Magdeburg
+        Copyright © 2023 Otto-von-Guericke University Magdeburg
     </p>"""
     QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
 
