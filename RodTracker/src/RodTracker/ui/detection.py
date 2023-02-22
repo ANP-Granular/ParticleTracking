@@ -175,6 +175,8 @@ class DetectorUI(QtWidgets.QWidget):
 
         self.table_colors = ui.findChild(QtWidgets.QTableWidget,
                                          "table_detect_colors")
+        self.table_colors.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         tab_header = self.table_colors.horizontalHeader()
         tab_header.setSectionResizeMode(0,
                                         QtWidgets.QHeaderView.ResizeToContents)
