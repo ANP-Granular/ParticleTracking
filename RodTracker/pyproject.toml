@@ -54,7 +54,8 @@ myst_parser = {version = "^0.18.1", optional = true}
 
 [tool.poetry.extras]
 dev = ["qt5-applications", "PyQt5-stubs", "flake8"]
-build = ["pyinstaller"]
+build = ["pyinstaller", "Sphinx", "docutils", "sphinx_rtd_theme",
+         "myst_parser"]
 test = ["pytest", "pytest-qt", "pytest-cov"]
 docs = ["Sphinx", "docutils", "sphinx_rtd_theme", "myst_parser"]
 

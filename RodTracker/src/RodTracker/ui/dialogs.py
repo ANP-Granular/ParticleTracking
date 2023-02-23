@@ -16,7 +16,6 @@
 
 """**TBD**"""
 
-from pathlib import Path
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 import RodTracker.backend.file_locations as fl
@@ -320,25 +319,6 @@ def show_about(parent: QtWidgets.QWidget):
         Copyright © 2023 Otto-von-Guericke University Magdeburg
     </p>"""
     QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
-
-
-def show_readme(parent: QtWidgets.QWidget):
-    docs_dialog = QtWidgets.QDialog(parent)
-    docs_dialog.resize(600, 600)
-    docs_dialog.setWindowTitle("README")
-
-    docs_dialog.docs = QtWidgets.QTextEdit(parent=docs_dialog)
-    docs_dialog.docs.setReadOnly(True)
-    docs_dialog.docs.setStyleSheet("background-color: transparent;")
-    docs_dialog.docs.setFrameShape(QtWidgets.QFrame.NoFrame)
-
-    docs_dialog.layout = QtWidgets.QVBoxLayout()
-    docs_dialog.layout.addWidget(docs_dialog.docs)
-    docs_dialog.setLayout(docs_dialog.layout)
-
-    readme_md = Path(fl.readme_path()).read_text()
-    docs_dialog.docs.setMarkdown(readme_md)
-    docs_dialog.show()
 
 
 class ConflictDialog(QtWidgets.QMessageBox):

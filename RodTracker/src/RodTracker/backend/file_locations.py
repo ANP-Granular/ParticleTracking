@@ -16,6 +16,8 @@
 
 """**TBD**"""
 
+import os
+import subprocess
 import sys
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
@@ -28,11 +30,10 @@ else:
     # importlib.resources has files(), so use that:
     import importlib.resources as importlib_resources
 
-_readme_path = "/README.md"
-try:
-    _base_path = sys._MEIPASS
-except AttributeError:
-    _base_path = "./RodTracker"
+# use the online documentation unless the RodTracker is bundled
+_docs_url = "https://particletracking.readthedocs.io/"
+if hasattr(sys, "_MEIPASS"):
+    _docs_url = "./docs/index.html"
 
 
 def icon_path() -> str:
@@ -47,19 +48,6 @@ def icon_path() -> str:
                                         "icon_main.ico"))
 
 
-def readme_path() -> str:
-    """Get a string representation of the path to the application README.
-
-    Returns
-    -------
-    str
-        String representation of the path to the application README.
-    """
-    if hasattr(sys, "_MEIPASS"):
-        return _base_path + _readme_path
-    return _base_path + "/.." + _readme_path
-
-
 def undo_icon_path() -> str:
     """Get a string representation of the path to the application undo icon.
 
@@ -70,3 +58,11 @@ def undo_icon_path() -> str:
     """
     return str(importlib_resources.path("RodTracker.resources",
                                         "left-arrow-96.png"))
+
+
+def open_docs() -> None:
+    """Open the documenation for the RodTracker."""
+    if sys.platform == 'win32':
+        os.startfile(_docs_url)
+    else:
+        subprocess.Popen(['xdg-open', _docs_url])

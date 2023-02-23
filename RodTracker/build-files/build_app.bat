@@ -1,5 +1,14 @@
 @echo off
-cd %~p0
+SET basedir=%~dp0
+
+@REM (Re-)Generate documentation before application bundling
+cd %basedir%
+cd ..\..\docs
+make clean
+make html
+
+@REM Bundle the application
+cd %basedir%
 cd ..
 if [%1]==[] goto onedir
 if %1==-onefile goto onefile 

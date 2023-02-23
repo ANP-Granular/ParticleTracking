@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 # @echo off
 
-BASEDIR=$(dirname "$0")
+BASEDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# (Re-)Generate documentation before application bundling
+cd $BASEDIR
+cd ../../docs
+make clean
+make html
+
+# Bundle the application
 cd $BASEDIR
 cd ..
-
 if [ $# -eq 0 ]; then
     # build as one directory
     pyinstaller ./build-files/build_onedir.spec

@@ -850,8 +850,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>616</width>
-                     <height>459</height>
+                     <width>100</width>
+                     <height>30</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -1094,7 +1094,7 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>476</width>
+                        <width>255</width>
                         <height>508</height>
                        </rect>
                       </property>
@@ -2141,10 +2141,10 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="action_logs"/>
     <addaction name="action_docs"/>
     <addaction name="action_about"/>
     <addaction name="action_about_qt"/>
-    <addaction name="action_logs"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -2249,7 +2249,7 @@
   </action>
   <action name="action_docs">
    <property name="text">
-    <string>Read Me</string>
+    <string>Documentation</string>
    </property>
   </action>
   <action name="action_about">
