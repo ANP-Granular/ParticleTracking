@@ -4,8 +4,8 @@ SET basedir=%~dp0
 @REM (Re-)Generate documentation before application bundling
 cd %basedir%
 cd ..\..\docs
-make clean
-make html
+call make clean
+call make html
 
 @REM Bundle the application
 cd %basedir%
