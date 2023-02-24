@@ -2,7 +2,7 @@
 
 
 block_cipher = None
-
+import pulp
 
 a = Analysis(['../src/RodTracker/RodTracker.py'],
              pathex=['.'],
@@ -13,7 +13,8 @@ a = Analysis(['../src/RodTracker/RodTracker.py'],
              ('../../docs/build/html/', './docs/'),
              ('../../docs/build/html/_modules', './docs/_modules'),
              ('../../docs/build/html/_sources', './docs/_sources'),
-             ('../../docs/build/html/_static', './docs/_static')],
+             ('../../docs/build/html/_static', './docs/_static'),
+             (pulp.__path__[0], './pulp')],
              hiddenimports=['PyQt5'],
              hookspath=[],
              hooksconfig={},

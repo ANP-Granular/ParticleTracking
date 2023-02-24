@@ -18,6 +18,7 @@
 
 import os
 import subprocess
+from pathlib import Path
 import sys
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
@@ -33,7 +34,7 @@ else:
 # use the online documentation unless the RodTracker is bundled
 _docs_url = "https://particletracking.readthedocs.io/"
 if hasattr(sys, "_MEIPASS"):
-    _docs_url = "./docs/index.html"
+    _docs_url = Path("./docs/index.html")
 
 
 def icon_path() -> str:
