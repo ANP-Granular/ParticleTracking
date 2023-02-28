@@ -351,12 +351,21 @@ class RodData(QtCore.QObject):
             msg.setText("There seems to be corrected data "
                         "already. Do you want to use that "
                         "instead of the selected data?")
-            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No |
+                                   QMessageBox.Abort)
             user_decision = msg.exec()
             if user_decision == QMessageBox.Yes:
+                # Load the previously corrected data and save any new changes
+                # to that same directory
                 self.folder = out_folder
                 self._allow_overwrite = True
+            elif user_decision == QMessageBox.No:
+                # Load the 'non-corrected' data and save changes to the
+                # 'name_corrected' directory potentially overwriting previously
+                # corrected data there
+                pass
             else:
+                # Abort loading and restart the folder selection process
                 return False
 
         # Load data
