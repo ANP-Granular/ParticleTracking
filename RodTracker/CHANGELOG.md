@@ -1,6 +1,28 @@
 ## [Unreleased]
 
-- TBD
+### Added
+- old rod positions are displayed during editing as a visual cue
+- mode for automatic selection of the rod closest to the cursor
+- documentation with Sphinx
+- detection of rods from images
+- recalculation of 3D rod positions after updates in 2D
+- tracking of rods and following recalculation of 3D positions
+- shortcut to fit the displayed image to its available space
+- evaluation plots for 3D position reconstruction
+- added a 'busy' indicator for tabs running long background tasks
+- shortcut to delete a rod when having it selected
+- display of the documentation from the Help dropdown menu
+
+### Changed
+- rods are now displayed partially transparent while being selected
+
+### Fixed
+- test suite problems have been fixed
+
+### Removed
+- function to display the README in the application
+
+---
 
 ## [v0.5.8]
 ### Changed
@@ -8,6 +30,7 @@
 ### Fixed
 - bundling of the `RodTracker` to a standalone program
 
+---
 
 ## [v0.5.7]
 ### Added
@@ -19,12 +42,14 @@
 ### Removed
 - splash screen during unpacking stage of standalone programs bundled as one file
 
+---
 
 ## v0.5.6
 **skipped**
 ## v0.5.5
 **skipped**
 
+---
 
 ## [v0.5.4]
 ### Changed
@@ -32,10 +57,14 @@
 ### Fixed
 - visual indicators of the experiment box are no longer extending further than the experiment's dimensions
 
+---
+
 ## [v0.5.3]
 ### Changed
 - The rod data displayed as a tree is now updated in place instead of being regenerated.
 This especially improves performance and responsiveness of the `RodTracker` when working with large datasets.
+
+---
 
 ## [v0.5.2]
 ### Changed
@@ -44,11 +73,15 @@ This especially improves performance and responsiveness of the `RodTracker` when
 - rod data display as a tree is done by a custom `QTreeWidget`
 - zooming and panning in the 3D environment has improved speeds for the interaction
 
+---
+
 ## [v0.5.1]
 ### Added
 - Three different display modes for rods in 3D
 ### Fixed
 - redundant settings updates are removed
+
+---
 
 ## [v0.5.0]
 ### Added
@@ -66,6 +99,7 @@ This especially improves performance and responsiveness of the `RodTracker` when
 - application crashes due to mishandled threads
 - cross platform path incompatibilities
 
+---
 
 ## v0.4
 **skipped**
@@ -74,10 +108,13 @@ This especially improves performance and responsiveness of the `RodTracker` when
 ## v0.2
 **skipped**
 
+---
 
 ## [v0.1.1]
 ### Fixed
 - crashes of the `RodTracker` when new rods are introduced during use (see #60)
+
+---
 
 ## [v0.1.0]
 ### Added

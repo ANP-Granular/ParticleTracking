@@ -607,7 +607,8 @@ class ReconstructorUI(QtWidgets.QWidget):
         if self.data is None or len(self.data) == 0:
             return
         data_plt = self.data.loc[(self.data["frame"] >= self.start_frame) &
-                                 (self.data["frame"] <= self.end_frame)]
+                                 (self.data["frame"] <= self.end_frame) &
+                                 (self.data["color"].isin(self.used_colors))]
         self.is_busy.emit(True)
         plotter = Plotter(
             data_plt.copy(), colors=self.used_colors,

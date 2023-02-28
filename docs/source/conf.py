@@ -10,10 +10,10 @@ sys.path.append(os.path.abspath("../../src"))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'RodTracker'
+project = 'ParticleTracking'
 copyright = '2023, Adrian Niemann, Dmitry Puzyrev'
 author = 'Adrian Niemann, Dmitry Puzyrev'
-release = '0.1'
+release = '0.6.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -47,6 +47,7 @@ myst_enable_extensions = [
     "substitution",
     "tasklist",
 ]
+myst_heading_anchors = 3
 
 # Napoleon settings
 napoleon_google_docstring = False
@@ -75,3 +76,5 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
+html_logo = "RodTrackerLogo.png"
+html_favicon = "../../RodTracker/src/RodTracker/resources/icon_main.ico"
