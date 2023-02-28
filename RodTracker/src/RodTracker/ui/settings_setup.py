@@ -52,9 +52,8 @@ def init_settings(ui: mw_l.Ui_MainWindow, settings: Settings):
     ui.number_size.valueChanged.connect(
         lambda val: settings.update_field("visual", "number_size", val)
     )
-    ui.number_rods.valueChanged.connect(
-        lambda val: settings.update_field("experiment", "number_rods", val)
-    )
+    ui.lbl_number_rods.setEnabled(False)
+    ui.number_rods.setEnabled(False)
     ui.box_width.valueChanged.connect(
         lambda val: settings.update_field("experiment", "box_width", val)
     )
@@ -176,7 +175,6 @@ def set_all_values(se: dict, ui: mw_l.Ui_MainWindow):
     ui.offset.setValue(se["visual"]["number_offset"])
     ui.thickness.setValue(se["visual"]["rod_thickness"])
     ui.number_size.setValue(se["visual"]["number_size"])
-    ui.number_rods.setValue(se["experiment"]["number_rods"])
     ui.box_width.setValue(se["experiment"]["box_width"])
     ui.box_height.setValue(se["experiment"]["box_height"])
     ui.box_depth.setValue(se["experiment"]["box_depth"])
