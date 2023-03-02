@@ -310,8 +310,14 @@ class ReconstructorUI(QtWidgets.QWidget):
             _logger.info("Insufficient data for plotting given. Skipping...")
             return
         if self.first_update:
-            self.update_plots()
-            self.pb_plots.setEnabled(False)
+            # The automatic updating of plots has been disabled due to a memory
+            # issue with not garbage collected plot residues. See the
+            # "Known issues" section in the docs to learn more about the
+            # problem.
+            # self.update_plots()
+            # self.pb_plots.setEnabled(False)
+            self.pb_plots.setEnabled(True)
+
             self.first_update = False
         else:
             self.pb_plots.setEnabled(True)
@@ -603,7 +609,7 @@ class ReconstructorUI(QtWidgets.QWidget):
         """
         while self.stacked_plots.count():
             self.stacked_plots.removeWidget(self.stacked_plots.currentWidget())
-        plt.close()
+        plt.close('all')
         if self.data is None or len(self.data) == 0:
             return
         data_plt = self.data.loc[(self.data["frame"] >= self.start_frame) &

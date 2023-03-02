@@ -316,3 +316,6 @@ The display of 3D rods can also be switched off using the `Show 3D` checkbox in 
 - `PulpSolverError` when attempting to run a 3D reconstruction in the same session as the detection
 - typing during interacting with a dialog can/will freeze the GUI
   - might be due to the `EventFilter`(s) that handles some keyboard shortcuts
+- memory leak from plotting
+  - see this [issue of matplotlib](https://github.com/matplotlib/matplotlib/issues/5022)
+  - this problem is partially mitigated by deactivating automatic plot updating after new data has been loaded
