@@ -39,6 +39,7 @@ import RodTracker.backend.logger as lg
 import RodTracker.backend.file_locations as fl
 import RodTracker.backend.parallelism as pl
 import RodTracker.ui.dialogs as dialogs
+import RodTracker
 
 RE_COLOR_DATA: re.Pattern = re.compile(r'rods_df_\w+\.csv')
 """Pattern : Pattern how the rod position data file names are expected."""
@@ -204,6 +205,7 @@ class RodData(QtCore.QObject):
         self.out_folder: Path = None
         self._allow_overwrite: bool = False
         self.threads = QtCore.QThreadPool.globalInstance()
+        self._auto_save = self.startTimer(60000)
 
         # Controls which data to provide
         self._show_2D = True
@@ -421,8 +423,8 @@ class RodData(QtCore.QObject):
         ----------
         temp_only : bool
             Flag to either save to the temporary files only or permanently
-            to the (user-)chosen location.
-            (Default is ``False``)
+            to the (user-)chosen location.\n
+            Default is ``False``.
 
 
         .. hint::
@@ -439,72 +441,79 @@ class RodData(QtCore.QObject):
         # Clean up data from unused rods before permanent saving
         if not temp_only:
             self.clean_data()
-        if self.out_folder is None:
-            try_again = True
-            while try_again:
-                chosen_folder = QtWidgets.QFileDialog.getExistingDirectory(
-                    None, 'Save as')
-                if chosen_folder == '':
-                    return
-                chosen_folder = Path(chosen_folder).resolve()
-                data_files = self.folder_has_data(chosen_folder)
-                if data_files:
-                    # Potentially data containing files were found
-                    msg = QMessageBox()
-                    msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-                    msg.setIcon(QMessageBox.Warning)
-                    msg.setWindowTitle("Rod Tracker")
-                    msg.setText("There were files found, that might get "
-                                "overwritten. Do you want to overwrite these?")
-                    msg.addButton("Overwrite", QMessageBox.ActionRole)
-                    btn_try_again = msg.addButton(
-                        "Try again", QMessageBox.ActionRole)
-                    btn_cancel = msg.addButton(
-                        "Cancel", QMessageBox.ActionRole)
-                    msg.exec()
-                    user_decision = msg.clickedButton()
-                    if user_decision == btn_try_again:
-                        # Try again
-                        continue
-                    elif user_decision == btn_cancel:
-                        # Abort saving
+            save_folder = self.out_folder
+            if self.out_folder is None:
+                try_again = True
+                while try_again:
+                    chosen_folder = QtWidgets.QFileDialog.getExistingDirectory(
+                        None, 'Save as')
+                    if chosen_folder == '':
                         return
-                self.out_folder = chosen_folder
-                self.folder = chosen_folder
-                self._allow_overwrite = True
-                try_again = False
-                lock.lockForRead()
-                colors = list(rod_data["color"].unique())
-                lock.unlock()
-                self.data_loaded[Path, Path, list].emit(
-                    chosen_folder, chosen_folder, colors)
+                    chosen_folder = Path(chosen_folder).resolve()
+                    data_files = self.folder_has_data(chosen_folder)
+                    if data_files:
+                        # Potentially data containing files were found
+                        msg = QMessageBox()
+                        msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+                        msg.setIcon(QMessageBox.Warning)
+                        msg.setWindowTitle("Rod Tracker")
+                        msg.setText("There were files found, that might get "
+                                    "overwritten. Do you want to overwrite "
+                                    "these?")
+                        msg.addButton("Overwrite", QMessageBox.ActionRole)
+                        btn_try_again = msg.addButton(
+                            "Try again", QMessageBox.ActionRole)
+                        btn_cancel = msg.addButton(
+                            "Cancel", QMessageBox.ActionRole)
+                        msg.exec()
+                        user_decision = msg.clickedButton()
+                        if user_decision == btn_try_again:
+                            # Try again
+                            continue
+                        elif user_decision == btn_cancel:
+                            # Abort saving
+                            return
+                    self.out_folder = chosen_folder
+                    self.folder = chosen_folder
+                    self._allow_overwrite = True
+                    try_again = False
+                    lock.lockForRead()
+                    colors = list(rod_data["color"].unique())
+                    lock.unlock()
+                    self.data_loaded[Path, Path, list].emit(
+                        chosen_folder, chosen_folder, colors)
+            elif self.out_folder == self.folder and not self._allow_overwrite:
+                msg = QMessageBox()
+                msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+                msg.setIcon(QMessageBox.Warning)
+                msg.setWindowTitle("Rod Tracker")
+                msg.setText("The saving path points to the original data!"
+                            "Do you want to overwrite it?")
+                msg.addButton("Overwrite", QMessageBox.ActionRole)
+                btn_cancel = msg.addButton("Cancel",
+                                           QMessageBox.ActionRole)
+                msg.exec()
+                if msg.clickedButton() == btn_cancel:
+                    return
+        else:
+            save_folder = RodTracker.TEMP_DIR / "autosaved"
 
-        elif self.out_folder == self.folder and not self._allow_overwrite:
-            msg = QMessageBox()
-            msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-            msg.setIcon(QMessageBox.Warning)
-            msg.setWindowTitle("Rod Tracker")
-            msg.setText("The saving path points to the original data!"
-                        "Do you want to overwrite it?")
-            msg.addButton("Overwrite", QMessageBox.ActionRole)
-            btn_cancel = msg.addButton("Cancel",
-                                       QMessageBox.ActionRole)
-            msg.exec()
-            if msg.clickedButton() == btn_cancel:
-                return
-        self.out_folder.mkdir(exist_ok=True)
+        save_folder.mkdir(exist_ok=True)
         lock.lockForRead()
         for color in rod_data.color.unique():
-            out_file = self.out_folder / f"rods_df_{color}.csv"
+            out_file = save_folder / f"rods_df_{color}.csv"
             df_out = rod_data.loc[rod_data.color == color].copy()
             df_out = df_out.astype({"frame": 'int', "particle": 'int'})
             df_out.to_csv(out_file, index_label="")
-            if self._logger is not None:
+            if self._logger is not None and not temp_only:
                 action = lg.FileAction(out_file, lg.FileActions.SAVE)
                 action.parent_id = self._logger_id
                 self._logger.add_action(action)
         lock.unlock()
-        self.saved.emit()
+        if not temp_only:
+            self.saved.emit()
+        else:
+            _logger.info("Autosaved.")
 
     @QtCore.pyqtSlot(int, int)
     def update_frame(self, frame: int, _: int = None):
@@ -1172,6 +1181,23 @@ class RodData(QtCore.QObject):
 
         if settings_changed:
             self.provide_data()
+
+    def timerEvent(self, event: QtCore.QEvent):
+        """Handle timer events.
+
+        Handles ``QTimerEvent``, i.e. those that indicate the request for
+        saving the currently loaded data automatically.
+
+        Parameters
+        ----------
+        event : QtCore.QEvent
+        """
+        if isinstance(event, QtCore.QTimerEvent):
+            if event.timerId() != self._auto_save:
+                return
+            self.save_changes(temp_only=True)
+        else:
+            _logger.info(type(event))
 
 
 def change_data(new_data: dict) -> None:

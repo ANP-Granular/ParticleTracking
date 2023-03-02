@@ -301,6 +301,11 @@ The display of 3D rods can also be switched off using the `Show 3D` checkbox in 
 | Toggle automatic rod selection mode | `G` |
 
 
+## Problem handling
+If a problem occurs with the RodTracker, e.g. it crashes, please first have a look at the log file. The log file is saved in your platform's directory for temporary files in the folder `./RodTracker/`. It can also be accessed from the RodTracker `Help` dropdown menu.
+
+To avoid excessive loss of data, the RodTracker automatically saves your currently loaded data to the temporary folder mentioned above. The most recent data is then available under `./RodTracker/autosaved/`.
+
 ## Known issues
 
 <mark>This section needs extension/correction!</mark>
