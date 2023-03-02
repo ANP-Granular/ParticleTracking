@@ -1,3 +1,19 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of ParticleDetection.
+#  ParticleDetection is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  ParticleDetection is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Collection of (mostly deprecated) functions to load stereo camera calibration
 data and rod position data.
@@ -142,9 +158,9 @@ def extract_cam_params(mat_params: dict) -> dict:
     Camera matrix correspondences::
 
         OpenCV:             Matlab:
-        [[fx, 0, cx],       [[fx, 0, 0],
-        [0, fy, cy],        [s, fy, 0],
-        [0, 0, 1]]          [cx, cy, 1]]
+        [[fx,  0, cx],       [[fx,  0, 0],
+         [ 0, fy, cy],        [ s, fy, 0],
+         [ 0,  0,  1]]        [cx, cy, 1]]
 
     OpenCV distortion coefficients::
 
@@ -190,12 +206,22 @@ def extract_cam_params(mat_params: dict) -> dict:
 
 def load_calib_from_json(file_name: str) -> \
         Union[Tuple[dict, dict], Tuple[None, dict], None]:
-    """**TBD**
+    """Attempts to load camera calibrations or transformations to
+    *world*/*experiment* coordinates saved in the MATLAB format.
+
+    Parameters
+    ----------
+    filename : str
 
     Returns
     -------
     None | dict | tuple
-        **TBD**
+
+    .. warning::
+        .. deprecated:: 0.3.1
+            Please convert your old configurations compatible with
+            :func:`load_world_transformation` and
+            :func:`load_camera_calibration`.
     """
     with open(file_name, "r") as f:
         all_calibs = json.load(f)
@@ -213,6 +239,9 @@ def load_calib_from_json(file_name: str) -> \
         return stereo_params, cam1, cam2
 
     elif "transformations" in all_calibs.keys():
+        warnings.warn("Don't use this function anymore to transformations "
+                      "calibrations. Use `load_world_transformation` instead.",
+                      DeprecationWarning)
         return all_calibs["transformations"]
     return
 

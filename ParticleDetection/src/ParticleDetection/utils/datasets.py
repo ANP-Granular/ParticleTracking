@@ -1,3 +1,19 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of ParticleDetection.
+#  ParticleDetection is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  ParticleDetection is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Functions and classes for dataset information and manipulation.
 
@@ -21,19 +37,21 @@ DEFAULT_CLASSES = {
     0: 'blue', 1: 'green', 2: 'orange', 3: 'purple', 4: 'red',
     5: 'yellow', 6: 'black', 7: 'lilac', 8: 'brown'
 }
-"""**TBD**"""
+"""Class-color correspondences most commonly used by the trained networks."""
+
 DEFAULT_COLUMNS = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
                    'x1_{id1:s}', 'y1_{id1:s}', 'x2_{id1:s}', 'y2_{id1:s}',
                    'x1_{id2:s}', 'y1_{id2:s}', 'x2_{id2:s}', 'y2_{id2:s}',
                    'frame', 'seen_{id1:s}', 'seen_{id2:s}', 'color']
-"""**TBD**"""
+"""Columns of rod position datasets used, e.g. in the RodTracker app."""
 
 RNG_SEED = 1
-"""**TBD**"""
+"""Seed to allow reproducibility of results, that are dependent on the
+generation of random numbers."""
 
 
 class DataSet:
-    """**TBD**"""
+    """Representation of a dataset for training a network."""
     folder: str
     annotation: str
     name: str
@@ -46,7 +64,7 @@ class DataSet:
 
 @dataclass
 class DataGroup:
-    """**TBD**"""
+    """Collection of training and test set for training a network."""
     train: DataSet
     val: DataSet
 

@@ -1,6 +1,22 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of ParticleDetection.
+#  ParticleDetection is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  ParticleDetection is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Functions to reconstruct 3D rod endpoints from images of a stereocamera system
-on a perframe basis, without knowledge about positions in other frames.
+on a per-frame basis, without knowledge about positions in other frames.
 Some functions are directly ported from a MATLAB implementation to python.
 
 **Authors**: Adrian Niemann (adrian.niemann@ovgu.de), Dmitry Puzyrev
@@ -50,6 +66,11 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
     ----
     This function currently saves the 3D points in the first camera's
     coordinate system, NOT the world/box coordinate system.
+
+
+    .. warning::
+        .. deprecated:: 0.3.1
+            Use :func:`match_csv_complex` instead.
     """
     warnings.warn("match_matlab_*() functions are deprecated."
                   " Use functions for csv instead.", DeprecationWarning)
@@ -252,6 +273,11 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
     ----
     This function currently saves the 3D points in the first camera's
     coordinate system, **NOT** the world/box coordinate system.
+
+
+    .. warning::
+        .. deprecated:: 0.3.1
+            Use :func:`match_csv_complex` instead.
     """
     warnings.warn("match_matlab_*() functions are deprecated."
                   " Use functions for csv instead.", DeprecationWarning)
@@ -656,9 +682,11 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
 
     Returns
     -------
-    DataFrame
+    Tuple[DataFrame, ndarray, ndarray]
         Returns the ``DataFrame`` with (re-)matched endpoints for ``frame`` of
-        ``color``.
+        ``color``. Additionally, returns the assignment costs, i.e. the sum of
+        end point reprojection errors per rod. Lastly, returns the lengths of
+        the reconstructed rods.
     """
     # Load data
     cols_cam1 = [f'x1_{cam1_name}', f'y1_{cam1_name}',
@@ -670,15 +698,6 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
     # remove rows with NaNs or only 0s
     _data_cam1.dropna(how="all", inplace=True)
     _data_cam2.dropna(how="all", inplace=True)
-    # TODO: evaluate, whether this can safely be deleted (in all these funcs)
-    # if not renumber:
-    #     no_drop_idx = ((_data_cam1 != 0).any(axis=1) &
-    #                    (_data_cam2 != 0).any(axis=1))
-    #     _data_cam1 = _data_cam1.loc[no_drop_idx]
-    #     _data_cam2 = _data_cam2.loc[no_drop_idx]
-    # else:
-    #     _data_cam1 = _data_cam1.loc[(_data_cam1 != 0).any(axis=1)]
-    #     _data_cam2 = _data_cam2.loc[(_data_cam2 != 0).any(axis=1)]
     _data_cam1 = _data_cam1.loc[(_data_cam1 != 0).any(axis=1)]
     _data_cam2 = _data_cam2.loc[(_data_cam2 != 0).any(axis=1)]
     if not renumber:

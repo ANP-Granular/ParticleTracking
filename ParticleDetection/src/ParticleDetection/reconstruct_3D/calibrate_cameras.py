@@ -1,3 +1,19 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of ParticleDetection.
+#  ParticleDetection is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  ParticleDetection is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 from typing import Tuple, Union
 import cv2
@@ -22,6 +38,10 @@ def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
     visualize : bool, optional
         Boolean flag to draw corner detection results for camera one images.\n
         By default ``False``.
+
+        .. warning::
+            This option must be set to ``False``, if the **headless** version
+            of OpenCV is installed. Otherwise it crashes this function.
 
     Returns
     -------

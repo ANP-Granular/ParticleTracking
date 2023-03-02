@@ -1,3 +1,19 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of ParticleDetection.
+#  ParticleDetection is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  ParticleDetection is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Collection of previously used automatic rod tracking approaches. These are just
 implemented for comparison with new, more promising methods.
@@ -113,7 +129,3 @@ def tracking_global_assignment(data: pd.DataFrame) \
     total_cost = cost[:, results[:, 0, :], results[:, 1, :]]
     total_cost = total_cost.diagonal(offset=0, axis1=0, axis2=1).sum(axis=0)
     return out, total_cost
-
-
-def tracking_imm_kalman():
-    raise NotImplementedError

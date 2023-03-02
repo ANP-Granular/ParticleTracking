@@ -1,3 +1,19 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of ParticleDetection.
+#  ParticleDetection is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  ParticleDetection is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Collection of function to manipulate training dataset metadata in json format.
 These functions are mainly to cleanup the metadata, but also to transfer it
@@ -133,6 +149,12 @@ def create_keypoints(file_name: str, single_class=True, order_x=True) -> None:
     ----------
     file_name : str
         Path to the annotations file that's changed.
+    single_class : bool
+        Has currently no effect.
+        Default is ``True``.
+    order_x : bool
+        Has currently no effect.
+        Default is ``True``.
     """
     to_change = ds.DataSet("to_change", os.path.dirname(file_name) + "/",
                            os.path.basename(file_name))

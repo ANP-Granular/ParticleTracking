@@ -1,3 +1,19 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of ParticleDetection.
+#  ParticleDetection is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  ParticleDetection is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Collection of function to convert between different file formats used over the
 course of the particle detection project, e.g. camera calibrations from MATLAB
@@ -86,16 +102,6 @@ def txt2mat(input_folder: Path, frames: Iterable[int], expected_rods: int,
         arr2[:]['Point2'] = r_c2[:, 2:]
         out_file2 = output_format.format(cam=cam2_id, frame=fr)
         sio.savemat(out_file2, {'rod_data_links': arr2})
-
-
-def mat2csv(input_folders: str, output_file: str):
-    """**Not implemented.**"""
-    raise NotImplementedError
-
-
-def csv2mat(input_file: str, output_folders: List[str]):
-    """**Not implemented.**"""
-    raise NotImplementedError
 
 
 def csv_extract_colors(input_file: str) -> List[str]:

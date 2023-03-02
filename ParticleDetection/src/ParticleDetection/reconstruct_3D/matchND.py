@@ -1,5 +1,21 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of ParticleDetection.
+#  ParticleDetection is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  ParticleDetection is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """
-Functions to reconstruct 3D rod endpoints from images of a stereocamera
+Functions to reconstruct 3D rod endpoints from images of a stereo camera
 system by solving an n-partite matching problem between the rods within one
 frame and the respective previous frame .
 
@@ -38,7 +54,7 @@ def npartite_matching(weights: np.ndarray, maximize: bool = True,
     ----------
     weights : ndarray
         A n-dimensional matrix where each entry is the cost associated with
-        choosing the combination of indeces. The number of dimensions represent
+        choosing the combination of indices. The number of dimensions represent
         the number of groups and the size of each dimension the number of
         members in this group.
     maximize : bool, optional
@@ -242,7 +258,7 @@ def assign(input_folder: str, output_folder: str, colors: Iterable[str],
 
     Returns
     -------
-    Tuple[ndarray]
+    Tuple[ndarray, ndarray]
         [0]: reprojection errors\n
         [1]: rod lengths
     """
@@ -309,6 +325,60 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
                 calibration: dict, P1: np.ndarray, P2: np.ndarray,
                 rot: R, trans: np.ndarray, r1: np.ndarray,
                 r2: np.ndarray, t1: np.ndarray, t2: np.ndarray):
+    """Matches, triangulates and tracks rods for one frame from a
+    ``DataFrame``.
+
+    Parameters
+    ----------
+    data : DataFrame
+        Dataset of rod positions.
+    cam1_name : str
+        First camera's identifier in the given dataset, e.g. ``"gp1"``.
+    cam2_name : str
+        Second camera's identifier in the given dataset, e.g. ``"gp2"``.
+    frame : int
+        Frame in ``data`` who's endpoints shall be (re-)evaluated.
+    color : str
+        Color of the rods in ``data`` to match.
+    calibration : dict
+        Stereocamera calibration parameters with the required fields:\n
+        ``"CM1"``: camera matrix of cam1\n
+        ``"R"``: rotation matrix between cam1 & cam2\n
+        ``"T"``: translation vector between cam1 & cam2\n
+        ``"CM2"``: camera matrix of cam2
+    P1 : ndarray
+        Projection matrix for camera 1.
+    P2 : ndarray
+        Projection matrix for camera 2.
+    rot : Rotation
+        Rotation from camera 1 coordinates to *world*/*experiment* coordinates.
+    trans : ndarray
+        Translation vector as part of the transformation to
+        *world*/*experiment* coordinates.
+    r1 : ndarray
+        Rotation matrix of camera 1.
+    r2 : ndarray
+        Rotation matrix of camera 2.
+    t1 : ndarray
+        Translation vector of camera 1.
+    t2 : ndarray
+        Translation vector of camera 2.
+
+    Returns
+    -------
+    Tuple[DataFrame, ndarray, ndarray]
+        Returns the ``DataFrame`` with tracked rods for ``frame`` of
+        ``color``. Additionally, returns the assignment costs, i.e. the sum of
+        end point reprojection errors per rod. Lastly, returns the lengths of
+        the reconstructed rods.
+
+    Raises
+    ------
+    ValueError
+        Is raised when an *unbalanced* dataset is encountered, i.e. on
+        consecutive frames or camera angles an unequal number of rods is
+        present.
+    """
     # Load data
     cols_cam1 = [f'x1_{cam1_name}', f'y1_{cam1_name}', f'x2_{cam1_name}',
                  f'y2_{cam1_name}']

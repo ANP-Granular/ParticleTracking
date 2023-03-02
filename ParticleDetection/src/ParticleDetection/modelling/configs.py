@@ -1,3 +1,19 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of ParticleDetection.
+#  ParticleDetection is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  ParticleDetection is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Collection of helper functions to be used with CfgNode configuration objects
 for a Detectron2 network. Additionally, defines a ported version of a
@@ -31,10 +47,24 @@ PORTED_AUGMENTATIONS = [
                ca.SharpenAugmentation(alpha=(0.4, 0.6), lightness=(0.9, 1.1))
                ], lower=0, upper=3)
 ]
+"""List of augmentations used during training of a rod detection network."""
 
 
 def get_epochs(cfg: CfgNode, image_count: int) -> float:
-    """Computes the achieved number of epochs with given settings and data."""
+    """Computes the achieved number of epochs with given settings and data.
+
+    Parameters
+    ----------
+    cfg : CfgNode
+        Configuration of a network to be trained with Detectron2. Must contain
+        at least the keys ``SOLVER.IMS_PER_BATCH`` and ``SOLVER.MAX_ITER``.
+    image_count : int
+        Number of images the network will be trained on.
+
+    Returns
+    -------
+    float
+    """
     batch_size = cfg.SOLVER.IMS_PER_BATCH
     iterations = cfg.SOLVER.MAX_ITER
     return iterations / (image_count / batch_size)
@@ -43,6 +73,21 @@ def get_epochs(cfg: CfgNode, image_count: int) -> float:
 def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
     """Computes the necessary iterations to achieve a given number of
     epochs.
+
+    Parameters
+    ---------
+    cfg : CfgNode
+        Configuration of a network to be trained with Detectron2. Must contain
+        at least the key ``SOLVER.IMS_PER_BATCH``.
+    image_count : int
+        Number of images the network will be trained on.
+    desired_epochs : int
+        Number of epochs the network shall be trained using a dataset with
+        ``ìmage_count`` number of images.
+
+    Returns
+    -------
+    int
     """
     batch_size = cfg.SOLVER.IMS_PER_BATCH
     return desired_epochs * (image_count / batch_size)
@@ -50,7 +95,21 @@ def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
 
 def write_configs(cfg: CfgNode, directory: str,
                   augmentations: List[T.Augmentation] = None) -> None:
-    """Write a configuration to a ``config.yaml`` file in a target directory.
+    """Write network configurations to a target directory.
+
+    Writes a ``config.yaml`` file from the configuration and possibly an
+    ``augmentations.pkl`` file.
+
+    Parameters
+    ----------
+    cfg : CfgNode
+        Configuration for a network handled with Detectron2.
+    directory : str
+        Directory the configuration shall be written to.
+    augmentations : List[Augmentation]
+        List of image augmentations that shall be saved alongside the network
+        configuration.
+        Default is ``None``.
     """
     with open(directory + "/config.yaml", "w") as f:
         f.write(cfg.dump())
@@ -72,6 +131,19 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
         -> CfgNode:
     """Creates a configuration resembling one previously used with an older
     implementation of a R-CNN.
+
+    Parameters
+    ----------
+    dataset : DataSet
+        Dataset intended for training the network.\n
+        Default is ``None``.
+    test_dataset : DataSet
+        Dataset for testing the network's performance during training.
+        Default is ``None``.
+
+    Returns
+    -------
+    CfgNode
     """
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file(

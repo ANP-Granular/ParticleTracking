@@ -1,3 +1,19 @@
+#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#
+#  This file is part of ParticleDetection.
+#  ParticleDetection is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  ParticleDetection is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Collection of custom image augmentations extending the Detectron2 augmentation
 pool. These augmentations are intended to be used during the training process
@@ -9,6 +25,7 @@ of a neural network using the Detectron2 framework.
 """
 import random
 import warnings
+from typing import List
 
 import numpy as np
 from imgaug import augmenters
@@ -17,8 +34,21 @@ from detectron2.data.transforms.augmentation import _transform_to_aug
 
 
 class SomeOf(T.AugmentationList):
-    """**TBD**"""
-    def __init__(self, augments, lower, upper):
+    """A list of ``Augmentations`` only some will be used of.
+
+    Randomly chooses ``Augmentation`` from the given list within the range of
+    possible numbers of ``Augmentation`` 's.
+
+    Parameters
+    ----------
+    augments : List[Augmentation]
+        List of possible augmentations to choose from.
+    lower : int
+        Minimum amount of augmentations to choose.
+    upper : int
+        Maximum amount of augmentations to choose.
+    """
+    def __init__(self, augments: List[T.Augmentation], lower: int, upper: int):
         self.lower = lower
         self.upper = upper
         self.possible_augments = augments
@@ -37,7 +67,14 @@ class SomeOf(T.AugmentationList):
 
 
 class GaussianBlurAugmentation(T.Augmentation):
-    """**TBD**"""
+    """Defines a strategy to blur images with a Gaussian blur operation.
+
+    Parameters
+    ----------
+    sigmas : Tuple[float, float]
+        Mean and variance of the constructed Gaussian kernel.\n
+        Default is ``(0.0, 2.0)``.
+    """
     def __init__(self, sigmas: tuple = (0.0, 2.0)):
         super().__init__()
         self.sigmas = sigmas
@@ -47,7 +84,14 @@ class GaussianBlurAugmentation(T.Augmentation):
 
 
 class GaussianBlur(T.Transform):
-    """**TBD**"""
+    """Applies a Gaussian blur using the imgaug library.
+
+    Parameters
+    ----------
+    sigmas : Tuple[float, float]
+        Mean and variance of the constructed Gaussian kernel.\n
+        Default is ``(0.0, 2.0)``.
+    """
     def __init__(self, sigmas: tuple = (0.0, 2.0)):
         super().__init__()
         self.sigmas = sigmas
@@ -64,7 +108,19 @@ class GaussianBlur(T.Transform):
 
 
 class SharpenAugmentation(T.Augmentation):
-    """**TBD**"""
+    """Defines an augmentation strategy to sharpen images.
+
+    Parameters
+    ----------
+    alpha : Tuple[float, float]
+        Blending factor of the sharpened image. A random value will be sampled
+        from the interval for every image.\n
+        Default is ``(0.0, 0.2)``.
+    lightness : Tuple[float, float]
+        Lightness/brightness of the sharped image. A random value will be
+        sampled from the interval per image.\n
+        Default is ``(0.8, 1.2)``.
+    """
     def __init__(self, alpha: tuple = (0.0, 0.2),
                  lightness: tuple = (0.8, 1.2)):
         self.alpha = alpha
@@ -75,7 +131,19 @@ class SharpenAugmentation(T.Augmentation):
 
 
 class Sharpen(T.Transform):
-    """**TBD**"""
+    """Applies a sharpening transformation using the imgaug library.
+
+    Parameters
+    ----------
+    alpha : Tuple[float, float]
+        Blending factor of the sharpened image. A random value will be sampled
+        from the interval for every image.\n
+        Default is ``(0.0, 0.2)``.
+    lightness : Tuple[float, float]
+        Lightness/brightness of the sharped image. A random value will be
+        sampled from the interval per image.\n
+        Default is ``(0.8, 1.2)``.
+    """
     def __init__(self, alpha: tuple = (0.0, 0.2),
                  lightness: tuple = (0.8, 1.2)):
         super().__init__()
@@ -95,7 +163,17 @@ class Sharpen(T.Transform):
 
 
 class MultiplyAugmentation(T.Augmentation):
-    """**TBD**"""
+    """Defines an augmentation strategy to multiply each pixel with a certain
+    value.
+
+    Parameters
+    ----------
+    mul : Tuple[float, float]
+        The value with which to multiply the pixel values in each image. A
+        value from the interval will be sampled per image and used for all
+        pixels.\n
+        Default is ``(0.8, 1.2)``
+    """
     def __init__(self, mul: tuple = (0.8, 1.2)):
         super().__init__()
         self.mul = mul
@@ -105,7 +183,16 @@ class MultiplyAugmentation(T.Augmentation):
 
 
 class Multiply(T.Transform):
-    """**TBD**"""
+    """Applies a multipliction of each pixel with a certain value.
+
+    Parameters
+    ----------
+    mul : Tuple[float, float]
+        The value with which to multiply the pixel values in each image. A
+        value from the interval will be sampled per image and used for all
+        pixels.
+        Default is ``(0.8, 1.2)``
+    """
     def __init__(self, mul: tuple = (0.8, 1.2)):
         super().__init__()
         self.mul = mul
