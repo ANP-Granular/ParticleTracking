@@ -17,7 +17,6 @@
 
 import math
 import logging
-import re
 from typing import List, Union
 import numpy as np
 import pandas as pd
@@ -143,7 +142,7 @@ class RodImageWidget(QLabel):
         self._rods = None
         self._scale_factor = 1.0
         self._offset = [0, 0]
-        self._cam_id = "gp3"
+        self._cam_id = "unknown"
 
     # Access to properties ====================================================
     @property
@@ -250,9 +249,6 @@ class RodImageWidget(QLabel):
 
     @cam_id.setter
     def cam_id(self, cam_id: str):
-        id_regex = re.compile('gp\\d+')                          # noqa: W605
-        if re.fullmatch(id_regex, cam_id) is None:
-            cam_id = "gp3"
         self._cam_id = cam_id
         try:
             self._logger.parent_id = cam_id

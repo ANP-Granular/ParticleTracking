@@ -52,9 +52,6 @@ A working folder and file structure for the stereo-camera images is shown below.
 When loading images the RodTracker will look for `*.png`, `*.jpeg`, and `*.jpg` files in the directory the file is in the user just chose.
 It will attempt to convert the filename to an integer, therefore keep a naming convention that allows instant conversion to integers. Leading 0s are usually not a problem for this.
 The folder name is then used as an ID for the loaded images and respective particle position data associated with them.
-```{warning}
-Currently only folder names with a structure `gp_[0-9]` are supported.
-```
 
 ## Automated detection of particles
 

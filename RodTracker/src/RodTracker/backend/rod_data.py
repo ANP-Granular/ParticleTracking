@@ -42,13 +42,13 @@ import RodTracker.ui.dialogs as dialogs
 
 RE_COLOR_DATA: re.Pattern = re.compile(r'rods_df_\w+\.csv')
 """Pattern : Pattern how the rod position data file names are expected."""
-RE_SEEN: re.Pattern = re.compile(r'seen_gp\d+')
+RE_SEEN: re.Pattern = re.compile(r'seen_.+')
 """Pattern : Pattern for columns indicating a particle's *seen* status.
 
 Pattern for column names in the rod position data indicating whether a
 particle was seen in the a specific camera.
 """
-RE_2D_POS: re.Pattern = re.compile(r'[xy][12]_gp\d+')
+RE_2D_POS: re.Pattern = re.compile(r'[xy][12]_.+')
 """Pattern : Pattern for columns containing 2D position information."""
 RE_3D_POS: re.Pattern = re.compile(r'[xyz][12]')
 """Pattern : Pattern for columns containing 3D position information."""
