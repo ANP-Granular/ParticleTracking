@@ -139,10 +139,12 @@ class Detector(QtCore.QRunnable):
     frames : List[int]
         Frames the detection of rods will be performed on. Each entry in
         :attr:`frames` corresponds to one in :attr:`images`.
-    colors : Dict[str, int]
+    classes : Dict[int, list]
         Classes of objects to detect in the images, i.e. rod colors that shall
-        be detected, togther with the amount of particles that shall be
-        detected per frame individually for each color.
+        be detected, togther with their human readable name and the amount of
+        particles that shall be detected per frame individually for each class.
+        list[0] : color as a ``str``
+        list[1] : expected amount of particles as an ``int``
     threshold : float, optional
         Confidence threshold :math:`\\in [0, 1]` below which objects are
         rejected after detection.\n
@@ -190,7 +192,7 @@ class Detector(QtCore.QRunnable):
 
     def __init__(self, cam_id: str, model: torch.ScriptModule,
                  images: List[Path], frames: List[int],
-                 colors: Dict[str, int], threshold: float = 0.5):
+                 classes: Dict[int, list], threshold: float = 0.5):
         super().__init__()
         self.cam_id = cam_id
         self.model = model
@@ -201,11 +203,11 @@ class Detector(QtCore.QRunnable):
         self.images = images
         self.frames = frames
         self.expected: Dict[int, int] = {}
-        for color, amount in colors.items():
-            current_class = list(ds.DEFAULT_CLASSES.keys())[
-                list(ds.DEFAULT_CLASSES.values()).index(color)]
-            self.classes[current_class] = color
-            self.expected[current_class] = amount
+        for id, description in classes.items():
+            color = description[0]
+            amount = description[1]
+            self.classes[id] = color
+            self.expected[id] = amount
         if threshold > 1.:
             threshold = 1.
         elif threshold < 0.:

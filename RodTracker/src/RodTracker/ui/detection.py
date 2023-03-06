@@ -104,12 +104,6 @@ class DetectorUI(QtWidgets.QWidget):
     Default is ``1``.
     """
 
-    # model: torch.ScriptModule = None
-    # """ScriptModule : Neural network model that is used for detection.
-
-    # Default is ``None``.
-    # """
-
     detected_data = QtCore.pyqtSignal(pd.DataFrame)
     """pyqtSignal(DataFrame) : Sends data of detected rods for one frame.
 
@@ -199,17 +193,22 @@ class DetectorUI(QtWidgets.QWidget):
             cb.deleteLater()
         row = 0
         col = 0
-        for color in ds.DEFAULT_CLASSES.values():
+        for c_class, color in ds.DEFAULT_CLASSES.items():
+            # Add default colors as checkboxes
             cb = QtWidgets.QCheckBox(text=color.lower())
             cb.setObjectName(f"cb_{color}")
-            cb.stateChanged.connect(self._toggle_color)
             cb.setChecked(True)
+            cb.stateChanged.connect(self._toggle_color)
             group_layout.addWidget(cb, row, col)
             if col == 1:
                 col = 0
                 row += 1
             else:
                 col = 1
+
+            self.add_color_row(color, self._expected_particles, c_class)
+        self._add_unknown_row()
+        self.table_colors.cellChanged.connect(self.cell_changed)
 
         self.pb_detect = ui.findChild(QtWidgets.QPushButton, "pb_detect")
         self.pb_detect.clicked.connect(self.start_detection)
@@ -224,14 +223,68 @@ class DetectorUI(QtWidgets.QWidget):
         self.spb_end_f = ui.findChild(QtWidgets.QSpinBox,
                                       "end_frame_detection")
         self.spb_end_f.valueChanged.connect(self._change_end_frame)
-        self._toggle_color(1)
 
     def _expected_changed(self, val: int):
         self._expected_particles = val
+        try:
+            while True:
+                self.table_colors.cellChanged.disconnect(self.cell_changed)
+        except TypeError:
+            # all connections to cell_changed have been removed
+            pass
         for i in range(self.table_colors.rowCount()):
             current_amount = self.table_colors.item(i, 1)
             if not current_amount.checkState():
                 current_amount.setText(str(val))
+        self.table_colors.cellChanged.connect(self.cell_changed)
+
+    def _cell_changed(self, row: int, column: int):
+        if row == self.table_colors.rowCount() - 1:
+            try:
+                while True:
+                    self.table_colors.cellChanged.disconnect(self.cell_changed)
+            except TypeError:
+                # all connections to cell_changed have been removed
+                pass
+            try:
+                self.table_colors.item(row, 1).setFlags(
+                    QtCore.Qt.ItemIsEnabled |
+                    QtCore.Qt.ItemIsEditable |
+                    QtCore.Qt.ItemIsUserCheckable
+                )
+                self.table_colors.item(row, 2).setFlags(
+                    QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled)
+            except AttributeError:
+                pass
+            self._add_unknown_row()
+            self.table_colors.cellChanged.connect(self.cell_changed)
+            return
+
+    def _add_unknown_row(self):
+        try:
+            while True:
+                self.table_colors.cellChanged.disconnect(self.cell_changed)
+        except TypeError:
+            # function has been disconnected.
+            pass
+        # Add empty row to allow for custom colors
+        tab_row = self.table_colors.rowCount()
+        self.table_colors.insertRow(tab_row)
+        color_item = QtWidgets.QTableWidgetItem("custom")
+        color_item.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable)
+
+        amount_item = QtWidgets.QTableWidgetItem(
+            str(self._expected_particles))
+        amount_item.setFlags(QtCore.Qt.NoItemFlags)
+        amount_item.setCheckState(0)
+        class_item = QtWidgets.QTableWidgetItem("unknown")
+        class_item.setFlags(QtCore.Qt.NoItemFlags)
+        class_item.setTextAlignment(QtCore.Qt.AlignHCenter |
+                                    QtCore.Qt.AlignVCenter)
+        self.table_colors.setItem(tab_row, 0, color_item)
+        self.table_colors.setItem(tab_row, 1, amount_item)
+        self.table_colors.setItem(tab_row, 2, class_item)
+        self.table_colors.cellChanged.connect(self.cell_changed)
 
     def _set_threshold(self, val: str):
         try:
@@ -263,37 +316,83 @@ class DetectorUI(QtWidgets.QWidget):
         ----------
         _ : int
         """
-        self.used_colors = []
-        self.table_colors.clearContents()
-        row_idx = 0
+        current_colors = [self.table_colors.item(i, 0).text() for i in
+                          range(self.table_colors.rowCount())]
+        try:
+            self.table_colors.cellChanged.disconnect(self.cell_changed)
+        except TypeError:
+            # cell_changed had not been connected yet.
+            pass
         for cb in self.ui.findChildren(QtWidgets.QCheckBox):
             if "tracking" in cb.objectName():
                 continue
+            color = cb.objectName().split("_")[1]
             if cb.checkState():
-                color = cb.objectName().split("_")[1]
-                self.used_colors.append(color)
-                # add row to table
-                color_item = QtWidgets.QTableWidgetItem(color)
-                color_item.setFlags(QtCore.Qt.ItemIsEnabled)
-                amount_item = QtWidgets.QTableWidgetItem(
-                    str(self._expected_particles))
-                amount_item.setFlags(QtCore.Qt.ItemIsEnabled |
-                                     QtCore.Qt.ItemIsEditable |
-                                     QtCore.Qt.ItemIsUserCheckable)
-                amount_item.setCheckState(0)
-                class_item = QtWidgets.QTableWidgetItem("auto")
-                class_item.setFlags(QtCore.Qt.ItemFlag.NoItemFlags)
-                class_item.setTextAlignment(QtCore.Qt.AlignHCenter)
+                # add row(s) of activated default colors
+                if color not in current_colors:
+                    for c_color, color_val in ds.DEFAULT_CLASSES.items():
+                        if color == color_val:
+                            self.add_color_row(color, self._expected_particles,
+                                               c_color)
+                            break
+            else:
+                # remove row(s) of deactivated default colors
+                if color in current_colors:
+                    to_del = self.table_colors.findItems(
+                        color, QtCore.Qt.MatchCaseSensitive)
+                    for item in to_del:
+                        self.table_colors.removeRow(item.row())
+        self.table_colors.cellChanged.connect(self.cell_changed)
 
-                if row_idx == self.table_colors.rowCount():
-                    self.table_colors.insertRow(row_idx)
-                self.table_colors.setItem(row_idx, 0, color_item)
-                self.table_colors.setItem(row_idx, 1, amount_item)
-                self.table_colors.setItem(row_idx, 2, class_item)
-                row_idx += 1
-        while self.table_colors.rowCount() > row_idx and\
-                self.table_colors.rowCount() > 0:
-            self.table_colors.removeRow(row_idx)
+    def add_color_row(self, color: str, amount: int, c_class: int = None):
+        """Add a new row to those used for the next rod detection.
+
+        Parameters
+        ----------
+        color : str
+            Human readable name of the class.
+        amount : int
+            Number of particles that shall be detected per frame.
+        c_class : int, optional
+            Class identifier used by the detection model.\n
+            By default ``None``.
+        """
+        try:
+            while True:
+                self.table_colors.cellChanged.disconnect(self.cell_changed)
+        except TypeError:
+            # function has been disconnected.
+            pass
+        row = self.table_colors.rowCount()
+
+        # Adjust the row to keep the customizable row as the last one
+        try:
+            if self.table_colors.item(row - 1, 0).text() == "custom":
+                row -= 1
+        except AttributeError:
+            # Item does not exist and therefore cannot be the 'custom' one
+            pass
+        self.table_colors.insertRow(row)
+
+        color_item = QtWidgets.QTableWidgetItem(color)
+        color_item.setFlags(QtCore.Qt.ItemIsEnabled)
+        amount_item = QtWidgets.QTableWidgetItem(
+            str(amount))
+        amount_item.setFlags(QtCore.Qt.ItemIsEnabled |
+                             QtCore.Qt.ItemIsEditable |
+                             QtCore.Qt.ItemIsUserCheckable)
+        amount_item.setCheckState(0)
+        if c_class is None:
+            c_class = "unknown"
+        class_item = QtWidgets.QTableWidgetItem(str(c_class))
+        class_item.setFlags(QtCore.Qt.ItemIsEditable |
+                            QtCore.Qt.ItemIsEnabled)
+        class_item.setTextAlignment(QtCore.Qt.AlignHCenter |
+                                    QtCore.Qt.AlignVCenter)
+        self.table_colors.setItem(row, 0, color_item)
+        self.table_colors.setItem(row, 1, amount_item)
+        self.table_colors.setItem(row, 2, class_item)
+        self.table_colors.cellChanged.connect(self.cell_changed)
 
     def load_model(self):
         """Show a file selection dialog to a user to select a particle
@@ -327,6 +426,7 @@ class DetectorUI(QtWidgets.QWidget):
             self.le_model.setText(chosen_file)
             self.model = torch.jit.load(chosen_file)
             self.pb_detect.setEnabled(True)
+            return True
 
     def autoselect_range(self):
         """**Not Implemented.**"""
@@ -374,8 +474,8 @@ class DetectorUI(QtWidgets.QWidget):
 
         Starts a detection process for each dataset loaded in the
         :attr:`managers` attribute. All frames between :attr:`start_frame` and
-        :attr:`end_frame` are used and only the selected colors in
-        :attr:`used_colors` will be detected.
+        :attr:`end_frame` are used and only the selected colors in displayed in
+        the tab's table will be detected.
         This function cannot start the detection without a loaded
         :attr:`model`.
 
@@ -384,17 +484,30 @@ class DetectorUI(QtWidgets.QWidget):
         None
         """
         if self.model is None:
-            _logger.info("No model selected yet.")
-            return
-        self.progress.setValue(0)
-        self._progress = 0.
-        self.is_busy.emit(True)
+            # Attempts to open a model to be able to continue
+            if self.load_model() is None:
+                _logger.info("No model selected yet.")
+                return
 
-        colors: Dict[str, int] = {}
+        classes: Dict[int, list] = {}
         for row in range(self.table_colors.rowCount()):
             color = self.table_colors.item(row, 0).text()
-            amount = int(self.table_colors.item(row, 1).text())
-            colors[color] = amount
+            if color == "custom":
+                continue
+            try:
+                amount = int(self.table_colors.item(row, 1).text())
+            except ValueError:
+                _logger.warning(f"Amount of particle '{color}' is not an "
+                                f"integer. Using the default value instead.")
+                amount = self._expected_particles
+            try:
+                c_class = int(self.table_colors.item(row, 2).text())
+            except ValueError:
+                _logger.warning(f"Class of particle '{color}' cannot be "
+                                f"converted to int. This particle won't be "
+                                f"used.")
+                continue
+            classes[c_class] = [color, amount]
         for img_manager in self.managers:
             if not img_manager.data_id:
                 continue
@@ -405,7 +518,7 @@ class DetectorUI(QtWidgets.QWidget):
             detector = Detector(img_manager.data_id, self.model,
                                 img_manager.files[idx_start:idx_end + 1],
                                 img_manager.frames[idx_start:idx_end + 1],
-                                colors, self.threshold)
+                                classes, self.threshold)
             detector.signals.progress.connect(self._progress_update)
             detector.signals.finished.connect(self._detection_finished)
             detector.signals.error.connect(
@@ -414,9 +527,13 @@ class DetectorUI(QtWidgets.QWidget):
                 lambda: self._detection_finished(None))
             self._threads.start(detector)
 
-        self.pb_detect.setText("Abort")
-        self.pb_detect.clicked.disconnect()
-        self.pb_detect.clicked.connect(self._abort_detection)
+            self.progress.setValue(0)
+            self._progress = 0.
+            self.is_busy.emit(True)
+
+            self.pb_detect.setText("Abort")
+            self.pb_detect.clicked.disconnect()
+            self.pb_detect.clicked.connect(self._abort_detection)
 
     @QtCore.pyqtSlot(str)
     def _detection_finished(self, cam_id: str):
