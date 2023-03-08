@@ -121,7 +121,6 @@ def test_save_wo_changes(both_cams: RodTrackWindow, qtbot: QtBot,
 # =============================================================================
 
 
-@pytest.mark.xpass(reason="Warning not implemented.", strict=True)
 def test_open_rod_after_changes(both_cams: RodTrackWindow, qtbot: QtBot,
                                 monkeypatch: MonkeyPatch,
                                 tmp_path: pathlib.Path):

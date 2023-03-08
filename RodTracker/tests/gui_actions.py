@@ -380,7 +380,8 @@ class SwitchCamera:
             state = aa.pre_switch_cam(main_window)
 
         with qtbot.wait_signal(main_window.ui.camera_tabs.currentChanged):
-            qtbot.keyClick(main_window, QtCore.Qt.Key_Tab)
+            qtbot.keyClick(main_window, QtCore.Qt.Key_Tab,
+                           modifier=QtCore.Qt.KeyboardModifier.ControlModifier)
 
         if self.assertions:
             aa.post_switch_cam(main_window, state)

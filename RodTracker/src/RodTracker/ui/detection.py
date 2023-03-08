@@ -208,7 +208,7 @@ class DetectorUI(QtWidgets.QWidget):
 
             self.add_color_row(color, self._expected_particles, c_class)
         self._add_unknown_row()
-        self.table_colors.cellChanged.connect(self.cell_changed)
+        self.table_colors.cellChanged.connect(self._cell_changed)
 
         self.pb_detect = ui.findChild(QtWidgets.QPushButton, "pb_detect")
         self.pb_detect.clicked.connect(self.start_detection)
@@ -228,7 +228,7 @@ class DetectorUI(QtWidgets.QWidget):
         self._expected_particles = val
         try:
             while True:
-                self.table_colors.cellChanged.disconnect(self.cell_changed)
+                self.table_colors.cellChanged.disconnect(self._cell_changed)
         except TypeError:
             # all connections to cell_changed have been removed
             pass
@@ -236,13 +236,14 @@ class DetectorUI(QtWidgets.QWidget):
             current_amount = self.table_colors.item(i, 1)
             if not current_amount.checkState():
                 current_amount.setText(str(val))
-        self.table_colors.cellChanged.connect(self.cell_changed)
+        self.table_colors.cellChanged.connect(self._cell_changed)
 
     def _cell_changed(self, row: int, column: int):
         if row == self.table_colors.rowCount() - 1:
             try:
                 while True:
-                    self.table_colors.cellChanged.disconnect(self.cell_changed)
+                    self.table_colors.cellChanged.disconnect(
+                        self._cell_changed)
             except TypeError:
                 # all connections to cell_changed have been removed
                 pass
@@ -257,13 +258,13 @@ class DetectorUI(QtWidgets.QWidget):
             except AttributeError:
                 pass
             self._add_unknown_row()
-            self.table_colors.cellChanged.connect(self.cell_changed)
+            self.table_colors.cellChanged.connect(self._cell_changed)
             return
 
     def _add_unknown_row(self):
         try:
             while True:
-                self.table_colors.cellChanged.disconnect(self.cell_changed)
+                self.table_colors.cellChanged.disconnect(self._cell_changed)
         except TypeError:
             # function has been disconnected.
             pass
@@ -284,7 +285,7 @@ class DetectorUI(QtWidgets.QWidget):
         self.table_colors.setItem(tab_row, 0, color_item)
         self.table_colors.setItem(tab_row, 1, amount_item)
         self.table_colors.setItem(tab_row, 2, class_item)
-        self.table_colors.cellChanged.connect(self.cell_changed)
+        self.table_colors.cellChanged.connect(self._cell_changed)
 
     def _set_threshold(self, val: str):
         try:
@@ -319,7 +320,7 @@ class DetectorUI(QtWidgets.QWidget):
         current_colors = [self.table_colors.item(i, 0).text() for i in
                           range(self.table_colors.rowCount())]
         try:
-            self.table_colors.cellChanged.disconnect(self.cell_changed)
+            self.table_colors.cellChanged.disconnect(self._cell_changed)
         except TypeError:
             # cell_changed had not been connected yet.
             pass
@@ -342,7 +343,7 @@ class DetectorUI(QtWidgets.QWidget):
                         color, QtCore.Qt.MatchCaseSensitive)
                     for item in to_del:
                         self.table_colors.removeRow(item.row())
-        self.table_colors.cellChanged.connect(self.cell_changed)
+        self.table_colors.cellChanged.connect(self._cell_changed)
 
     def add_color_row(self, color: str, amount: int, c_class: int = None):
         """Add a new row to those used for the next rod detection.
@@ -359,7 +360,7 @@ class DetectorUI(QtWidgets.QWidget):
         """
         try:
             while True:
-                self.table_colors.cellChanged.disconnect(self.cell_changed)
+                self.table_colors.cellChanged.disconnect(self._cell_changed)
         except TypeError:
             # function has been disconnected.
             pass
@@ -392,7 +393,7 @@ class DetectorUI(QtWidgets.QWidget):
         self.table_colors.setItem(row, 0, color_item)
         self.table_colors.setItem(row, 1, amount_item)
         self.table_colors.setItem(row, 2, class_item)
-        self.table_colors.cellChanged.connect(self.cell_changed)
+        self.table_colors.cellChanged.connect(self._cell_changed)
 
     def load_model(self):
         """Show a file selection dialog to a user to select a particle

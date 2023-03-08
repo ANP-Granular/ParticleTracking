@@ -145,7 +145,8 @@ class TestRodData:
 
     @pytest.mark.parametrize(
         "decision,expected_return",
-        [(QtWidgets.QMessageBox.Yes, True), (QtWidgets.QMessageBox.No, False)])
+        [(QtWidgets.QMessageBox.Yes, True), (QtWidgets.QMessageBox.No, True),
+         (QtWidgets.QMessageBox.Abort, False)])
     def test_open_folder_corrected(
             self, qtbot: QtBot, monkeypatch: MonkeyPatch, tmp_path: Path,
             rod_manager: RodData,
@@ -169,6 +170,9 @@ class TestRodData:
         if decision == QtWidgets.QMessageBox.Yes:
             assert rod_manager._allow_overwrite is True
             assert rod_manager.folder == corrected_folder
+        elif decision == QtWidgets.QMessageBox.No:
+            assert rod_manager.folder == chosen_folder
+            assert rod_manager._allow_overwrite is False
         else:
             assert rod_manager._allow_overwrite is False
         assert result == expected_return
