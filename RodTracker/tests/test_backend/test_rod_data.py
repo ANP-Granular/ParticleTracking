@@ -29,10 +29,12 @@ if sys.version_info < (3, 9):
 else:
     # importlib.resources has files(), so use that:
     import importlib.resources as importlib_resources
+import pandas as pd
 import pytest
 from pytest import MonkeyPatch
 from pytestqt.qtbot import QtBot
 from PyQt5 import QtWidgets
+from conftest import load_rod_data
 from RodTracker.backend import rod_data, logger as lg
 from RodTracker.backend.rod_data import RodData
 
@@ -211,6 +213,22 @@ class TestRodData:
                 rod_manager.save_changes()
             assert len(
                 [file for file in tmp_path.iterdir() if file.is_file()]) == 0
+
+    def test_save_no_folder(self, monkeypatch: MonkeyPatch, tmp_path: Path,
+                            rod_manager: RodData):
+        monkeypatch.setattr(rod_manager, "out_folder", None)
+        monkeypatch.setattr(QtWidgets.QFileDialog, "getExistingDirectory",
+                            lambda *args: str(tmp_path.absolute()))
+        rod_manager.save_changes()
+        assert len([file for file in tmp_path.iterdir() if file.is_file()])
+
+    def test_save_no_folder_abort(self, monkeypatch: MonkeyPatch,
+                                  rod_manager: RodData):
+        monkeypatch.setattr(rod_manager, "out_folder", None)
+        monkeypatch.setattr(QtWidgets.QFileDialog, "getExistingDirectory",
+                            lambda *args: "")
+        rod_manager.save_changes()
+        assert rod_manager.out_folder is None
 
     def test_update_frame(self, qtbot: QtBot, rod_manager: RodData):
         frames = rod_data.rod_data.frame.unique()
@@ -393,9 +411,68 @@ class TestRodData:
         assert len(sent_data.frame.unique()) == 1
         assert sent_data.frame.unique()[0] == 500
 
-    @pytest.mark.skip("get_data() is not implemented yet.")
-    def test_get_data(self):
-        raise NotImplementedError
+    @pytest.mark.parametrize(
+        "data3d, data2d, rods", [(False, True, [1, 2, 4]),
+                                 (True, False, [1, 2, 4])])
+    def test_get_data(self, qtbot: QtBot, rod_manager: RodData, data3d, data2d,
+                      rods):
+        with qtbot.wait_signal(rod_manager.requested_data) as blocker:
+            rod_manager.get_data(rods=rods, data_2d=data2d, data_3d=data3d)
+        particles = blocker.args[0]["particle"].unique()
+        columns = blocker.args[0].columns
+        assert list(particles) == rods
+        assert (list(columns) == rod_manager.cols_2D) == data2d
+        assert (list(columns) == rod_manager.cols_3D) == data3d
+
+    def test_get_data_missing_data(self, qtbot: QtBot,
+                                   monkeypatch: MonkeyPatch,
+                                   rod_manager: RodData):
+        monkeypatch.setattr(rod_data, "rod_data", None)
+        with qtbot.assert_not_emitted(rod_manager.requested_data):
+            rod_manager.get_data()
+
+    def test_receive_updated_data(self, rod_manager: RodData):
+        test_data = rod_data.rod_data.loc[
+            rod_data.rod_data["frame"] == 500].copy()
+        test_particles = test_data.particle.unique()[0]
+        columns = [col for col in test_data.columns
+                   if col not in ["particle", "color", "frame"]]
+        test_data.loc[
+            test_data.particle == test_particles, columns] = 1
+        rod_manager.receive_updated_data(test_data)
+        changed_data = rod_data.rod_data.loc[rod_data.rod_data.frame == 500]
+        pd.testing.assert_frame_equal(changed_data[test_data.columns],
+                                      test_data, check_dtype=False)
+
+    def test_receive_updated_data_current_frame(self, qtbot: QtBot,
+                                                rod_manager: RodData):
+        test_data = rod_data.rod_data.loc[
+            rod_data.rod_data["frame"] == 500].copy()
+        test_particles = test_data.particle.unique()[0]
+        columns = [col for col in test_data.columns
+                   if col not in ["particle", "color", "frame"]]
+        test_data.loc[
+            test_data.particle == test_particles, columns] = 1
+        rod_manager.frame = 500
+        with qtbot.wait_signals([rod_manager.data_2d, rod_manager.data_3d]):
+            rod_manager.receive_updated_data(test_data)
+
+    def test_add_data(self, rod_manager: RodData):
+        rod_data.rod_data = load_rod_data(["red"])
+        test_data = load_rod_data(["blue"])
+        rod_manager.add_data(test_data)
+        # raise NotImplementedError
+
+    def test_add_data_not_loaded(self, qtbot: QtBot, monkeypatch: MonkeyPatch,
+                                 rod_manager: RodData):
+        rod_data.rod_data = None
+        test_data = load_rod_data(["red"])
+        expected = [rod_manager.is_busy, rod_manager.data_loaded[list]]
+        monkeypatch.setattr(rod_manager.threads, "start",
+                            lambda *args: None)
+        with qtbot.wait_signals(expected):
+            rod_manager.add_data(test_data)
+        pd.testing.assert_frame_equal(rod_data.rod_data, test_data)
 
     def test_catch_data_single(self, qtbot: QtBot, rod_manager: RodData):
         test_data = {

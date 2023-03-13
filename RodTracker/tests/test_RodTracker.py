@@ -35,6 +35,8 @@ def test_tmp_dir_create():
         if file.is_file():
             file.unlink()
         elif file.is_dir():
+            for inner_file in file.iterdir():
+                inner_file.unlink()
             file.rmdir()
     RodTracker.TEMP_DIR.rmdir()
 

@@ -17,7 +17,9 @@
 """Put fixtures here, that should be available to (all) tests."""
 import sys
 import random
+from typing import List
 from pathlib import Path
+import pandas as pd
 import pytest
 from pytestqt.qtbot import QtBot
 from RodTracker.ui.mainwindow import RodTrackWindow
@@ -109,3 +111,20 @@ def both_cams(qtbot: QtBot, main_window: RodTrackWindow) -> RodTrackWindow:
     r_data.lock.lockForRead()
     r_data.rod_data = None
     r_data.lock.unlock()
+
+
+def load_rod_data(colors: List[str]):
+    data = pd.DataFrame()
+    folder = importlib_resources.files("RodTracker.resources.example_data.csv")
+    for color in colors:
+        tmp_data_file = folder.joinpath(f"rods_df_{color}.csv")
+        tmp_data = pd.read_csv(tmp_data_file, index_col=0)
+        tmp_data["color"] = color
+        data = pd.concat([data, tmp_data])
+    data.reset_index(inplace=True)
+    return data
+
+
+@pytest.fixture()
+def testing_data() -> pd.DataFrame:
+    return load_rod_data(["red", ])

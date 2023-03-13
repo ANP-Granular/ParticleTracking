@@ -475,6 +475,7 @@ class RodData(QtCore.QObject):
                             return
                     self.out_folder = chosen_folder
                     self.folder = chosen_folder
+                    save_folder = chosen_folder
                     self._allow_overwrite = True
                     try_again = False
                     lock.lockForRead()

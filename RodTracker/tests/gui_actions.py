@@ -103,7 +103,7 @@ class DeleteRod:
                 qtbot.mouseDClick(rod, QtCore.Qt.MouseButton.LeftButton)
                 qtbot.keyClick(rod, QtCore.Qt.Key_Delete)
                 qtbot.keyClick(rod, QtCore.Qt.Key_Enter)
-                qtbot.waitUntil(increase_count)
+                qtbot.wait_until(increase_count, timeout=2000)
                 if self.assertions:
                     aa.post_delete(main_window, self.rod_id)
                 return main_window
@@ -146,7 +146,7 @@ class ChangeRodPosition:
                 qtbot.mouseClick(cam, QtCore.Qt.MouseButton.LeftButton,
                                  pos=self.end)
                 qtbot.keyClick(rod, QtCore.Qt.Key_Enter)
-                qtbot.waitUntil(increased_count)
+                qtbot.wait_until(increased_count, timeout=2000)
                 if self.assertions:
                     aa.post_pos_change(main_window, self.rod_id, self.start,
                                        self.end)
@@ -203,7 +203,7 @@ class SwitchRodNumber:
                     qtbot.keyClicks(rod, str(self.new_id))
                     qtbot.keyClick(rod, QtCore.Qt.Key_Enter)
                     if self.mode is not None:
-                        qtbot.waitUntil(increased_count)
+                        qtbot.wait_until(increased_count, timeout=2000)
                     if self.assertions:
                         qtbot.wait(150)
                         aa.post_number_switch(main_window, self.rod_id,
@@ -238,7 +238,7 @@ class SaveChanges:
         with qtbot.wait_signal(main_window.rod_data.saved):
             qtbot.keyClick(main_window, QtCore.Qt.Key_S,
                            modifier=QtCore.Qt.ControlModifier)
-        qtbot.waitUntil(contents_written)
+        qtbot.wait_until(contents_written, timeout=2000)
         if self.assertions:
             aa.post_save(main_window, tmp_path, state)
         return main_window
@@ -268,7 +268,7 @@ class Undo:
             assert main_window.ui.lv_actions_list.count() < prev_act_count
         qtbot.keyClick(cam, QtCore.Qt.Key_Z,
                        modifier=QtCore.Qt.ControlModifier)
-        qtbot.waitUntil(decrease_count)
+        qtbot.wait_until(decrease_count, timeout=2000)
         qtbot.wait(250)
         if self.assertions:
             aa.post_undo(main_window, state)
@@ -301,7 +301,7 @@ class Redo:
         qtbot.keyClick(cam, QtCore.Qt.Key_Z,
                        modifier=(QtCore.Qt.ControlModifier |
                                  QtCore.Qt.ShiftModifier))
-        qtbot.waitUntil(increased_count)
+        qtbot.wait_until(increased_count, timeout=2000)
         qtbot.wait(250)
 
         if self.assertions:

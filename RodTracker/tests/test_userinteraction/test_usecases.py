@@ -40,7 +40,6 @@ def teardown_replacements(mp: MonkeyPatch):
 # =============================================================================
 
 
-@pytest.mark.skip("Breaks and thereby breaks the whole test suite.")
 def test_typical(main_window: RodTrackWindow, qtbot: QtBot,
                  monkeypatch: MonkeyPatch, tmp_path: pathlib.Path):
     """Attempt a typical workflow."""

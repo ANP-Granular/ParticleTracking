@@ -734,6 +734,13 @@ class Tracker(Reconstructor):
             if self.frames[0] - 1 not in self.data.frame.unique():
                 # Do a 2-dimensional reconstruction of 3D positions, because
                 # there is no initial 3D data to relate to.
+                lock.lockForRead()
+                if abort_reconstruction:
+                    df_out.reset_index(drop=True, inplace=True)
+                    self.signals.result.emit(df_out)
+                    lock.unlock()
+                    return
+                lock.unlock()
                 tmp = match_frame(self.data, self.cams[0],
                                   self.cams[1], self.frames[0],
                                   self.color, self.calibration, P1, P2, rot,
