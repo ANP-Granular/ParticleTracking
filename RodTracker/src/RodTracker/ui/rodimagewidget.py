@@ -479,7 +479,27 @@ class RodImageWidget(QLabel):
             closest_rod = None
             min_dist = np.inf
             for rod in self.rods:
-                distance = np.linalg.norm(rod.rod_center - mouse_pos)
+                # distance 0: distance from center
+                # distance = np.linalg.norm(rod.rod_center - mouse_pos)
+
+                # distance 1: use closest endpoint
+                points = np.asarray([
+                    self._position_scaling * self._scale_factor * coord
+                    for coord in rod.rod_points])
+                dist_p1 = np.linalg.norm(
+                    points[0:2] + np.array(self._offset) - mouse_pos)
+                dist_p2 = np.linalg.norm(
+                    points[2:] + np.array(self._offset) - mouse_pos)
+                distance = np.min([dist_p1, dist_p2])
+
+                # distance 2: min distance to the whole line segment
+                # points = np.asarray([
+                #     self._position_scaling * self._scale_factor * coord
+                #     for coord in rod.rod_points])
+                # p1 = points[0:2] + np.array(self._offset)
+                # p2 = points[2:] + np.array(self._offset)
+                # distance = _line_segment_distance(p1, p2, mouse_pos)
+
                 if distance < min_dist:
                     min_dist = distance
                     closest_rod = rod
@@ -1199,3 +1219,14 @@ class RodImageWidget(QLabel):
         self._scale_image()
         last_action = lg.CreateRodAction(new_rod.copy())
         self._logger.add_action(last_action)
+
+
+def line_segment_distance(p1: np.ndarray, p2: np.ndarray,
+                          p: np.ndarray) -> float:
+    l2 = np.sum((p2 - p1)**2)    # |p2-p1|, without the root
+    if l2 == 0.:
+        # line segment of length 0
+        return np.linalg.norm(p1 - p)
+    m = np.max([0., np.min([1., np.dot(p - p1, p2 - p1) / l2])])
+    min_d_point = p1 + m * (p2 - p1)
+    return float(np.linalg.norm(min_d_point - p))
