@@ -64,6 +64,9 @@ detectron2 = [
 ]
 imgaug = {version = "*", optional = true}
 Pillow = {version = "*"}
+importlib-resources = {version = ">=1.4", python = "<3.9", optional = true}
+pytest = {version = ">=7.1.2", optional = true}
+pytest-cov = {version = ">=3.0.0", optional = true}
 
 [[tool.poetry.source]]
 name = "gpu-win"
@@ -83,4 +86,11 @@ GPU = ["torch", "torchvision", "torchaudio"]
 DETECTRON = [
     "torch", "torchvision", "torchaudio", "detectron2", "tensorboard", 
     "protobuf", "shapely", "imgaug", "Pillow",
+]
+TEST = ["pytest", "importlib_resources", "pytest-cov"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=html"
+testpaths = [
+    "tests/",
 ]

@@ -86,7 +86,7 @@ def get_dataset_classes(dataset: DataSet) -> Set[int]:
     """Retrieve the number and IDs of thing classes in the dataset."""
     with open(dataset.annotation) as metadata:
         annotations = json.load(metadata)
-    classes = {0, }
+    classes = set()
     for image in list(annotations.values()):
         regions = image["regions"]
         if regions:

@@ -187,7 +187,8 @@ def rod_endpoints(prediction, classes: Dict[int, str], method: str = "simple",
     ----------
     prediction : dict
         Prediction output of a Detectron2 network with the actual results
-        present in ``prediction["instances"]`` as a ``torch.Tensor``.
+        present in ``prediction["instances"]`` as
+        ``detectron2.structures.Instances`` or ``dict``.
     classes : dict[int, str]
         Dictionary of classes expected/possible in the prediction. The key
         being the class ID as an integer, that is the output of the
