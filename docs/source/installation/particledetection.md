@@ -43,6 +43,9 @@ This package has three functionality options to be installed. These are realized
         ```
     - refer to the [Detectron2 Installation Guide](https://detectron2.readthedocs.io/en/latest/tutorials/install.html) and the [PyTorch Get Started Page](https://pytorch.org/get-started/locally/)
   ```
+- `TEST`:
+  - intended for running (or developing) tests for the package
+  - must be installed in addition to one of the other `extras`
 
 ```{Warning}
 Detection models exported with GPU support enabled will not work with a CPU-only installation.
