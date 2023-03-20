@@ -40,6 +40,7 @@ def teardown_replacements(mp: MonkeyPatch):
 # =============================================================================
 
 
+@pytest.mark.filterwarnings("ignore:")
 def test_typical(main_window: RodTrackWindow, qtbot: QtBot,
                  monkeypatch: MonkeyPatch, tmp_path: pathlib.Path):
     """Attempt a typical workflow."""
