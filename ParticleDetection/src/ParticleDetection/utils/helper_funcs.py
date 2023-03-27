@@ -216,7 +216,9 @@ def rod_endpoints(prediction, classes: Dict[int, str], method: str = "simple",
             No restrictions on the amount of particles per class and frame
             are imposed. How ever many particles were detected will be in the
             output.
+
         Default is ``None``.
+
     Returns
     -------
     dict[int, np.ndarray]
