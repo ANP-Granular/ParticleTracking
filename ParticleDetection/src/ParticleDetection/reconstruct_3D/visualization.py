@@ -58,9 +58,6 @@ def matching_results(reprojection_errors: np.ndarray,
         [0]: reprojection errors histogram\n
         [1]: rod lengths histogram
     """
-    # rep_norm = (112/1082)   # scaling constant taken from MATLAB script
-    # reprojetion_errors *= rep_norm
-
     fig1 = reprojection_errors_hist(reprojection_errors)
     fig2 = length_hist(rod_lengths)
 
@@ -231,6 +228,8 @@ def compare_diplacements(data: List[np.ndarray], labels: List[str] = None,
     plt.xlim((0, frames))
     plt.xlabel("Frame")
     plt.ylabel("Displacement [mm]")
+    if labels is None:
+        labels = [f"dataset_{i}" for i in range(len(data))]
     plt.legend(labels)
 
     if not show:
