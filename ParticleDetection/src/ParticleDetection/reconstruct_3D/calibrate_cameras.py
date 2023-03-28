@@ -120,7 +120,7 @@ def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
 
 
 def project_points(p_cam1: np.ndarray, p_cam2: np.ndarray, calibration: dict,
-                   transforms: Union[dict, None]):
+                   transforms: Union[dict, None] = None):
     """Project points from a stereocamera system to 3D coordinates.
 
     Parameters
@@ -143,7 +143,8 @@ def project_points(p_cam1: np.ndarray, p_cam2: np.ndarray, calibration: dict,
         **Must contain the following fields:**\n
         ``"rotation"``, ``"translation"``\n
         Transformation of 3D coordinates to *world*/*experiment* coordinates is
-        omitted if ``transforms`` is ``None``.
+        omitted if ``transforms`` is ``None``.\n
+        Default is ``None``.
 
     Returns
     -------
@@ -174,13 +175,13 @@ def project_points(p_cam1: np.ndarray, p_cam2: np.ndarray, calibration: dict,
     if transforms is not None:
         rot = R.from_matrix(transforms["rotation"])
         trans = transforms["translation"]
-        p3d = rot.apply(p3d) + trans
+        p3d = (rot.apply(p3d.T) + trans).T
 
     return p3d
 
 
 def reproject_points(points: np.ndarray, calibration: dict,
-                     transforms: Union[dict, None]
+                     transforms: Union[dict, None] = None
                      ) -> Tuple[np.ndarray, np.ndarray]:
     """Project 3D coordinates to 2D stereocamera coordinates.
 
@@ -203,6 +204,7 @@ def reproject_points(points: np.ndarray, calibration: dict,
         ``"rotation"``, ``"translation"``\n
         Transformation of 3D coordinates from *world*/*experiment* coordinates
         is omitted if ``transforms`` is ``None``.
+        Default is ``None``.
 
     Returns
     -------
