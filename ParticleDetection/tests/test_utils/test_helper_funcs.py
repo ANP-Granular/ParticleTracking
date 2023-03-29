@@ -1,28 +1,9 @@
 import itertools
 import numpy as np
-import cv2
 import pytest
 import torch
-from matplotlib.patches import Rectangle
 import ParticleDetection.utils.helper_funcs as hf
-
-
-def create_dummy_mask(width: int, height: int, angle: int,
-                      bar_lengths: int, bar_thickness: int):
-    """Creates a dummy segmentation mask of a bar with a defined angle"""
-    center_h = (height / 2) - bar_lengths / 2
-    center_w = width / 2 - bar_thickness / 2
-
-    rect = Rectangle((center_w, center_h), bar_thickness, bar_lengths,
-                     angle=angle, rotation_point='center')
-    corners = rect.get_corners()
-    ep0 = corners[0] + np.diff(corners[0:2], axis=0) / 2
-    ep1 = corners[2] + np.diff(corners[2:], axis=0) / 2
-
-    img = np.zeros((height, width))
-    cv2.fillPoly(img, np.int32([corners]), 255)
-    mask = img > 0
-    return mask, ep0, ep1
+from conftest import create_dummy_mask
 
 
 @pytest.fixture()

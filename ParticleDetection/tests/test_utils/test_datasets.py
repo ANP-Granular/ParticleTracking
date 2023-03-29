@@ -8,21 +8,21 @@ from ParticleDetection.utils import datasets
 from conftest import load_rod_data
 
 
-def test_get_object_counts(tmpdir: Path):
+def test_get_object_counts(tmp_path: Path):
     test_objs = [random.randint(1, 5) for _ in range(5)]
     test_data = {
         i: {"regions": test_objs[i] * ["test"]} for i in range(5)
     }
-    test_file = tmpdir / "test.json"
+    test_file = tmp_path / "test.json"
     with open(test_file, "w") as f:
         json.dump(test_data, f)
 
-    test_dataset = datasets.DataSet("test", str(tmpdir) + "/", "test.json")
+    test_dataset = datasets.DataSet("test", str(tmp_path) + "/", "test.json")
     found_objs = datasets.get_object_counts(test_dataset)
     assert found_objs == test_objs
 
 
-def test_get_dataset_classes(tmpdir: Path):
+def test_get_dataset_classes(tmp_path: Path):
     test_classes = [random.randint(1, 5) for _ in range(100)]
     test_expected = set(test_classes)
     test_data = {
@@ -30,25 +30,25 @@ def test_get_dataset_classes(tmpdir: Path):
             {"region_attributes": {"rod_col": test_classes[i]}}]}
         for i in range(100)
     }
-    test_file = tmpdir / "test.json"
+    test_file = tmp_path / "test.json"
     with open(test_file, "w") as f:
         json.dump(test_data, f)
-    test_dataset = datasets.DataSet("test", str(tmpdir) + "/", "test.json")
+    test_dataset = datasets.DataSet("test", str(tmp_path) + "/", "test.json")
     found_classes = datasets.get_dataset_classes(test_dataset)
     assert found_classes == test_expected
 
 
-def test_get_dataset_size(tmpdir: Path):
+def test_get_dataset_size(tmp_path: Path):
     test_images = random.choices([0, 1], weights=[0.1, 0.9], k=100)
     test_data = {
         i: {"regions": ["test"]} if test_images[i] == 1
         else {"regions": []} for i in range(100)
     }
-    test_file = tmpdir / "test.json"
+    test_file = tmp_path / "test.json"
     with open(test_file, "w") as f:
         json.dump(test_data, f)
 
-    test_dataset = datasets.DataSet("test", str(tmpdir) + "/", "test.json")
+    test_dataset = datasets.DataSet("test", str(tmp_path) + "/", "test.json")
     found_images_w_data = datasets.get_dataset_size(test_dataset)
     assert found_images_w_data == sum(test_images)
 
