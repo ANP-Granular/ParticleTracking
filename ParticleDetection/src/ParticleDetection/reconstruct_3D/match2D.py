@@ -48,7 +48,8 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
                         frame_numbers, calibration_file=None,
                         transformation_file=None,
                         cam1_convention="{idx:05d}_{color:s}.mat",
-                        cam2_convention="{idx:05d}_{color:s}.mat"):
+                        cam2_convention="{idx:05d}_{color:s}.mat"
+                        ):  # pragma: no cover
     """Ported Matlab script from ``match_rods_2020mix_gp12_cl1.m``.
     This function takes the same input file format and outputs the same file
     formats as the previous implementation in MATLAB. Use this function for a
@@ -222,7 +223,8 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
                          frame_numbers, calibration_file=None,
                          transformation_file=None,
                          cam1_convention="{idx:05d}_{color:s}.mat",
-                         cam2_convention="{idx:05d}_{color:s}.mat"):
+                         cam2_convention="{idx:05d}_{color:s}.mat"
+                         ):    # pragma: no cover
     """Match rod endpoints per frame such that the reprojection error is
     minimal.
     This function takes the same input file format and outputs the same file
@@ -606,13 +608,17 @@ def match_complex(data: pd.DataFrame, frame_numbers: Iterable[int], color: str,
     P2 = np.vstack((r2.T, t2.T)) @ calibration["CM2"].T
     P2 = P2.T
 
-    rotx = R.from_matrix(np.asarray(transform["M_rotate_x"])[0:3, 0:3])
-    roty = R.from_matrix(np.asarray(transform["M_rotate_y"])[0:3, 0:3])
-    rotz = R.from_matrix(np.asarray(transform["M_rotate_z"])[0:3, 0:3])
-    tw1 = np.asarray(transform["M_trans"])[0:3, 3]
-    tw2 = np.asarray(transform["M_trans2"])[0:3, 3]
-    rot = rotz * roty * rotx
-    trans = rot.apply(tw1) + tw2
+    if "translation" in transform.keys():
+        rot = R.from_matrix(transform["rotation"])
+        trans = transform["translation"]
+    else:
+        rotx = R.from_matrix(np.asarray(transform["M_rotate_x"])[0:3, 0:3])
+        roty = R.from_matrix(np.asarray(transform["M_rotate_y"])[0:3, 0:3])
+        rotz = R.from_matrix(np.asarray(transform["M_rotate_z"])[0:3, 0:3])
+        tw1 = np.asarray(transform["M_trans"])[0:3, 3]
+        tw2 = np.asarray(transform["M_trans2"])[0:3, 3]
+        rot = rotz * roty * rotx
+        trans = rot.apply(tw1) + tw2
 
     all_repr_errs = []
     all_rod_lengths = []

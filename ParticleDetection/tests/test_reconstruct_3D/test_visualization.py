@@ -20,7 +20,7 @@ else:
 @pytest.fixture(scope="session")
 def plotting_data() -> pd.DataFrame:
     colors = ["black", "green"]
-    data_folder = data_file = importlib_resources.files(
+    data_folder = importlib_resources.files(
         "RodTracker.resources.example_data.csv")
     data = pd.DataFrame()
     for color in colors:
