@@ -307,7 +307,7 @@ def save_to_mat(file_name: str, points: dict):
             # skip classes without saved points
             continue
         dt = np.dtype(
-            [('Point1', np.float, (2,)), ('Point2', np.float, (2,))])
+            [('Point1', float, (2,)), ('Point2', float, (2,))])
         arr = np.zeros((vals.shape[0],), dtype=dt)
 
         arr[:]['Point1'] = vals[:, 0, :]

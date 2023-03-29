@@ -163,7 +163,7 @@ class CustomTrainer(DefaultTrainer):
 
 
 # Currently not used
-class CompleteMapper(DatasetMapper):
+class CompleteMapper(DatasetMapper):    # pragma: no cover
     """Provides annotation data in training and testing context."""
     def __call__(self, dataset_dict):
         """
