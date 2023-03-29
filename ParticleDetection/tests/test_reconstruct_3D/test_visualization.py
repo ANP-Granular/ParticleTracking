@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -224,13 +225,17 @@ def test_show_3D_show(monkeypatch: pytest.MonkeyPatch):
     plt.close("all")
 
 
-def test_animate_3D():
+def test_animate_3D(tmp_path: Path):
     data0 = np.random.random((5, 6, 3, 2))
     data1 = data0 + 2
+    previous_dir = os.getcwd()
+    os.chdir(tmp_path)
     result = vis.animate_3D(data0, data1, show=False)
+    os.chdir(previous_dir)
+
     assert isinstance(result, Figure)
     assert isinstance(result.axes[0], Axes3D)
-    assert Path("./animate_3D.gif").exists()
+    assert Path(tmp_path / "animate_3D.gif").exists()
     plt.close("all")
 
 
