@@ -54,7 +54,7 @@ def test_get_dataset_size(tmp_path: Path):
 
 
 def test_insert_missing_rods():
-    test_data = load_rod_data(["red", "black"])
+    test_data = load_rod_data(["green", "black"])
     test_data = test_data.loc[test_data.frame == 500]
     previous_numbers = set(test_data["particle"])
     expected = len(test_data.particle.unique()) + 2
@@ -76,7 +76,7 @@ def test_insert_missing_rods():
 
 
 def test_replace_missing_rods():
-    test_data = load_rod_data(["blue"])
+    test_data = load_rod_data(["black"])
     unchanged_cols = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
                       'frame', 'particle', 'color']
     changed_cols = [col for col in test_data.columns
@@ -99,13 +99,13 @@ def test_replace_missing_rods():
 @pytest.mark.parametrize("cam_id,frame,", [("gp3", 100), ("gp4", 100)])
 def test_add_points(cam_id: str, frame: int):
     test_points = {
-        "blue": np.array([[0, 23.5, 15, 223.78],
+        "black": np.array([[0, 23.5, 15, 223.78],
                           [0, 23.5, 15, 223.78],
                           [0, 23.5, 15, 223.78]]),
         "green": np.array([[0, 23.5, 15, 223.78],
                           [0, 23.5, 15, 223.78]]),
     }
-    test_data = load_rod_data(["blue"])
+    test_data = load_rod_data(["black"])
     accessible = test_data.set_index(["color", "frame", "particle"])
     prev_nums = {}
     for k in test_points.keys():
@@ -128,15 +128,15 @@ def test_add_points(cam_id: str, frame: int):
 def test_add_points_both_cams():
     frame = 100
     test_points = {
-        "blue": np.array([[0, 23.5, 15, 223.78],
+        "black": np.array([[0, 23.5, 15, 223.78],
                           [0, 23.5, 15, 223.78],
                           [0, 23.5, 15, 223.78]]),
     }
-    test_data = datasets.add_points(test_points, load_rod_data(["blue"]),
+    test_data = datasets.add_points(test_points, load_rod_data(["black"]),
                                     "gp3", frame)
     inserted = datasets.add_points(test_points, test_data, "gp4", frame)
     sec_cam_cols = [col for col in test_data.columns if "gp4" in col]
-    v = test_points["blue"]
+    v = test_points["black"]
     inserted.set_index(["color", "frame", "particle"], inplace=True)
-    assert (inserted.loc["blue", frame][sec_cam_cols].to_numpy() ==
+    assert (inserted.loc["black", frame][sec_cam_cols].to_numpy() ==
             np.append(v, np.ones((len(v), 1)), axis=1)).all()

@@ -1,23 +1,14 @@
-import sys
 import shutil
 from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
 import ParticleDetection.utils.data_conversions as dc
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
-csv_files = importlib_resources.files(
-    "RodTracker.resources.example_data.csv")
+from conftest import EXAMPLES as csv_files
 
 
 def test_csv_extract_colors(tmp_path: Path):
-    test_colors = {"blue", "green", "red"}
+    test_colors = {"black", "green"}
     base_name = "test"
     test_file = tmp_path / (base_name + ".csv")
     test_data = pd.DataFrame()
@@ -29,7 +20,7 @@ def test_csv_extract_colors(tmp_path: Path):
     test_data.to_csv(test_file)
 
     result = dc.csv_extract_colors(test_file)
-    assert len(result) == 3
+    assert len(result) == 2
     saved_colors = set()
     for file in result:
         result_frame = pd.read_csv(file, index_col=0)
@@ -44,8 +35,8 @@ def test_csv_extract_colors(tmp_path: Path):
 
 
 def test_csv_combine(tmp_path: Path):
-    test_colors = {"blue", "green", "red"}
-    test_files = [csv_files.joinpath(f"rods_df_{color}.csv")
+    test_colors = {"black", "green"}
+    test_files = [csv_files / (f"rods_df_{color}.csv")
                   for color in test_colors]
     output_file = tmp_path / "test.csv"
     result = dc.csv_combine(test_files, str(output_file))
@@ -65,7 +56,7 @@ def test_csv_combine_unknown_files(tmp_path: Path):
     assert output_file.exists() is False
 
 
-@pytest.mark.parametrize("cut_frames", ([501], [502, 512, 550], []))
+@pytest.mark.parametrize("cut_frames", ([501], [502, 504, 510], []))
 def test_csv_split_by_frames(tmp_path: Path, cut_frames: list):
     test_file = tmp_path / "rods_df_black.csv"
     shutil.copy(csv_files.joinpath("rods_df_black.csv"), test_file)

@@ -83,7 +83,7 @@ def test_read_image(tmpdir: Path):
 
 
 def test_extract_3d_data():
-    test_data = load_rod_data(["blue"])
+    test_data = load_rod_data(["black"])
     frames = len(test_data.frame.unique())
     particles = len(test_data.particle.unique())
 

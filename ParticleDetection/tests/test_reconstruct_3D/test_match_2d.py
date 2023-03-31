@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -7,19 +6,12 @@ from scipy.spatial.transform import Rotation as R
 
 import ParticleDetection.reconstruct_3D.match2D as m2d
 import ParticleDetection.utils.data_loading as dl
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
+from conftest import EXAMPLES
 
 
 @pytest.fixture(scope="session")
 def example_data() -> pd.DataFrame:
-    data_file = importlib_resources.files(
-        "RodTracker.resources.example_data.csv").joinpath("rods_df_black.csv")
+    data_file = EXAMPLES / "rods_df_black.csv"
     data = pd.read_csv(data_file, index_col=0)
     return data
 
@@ -29,12 +21,9 @@ def test_match_csv_complex(tmp_path: Path, rematching: bool):
     colors = ["black", ]
     frames = list(range(505, 508))
 
-    calibs = importlib_resources.files(
-        "RodTracker.resources.example_data.calibrations")
-    calibration = calibs.joinpath("gp34.json")
-    transformation = calibs.joinpath("transformation.json")
-    data_folder = Path(importlib_resources.files(
-        "RodTracker.resources.example_data").joinpath("csv"))
+    calibration = EXAMPLES / "gp34.json"
+    transformation = EXAMPLES / "transformation.json"
+    data_folder = EXAMPLES
     assert not (tmp_path / "output").exists()
 
     result = m2d.match_csv_complex(str(data_folder), str(tmp_path / "output"),
@@ -55,11 +44,9 @@ def test_match_complex(tmp_path: Path, example_data: pd.DataFrame,
     cam2 = "gp4"
     frames = list(range(505, 508))
 
-    calibs = importlib_resources.files(
-        "RodTracker.resources.example_data.calibrations")
-    calibration = dl.load_camera_calibration(calibs.joinpath("gp34.json"))
+    calibration = dl.load_camera_calibration(EXAMPLES / "gp34.json")
     transformation = dl.load_world_transformation(
-        calibs.joinpath("transformation.json"))
+        EXAMPLES / "transformation.json")
     result = m2d.match_complex(example_data, frames, color, calibration,
                                transformation, cam1, cam2, renumber)
     assert len(result) == 3
@@ -80,11 +67,9 @@ def test_match_frame(example_data: pd.DataFrame, renumber: bool):
     cam2 = "gp4"
     cols_2D = [f"x1_{cam1}", f"y1_{cam1}", f"x2_{cam1}", f"y2_{cam1}",
                f"x1_{cam2}", f"y1_{cam2}", f"x2_{cam2}", f"y2_{cam2}"]
-    calibs = importlib_resources.files(
-        "RodTracker.resources.example_data.calibrations")
-    calibration = dl.load_camera_calibration(calibs.joinpath("gp34.json"))
+    calibration = dl.load_camera_calibration(EXAMPLES / "gp34.json")
     transformation = dl.load_world_transformation(
-        calibs.joinpath("transformation.json"))
+        EXAMPLES / "transformation.json")
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)

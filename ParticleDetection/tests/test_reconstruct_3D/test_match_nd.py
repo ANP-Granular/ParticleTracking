@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -7,19 +6,12 @@ from scipy.spatial.transform import Rotation as R
 
 import ParticleDetection.reconstruct_3D.matchND as mnd
 import ParticleDetection.utils.data_loading as dl
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
+from conftest import EXAMPLES
 
 
 @pytest.fixture(scope="session")
 def example_data() -> pd.DataFrame:
-    data_file = importlib_resources.files(
-        "RodTracker.resources.example_data.csv").joinpath("rods_df_black.csv")
+    data_file = EXAMPLES / "rods_df_black.csv"
     data = pd.read_csv(data_file, index_col=0)
     return data
 
@@ -57,12 +49,9 @@ def test_assign(tmp_path: Path):
     colors = ["black", ]
     frames = list(range(505, 508))
 
-    calibs = importlib_resources.files(
-        "RodTracker.resources.example_data.calibrations")
-    calibration = calibs.joinpath("gp34.json")
-    transformation = calibs.joinpath("transformation.json")
-    data_folder = Path(importlib_resources.files(
-        "RodTracker.resources.example_data").joinpath("csv"))
+    calibration = EXAMPLES / "gp34.json"
+    transformation = EXAMPLES / "transformation.json"
+    data_folder = EXAMPLES
     assert not (tmp_path / "output").exists()
 
     result = mnd.assign(str(data_folder), str(tmp_path / "output"), colors,
@@ -77,11 +66,9 @@ def test_assign(tmp_path: Path):
 def test_match_frame_nd(example_data: pd.DataFrame):
     frame = 508
     color = "black"
-    calibs = importlib_resources.files(
-        "RodTracker.resources.example_data.calibrations")
-    calibration = dl.load_camera_calibration(calibs.joinpath("gp34.json"))
+    calibration = dl.load_camera_calibration(EXAMPLES / "gp34.json")
     transformation = dl.load_world_transformation(
-        calibs.joinpath("transformation.json"))
+        EXAMPLES / "transformation.json")
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)

@@ -1,4 +1,3 @@
-import sys
 import os
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -9,20 +8,13 @@ import pandas as pd
 import pytest
 import ParticleDetection.reconstruct_3D.visualization as vis
 import ParticleDetection.utils.data_loading as dl
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
+from conftest import EXAMPLES
 
 
 @pytest.fixture(scope="session")
 def plotting_data() -> pd.DataFrame:
     colors = ["black", "green"]
-    data_folder = importlib_resources.files(
-        "RodTracker.resources.example_data.csv")
+    data_folder = EXAMPLES
     data = pd.DataFrame()
     for color in colors:
         data_file = data_folder.joinpath(f"rods_df_{color}.csv")

@@ -1,17 +1,9 @@
-import sys
 from pathlib import Path
 import numpy as np
 import pytest
 import torch
 import ParticleDetection.utils.detection as det
 from conftest import create_dummy_mask
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
 
 
 def test_run_detection(monkeypatch: pytest.MonkeyPatch, tmpdir):
@@ -27,9 +19,7 @@ def test_run_detection(monkeypatch: pytest.MonkeyPatch, tmpdir):
         "pred_classes": torch.tensor([0, ]),
         "pred_masks": torch.tensor(masks),
     }
-    data_folder = importlib_resources.files(
-        "RodTracker.resources.example_data").joinpath("images")
-    dataset_format = str(data_folder) + "/{cam_id:s}/{frame:04d}.jpg"
+    dataset_format = "/{cam_id:s}/{frame:04d}.jpg"
     classes = {0: "black", 1: "blue"}
 
     monkeypatch.setattr(det, "_run_detection",
