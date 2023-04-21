@@ -11,40 +11,51 @@ authors:
     affiliation: 1
   - name: Dmitry Puzyrev
     orcid: 0000-0002-9269-3224
-    affiliation: 1
+    affiliation: 1,2
+  - name: Ralf Stannarius
+    orcid: 0000-0002-6836-3663
+    affiliation: 1,2
 affiliations:
- - name: Otto-von-Guericke-University Magdeburg
-   index: 1
+  - name: Department of Nonlinear Phenomena, Institute of Physics, Otto-von-Guericke-University Magdeburg
+    index: 1
+  - name: MARS, Otto-von-Guericke-University Magdeburg
+    index: 2
 date: 30 March 2023
 bibliography: paper.bib
 ---
 
 # Summary
 
-The RodTracker software is intended to facilitate the semi-automatic particle detection, tracking and 3D-coordinate reconstruction from stereo camera images.
-It consists of two packages, `RodTracker` and `ParticleDetection`.
-The `ParticleDetection` package is the library providing functionality for training and use of neural-networks for particle detection in said images, as well as automatic tracking of these particles. The `RodTracker` package is a graphical user interface (GUI) for the particle tracking task, encapsulating the functionality of `ParticleDetection` and providing means to manually correct the automatically generated particle position and tracking data.
+The RodTracker software is intended to facilitate semi-automatic detection, 3D position and orientation reconstruction and tracking of arbitrarily shaped particles from 2-view stereo camera footage.
+The software consists of two packages, `RodTracker` and `ParticleDetection`.
+The `ParticleDetection` package provides functionality for training and application of neural networks (e.g. Mask R-CNN) for particle detection in camera images, as well as automatic 3D matching and multi-object tracking of these particles. The `RodTracker` package is a graphical user interface (GUI) for the particle tracking task, encapsulating the functionality of `ParticleDetection` and providing means to manually correct the automatically generated particle coordinates and tracking data.
 
 The main features of this software are:
 
-- training of Mask R-CNN models for detecting particles on images
-- automated particle endpoint assignments from segmentation masks
-- automated assignment of particle correspondences between stereo-camera images
-- reconstruction of 3D coordinates for particles identified on stereo-camera images
-- automated tracking of particles over multiple stereo-camera frames, i.e. the course of an experiment
+- training and application of (Detectron2) Mask R-CNN models for detecting particles on images
+- automated particle endpoint detection from segmentation masks
+- automated assignment of particle correspondences (3D matching) between two camera views
+- reconstruction of 3D coordinates and orientations of particles identified on camera images
+- automated tracking of particles over multiple stereo camera frames, i.e. the course of an experiment
 - providing a GUI for applying manual corrections to the automatically generated data
 
-The main focus of this software is currently on rod-shaped particles, but it is extensible with new particle geometries.
-The software is currently employed for data extraction by the VICKI (**TBD**), EVA (**TBD**), and CORDYGA (**TBD**) projects.
-So far, **X** publications are in preparation, that use this library for data extraction.
+The main focus of this software is currently on elongated (rod-shaped) particles, but it is extensible with new particle geometries.
+The software is currently employed for data extraction by the DLR projects VICKI (50WM2252), EVA (50WM2048), and CORDYGA (**TBD**).
+The prototype software for particle detection and tracking was described in [@Puzyrev2020].
+Several publications that use this library for data extraction are currently in preparation.
 
 # Statement of need
 
-Many natural and industrial processes deal with granular gases, i.e. dilute macroscopic particles floating and colliding in space. For the study of such systems it is beneficial to know the 3D positions of as many particles as possible over time. With that information a statistical analysis of the ensembles' properties and their evolution over time can be achieved.
-For this, granular systems are placed in microgravity, are excited there and observed with a stereo-camera setup [@PhysRevLett.120.214301; @Puzyrev2020].
-To achieve statistically meaningful results usually many tens to hundreds of particles are necessary in such experiments. This makes manual data analysis very time-consuming.
-For that reason AI-assisted approaches have been successfully employed [@Puzyrev2020] in the data extraction process from the raw stereo-camera images.
-This approach still suffered from long manual data correction times, because of detection errors during automatic particle detection and tracking as well as a suboptimal user interface to perform these corrections.
+Many natural and industrial processes deal with granular gases, i.e. dilute ensembles of macroscopic particles floating and colliding in space. Starting from the pioneering experiments of E. Falcon et al. [TODO], the 
+Aside from some on-earth experiments, most experiments with 3D gases are performed in microgravity conditions. In typycal microgravity experiments, ensembles of particles are placed in the container, excited mechanically or magnetically and observed with a stereo-camera setup. Many experiments were performed in the VIP-Gran instrument by the Space Grains ESA Topical team [spacegrains.org] during the parabolic flight campaigns. In majority of VIP-Gran experiments, particle density does not allow to track individual grains.
+
+Another possibility is to perform the experiment with dilute ensembles, where most particles can be directly observed on video footage [@PhysRevLett.120.214301; @Puzyrev2020]. In this case, the focus has been on the experiments with elongated particles, due to the fact that collision rates for such particles are much higher than for spheres for the same packing fraction. Thus, even if particles overlap on the camera views, usually their endpoints still can be observed and their 3D position and orientation can be reconstructed. In addition, observing the evolution of particle orientations allows to find the kinetic energy associated with the rotational degrees of freedom. Experiments with other particle types are planned as well.
+
+For the study of such systems it is beneficial to know the 3D positions of as many particles as possible over time. To achieve statistically meaningful results the tracking of many tens to hundreds of particles is usually required. With that information a statistical analysis of the ensembles' properties and their evolution over time can be achieved.
+
+In addition to high amount of simulatneously tracked objects, accurate experimental data analysis requires high framerates. In one drop tower experimental run, around 9 seconds of 100 fps to 240 fps video footage has to be analysed. This makes manual data analysis exceptionally time-consuming.
+For that reason AI-assisted approaches have been successfully employed [@Puzyrev2020] in the data extraction process from the raw stereo camera images.
+This approach still suffered from long manual data processing times, because of the necessity to correct remaining errors after automatic particle detection, matching and tracking as well as a suboptimal user interface to perform the correction tasks.
 
 <!-- Specifically a GUI was needed that allowed users, that are partially untrained in the use of programming scripts, to perform the data correction  -->
 
@@ -69,7 +80,7 @@ A typical workflow is shown in \autoref{fig:workflow}.
 
 # Dependencies
 
-Among others, the software depends on the following open source libraries. For the particle detection the Detectron2 [@wu2019detectron2] framework is used. For tracking the software relies heavily on functions provided by numpy [@harris2020array], scipy [@2020SciPy-NMeth] and PuLP. The GUI was constructed with PyQt5 and is using pandas [@the_pandas_development_team_2022_7344967] for its data management.
+Among others, the software depends on the following open source libraries: For the particle detection the Detectron2 [@wu2019detectron2] framework is used. For tracking the software relies heavily on functions provided by numpy [@harris2020array], scipy [@2020SciPy-NMeth] and PuLP [https://coin-or.github.io/pulp/]. The GUI was constructed with PyQt5 and is using pandas [@the_pandas_development_team_2022_7344967] for its data management.
 
 # Acknowledgements
 We want to acknowledge the valuable feedback and bug reports given by the users of our software, specifically Mahdieh Mohammadi and Kirsten Harth.
