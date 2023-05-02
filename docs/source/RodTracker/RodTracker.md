@@ -15,7 +15,7 @@ Run the **RodTracker** GUI using one of the possibilities:
     ```
   - Execute a stand-alone executable bundled for your system.
 
-In all these cases the window shown below should be opened after the splash screen disappears. In some cases the application opens behind other windows, so look at your task bar in case you don't see this window.
+In all these cases the window shown below should be opened after the splash screen disappears. In some cases the application opens behind other windows, so look at your task bar in case you do not see this window.
 
 ![RodTracker - GUI](../images/Startup.png)
 
@@ -186,7 +186,7 @@ Unlike during the detection of particles, the results will only be accessible af
 
 ### Calibration & transformation data format
 
-The stereo camera calibration relates positions in images from both cameras to each other. From this the 3D coordinates of the objects shown in the images can be reconstructed. Here [OpenCV](https://opencv.org/) was used to generate the stereo-camera calibration (see ParticleDetection's [camera calibration](../ParticleDetection-api/reconstruct_3D/calibrate_cameras.rst)). It is also possible to do this calibration with other software, e.g. MATLAB, as long as the pin-hole camera model is used and the calibration data is transferred into the format shown below.
+The stereo camera calibration relates positions in images from both cameras to each other. From this the 3D coordinates of the objects shown in the images can be reconstructed. One can use [OpenCV](https://opencv.org/) to perform the stereo camera calibration (see ParticleDetection's [camera calibration](../ParticleDetection-api/reconstruct_3D/calibrate_cameras.rst)). It is also possible to do this calibration with other software, e.g. [MATLAB Stereo Camera Calibrator App](https://mathworks.com/help/vision/ug/using-the-stereo-camera-calibrator-app.html), as long as the pin-hole camera model is used and the calibration data is transferred into the format shown below. We have found that stereo camera calibration done via MATLAB App is generally more accurate than one done with OpenCV functions.  
 
 The transformation represents a change of coordinate system, i.e. from the first camera's coordinate system to the world/experiment coordinate system. It must be represented as a rotation followed by a translation as shown below.
 
@@ -241,13 +241,13 @@ See this [OpenCV documentation](https://docs.opencv.org/3.4/d9/d0c/group__calib3
   ]
 }
 ```
-### Tracking vs. only reconstruction
+### Tracking vs. Reconstruction-only
 
 The checkbox titled *Tracking* toggles the use of tracking and reconstruction-only mode.
 
 In the reconstruction-only mode the particle number assignments are kept *as-is*. This means, that 3D coordinates are reconstructed from without attempting to find the *correct*/a *better* assignments. This is very useful, if only some manual adjustments have been made to the 2D rod data or their number assignment and their 3D coordinates need an update.
 
-The tracking mode on the other hand attempts to find an optimal assignment of particle numbers between camera angles within one frame. Additionally, tracking particles over all frames is attempted, i.e. assigning the same ID to it. For more information about the used metric, have a look at `create_weights()` and `match_frame()` in the [matchND module](../ParticleDetection-api/reconstruct_3D/matchND.rst).
+The tracking mode on the other hand attempts to find an optimal assignment of particle numbers between camera angles within one frame. Additionally, tracking particles over all frames is attempted, i.e. assigning the same ID to the same particle. For more information about the used metric, have a look at `create_weights()` and `match_frame()` in the [matchND module](../ParticleDetection-api/reconstruct_3D/matchND.rst).
 
 
 ### Evaluation plots
@@ -270,7 +270,7 @@ Displacement per frame
 
 ### 3D display
 
-After successful reconstruction the 3D data can be displayed in the 3D. If an appropriate transformation to experiment coordinates was given, the detected particles will show up inside the indicated experiment container (see example image below).
+After successful reconstruction the 3D data can be displayed in the 3D. If an appropriate transformation to experiment coordinates was given, the detected particles will show up inside the indicated experimental container (see example image below).
 
 ![3D-display](../images/3DpostTracking.png)
 

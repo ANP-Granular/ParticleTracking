@@ -2,7 +2,7 @@
 
 <mark>This section needs extension/correction!</mark>
 
-This repository customizes the training, inference and visualization code of the **Detectron2** framework to accurately detect rod-like particles. It additionally provides functionality to track these detected particles over multiple frames and reconstruct 3D representations of these observed granular gases.
+This repository customizes the training, inference and visualization code of the **Detectron2** framework to accurately detect rod-like particles. It additionally provides functionality t match and track the detected particles over multiple frames and reconstruct 3D representations of the particle ensembles (granular gases).
 
 Use it like any other python package, by installing it in your environment and
 then importing it in your scripts/modules/functions.

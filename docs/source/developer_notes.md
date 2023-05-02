@@ -39,7 +39,7 @@ Please make sure that the dependencies of the `DOCS`, `BUILD`, or `DEV` extra ar
 Refer to the [Sphinx documentation](https://www.sphinx-doc.org/) for further options.
 
 ```{warning}
-On Windows make sure that no other process, e.g. Dropbox, attempts to access files necessary for the build during this. Otherwise an `OSError: [WinError 110]` might occur and break the process.
+On Windows make sure that no other process, e.g. Dropbox, attempts to access files necessary for the build during this step. Otherwise an `OSError: [WinError 110]` might occur and break the process.
 
 On Linux this problem does not seem to occur.
 ```
@@ -67,12 +67,12 @@ In the first case everything is bundled into one folder named `RodTracker`
 which can be copied or moved as a whole. Run the executable
 `dist\RodTracker\RodTrackerApp.exe` inside this folder to start the program.
 
-The second script on the other hand generates only one file, i.e. 
+The build option generates only one file, i.e. 
 `dist\RodTracker.exe`, that holds all necessary files to run the program 
-and unpacks those during run-time.
+and unpacks those during runtime.
 
 ```{warning}
-On Windows make sure that no other process, e.g. Dropbox, attempts to access files necessary for the build during this. Otherwise an `OSError: [WinError 110]` might occur and break the process.
+On Windows make sure that no other process, e.g. Dropbox, attempts to access files necessary for the build during this step. Otherwise an `OSError: [WinError 110]` might occur and break the process.
 
 On Linux this problem does not seem to occur.
 ```
