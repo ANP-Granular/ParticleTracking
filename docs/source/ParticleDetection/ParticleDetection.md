@@ -4,6 +4,7 @@ ParticleDetection is a library for detecting and tracking particles in stereo-ca
 The main focus here is to enable the (semi-)automatic data extraction from microgravity experiments with granular gases. In these experiments many particles float and interact in space.
 Different shapes can be chosen for these particles, but for now the library is focused on rod-like particles. It is planned to include multiple shapes in later versions.
 
+This repository customizes the training, inference and visualization code of the **Detectron2** framework to accurately detect rod-like particles. It additionally provides functionality to match and track the detected particles over multiple frames and reconstruct 3D representations of the particle ensembles (granular gases).
 
 
 ## Model training
