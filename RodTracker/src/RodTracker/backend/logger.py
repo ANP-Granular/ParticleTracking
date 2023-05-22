@@ -25,6 +25,7 @@ import traceback
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Optional, Iterable, Union, List
+import numpy as np
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
 from RodTracker import LOG_PATH
@@ -495,7 +496,7 @@ class DeleteRodAction(Action):
             out["seen"] = self.rod.seen
         else:
             # If the action was performed
-            out["position"] = [0, 0, 0, 0]
+            out["position"] = 4 * [np.nan]
             out["seen"] = not self.rod.seen
         return out
 

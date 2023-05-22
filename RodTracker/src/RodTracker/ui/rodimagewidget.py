@@ -1000,7 +1000,7 @@ class RodImageWidget(QLabel):
 
     @QtCore.pyqtSlot(rn.RodNumberWidget)
     def delete_rod(self, rod: rn.RodNumberWidget) -> None:
-        """Deletes the given rod, thus sets its position to ``(0, 0)``.
+        """Deletes the given rod, thus sets its position to ``(-1, -1)``.
 
         Parameters
         ----------
@@ -1013,7 +1013,7 @@ class RodImageWidget(QLabel):
         rod.setText(str(rod.rod_id))
         delete_action = lg.DeleteRodAction(rod.copy())
         rod.seen = False
-        rod.rod_points = [0, 0, 0, 0]
+        rod.rod_points = 4 * [-1]
         rod.rod_state = rn.RodState.CHANGED
         self._logger.add_action(delete_action)
         self.draw_rods()
