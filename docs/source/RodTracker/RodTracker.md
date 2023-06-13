@@ -160,6 +160,10 @@ To load a position dataset in the form shown in [](#saving), click on the `Load 
 
 If no rods are shown after selecting a folder check, that the `Overlay Rods` box is checked, the correct image dataset is loaded (folder must match the ID appended to the 2D data column names), and that a frame is currently displayed, that has data associated with it.
 
+```{hint}
+You might need to adjust the `Position Scaling` value to `10.0` in the settings tab, if you are loading the example data.
+```
+
 ```{note}
 The selection dialog on Windows will not show any files in the selected directory. Therefore, make sure which directory to select in advance.
 ```
@@ -308,8 +312,6 @@ To avoid excessive loss of data, the RodTracker automatically saves your current
 
 ## Known issues
 
-<mark>This section needs extension/correction!</mark>
-
 - make sure the front camera images are detected first
   - the front camera columns must be the first in the dataset given
   - otherwise the transformations will not work correctly
@@ -321,3 +323,5 @@ To avoid excessive loss of data, the RodTracker automatically saves your current
 - memory leak from plotting
   - see this [issue of matplotlib](https://github.com/matplotlib/matplotlib/issues/5022)
   - this problem is partially mitigated by deactivating automatic plot updating after new data has been loaded
+
+For more (recent) information about issues see the [GitHub repository](https://github.com/ANP-Granular/ParticleTracking/issues).
