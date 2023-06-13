@@ -6,7 +6,7 @@ From now on all instructions for installation are only concerning installing the
 
 ## Installation from source
 
-**Requirement:** Python `>=3.8` is installed
+**Requirement:** Python `>=3.8` is installed, pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
   1. Clone the [repository](https://github.com/ANP-Granular/Track_Gui) containing the RodTracker. Do **NOT** just copy the `RodTracker` folder. This will lead to a missing dependency during the installation.
   2. Install it using `pip`.
    ```shell

@@ -26,9 +26,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ./Python
+        pip install ./RodTracker[DEV]
+        pip install ./ParticleDetection[TEST]
     - name: Lint with flake8
       run: |
-        pip install flake8
-        flake8 --config ./Python/setup.cfg ./Python
+        flake8 --config ./RodTracker/setup.cfg ./RodTracker
+        flake8 ./ParticleDetection
       continue-on-error: true
