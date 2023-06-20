@@ -26,7 +26,7 @@ import RodTracker.backend.settings as se
 
 class TestConfiguration:
     def test_read_default(self, tmp_path: pathlib.Path):
-        RodTracker.TEMP_DIR = tmp_path
+        RodTracker.CONFIG_DIR = tmp_path
         # Force reload to account for the new TEMP_DIR
         importlib.reload(se)
 

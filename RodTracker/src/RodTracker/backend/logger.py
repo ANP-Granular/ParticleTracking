@@ -28,7 +28,7 @@ from typing import Optional, Iterable, Union, List
 import numpy as np
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
-from RodTracker import LOG_PATH
+from RodTracker import LOG_FILE
 import RodTracker.ui.rodnumberwidget as rn
 
 _logger = logging.getLogger(__name__)
@@ -64,10 +64,10 @@ QtCore.qInstallMessageHandler(qt_error_handler)
 def open_logs():
     """Opens the log file."""
     if sys.platform == "win32":
-        os.startfile(LOG_PATH)
+        os.startfile(LOG_FILE)
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
-        subprocess.run([opener, LOG_PATH])
+        subprocess.run([opener, LOG_FILE])
 
 
 class FileActions(Enum):

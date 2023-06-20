@@ -15,16 +15,19 @@
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import pathlib
-import tempfile
+from pathlib import Path
+import platformdirs
 
-TEMP_DIR: pathlib.Path = pathlib.Path(tempfile.gettempdir()) / "RodTracker"
-if not TEMP_DIR.exists():
-    TEMP_DIR.mkdir()
-LOG_PATH = TEMP_DIR / "RodTracker.log"
+
+APPNAME = "RodTracker"
+APPAUTHOR = "ANP-Granular"
+
+LOG_DIR: Path = platformdirs.user_log_path(APPNAME, APPAUTHOR, opinion=False,
+                                           ensure_exists=True)
+LOG_FILE = LOG_DIR / "RodTracker.log"
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-f_handle = logging.FileHandler(LOG_PATH, mode="a")
+f_handle = logging.FileHandler(LOG_FILE, mode="a")
 f_handle.setLevel(logging.INFO)
 formatter = logging.Formatter(
     "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
@@ -33,3 +36,10 @@ formatter = logging.Formatter(
 f_handle.setFormatter(formatter)
 logger.addHandler(f_handle)
 logging.captureWarnings(True)
+
+CONFIG_DIR = platformdirs.user_config_path(APPNAME, APPAUTHOR, roaming=False,
+                                           ensure_exists=True)
+SETTINGS_FILE = CONFIG_DIR / "settings.json"
+
+DATA_DIR = platformdirs.user_data_path(APPNAME, APPAUTHOR, roaming=False,
+                                       ensure_exists=True)

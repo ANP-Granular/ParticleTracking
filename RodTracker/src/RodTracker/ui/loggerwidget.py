@@ -21,7 +21,7 @@ import tempfile
 from typing import List
 from PyQt5 import QtCore, QtWidgets
 import RodTracker.backend.logger as lg
-from RodTracker import TEMP_DIR
+from RodTracker import DATA_DIR
 
 _logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class LoggerWidget(QtWidgets.QListWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.temp_manager = tempfile.TemporaryDirectory(
-            prefix="Session_", dir=str(TEMP_DIR))
+            prefix="Session_", dir=str(DATA_DIR))
         _logger.info(self.temp_manager.name)
 
     @property

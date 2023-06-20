@@ -46,11 +46,8 @@ def main():
     splash.show()
 
     splash.showMessage("Updating environment...", align, color)
-    from RodTracker import TEMP_DIR
     import RodTracker.backend.logger as lg
     sys.excepthook = lg.exception_logger
-    if not TEMP_DIR.exists():
-        TEMP_DIR.mkdir()
 
     splash.showMessage("Loading UI...", align, color)
     import RodTracker.ui.mainwindow as mw

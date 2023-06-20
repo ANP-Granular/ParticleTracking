@@ -246,6 +246,14 @@ def show_about(parent: QtWidgets.QWidget):
         </tr>
         <tr>
             <td width="50">
+                <p><a href="https://github.com/platformdirs/platformdirs">
+                platformdirs</a>:</p>
+            </td>
+            <td width="150">3.2.0</td>
+            <td width="200"><p> MIT </p></td>
+        </tr>
+        <tr>
+            <td width="50">
                 <p><a href="https://www.pyinstaller.org/">PyInstaller</a>:</p>
             </td>
             <td width="150">5.7</td>
