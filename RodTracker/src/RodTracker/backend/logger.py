@@ -21,7 +21,6 @@ import logging
 import pathlib
 import sys
 import subprocess
-import traceback
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Optional, Iterable, Union, List
@@ -36,8 +35,7 @@ _logger = logging.getLogger(__name__)
 
 def exception_logger(e_type, e_value, e_tb):
     """Handler for logging uncaught exceptions during the program flow."""
-    tb_str = "".join(traceback.format_exception(e_type, e_value, e_tb))
-    _logger.exception(f"Uncaught exception:\n{tb_str}")
+    _logger.exception("Uncaught exception:", exc_info=(e_type, e_value, e_tb))
 
 
 def qt_error_handler(mode: QtCore.QtMsgType,
