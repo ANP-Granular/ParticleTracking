@@ -26,28 +26,27 @@ bibliography: paper.bib
 
 # Summary
 
-The RodTracker software is intended to facilitate semi-automatic detection, 3D position and orientation reconstruction and tracking of arbitrarily shaped particles from 2-view stereo camera footage.
+<!-- TODO: insert link to docs -->
+
+The `ParticleTracking` software is intended to facilitate semi-automatic detection, 3D position and orientation reconstruction and tracking of arbitrarily shaped particles from 2-view stereo camera footage.
 The software consists of two packages, `RodTracker` and `ParticleDetection`.
 The `ParticleDetection` package provides functionality for training and application of neural networks (e.g. Mask R-CNN) for particle detection in camera images, as well as automatic 3D matching and multi-object tracking of these particles. The `RodTracker` package is a graphical user interface (GUI) for the particle tracking task, encapsulating the functionality of `ParticleDetection` and providing means to manually correct the automatically generated particle coordinates and tracking data.
 
-The main features of this software are:
+The main features of this software are given below:
 
 - training and application of (Detectron2) Mask R-CNN models for detecting particles on images
 - automated particle endpoint localization from segmentation masks
 - automated assignment of particle correspondences (3D matching) between two camera views
 - reconstruction of 3D coordinates and orientations of particles identified on camera images
 - automated tracking of particles over multiple stereo camera frames, i.e. the course of an experiment
-- providing a GUI for applying manual corrections to the automatically generated data
-
-<!-- TODO: Insert Workflow graph here: -->
-![Typical workflow for data extraction.\label{fig:workflow}](./workflow.png){ width=80% }
+- providing a GUI for applying manual corrections to the automatically generated data with a typical workflow shown in \autoref{fig:workflow}
 
 The main focus of this software is currently on elongated (rod-shaped) particles, but it is extensible with new particle geometries. 
 The software can also be modified for inclusion of additional camera views for more accurate 3D tracking, or for 1-view 2D particle tracking.
 The `RodTracker` software is currently employed for data extraction in the German Aerospace Center (DLR) projects EVA (50WM2048), VICKI (50WM2252), and CORDYGA (50WM2242). Several publications that use this library for data extraction are currently in preparation.
 The prototype software for particle detection and tracking was described in [@Puzyrev2020].
 
-<!-- TODO: insert link to docs -->
+![Typical workflow with the `RodTracker` for data extraction.\label{fig:workflow}](./workflow.png){ width=100% }
 
 # Statement of need
 
@@ -68,11 +67,11 @@ The `ParticleTracking` software is an evolution of the AI-assisted framework for
 
 # Dependencies
 
-Among others, the software depends on the following open source libraries: For the particle detection the Detectron2 [@wu2019detectron2] framework is used. For tracking the software relies heavily on functions provided by numpy [@harris2020array], scipy [@2020SciPy-NMeth] and (PuLP)[https://coin-or.github.io/pulp/]. The GUI was constructed with PyQt5 and is using pandas [@the_pandas_development_team_2022_7344967] for its data management.
+Among others, the software depends on the following open source libraries: For the particle detection the Detectron2 [@wu2019detectron2] framework is used. For tracking the software relies heavily on functions provided by numpy [@harris2020array], scipy [@2020SciPy-NMeth] and PuLP. The GUI was constructed with PyQt5 and is using pandas [@the_pandas_development_team_2022_7344967] for its data management.
 
 # Acknowledgements
 We want to acknowledge the valuable feedback and bug reports given by the users of our software, specifically Mahdieh Mohammadi and Kirsten Harth.
-We also want to acknowledge the work of Meera Subramanian and Adithya Viswanathan that provided a first prototype of the RodTracker GUI.
+We also want to acknowledge the work of Meera Subramanian and Adithya Viswanathan that provided a first prototype of the `RodTracker` GUI.
 
 The development of this software has been financially supported by the German Aerospace Center (DLR) within grants 50WM2048 (Project EVA) and 50WM2252 (Project VICKI).
 
