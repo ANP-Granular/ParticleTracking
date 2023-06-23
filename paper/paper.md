@@ -26,13 +26,11 @@ bibliography: paper.bib
 
 # Summary
 
-<!-- TODO: insert link to docs -->
-
 The `ParticleTracking` software is intended to facilitate semi-automatic detection, 3D position and orientation reconstruction and tracking of arbitrarily shaped particles from 2-view stereo camera footage.
 The software consists of two packages, `RodTracker` and `ParticleDetection`.
 The `ParticleDetection` package provides functionality for training and application of neural networks (e.g. Mask R-CNN) for particle detection in camera images, as well as automatic 3D matching and multi-object tracking of these particles. The `RodTracker` package is a graphical user interface (GUI) for the particle tracking task, encapsulating the functionality of `ParticleDetection` and providing means to manually correct the automatically generated particle coordinates and tracking data.
 
-The main features of this software are given below:
+The main features of this software are given below with a more extensive feature description available in the documentation under https://particletracking.readthedocs.io/en/latest/:
 
 - training and application of (Detectron2) Mask R-CNN models for detecting particles on images
 - automated particle endpoint localization from segmentation masks
@@ -53,7 +51,7 @@ The prototype software for particle detection and tracking was described in [@Pu
 Many natural and industrial processes deal with granular gases, i.e. dilute ensembles of macroscopic particles floating and colliding in space. One of the defining features of such systems is inelasticity of the collision, i.e. dissipation of particle kinetic energy. This leads to fascinating phenomena such as spontaneous clustering, lack of energy equipartition and non-Gaussian velocity distributions. 
 While most of 2D experiments can be performed in normal gravity, 3D experiments with granular gases require microgravity conditions. Starting from the pioneering results on cluster formation [@Falcon1999], the 3D experiments have been reported for spherical grains [@Falcon2006; @Yu2020], ellipsoids [@Pitikaris2022] and rods [@Harth2013; @Harth2018]. 
 
-<!-- FIXME: The following paragraph might not be necessary. Instead focus on the intended experiments. -->
+<!-- FIXME: The following paragraph might not be necessary. Instead focus on the intended experiments? -->
 In typical microgravity experiments, ensembles of particles are placed in the container, excited mechanically or magnetically and observed with a stereo-camera setup. Many experiments were performed in the VIP-Gran instrument by the (Space Grains ESA Topical team)[spacegrains.org] during the parabolic flight campaigns. In the majority of VIP-Gran experiments, particle density does not allow for tracking individual grains.
 
 Another possibility is to perform the experiment with dilute ensembles, where most particles can be directly observed on video footage [@Harth2018; @Puzyrev2020]. In this case, the focus has been on the experiments with elongated particles, due to the fact that collision rates for such particles are much higher than for spheres for the same packing fraction. Thus, even if particles overlap on the camera views, usually their endpoints still can be observed and their 3D position and orientation can be reconstructed. In addition, study of elongated particles allows to observe the evolution of their orientations and find the kinetic energy associated with the rotational degrees of freedom. Experiments with other particle types are planned as well.
