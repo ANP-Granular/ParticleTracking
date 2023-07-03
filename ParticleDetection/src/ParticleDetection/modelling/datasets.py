@@ -30,10 +30,78 @@ from typing import List, Callable, Set
 
 import numpy as np
 from PIL import Image
+from shapely.geometry.point import Point
+from shapely.affinity import scale, rotate
 from detectron2.structures import BoxMode
 from detectron2.data import DatasetCatalog, MetadataCatalog
 
 from ParticleDetection.utils.datasets import DataSet
+
+
+def extract_polygon(annotation: dict) -> tuple(list, list):
+    """Extract a polygon and its bounds from annotation data.
+
+    This function extracts object segmentations as polygons from different
+    shapes annotated with the VGG Image Annotator (VIA). Currently this
+    function supports rectangular, circlular, elliptical, and polyonal/polyline
+    annotations from VIA.
+
+    Parameters
+    ----------
+    annotation : dict
+        Contents of the ``"shape_attributes"`` field of an object's
+        segmentation data saved from VIA.
+
+    Returns
+    -------
+    tuple(list, list)
+        [0] : list of polygon point coordinates\n
+        [1] : bounding box of object as [min_x, min_y, max_x, max_y]
+
+    Raises
+    ------
+    ValueError
+        Is raised, in case an unknown annotation type is encountered, i.e. none
+        of the ones mentioned above.
+    """
+    shape_type = annotation["name"]
+    if shape_type == "ellipse":
+        cx = annotation["cx"]
+        cy = annotation["cy"]
+        rx = annotation["rx"]
+        ry = annotation["ry"]
+        theta = annotation["theta"]
+
+        circ = Point(cx, cy).buffer(1)      # circle with r=1
+        ellipse = rotate(scale(circ, rx, ry), theta, use_radians=True)
+        poly = list(ellipse.exterior.coords)
+        bounds = list(ellipse.bounds)
+
+    elif shape_type in ["polygon", "polyline"]:
+        px = annotation["all_points_x"]
+        py = annotation["all_points_y"]
+        poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+        bounds = [np.min(px), np.min(py), np.max(px), np.max(py)]
+
+    elif shape_type == "rect":
+        x = annotation["x"]
+        y = annotation["y"]
+        w = annotation["width"]
+        h = annotation["height"]
+        poly = [(x, y), (x + w, y), (x + w, y + h), (x, y + h)]
+        bounds = [x, y, x + w, y + h]
+
+    elif shape_type == "circle":
+        cx = annotation["cx"]
+        cy = annotation["cy"]
+        r = annotation["r"]
+        circ = Point(cx, cy).buffer(r)
+        poly = list(circ.exterior.coords)
+        bounds = list(circ.bounds)
+
+    else:
+        raise ValueError(f"Unkown shape type: {shape_type}")
+    return poly, bounds
 
 
 def load_custom_data(dataset: DataSet) -> List[dict]:
@@ -86,14 +154,11 @@ def load_custom_data(dataset: DataSet) -> List[dict]:
                 keypoints = None
 
             anno = anno["shape_attributes"]
-            px = anno["all_points_x"]
-            py = anno["all_points_y"]
-            # TODO: verify the polygon computation in the following two lines
-            poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+            poly, bounds = extract_polygon(anno)
             poly = [p for x in poly for p in x]
 
             obj = {
-                "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
+                "bbox": bounds,
                 "bbox_mode": BoxMode.XYXY_ABS,
                 "segmentation": [poly],
                 "category_id": category_id,
