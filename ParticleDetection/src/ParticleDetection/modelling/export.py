@@ -136,6 +136,7 @@ def annotation_to_json(prediction: dict, image: Path | str,
         "filename": image.name,
         "size": image_size,
         "regions": [],
+        "file_attributes": {},
     }
 
     if "instances" in prediction.keys():

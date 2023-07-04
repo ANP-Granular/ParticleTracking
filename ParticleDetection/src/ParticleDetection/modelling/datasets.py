@@ -38,7 +38,7 @@ from detectron2.data import DatasetCatalog, MetadataCatalog
 from ParticleDetection.utils.datasets import DataSet
 
 
-def extract_polygon(annotation: dict) -> tuple(list, list):
+def extract_polygon(annotation: dict):
     """Extract a polygon and its bounds from annotation data.
 
     This function extracts object segmentations as polygons from different
