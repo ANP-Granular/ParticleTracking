@@ -41,6 +41,8 @@ from scipy.spatial.transform import Rotation as R
 
 import ParticleDetection.utils.data_loading as dl
 
+from tqdm import tqdm
+
 _logger = logging.getLogger(__name__)
 
 
@@ -850,3 +852,132 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
     seen_cols = [col for col in data.columns if "seen" in col]
     tmp_df[seen_cols] = 1
     return tmp_df, costs, out[:, 9]
+
+def reorder_endpoints_csv(input_folder, output_folder, colors, cam1_name="gp1",
+                      cam2_name="gp2", frame_numbers=None):
+    """Reorders endpoints from *.csv data files.
+
+    The function reorders rod endpoints per frame such that the endpoints displacement between consecutive frames is minimal. 
+    It does not change the rod number assignment and does not match the 2D endpoint coordinates into 3D acoording to the reprojection error.
+    Usually this step is performed after rematching or instead of it if rematching is not necessary.
+
+    It takes *.csv files with the columns from
+    `datasets.DEFAULT_COLUMNS` as input and also outputs the results in this
+    format.
+
+    Parameters
+    ----------
+    input_folder : str
+        Folder containing the ``*.csv`` files for all colors given in
+        ``colors``.
+    output_folder : str
+        Folder to write the output to. The parent folder of this must exist
+        already.
+    colors : Iterable[str]
+        Names of the colors present in the dataset.
+        See :const:`~ParticleDetection.utils.datasets.DEFAULT_CLASSES`.
+    cam1_name : str, optional
+        First camera's identifier in the given dataset.\n
+        By default ``"gp1"``.
+    cam2_name : str, optional
+        Second camera's identifier in the given dataset.\n
+        By default ``"gp2"``.
+    frame_numbers : Iterable[int], optional
+        An iterable of frame numbers present in the data.
+        By default ``None``.
+
+    Returns
+    -------
+    Tuple[ndarray]
+        Returns the assignment costs, i.e. the sum of
+        end point reprojection errors per rod. 
+    """
+
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+    
+    all_repr_errs = []
+    all_rod_lengths = []
+    for color in colors:
+        f_in = input_folder + f"/rods_df_{color}.csv"
+        data = pd.read_csv(f_in, sep=",", index_col=0)
+
+        frame = frame_numbers[0]
+
+        dfs_out = []
+
+        df_raw_add = data.loc[data['frame']==frame].sort_values('particle')
+
+        mincosts_T = np.zeros( (len(df_raw_add),len(frame_numbers)-1) )
+
+        df0 = df_raw_add.copy()
+
+        dfs_out.append(df_raw_add)
+
+        for frame in tqdm(frame_numbers[1:]):
+            
+            df1 = data.loc[data['frame']==frame].sort_values('particle')
+
+            df_raw_add = df1.copy()
+            
+            for i in df1['particle'].unique():
+                    
+                x1_0=df0.loc[df0['particle']==i,'x1'].to_numpy()
+                y1_0=df0.loc[df0['particle']==i,'y1'].to_numpy()
+                z1_0=df0.loc[df0['particle']==i,'z1'].to_numpy()
+                x2_0=df0.loc[df0['particle']==i,'x2'].to_numpy()
+                y2_0=df0.loc[df0['particle']==i,'y2'].to_numpy()
+                z2_0=df0.loc[df0['particle']==i,'z2'].to_numpy()
+                
+                x1_1=df1.loc[df1['particle']==i,'x1'].to_numpy()
+                y1_1=df1.loc[df1['particle']==i,'y1'].to_numpy()
+                z1_1=df1.loc[df1['particle']==i,'z1'].to_numpy()
+                x2_1=df1.loc[df1['particle']==i,'x2'].to_numpy()
+                y2_1=df1.loc[df1['particle']==i,'y2'].to_numpy()
+                z2_1=df1.loc[df1['particle']==i,'z2'].to_numpy()
+                
+                x1gp1_1=df1.loc[df1['particle']==i,'x1_gp1'].to_numpy()
+                y1gp1_1=df1.loc[df1['particle']==i,'y1_gp1'].to_numpy()
+                x2gp1_1=df1.loc[df1['particle']==i,'x2_gp1'].to_numpy()
+                y2gp1_1=df1.loc[df1['particle']==i,'y2_gp1'].to_numpy()
+                
+                x1gp2_1=df1.loc[df1['particle']==i,'x1_gp2'].to_numpy()
+                y1gp2_1=df1.loc[df1['particle']==i,'y1_gp2'].to_numpy()
+                x2gp2_1=df1.loc[df1['particle']==i,'x2_gp2'].to_numpy()
+                y2gp2_1=df1.loc[df1['particle']==i,'y2_gp2'].to_numpy()
+                
+                comb1 = np.linalg.norm ([x1_0-x1_1,y1_0-y1_1,z1_0-z1_1]) + np.linalg.norm ([x2_0-x2_1,y2_0-y2_1,z2_0-z2_1])
+                comb2 = np.linalg.norm ([x2_0-x1_1,y2_0-y1_1,z2_0-z1_1]) + np.linalg.norm ([x1_0-x2_1,y1_0-y2_1,z1_0-z2_1])
+                
+                mincosts_T[i,frame-frame_numbers[1]] = min(comb1,comb2)
+
+                if comb2<comb1:
+                    df_raw_add.loc[df_raw_add['particle']==i,'x1']=x2_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'y1']=y2_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'z1']=z2_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'x2']=x1_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'y2']=y1_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'z2']=z1_1
+                    
+                    df_raw_add.loc[df_raw_add['particle']==i,'x1_gp1']=x2gp1_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'y1_gp1']=y2gp1_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'x2_gp1']=x1gp1_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'y2_gp1']=y1gp1_1
+                    
+                    df_raw_add.loc[df_raw_add['particle']==i,'x1_gp2']=x2gp2_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'y1_gp2']=y2gp2_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'x2_gp2']=x1gp2_1
+                    df_raw_add.loc[df_raw_add['particle']==i,'y2_gp2']=y1gp2_1
+
+
+            df0 = df_raw_add.copy() 
+            dfs_out.append(df_raw_add)
+
+        
+        df_out = pd.concat(dfs_out)
+
+        df_out.reset_index(drop=True, inplace=True)
+        df_out.to_csv(os.path.join(output_folder, f"rods_df_{color}.csv"),
+                      sep=",")
+
+    return mincosts_T
