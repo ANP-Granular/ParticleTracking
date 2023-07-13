@@ -44,7 +44,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _run_detection(model: torch.ScriptModule, img: Path,
-                   threshold: float = 0.5) -> dict:
+                   threshold: float = 0.5) -> ds.DetectionResult:
     """Runs detection on one image.
 
     Runs the detection model with the given image and converts the returned
@@ -67,7 +67,7 @@ def _run_detection(model: torch.ScriptModule, img: Path,
 
     Returns
     -------
-    dict
+    :data:`~ParticleDetection.utils.datasets.DetectionResult`
         Has the following keys:\n
         ``"pred_boxes"``, ``"pred_classes"``, ``"pred_masks"``, ``"scores"``,
         ``"input_size"``

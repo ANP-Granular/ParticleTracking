@@ -24,11 +24,13 @@ Functions and classes for dataset information and manipulation.
 import os
 import json
 import logging
-from typing import List, Set, Dict
+from typing import List, Set, Dict, TypedDict, Tuple
 from pathlib import Path
 from dataclasses import dataclass
+import cv2
 import numpy as np
 import pandas as pd
+import torch
 
 _logger = logging.getLogger(__name__)
 
@@ -49,6 +51,21 @@ RNG_SEED = 1
 """Seed to allow reproducibility of results, that are dependent on the
 generation of random numbers."""
 
+DetectionResult = TypedDict("DetectionResult",
+                            {'pred_boxes': torch.Tensor,
+                             'pred_classes': torch.Tensor,
+                             'pred_masks': torch.Tensor,
+                             'scored': torch.Tensor,
+                             'input_size': List[int],
+                             }, total=False)
+"""Results of detecting particles in an image file.
+
+See also
+--------
+:func:`ParticleDetection.utils.detection._run_detection`
+:func:`ParticleDetection.modelling.runners.detection.detect`
+"""
+
 
 class DataSet:
     """Representation of a dataset for training a network."""
@@ -60,6 +77,16 @@ class DataSet:
         self.name = name
         self.annotation = os.path.abspath(folder + annotation_file)
         self.folder = os.path.abspath(folder)
+
+    def __iter__(self):
+        with open(self.annotation) as metadata:
+            annotations = json.load(metadata)
+        return iter(
+            os.path.join(self.folder, anno["filename"]) for
+            anno in annotations.values() if anno["regions"])
+
+    def __len__(self):
+        return get_dataset_size(self)
 
 
 @dataclass
@@ -295,3 +322,53 @@ def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
                 data = pd.concat((data, temp_df.iloc[idx_to_add]))
     data = data.astype({"frame": 'int', "particle": 'int'})
     return data
+
+
+def get_files(dataset: DataSet) -> List[str]:
+    """Retrieve the file paths of a dataset that have annotations associated.
+
+    Parameters
+    ----------
+    dataset : DataSet
+
+    Returns
+    -------
+    List[str]
+        List of file paths to images that have annotations associated to them.
+    """
+    with open(dataset.annotation) as metadata:
+        annotations = json.load(metadata)
+    files = []
+    for image in list(annotations.values()):
+        # Skip non-annotated image entries
+        if image["regions"]:
+            files.append(os.path.join(dataset.folder, image["filename"]))
+    return files
+
+
+def get_pixel_stats(files: List[str]) -> Tuple[np.ndarray, np.ndarray]:
+    """Get the mean and standard deviation of each color channel for a list of
+    image files.
+
+    Parameters
+    ----------
+    files : List[str]
+        List of file paths to images that shall be included in the calculation.
+
+    Returns
+    -------
+    means : ndarray
+        Mean pixel values of the given dataset for each color channel in
+        BGR order. Shape: (3, 1)
+    standard-deviations : ndarray
+        Standard deviation of pixel values for the given dataset for each
+        color channel in BGR order. Shape: (3, 1)
+    """
+    means = np.zeros((3, len(files)))
+    stds = np.zeros((3, len(files)))
+    for idx_f, f in enumerate(files):
+        im = np.asanyarray(cv2.imread(f))   # in BGR
+        means[:, idx_f] = np.mean(im, axis=(0, 1))
+        stds[:, idx_f] = np.std(im, axis=(0, 1))
+
+    return np.mean(means, axis=1), np.mean(stds, axis=1)
