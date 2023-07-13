@@ -1,4 +1,6 @@
 ## [Unreleased]
+
+## [v0.4.0]
 ### Added
 - documentation with Sphinx
   - improved API documentation
@@ -27,4 +29,6 @@
 ### Added
 - start versioning
 
-[Unreleased]: https://github.com/ANP-Granular/Track_Gui/compare/v0.3.1+ParticleTracking...HEAD
+[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.4.0+ParticleTracking...HEAD
+[v0.4.0]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.3.1+ParticleTracking...v0.4.0+ParticleTracking
+[v0.3.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.3.1+ParticleTracking

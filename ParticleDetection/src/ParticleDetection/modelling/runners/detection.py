@@ -317,7 +317,7 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
     In addition to running inference this script also generates rod endpoints
     from the generated masks, if the network predicted these.
 
-    .. deprecated:: 0.3.1
+    .. deprecated:: 0.4.0
         :func:`.run_detection` will be completely replaced by
         :func:`.detect` to allow more modular saving of data. Internally
         this function already uses :func:`.detect`.
@@ -406,7 +406,7 @@ def run_detection_csv(dataset_format: str,
     endpoints are saved to a single ``rods_df.csv`` file in the specified
     output folder.
 
-    .. deprecated:: 0.3.1
+    .. deprecated:: 0.4.0
         :func:`.run_detection_csv` will be completely replaced by
         :func:`.detect` to allow more modular saving of data. Internally
         this function already uses :func:`.detect`.

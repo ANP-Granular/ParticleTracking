@@ -72,7 +72,7 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
 
 
     .. warning::
-        .. deprecated:: 0.3.1
+        .. deprecated:: 0.4.0
             Use :func:`match_csv_complex` instead.
     """
     warnings.warn("match_matlab_*() functions are deprecated."
@@ -280,7 +280,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
 
 
     .. warning::
-        .. deprecated:: 0.3.1
+        .. deprecated:: 0.4.0
             Use :func:`match_csv_complex` instead.
     """
     warnings.warn("match_matlab_*() functions are deprecated."

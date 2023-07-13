@@ -218,7 +218,7 @@ def load_calib_from_json(file_name: str) -> \
     None | dict | tuple
 
     .. warning::
-        .. deprecated:: 0.3.1
+        .. deprecated:: 0.4.0
             Please convert your old configurations compatible with
             :func:`load_world_transformation` and
             :func:`load_camera_calibration`.
