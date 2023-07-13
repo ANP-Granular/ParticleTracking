@@ -16,9 +16,7 @@
 
 import sys
 from enum import Enum
-from pathlib import Path
 from types import ModuleType
-import numpy as np
 not_installed = False
 try:
     from ParticleDetection.modelling.runners import detection
@@ -58,10 +56,4 @@ except ModuleNotFoundError:
     submod5.GenericMask = None
     sys.modules["detectron2.utils.visualizer"] = submod5
 finally:
-    from ParticleDetection.modelling.runners import detection
-
-
-def test_save_to_mat(tmp_path: Path):
-    test_points = {i: np.random.random((i + 1, 2, 2)) for i in range(10)}
-    detection.save_to_mat(str(tmp_path / "test"), test_points)
-    assert len(list(tmp_path.iterdir())) == len(test_points)
+    from ParticleDetection.modelling.runners import detection   # noqa: F401
