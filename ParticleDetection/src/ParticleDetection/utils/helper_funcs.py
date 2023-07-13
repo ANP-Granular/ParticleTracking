@@ -33,6 +33,7 @@ from sklearn.cluster import DBSCAN
 from skimage.transform import probabilistic_hough_line
 
 import ParticleDetection.utils.data_loading as dl
+import ParticleDetection.utils.datasets as ds
 
 _logger = logging.getLogger(__name__)
 
@@ -141,17 +142,17 @@ def _minimum_bounding_rectangle(points):
     angles = np.unique(angles)
 
     # find rotation matrices
-    # XXX both work
+    # both work
     rotations = np.vstack([
         np.cos(angles),
         np.cos(angles - pi2),
         np.cos(angles + pi2),
         np.cos(angles)]).T
-    #     rotations = np.vstack([
-    #         np.cos(angles),
-    #         -np.sin(angles),
-    #         np.sin(angles),
-    #         np.cos(angles)]).T
+    # rotations = np.vstack([
+    #     np.cos(angles),
+    #     -np.sin(angles),
+    #     np.sin(angles),
+    #     np.cos(angles)]).T
     rotations = rotations.reshape((-1, 2, 2))
 
     # apply rotations to the hull
@@ -183,17 +184,19 @@ def _minimum_bounding_rectangle(points):
     return rval
 
 
-def rod_endpoints(prediction, classes: Dict[int, str], method: str = "simple",
+def rod_endpoints(prediction: ds.DetectionResult, classes: Dict[int, str],
+                  method: str = "simple",
                   expected_particles: Union[int, Dict[int, int], None] = None)\
         -> Dict[int, np.ndarray]:
     """Calculates the endpoints of rods from the prediction masks.
 
     Parameters
     ----------
-    prediction : dict
-        Prediction output of a Detectron2 network with the actual results
-        present in ``prediction["instances"]`` as
-        ``detectron2.structures.Instances`` or ``dict``.
+    prediction : :class:`~ParticleDetection.utils.datasets.DetectionResult`
+        Prediction output of a Detectron2 network. It can also be given as
+        ``prediction["instances"]`` as ``detectron2.structures.Instances`` or
+        ``dict``, as long as the resulting ``dict`` contains at least the same
+        keys as :class:`~ParticleDetection.utils.datasets.DetectionResult`.
     classes : dict[int, str]
         Dictionary of classes expected/possible in the prediction. The key
         being the class ID as an integer, that is the output of the
@@ -473,41 +476,56 @@ def paste_mask_in_image_old(mask: torch.Tensor, box: torch.Tensor, img_h: int,
     ]
     return im_mask
 
-def find_world_transform(calibration_file, edges_cam1_dist, edges_cam2_dist, edges_3D, out_json):
-    """ Find world transformation from Camera 1 coordinate system to desired world coordinate system 
+
+def find_world_transform(calibration_file: str, edges_cam1_dist: np.ndarray,
+                         edges_cam2_dist: np.ndarray, edges_3D: np.ndarray,
+                         out_json: str):
+    """Find world transformation from camera 1 coordinate system to the desired
+    world coordinate system.
 
     Parameters
     ----------
     calibration_file : str
         Path to a stereo calibration file
     edges_cam1_dist : np.ndarray(8,2)
-        Should contain 2D coordinates of box edges (corners) on 1st camera view (not undistorted): 
-        [front: left up, left down, right up, right down, back: left up, left down, right up, right down]
-        E.g.
-        np.array([[27,36],[30,904],[1235,27],[1240,903],[183,149],[188,900],[1096,140],[1098,790]]).astype(float) 
+        Should contain 2D coordinates of box edges (corners) on 1st camera
+        view (not undistorted):\n
+        [front left up, front left down, front right up, front right down,\n
+        back left up, back left down, back right up, back right down],
+        e.g.
+
+        >>> np.array([[27, 36], [30, 904], [1235, 27], [1240, 903],
+        ...           [183, 149], [188, 900], [1096, 140], [1098, 790]]
+        ...         ).astype(float)
     edges_cam2_dist : np.ndarray(8,2)
-        Should contain 2D coordinates of box edges (corners) on 2nd camera view (not undistorted):  
-        [front: left up, left down, right up, right down, back: left up, left down, right up, right down]
+        Should contain 2D coordinates of box edges (corners) on 2nd camera
+        view (not undistorted):\n
+        [front left up, front left down, front right up, front right down,\n
+        back left up, back left down, back right up, back right down]
     edges_3D: np.ndarray(8,3)
-        Should contain 3D coordinates of box edges (in the final world coordinate system)
-        Choose coordinate system, for example  with 0 at the middle of the box
-        E.g. 
-        edges_3D = np.array([[-58,40,40],[-58,-40,40],[58,40,40],[58,-40,40],
-                [-58,40,-40],[-58,-40,-40],[58,40,-40],[58,-40,-40]]).astype(float) 
+        Should contain 3D coordinates of box edges (in the final world
+        coordinate system). Choose coordinate system, for example with 0 at
+        the center of the box, e.g.
+
+        >>> edges_3D = np.array([[-58,40,40], [-58,-40,40], [58,40,40],
+        ...                      [58,-40,40], [-58,40,-40], [-58,-40,-40],
+        ...                      [58,40,-40],[58,-40,-40]]).astype(float)
     out_json : str
-        Path where the resulting transformation file should be saved in JSON format
+        Path where the resulting transformation file should be saved in JSON
+        format.
 
     Returns
     -------
     rot_comb : np.ndarray(3,3)
-        Rotation matrix 
+        Rotation matrix
     trans_vec : np.ndarray(3,1)
-        Translation vector 
+        Translation vector
 
-    The transformation of 3D coordinates can then be performed as 
-    p_world = rot_comb.apply(p_cam1) + trans_vec
-    
-    
+    Notes
+    -----
+    The transformation of 3D coordinates can then be performed as
+
+    >>> p_world = rot_comb.apply(p_cam1) + trans_vec
     """
     calibration = dl.load_camera_calibration(str(calibration_file))
 
@@ -522,43 +540,36 @@ def find_world_transform(calibration_file, edges_cam1_dist, edges_cam2_dist, edg
     P2 = np.vstack((r2.T, t2.T)) @ calibration["CM2"].T
     P2 = P2.T
 
-
     # Undistort points using the camera calibration
     edges_cam1 = cv2.undistortImagePoints(
         edges_cam1_dist, calibration["CM1"],
-        calibration["dist1"]).reshape(-1,2)
+        calibration["dist1"]).reshape(-1, 2)
 
     # Undistort points using the camera calibration
     edges_cam2 = cv2.undistortImagePoints(
         edges_cam2_dist, calibration["CM2"],
-        calibration["dist2"]).reshape(-1,2)
+        calibration["dist2"]).reshape(-1, 2)
 
     # Triangulate box corners (result in cam1 coordinate system)
-    edges_triang = cv2.triangulatePoints(
-                    P1, P2,
-                    edges_cam1.T,
-                    edges_cam2.T)
+    edges_triang = cv2.triangulatePoints(P1, P2, edges_cam1.T, edges_cam2.T)
 
-    edges_triang = np.asarray([p[0:3]/p[3] for p in
-                            edges_triang.transpose()])
-
+    edges_triang = np.asarray([p[0:3] / p[3] for p in
+                               edges_triang.transpose()])
 
     # Estimate affine transform to coordinate system
-    transform_result = cv2.estimateAffine3D(edges_triang,edges_3D)
+    transform_result = cv2.estimateAffine3D(edges_triang, edges_3D)
 
     transform = np.array(transform_result[1])
 
-    rot_comb = transform[0:3,0:3]
-    trans_vec = transform[0:3,3]
+    rot_comb = transform[0:3, 0:3]
+    trans_vec = transform[0:3, 3]
 
     transformations = {}
 
     transformations['rot_comb'] = rot_comb.tolist()
     transformations['trans_vec'] = trans_vec.tolist()
-    #print(json.dumps(transformations))
 
     with open(out_json, 'w') as fp:
         json.dump(transformations, fp)
 
-
-    return rot_comb,trans_vec
+    return rot_comb, trans_vec
