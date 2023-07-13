@@ -4,23 +4,30 @@
 - old rod positions are displayed during editing as a visual cue
 - mode for automatic selection of the rod closest to the cursor
 - documentation with Sphinx
-- detection of rods from images
-- recalculation of 3D rod positions after updates in 2D
-- tracking of rods and following recalculation of 3D positions
+- integration of `ParticleDetection` functionality
+  - detection of rods from images
+  - recalculation of 3D rod positions from position updates in 2D
+  - tracking of rods and following recalculation of 3D positions
+  - evaluation plots for 3D position reconstruction
 - shortcut to fit the displayed image to its available space
-- evaluation plots for 3D position reconstruction
 - added a 'busy' indicator for tabs running long background tasks
 - shortcut to delete a rod when having it selected
 - display of the documentation from the Help dropdown menu
+- loaded/changed position data is automatically saved every 60 seconds
 
 ### Changed
 - rods are now displayed partially transparent while being selected
+- display of a folder selection dialog, if no folder is selected during saving
+- settings-/data-directory is now determined with `platformdirs`
 
 ### Fixed
 - test suite problems have been fixed
+- initial display of rods on Windows
+- rods not being completely deletable ([#69](https://github.com/ANP-Granular/ParticleTracking/issues/69))
 
 ### Removed
 - function to display the README in the application
+- `True number of rods` setting is no longer available
 
 ---
 
