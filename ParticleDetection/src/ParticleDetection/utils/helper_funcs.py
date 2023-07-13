@@ -46,6 +46,7 @@ def configure_logging(level: int = logging.INFO):
         By default ``logging.INFO``.
     """
     lg = logging.getLogger()
+    lg.setLevel(level)
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(level)
     formatter = logging.Formatter(
