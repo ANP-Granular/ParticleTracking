@@ -1,7 +1,7 @@
 # Installation of ParticleDetection
 **Requirement:** Python `>=3.8` is installed, pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
 ## Installation from source
-1. Clone the [repository](https://github.com/ANP-Granular/Track_Gui) containing the ParticleDetection package or only download the `ParticleDetection` folder, if you are not interested in the RodTracker application.
+1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the ParticleDetection package or only download the `ParticleDetection` folder, if you are not interested in the RodTracker application.
 2. Install it using pip
   ```shell
   YOUR/REPO/PATH/ParticleDetection$ pip install .

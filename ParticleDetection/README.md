@@ -10,7 +10,7 @@ import ParticleDetection.utils.helper_funcs as hf
 Please refer to the [documentation](https://particletracking.readthedocs.io/) for more detailed information.
 
 ## Installation
-1. Clone the [repository](https://github.com/ANP-Granular/Track_Gui) containing the ParticleDetection package or only download the `ParticleDetection` folder, if you are not interested in the RodTracker application.
+1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the ParticleDetection package or only download the `ParticleDetection` folder, if you are not interested in the RodTracker application.
 2. Install it using pip
   ```shell
   YOUR/REPO/PATH/ParticleDetection$ pip install .

@@ -238,7 +238,7 @@ def show_about(parent: QtWidgets.QWidget):
         </tr>
         <tr>
             <td width="50">
-                <p><a href="https://github.com/ANP-Granular/Track_Gui">
+                <p><a href="https://github.com/ANP-Granular/ParticleTracking">
                 particledetection</a>:</p>
             </td>
             <td width="150">0.3.1</td>

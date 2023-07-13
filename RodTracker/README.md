@@ -5,7 +5,7 @@ Please refer to the [documentation](https://particletracking.readthedocs.io/) fo
 
 ## Installation
 - Requirements: Python `>=3.8` is installed
-1. Clone the [repository](https://github.com/ANP-Granular/Track_Gui) containing the RodTracker. Do **NOT** just copy the `RodTracker` folder. This will lead to a missing dependency during the installation.
+1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the RodTracker. Do **NOT** just copy the `RodTracker` folder. This will lead to a missing dependency during the installation.
 2. Install it using `pip`.
    ```shell
    YOUR/REPO/PATH/RodTracker$ pip install .
