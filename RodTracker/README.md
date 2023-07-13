@@ -1,4 +1,5 @@
 # RodTracker
+This package provides a GUI encapsulating the most used functionality of the [ParticleDetection](../ParticleDetection/) package. It enables users to carry out the aforementioned tasks, except for training a model. Additionally, it provides the means to manually correct placement and assignment mistakes of the automated processes.
 
 Please refer to the [documentation](https://particletracking.readthedocs.io/) for more detailed information.
 

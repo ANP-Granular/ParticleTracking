@@ -324,7 +324,7 @@ def show_about(parent: QtWidgets.QWidget):
     <br>
     <br>
     <p>
-        Copyright © 2023 Otto-von-Guericke University Magdeburg
+        Copyright © 2023 Adrian Niemann, Dmitry Puzyrev
     </p>"""
     QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
 

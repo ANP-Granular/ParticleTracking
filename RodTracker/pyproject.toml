@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "RodTracker"
-description = "GUI to track rod like particles on multiple cameras"
+description = "GUI to track rod-like particles on multiple cameras"
 readme = "README.md"
 version = "0.5.8"
 authors = [
