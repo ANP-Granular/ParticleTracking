@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 name = "RodTracker"
 description = "GUI to track rod-like particles on multiple cameras"
 readme = "README.md"
-version = "0.5.8"
+version = "0.6.0"
 authors = [
     "Adrian Niemann <adrian.niemann@gmx.de>",
     "Dmitry Puzyrev <dmitry.puzyrev@ovgu.de>"
@@ -39,7 +39,7 @@ numpy = ">=1.21.0"
 PyQt3D = ">=5.15.5"
 matplotlib = ">=3.6.2"
 importlib-resources = {version = ">=1.4", python = "<3.9"}
-ParticleDetection = {path = "../ParticleDetection"}
+ParticleDetection = {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", tag = "v0.4.0+ParticleDetection"}
 
 pyinstaller = {version = ">=5.7", optional = true}
 qt5-applications = {version = ">=5.15", optional = true}

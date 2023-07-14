@@ -1,5 +1,6 @@
 ## [Unreleased]
 
+## [v0.6.0]
 ### Added
 - old rod positions are displayed during editing as a visual cue
 - mode for automatic selection of the rod closest to the cursor
@@ -127,13 +128,14 @@ This especially improves performance and responsiveness of the `RodTracker` when
 ### Added
 - a versioning system
 
-[Unreleased]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.8...HEAD
-[v0.5.8]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.7...v0.5.8
-[v0.5.7]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.4...v0.5.7
-[v0.5.4]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.3...v0.5.4
-[v0.5.3]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.2...v0.5.3
-[v0.5.2]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.1...v0.5.2
-[v0.5.1]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.0...v0.5.1
-[v0.5.0]: https://github.com/ANP-Granular/Track_Gui/compare/v0.1.1...v0.5.0
-[v0.1.1]: https://github.com/ANP-Granular/Track_Gui/compare/v0.1.0...v0.1.1
-[v0.1.0]: https://github.com/ANP-Granular/Track_Gui/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.0...HEAD
+[v0.6.0]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.8...v0.6.0
+[v0.5.8]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.7...v0.5.8
+[v0.5.7]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.4...v0.5.7
+[v0.5.4]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.3...v0.5.4
+[v0.5.3]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.2...v0.5.3
+[v0.5.2]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.1...v0.5.2
+[v0.5.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.0...v0.5.1
+[v0.5.0]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.1.1...v0.5.0
+[v0.1.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.1.0...v0.1.1
+[v0.1.0]: https://github.com/ANP-Granular/ParticleTracking/releases/tag/v0.1.0
