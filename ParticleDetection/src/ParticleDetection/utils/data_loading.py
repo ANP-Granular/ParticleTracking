@@ -12,7 +12,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 Collection of (mostly deprecated) functions to load stereo camera calibration
@@ -218,7 +218,7 @@ def load_calib_from_json(file_name: str) -> \
     None | dict | tuple
 
     .. warning::
-        .. deprecated:: 0.3.1
+        .. deprecated:: 0.4.0
             Please convert your old configurations compatible with
             :func:`load_world_transformation` and
             :func:`load_camera_calibration`.

@@ -12,7 +12,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 Functions to visualize predictions of Detectron2 models.
@@ -21,21 +21,22 @@ Functions to visualize predictions of Detectron2 models.
 **Date:**       11.08.2022
 
 """
-import os
-import cv2
 import logging
+import os
 from typing import Union, Iterable
 
+import cv2
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import numpy as np
 import torch
 from detectron2.utils.visualizer import GenericMask
 
 _logger = logging.getLogger(__name__)
 
 
-def visualize(prediction, original: Union[dict, str],
-              hide_tags=True, output_dir="", colors: Iterable = None):
+def visualize(prediction, original: Union[dict, str, np.ndarray],
+              hide_tags=True, output_dir="", colors: Iterable = None, **_):
     """Visualizes predictions on one image with/without it's ground truth.
 
     Parameters
@@ -43,11 +44,12 @@ def visualize(prediction, original: Union[dict, str],
     prediction
         Predictions of a one image, for details see the Detectron2
         documentation.
-    original : Union[dict, str]
-        Is either the full dataset entry with all metadata or just the path to
-        the image file used during inference.\n
+    original : Union[dict, str, ndarray]
+        Is either the full dataset entry with all metadata, just the path to
+        the image file used during inference or the loaded image itself.\n
         ``dict``    --->    full dataset entry\n
         ``str``     --->    path to image\n
+        ``ndarray`` --->    image in BGR format\n
     hide_tags : bool, optional
         Flag to remove the ``"scores"`` field, such that it is not
         visualized.\n
@@ -64,8 +66,11 @@ def visualize(prediction, original: Union[dict, str],
     """
     if isinstance(original, dict):
         im = cv2.imread(original["file_name"])
+    elif isinstance(original, np.ndarray):
+        im = original
     else:
         im = cv2.imread(original)
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
     # Remove unnecessary information before drawing
     to_draw = prediction["instances"].to("cpu")
@@ -78,8 +83,19 @@ def visualize(prediction, original: Union[dict, str],
         # Display original as well
         fig_title = os.path.basename(original["file_name"])
         fig = create_figure(im, to_draw, original, colors)
-    else:
+    elif isinstance(original, str):
         fig_title = os.path.basename(original)
+        fig = create_figure(im, to_draw, None, colors)
+    else:
+        unknown_id = 0
+        while True:
+            fig_title = f"unkwown_img_{unknown_id:05d}.png"
+            if output_dir:
+                save_path = os.path.join(output_dir, fig_title)
+                if not os.path.exists(save_path):
+                    break
+            unknown_id += 1
+
         fig = create_figure(im, to_draw, None, colors)
 
     if not hide_tags:

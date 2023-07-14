@@ -19,14 +19,14 @@
 import json
 from abc import abstractmethod
 from PyQt5 import QtWidgets, QtCore
-from RodTracker import TEMP_DIR
+from RodTracker import SETTINGS_FILE, CONFIG_DIR
 
 
 class Configuration(QtCore.QObject):
     """Generic class that shall hold configurations/settings."""
     _default: dict = {}
     _contents: dict = {}
-    path: str = str(TEMP_DIR / "configurations.json")
+    path: str = str(CONFIG_DIR / "configurations.json")
     """str : Path to the file for storing this configuration."""
 
     def read(self, path: str = None):
@@ -118,7 +118,7 @@ class Settings(Configuration):
     ----------
     parent : QWidget
     """
-    path = str(TEMP_DIR / "settings.json")
+    path = str(SETTINGS_FILE)
     """str : Location and name where the settings are saved as a ``*.json``
     file.
     """

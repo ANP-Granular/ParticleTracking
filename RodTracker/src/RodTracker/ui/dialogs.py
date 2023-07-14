@@ -238,11 +238,19 @@ def show_about(parent: QtWidgets.QWidget):
         </tr>
         <tr>
             <td width="50">
-                <p><a href="https://github.com/ANP-Granular/Track_Gui">
+                <p><a href="https://github.com/ANP-Granular/ParticleTracking">
                 particledetection</a>:</p>
             </td>
-            <td width="150">0.3.1</td>
+            <td width="150">0.4.0</td>
             <td width="200"><p> GPLv3 </p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://github.com/platformdirs/platformdirs">
+                platformdirs</a>:</p>
+            </td>
+            <td width="150">3.2.0</td>
+            <td width="200"><p> MIT </p></td>
         </tr>
         <tr>
             <td width="50">
@@ -316,7 +324,7 @@ def show_about(parent: QtWidgets.QWidget):
     <br>
     <br>
     <p>
-        Copyright © 2023 Otto-von-Guericke University Magdeburg
+        Copyright © 2023 Adrian Niemann, Dmitry Puzyrev
     </p>"""
     QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
 

@@ -31,15 +31,15 @@ def test_tmp_dir_create():
     for handler in RodTracker.logger.handlers:
         RodTracker.logger.removeHandler(handler)
         handler.close()
-    for file in RodTracker.TEMP_DIR.iterdir():
+    for file in RodTracker.LOG_DIR.iterdir():
         if file.is_file():
             file.unlink()
         elif file.is_dir():
             for inner_file in file.iterdir():
                 inner_file.unlink()
             file.rmdir()
-    RodTracker.TEMP_DIR.rmdir()
+    RodTracker.LOG_DIR.rmdir()
 
     importlib.reload(RodTracker)
-    assert RodTracker.TEMP_DIR.exists()
-    assert RodTracker.LOG_PATH.exists()
+    assert RodTracker.LOG_DIR.exists()
+    assert RodTracker.LOG_FILE.exists()

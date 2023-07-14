@@ -1,4 +1,27 @@
 # Developer notes
+
+## Building the docs
+The documentation is a combined for the `ParticleDetection` and the `RodTracker` packages.
+Please make sure that `ParticleDetection` is installed. It is not necessary to install the `DETECTRON` extra.
+Please make sure that the `RodTracker` with the dependencies of the `DOCS`, `BUILD`, or `DEV` extra are installed.
+
+1. Clean the build directory:
+   ```shell
+   YOUR/REPO/PATH/docs$ make clean
+   ```
+2. (Re-)Build the documentation:
+   ```shell
+   YOUR/REPO/PATH/docs$ make html
+   ```
+
+Refer to the [Sphinx documentation](https://www.sphinx-doc.org/) for further options.
+
+```{warning}
+On Windows make sure that no other process, e.g. Dropbox, attempts to access files necessary for the build during this. Otherwise an `OSError: [WinError 110]` might occur and break the process.
+
+On Linux this problem does not seem to occur.
+```
+
 ## RodTracker
 
 The different tasks described below require additional libraries compared to the default installation. Please make sure that you install the correct extras before attempting the tasks below (see [Installation options](installation/rodtracker.md#installation-options)).
@@ -75,4 +98,12 @@ and unpacks those during runtime.
 On Windows make sure that no other process, e.g. Dropbox, attempts to access files necessary for the build during this step. Otherwise an `OSError: [WinError 110]` might occur and break the process.
 
 On Linux this problem does not seem to occur.
+```
+
+## ParticleDetection
+
+### Running tests
+Please make sure that the dependencies from `TEST` extra are installed. Run the tests with `pytest` from within the `ParticleDetection` directory:
+```shell
+YOUR/REPO/PATH/ParticleDetection$ pytest
 ```

@@ -12,7 +12,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 Collection of custom Detectron2 objects to provide a customized training
@@ -163,7 +163,7 @@ class CustomTrainer(DefaultTrainer):
 
 
 # Currently not used
-class CompleteMapper(DatasetMapper):
+class CompleteMapper(DatasetMapper):    # pragma: no cover
     """Provides annotation data in training and testing context."""
     def __call__(self, dataset_dict):
         """

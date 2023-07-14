@@ -1,26 +1,34 @@
 ## [Unreleased]
 
+## [v0.6.0]
 ### Added
 - old rod positions are displayed during editing as a visual cue
 - mode for automatic selection of the rod closest to the cursor
 - documentation with Sphinx
-- detection of rods from images
-- recalculation of 3D rod positions after updates in 2D
-- tracking of rods and following recalculation of 3D positions
+- integration of `ParticleDetection` functionality
+  - detection of rods from images
+  - recalculation of 3D rod positions from position updates in 2D
+  - tracking of rods and following recalculation of 3D positions
+  - evaluation plots for 3D position reconstruction
 - shortcut to fit the displayed image to its available space
-- evaluation plots for 3D position reconstruction
 - added a 'busy' indicator for tabs running long background tasks
 - shortcut to delete a rod when having it selected
 - display of the documentation from the Help dropdown menu
+- loaded/changed position data is automatically saved every 60 seconds
 
 ### Changed
 - rods are now displayed partially transparent while being selected
+- display of a folder selection dialog, if no folder is selected during saving
+- settings-/data-directory is now determined with `platformdirs`
 
 ### Fixed
 - test suite problems have been fixed
+- initial display of rods on Windows
+- rods not being completely deletable ([#69](https://github.com/ANP-Granular/ParticleTracking/issues/69))
 
 ### Removed
 - function to display the README in the application
+- `True number of rods` setting is no longer available
 
 ---
 
@@ -120,13 +128,14 @@ This especially improves performance and responsiveness of the `RodTracker` when
 ### Added
 - a versioning system
 
-[Unreleased]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.8...HEAD
-[v0.5.8]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.7...v0.5.8
-[v0.5.7]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.4...v0.5.7
-[v0.5.4]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.3...v0.5.4
-[v0.5.3]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.2...v0.5.3
-[v0.5.2]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.1...v0.5.2
-[v0.5.1]: https://github.com/ANP-Granular/Track_Gui/compare/v0.5.0...v0.5.1
-[v0.5.0]: https://github.com/ANP-Granular/Track_Gui/compare/v0.1.1...v0.5.0
-[v0.1.1]: https://github.com/ANP-Granular/Track_Gui/compare/v0.1.0...v0.1.1
-[v0.1.0]: https://github.com/ANP-Granular/Track_Gui/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.0...HEAD
+[v0.6.0]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.8...v0.6.0
+[v0.5.8]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.7...v0.5.8
+[v0.5.7]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.4...v0.5.7
+[v0.5.4]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.3...v0.5.4
+[v0.5.3]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.2...v0.5.3
+[v0.5.2]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.1...v0.5.2
+[v0.5.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.0...v0.5.1
+[v0.5.0]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.1.1...v0.5.0
+[v0.1.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.1.0...v0.1.1
+[v0.1.0]: https://github.com/ANP-Granular/ParticleTracking/releases/tag/v0.1.0

@@ -6,8 +6,8 @@ From now on all instructions for installation are only concerning installing the
 
 ## Installation from source
 
-**Requirement:** Python `>=3.8` is installed
-  1. Clone the [repository](https://github.com/ANP-Granular/Track_Gui) containing the RodTracker. Do **NOT** just copy the `RodTracker` folder. This will lead to a missing dependency during the installation.
+**Requirement:** Python `>=3.8` is installed, pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
+  1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the RodTracker. Do **NOT** just copy the `RodTracker` folder. This will lead to a missing dependency during the installation.
   2. Install it using `pip`.
    ```shell
    YOUR/REPO/PATH/RodTracker$ pip install .
@@ -29,7 +29,7 @@ From now on all instructions for installation are only concerning installing the
 ```{important}
 Do **NOT** use conda to install/upgrade any packages that the RodTracker software uses. Make sure, that any packages additionally installed with conda have no interaction with the RodTracker software.
 
-Refer to conda's [interoperatbility feature](https://docs.conda.io/projects/conda/en/latest/user-guide/configuration/pip-interoperability.html?highlight=conda%20pip), this [Anaconda blog post](https://www.anaconda.com/blog/using-pip-in-a-conda-environment) and issue [#59](https://github.com/ANP-Granular/Track_Gui/issues/59) for more information on the topic.
+Refer to conda's [interoperatbility feature](https://docs.conda.io/projects/conda/en/latest/user-guide/configuration/pip-interoperability.html?highlight=conda%20pip), this [Anaconda blog post](https://www.anaconda.com/blog/using-pip-in-a-conda-environment) and issue [#59](https://github.com/ANP-Granular/ParticleTracking/issues/59) for more information on the topic.
 ```
 
 ## Installation options

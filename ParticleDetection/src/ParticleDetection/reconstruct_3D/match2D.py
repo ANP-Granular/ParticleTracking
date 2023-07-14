@@ -12,7 +12,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 Functions to reconstruct 3D rod endpoints from images of a stereocamera system
@@ -41,6 +41,8 @@ from scipy.spatial.transform import Rotation as R
 
 import ParticleDetection.utils.data_loading as dl
 
+from tqdm import tqdm
+
 _logger = logging.getLogger(__name__)
 
 
@@ -48,7 +50,8 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
                         frame_numbers, calibration_file=None,
                         transformation_file=None,
                         cam1_convention="{idx:05d}_{color:s}.mat",
-                        cam2_convention="{idx:05d}_{color:s}.mat"):
+                        cam2_convention="{idx:05d}_{color:s}.mat"
+                        ):  # pragma: no cover
     """Ported Matlab script from ``match_rods_2020mix_gp12_cl1.m``.
     This function takes the same input file format and outputs the same file
     formats as the previous implementation in MATLAB. Use this function for a
@@ -69,7 +72,7 @@ def match_matlab_simple(cam1_folder, cam2_folder, output_folder, colors,
 
 
     .. warning::
-        .. deprecated:: 0.3.1
+        .. deprecated:: 0.4.0
             Use :func:`match_csv_complex` instead.
     """
     warnings.warn("match_matlab_*() functions are deprecated."
@@ -222,7 +225,8 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
                          frame_numbers, calibration_file=None,
                          transformation_file=None,
                          cam1_convention="{idx:05d}_{color:s}.mat",
-                         cam2_convention="{idx:05d}_{color:s}.mat"):
+                         cam2_convention="{idx:05d}_{color:s}.mat"
+                         ):    # pragma: no cover
     """Match rod endpoints per frame such that the reprojection error is
     minimal.
     This function takes the same input file format and outputs the same file
@@ -276,7 +280,7 @@ def match_matlab_complex(cam1_folder, cam2_folder, output_folder, colors,
 
 
     .. warning::
-        .. deprecated:: 0.3.1
+        .. deprecated:: 0.4.0
             Use :func:`match_csv_complex` instead.
     """
     warnings.warn("match_matlab_*() functions are deprecated."
@@ -606,13 +610,17 @@ def match_complex(data: pd.DataFrame, frame_numbers: Iterable[int], color: str,
     P2 = np.vstack((r2.T, t2.T)) @ calibration["CM2"].T
     P2 = P2.T
 
-    rotx = R.from_matrix(np.asarray(transform["M_rotate_x"])[0:3, 0:3])
-    roty = R.from_matrix(np.asarray(transform["M_rotate_y"])[0:3, 0:3])
-    rotz = R.from_matrix(np.asarray(transform["M_rotate_z"])[0:3, 0:3])
-    tw1 = np.asarray(transform["M_trans"])[0:3, 3]
-    tw2 = np.asarray(transform["M_trans2"])[0:3, 3]
-    rot = rotz * roty * rotx
-    trans = rot.apply(tw1) + tw2
+    if "translation" in transform.keys():
+        rot = R.from_matrix(transform["rotation"])
+        trans = transform["translation"]
+    else:
+        rotx = R.from_matrix(np.asarray(transform["M_rotate_x"])[0:3, 0:3])
+        roty = R.from_matrix(np.asarray(transform["M_rotate_y"])[0:3, 0:3])
+        rotz = R.from_matrix(np.asarray(transform["M_rotate_z"])[0:3, 0:3])
+        tw1 = np.asarray(transform["M_trans"])[0:3, 3]
+        tw2 = np.asarray(transform["M_trans2"])[0:3, 3]
+        rot = rotz * roty * rotx
+        trans = rot.apply(tw1) + tw2
 
     all_repr_errs = []
     all_rod_lengths = []
@@ -844,3 +852,143 @@ def match_frame(data: pd.DataFrame, cam1_name: str,
     seen_cols = [col for col in data.columns if "seen" in col]
     tmp_df[seen_cols] = 1
     return tmp_df, costs, out[:, 9]
+
+
+def reorder_endpoints_csv(input_folder: str, output_folder: str,
+                          colors: Iterable[str], cam1_name: str = "gp1",
+                          cam2_name: str = "gp2",
+                          frame_numbers: Iterable[int] = None):
+    """Reorders endpoints from ``*.csv`` data files.
+
+    The function reorders rod endpoints per frame such that the endpoints
+    displacement between consecutive frames is minimal. It does not change the
+    rod number assignment and does not match the 2D endpoint coordinates into
+    3D acoording to the reprojection error. Usually this step is performed
+    after rematching or instead of it if rematching is not necessary.
+
+    It takes ``*.csv`` files with the columns from
+    :const:`~ParticleDetection.utils.datasets.DEFAULT_COLUMNS` as input and
+    also outputs the results in this format.
+
+    Parameters
+    ----------
+    input_folder : str
+        Folder containing the ``*.csv`` files for all colors given in
+        ``colors``.
+    output_folder : str
+        Folder to write the output to. The parent folder of this must exist
+        already.
+    colors : Iterable[str]
+        Names of the colors present in the dataset.
+        See :const:`~ParticleDetection.utils.datasets.DEFAULT_CLASSES`.
+    cam1_name : str, optional
+        First camera's identifier in the given dataset.\n
+        By default ``"gp1"``.
+    cam2_name : str, optional
+        Second camera's identifier in the given dataset.\n
+        By default ``"gp2"``.
+    frame_numbers : Iterable[int], optional
+        An iterable of frame numbers present in the data.\n
+        By default ``None``.
+
+    Returns
+    -------
+    Tuple[ndarray]
+        Returns the assignment costs, i.e. the sum of end point reprojection
+        errors per rod.
+    """
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+
+    for color in colors:
+        f_in = input_folder + f"/rods_df_{color}.csv"
+        data = pd.read_csv(f_in, sep=",", index_col=0)
+
+        frame = frame_numbers[0]
+
+        dfs_out = []
+
+        df_raw_add = data.loc[data['frame'] == frame].sort_values('particle')
+
+        mincosts_T = np.zeros((len(df_raw_add), len(frame_numbers) - 1))
+
+        df0 = df_raw_add.copy()
+
+        dfs_out.append(df_raw_add)
+
+        for frame in tqdm(frame_numbers[1:]):
+            df1 = data.loc[data['frame'] == frame].sort_values('particle')
+
+            df_raw_add = df1.copy()
+
+            for i in df1['particle'].unique():
+
+                x1_0 = df0.loc[df0['particle'] == i, 'x1'].to_numpy()
+                y1_0 = df0.loc[df0['particle'] == i, 'y1'].to_numpy()
+                z1_0 = df0.loc[df0['particle'] == i, 'z1'].to_numpy()
+                x2_0 = df0.loc[df0['particle'] == i, 'x2'].to_numpy()
+                y2_0 = df0.loc[df0['particle'] == i, 'y2'].to_numpy()
+                z2_0 = df0.loc[df0['particle'] == i, 'z2'].to_numpy()
+
+                x1_1 = df1.loc[df1['particle'] == i, 'x1'].to_numpy()
+                y1_1 = df1.loc[df1['particle'] == i, 'y1'].to_numpy()
+                z1_1 = df1.loc[df1['particle'] == i, 'z1'].to_numpy()
+                x2_1 = df1.loc[df1['particle'] == i, 'x2'].to_numpy()
+                y2_1 = df1.loc[df1['particle'] == i, 'y2'].to_numpy()
+                z2_1 = df1.loc[df1['particle'] == i, 'z2'].to_numpy()
+
+                x1gp1_1 = df1.loc[df1['particle'] == i, 'x1_gp1'].to_numpy()
+                y1gp1_1 = df1.loc[df1['particle'] == i, 'y1_gp1'].to_numpy()
+                x2gp1_1 = df1.loc[df1['particle'] == i, 'x2_gp1'].to_numpy()
+                y2gp1_1 = df1.loc[df1['particle'] == i, 'y2_gp1'].to_numpy()
+
+                x1gp2_1 = df1.loc[df1['particle'] == i, 'x1_gp2'].to_numpy()
+                y1gp2_1 = df1.loc[df1['particle'] == i, 'y1_gp2'].to_numpy()
+                x2gp2_1 = df1.loc[df1['particle'] == i, 'x2_gp2'].to_numpy()
+                y2gp2_1 = df1.loc[df1['particle'] == i, 'y2_gp2'].to_numpy()
+
+                comb1 = (
+                    np.linalg.norm([x1_0 - x1_1, y1_0 - y1_1, z1_0 - z1_1]) +
+                    np.linalg.norm([x2_0 - x2_1, y2_0 - y2_1, z2_0 - z2_1]))
+                comb2 = (
+                    np.linalg.norm([x2_0 - x1_1, y2_0 - y1_1, z2_0 - z1_1]) +
+                    np.linalg.norm([x1_0 - x2_1, y1_0 - y2_1, z1_0 - z2_1]))
+
+                mincosts_T[i, frame - frame_numbers[1]] = min(comb1, comb2)
+
+                if comb2 < comb1:
+                    df_raw_add.loc[df_raw_add['particle'] == i, 'x1'] = x2_1
+                    df_raw_add.loc[df_raw_add['particle'] == i, 'y1'] = y2_1
+                    df_raw_add.loc[df_raw_add['particle'] == i, 'z1'] = z2_1
+                    df_raw_add.loc[df_raw_add['particle'] == i, 'x2'] = x1_1
+                    df_raw_add.loc[df_raw_add['particle'] == i, 'y2'] = y1_1
+                    df_raw_add.loc[df_raw_add['particle'] == i, 'z2'] = z1_1
+
+                    df_raw_add.loc[df_raw_add['particle'] == i,
+                                   'x1_gp1'] = x2gp1_1
+                    df_raw_add.loc[df_raw_add['particle'] == i,
+                                   'y1_gp1'] = y2gp1_1
+                    df_raw_add.loc[df_raw_add['particle'] == i,
+                                   'x2_gp1'] = x1gp1_1
+                    df_raw_add.loc[df_raw_add['particle'] == i,
+                                   'y2_gp1'] = y1gp1_1
+
+                    df_raw_add.loc[df_raw_add['particle'] == i,
+                                   'x1_gp2'] = x2gp2_1
+                    df_raw_add.loc[df_raw_add['particle'] == i,
+                                   'y1_gp2'] = y2gp2_1
+                    df_raw_add.loc[df_raw_add['particle'] == i,
+                                   'x2_gp2'] = x1gp2_1
+                    df_raw_add.loc[df_raw_add['particle'] == i,
+                                   'y2_gp2'] = y1gp2_1
+
+            df0 = df_raw_add.copy()
+            dfs_out.append(df_raw_add)
+
+        df_out = pd.concat(dfs_out)
+
+        df_out.reset_index(drop=True, inplace=True)
+        df_out.to_csv(os.path.join(output_folder, f"rods_df_{color}.csv"),
+                      sep=",")
+
+    return mincosts_T

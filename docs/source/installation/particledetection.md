@@ -1,7 +1,7 @@
 # Installation of ParticleDetection
-**Requirement:** Python `>=3.8` is installed
+**Requirement:** Python `>=3.8` is installed, pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
 ## Installation from source
-1. Clone the [repository](https://github.com/ANP-Granular/Track_Gui) containing the ParticleDetection package or only download the `ParticleDetection` folder, if you are not interested in the RodTracker application.
+1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the ParticleDetection package or only download the `ParticleDetection` folder, if you are not interested in the RodTracker application.
 2. Install it using pip
   ```shell
   YOUR/REPO/PATH/ParticleDetection$ pip install .
@@ -43,6 +43,9 @@ This package has three functionality options to be installed. These are realized
         ```
     - refer to the [Detectron2 Installation Guide](https://detectron2.readthedocs.io/en/latest/tutorials/install.html) and the [PyTorch Get Started Page](https://pytorch.org/get-started/locally/)
   ```
+- `TEST`:
+  - intended for running (or developing) tests for the package
+  - must be installed in addition to one of the other `extras`
 
 ```{Warning}
 Detection models exported with GPU support enabled will not work with a CPU-only installation.

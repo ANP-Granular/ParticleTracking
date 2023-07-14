@@ -12,7 +12,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 Functions to run inference with a trained and exported network and save
@@ -44,7 +44,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _run_detection(model: torch.ScriptModule, img: Path,
-                   threshold: float = 0.5) -> dict:
+                   threshold: float = 0.5) -> ds.DetectionResult:
     """Runs detection on one image.
 
     Runs the detection model with the given image and converts the returned
@@ -67,7 +67,7 @@ def _run_detection(model: torch.ScriptModule, img: Path,
 
     Returns
     -------
-    dict
+    :data:`~ParticleDetection.utils.datasets.DetectionResult`
         Has the following keys:\n
         ``"pred_boxes"``, ``"pred_classes"``, ``"pred_masks"``, ``"scores"``,
         ``"input_size"``

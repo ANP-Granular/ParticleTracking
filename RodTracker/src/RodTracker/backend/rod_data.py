@@ -497,7 +497,7 @@ class RodData(QtCore.QObject):
                 if msg.clickedButton() == btn_cancel:
                     return
         else:
-            save_folder = RodTracker.TEMP_DIR / "autosaved"
+            save_folder = RodTracker.DATA_DIR / "autosaved"
 
         save_folder.mkdir(exist_ok=True)
         lock.lockForRead()

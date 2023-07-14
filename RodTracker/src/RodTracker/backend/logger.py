@@ -21,13 +21,13 @@ import logging
 import pathlib
 import sys
 import subprocess
-import traceback
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Optional, Iterable, Union, List
+import numpy as np
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
-from RodTracker import LOG_PATH
+from RodTracker import LOG_FILE
 import RodTracker.ui.rodnumberwidget as rn
 
 _logger = logging.getLogger(__name__)
@@ -35,8 +35,7 @@ _logger = logging.getLogger(__name__)
 
 def exception_logger(e_type, e_value, e_tb):
     """Handler for logging uncaught exceptions during the program flow."""
-    tb_str = "".join(traceback.format_exception(e_type, e_value, e_tb))
-    _logger.exception(f"Uncaught exception:\n{tb_str}")
+    _logger.exception("Uncaught exception:", exc_info=(e_type, e_value, e_tb))
 
 
 def qt_error_handler(mode: QtCore.QtMsgType,
@@ -63,10 +62,10 @@ QtCore.qInstallMessageHandler(qt_error_handler)
 def open_logs():
     """Opens the log file."""
     if sys.platform == "win32":
-        os.startfile(LOG_PATH)
+        os.startfile(LOG_FILE)
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
-        subprocess.run([opener, LOG_PATH])
+        subprocess.run([opener, LOG_FILE])
 
 
 class FileActions(Enum):
@@ -495,7 +494,7 @@ class DeleteRodAction(Action):
             out["seen"] = self.rod.seen
         else:
             # If the action was performed
-            out["position"] = [0, 0, 0, 0]
+            out["position"] = 4 * [np.nan]
             out["seen"] = not self.rod.seen
         return out
 

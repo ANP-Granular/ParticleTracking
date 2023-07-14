@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11']
+        python_version: ['3.8', '3.9', '3.10']
 
     steps:
     - uses: actions/checkout@v3
@@ -26,9 +26,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ./Python
+        pip install ./RodTracker[DEV]
+        pip install ./ParticleDetection[TEST]
     - name: Lint with flake8
       run: |
-        pip install flake8
-        flake8 --config ./Python/setup.cfg ./Python
-      continue-on-error: true
+        flake8 --config ./RodTracker/setup.cfg ./RodTracker
+        flake8 ./ParticleDetection
+      continue-on-error: false

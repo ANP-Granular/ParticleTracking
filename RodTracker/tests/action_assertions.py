@@ -121,10 +121,10 @@ def post_delete(main_window: RodTrackWindow, rod_id: int):
     cam = main_window.cameras[cam_idx]
     for rod in cam.rods:
         if rod.rod_id == rod_id:
-            assert rod.rod_points == 4 * [0]
+            assert rod.rod_points == 4 * [-1]
             return
     raise AssertionError(f"Rod #{rod_id} was not found but should be at"
-                         f" [0, 0, 0, 0]")
+                         f" [-1, -1, -1, -1]")
 
 
 def pre_pos_change(main_window: RodTrackWindow, rod_id: int):
