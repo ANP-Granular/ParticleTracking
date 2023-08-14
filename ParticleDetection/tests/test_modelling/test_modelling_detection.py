@@ -34,11 +34,17 @@ except ModuleNotFoundError:
     submod2 = ModuleType("config")
     submod2.CfgNode = None
     submod2.get_cfg = None
+    submod6 = ModuleType("projects")
+    submod6.point_rend = None
+    submod7 = ModuleType("export")
+    submod7.TracingAdapter = None
     sys.modules["detectron2"] = module
     sys.modules["detectron2.engine"] = submod0
     sys.modules["detectron2.utils"] = submod1
     sys.modules["detectron2.utils.logger"] = subsubmod0
     sys.modules["detectron2.config"] = submod2
+    sys.modules["detectron2.projects"] = submod6
+    sys.modules["detectron2.export"] = submod7
 
     module2 = ModuleType("configs")
     module2.write_configs = None
@@ -55,5 +61,9 @@ except ModuleNotFoundError:
     submod5 = ModuleType('visualizer')
     submod5.GenericMask = None
     sys.modules["detectron2.utils.visualizer"] = submod5
+
+    submod8 = ModuleType('detection_utils')
+    submod8.read_image = None
+    sys.modules["detectron2.data.detection_utils"] = submod8
 finally:
     from ParticleDetection.modelling.runners import detection   # noqa: F401
