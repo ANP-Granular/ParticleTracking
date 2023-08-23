@@ -27,6 +27,7 @@ from pytest import MonkeyPatch
 import pytest
 import RodTracker.backend.logger as lg
 import gui_actions as ga
+
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
     # function, so use the PyPI version:
@@ -35,37 +36,55 @@ else:
     # importlib.resources has files(), so use that:
     import importlib.resources as importlib_resources
 
+    if sys.version_info >= (3, 11):
+        importlib_resources.path = (
+            lambda module, file: importlib_resources.files(module).joinpath(
+                file
+            )
+        )
+
 
 def teardown_replacements(mp: MonkeyPatch):
     """Replaces QMessageBox behaviour to be able to automatically close the
     RodTracker, when it has unsaved changes."""
-    mp.setattr(QtWidgets.QMessageBox, "clickedButton",
-               lambda *args, **kwargs: None)
-    mp.setattr(QtWidgets.QMessageBox, "exec",
-               lambda *args, **kwargs: None)
+    mp.setattr(
+        QtWidgets.QMessageBox, "clickedButton", lambda *args, **kwargs: None
+    )
+    mp.setattr(QtWidgets.QMessageBox, "exec", lambda *args, **kwargs: None)
 
 
 data_opening = [
     pytest.param(
         [
-            ga.OpenData(importlib_resources.files(
-                "RodTracker.resources.example_data").joinpath("csv")),
-        ], id="open-positions"
+            ga.OpenData(
+                importlib_resources.files(
+                    "RodTracker.resources.example_data"
+                ).joinpath("csv")
+            ),
+        ],
+        id="open-positions",
     ),
     pytest.param(
         [
-            ga.OpenImage(importlib_resources.files(
-                "RodTracker.resources.example_data.images.gp3").joinpath(
-                    "0500.jpg")),
-        ], id="open-image"
+            ga.OpenImage(
+                importlib_resources.files(
+                    "RodTracker.resources.example_data.images.gp3"
+                ).joinpath("0500.jpg")
+            ),
+        ],
+        id="open-image",
     ),
 ]
 
 
 @pytest.mark.parametrize("actions", data_opening)
-def test_data_opening(main_window: RodTrackWindow, qtbot: QtBot,
-                      monkeypatch: MonkeyPatch, tmp_path: pathlib.Path,
-                      actions: List[ga.UserAction]):
+def test_data_opening(
+    main_window: RodTrackWindow,
+    qtbot: QtBot,
+    monkeypatch: MonkeyPatch,
+    tmp_path: pathlib.Path,
+    actions: List[ga.UserAction],
+):
     try:
         for action in actions:
             main_window = action.run(main_window, qtbot, monkeypatch, tmp_path)
@@ -78,25 +97,32 @@ position_operations = [
     pytest.param(
         [
             ga.CreateRod(25),
-        ], id="create rod"
+        ],
+        id="create rod",
     ),
     pytest.param(
         [
             ga.DeleteRod(12),
-        ], id="delete rod"
+        ],
+        id="delete rod",
     ),
     pytest.param(
         [
             ga.ChangeRodPosition(12),
-        ], id="change position"
+        ],
+        id="change position",
     ),
 ]
 
 
 @pytest.mark.parametrize("actions", position_operations)
-def test_position_operations(one_cam: RodTrackWindow, qtbot: QtBot,
-                             monkeypatch: MonkeyPatch, tmp_path: pathlib.Path,
-                             actions: List[ga.UserAction]):
+def test_position_operations(
+    one_cam: RodTrackWindow,
+    qtbot: QtBot,
+    monkeypatch: MonkeyPatch,
+    tmp_path: pathlib.Path,
+    actions: List[ga.UserAction],
+):
     try:
         for action in actions:
             one_cam = action.run(one_cam, qtbot, monkeypatch, tmp_path)
@@ -106,38 +132,34 @@ def test_position_operations(one_cam: RodTrackWindow, qtbot: QtBot,
 
 
 number_changing = [
+    pytest.param([ga.SwitchRodNumber(12, 7)], id="switch number-abort"),
     pytest.param(
-        [
-            ga.SwitchRodNumber(12, 7)
-        ], id="switch number-abort"
+        [ga.SwitchRodNumber(12, 7, lg.NumberChangeActions.ALL)],
+        id="switch number-all",
     ),
     pytest.param(
-        [
-            ga.SwitchRodNumber(12, 7, lg.NumberChangeActions.ALL)
-        ], id="switch number-all",
+        [ga.SwitchRodNumber(12, 7, lg.NumberChangeActions.ALL_ONE_CAM)],
+        id="switch number-one cam",
     ),
     pytest.param(
-        [
-            ga.SwitchRodNumber(12, 7, lg.NumberChangeActions.ALL_ONE_CAM)
-        ], id="switch number-one cam"
+        [ga.SwitchRodNumber(12, 7, lg.NumberChangeActions.ONE_BOTH_CAMS)],
+        id="switch number-one frame",
     ),
     pytest.param(
-        [
-            ga.SwitchRodNumber(12, 7, lg.NumberChangeActions.ONE_BOTH_CAMS)
-        ], id="switch number-one frame",
-    ),
-    pytest.param(
-        [
-            ga.SwitchRodNumber(12, 7, lg.NumberChangeActions.CURRENT)
-        ], id="switch number-this frame/cam"
+        [ga.SwitchRodNumber(12, 7, lg.NumberChangeActions.CURRENT)],
+        id="switch number-this frame/cam",
     ),
 ]
 
 
 @pytest.mark.parametrize("actions", number_changing)
-def test_number_changing(one_cam: RodTrackWindow, qtbot: QtBot,
-                         monkeypatch: MonkeyPatch, tmp_path: pathlib.Path,
-                         actions: List[ga.UserAction]):
+def test_number_changing(
+    one_cam: RodTrackWindow,
+    qtbot: QtBot,
+    monkeypatch: MonkeyPatch,
+    tmp_path: pathlib.Path,
+    actions: List[ga.UserAction],
+):
     try:
         for action in actions:
             one_cam = action.run(one_cam, qtbot, monkeypatch, tmp_path)
@@ -150,30 +172,38 @@ length_adjustment = [
     pytest.param(
         [
             ga.LengthAdjustment(QtCore.Qt.Key_A, 12),
-        ], id="Lengthen-single"
+        ],
+        id="Lengthen-single",
     ),
     pytest.param(
         [
             ga.LengthAdjustment(QtCore.Qt.Key_S, 12),
-        ], id="Shorten-single"
+        ],
+        id="Shorten-single",
     ),
     pytest.param(
         [
             ga.LengthAdjustment(QtCore.Qt.Key_R, 12),
-        ], id="Lengthen-all"
+        ],
+        id="Lengthen-all",
     ),
     pytest.param(
         [
             ga.LengthAdjustment(QtCore.Qt.Key_T, 12),
-        ], id="Shorten-all"
+        ],
+        id="Shorten-all",
     ),
 ]
 
 
 @pytest.mark.parametrize("actions", length_adjustment)
-def test_length_adjustment(both_cams: RodTrackWindow, qtbot: QtBot,
-                           monkeypatch: MonkeyPatch, tmp_path: pathlib.Path,
-                           actions: List[ga.UserAction]):
+def test_length_adjustment(
+    both_cams: RodTrackWindow,
+    qtbot: QtBot,
+    monkeypatch: MonkeyPatch,
+    tmp_path: pathlib.Path,
+    actions: List[ga.UserAction],
+):
     try:
         for action in actions:
             both_cams = action.run(both_cams, qtbot, monkeypatch, tmp_path)
@@ -186,30 +216,23 @@ display_operations = [
     pytest.param(
         [
             ga.SwitchColor("blue"),
-        ], id="switch color"
+        ],
+        id="switch color",
     ),
-    pytest.param(
-        [
-            ga.SwitchFrame(2)
-        ], id="switch frame - positive, multi"
-    ),
-    pytest.param(
-        [
-            ga.SwitchFrame(-2)
-        ], id="switch frame - negative, multi"
-    ),
-    pytest.param(
-        [
-            ga.SwitchCamera()
-        ], id="switch camera"
-    ),
+    pytest.param([ga.SwitchFrame(2)], id="switch frame - positive, multi"),
+    pytest.param([ga.SwitchFrame(-2)], id="switch frame - negative, multi"),
+    pytest.param([ga.SwitchCamera()], id="switch camera"),
 ]
 
 
 @pytest.mark.parametrize("actions", display_operations)
-def test_display_operations(both_cams: RodTrackWindow, qtbot: QtBot,
-                            monkeypatch: MonkeyPatch, tmp_path: pathlib.Path,
-                            actions: List[ga.UserAction]):
+def test_display_operations(
+    both_cams: RodTrackWindow,
+    qtbot: QtBot,
+    monkeypatch: MonkeyPatch,
+    tmp_path: pathlib.Path,
+    actions: List[ga.UserAction],
+):
     try:
         for action in actions:
             both_cams = action.run(both_cams, qtbot, monkeypatch, tmp_path)
@@ -223,22 +246,21 @@ amendment_operations = [
         [
             ga.DeleteRod(12),
             ga.Undo(),
-        ], id="undo"
+        ],
+        id="undo",
     ),
-    pytest.param(
-        [
-            ga.DeleteRod(12),
-            ga.Undo(),
-            ga.Redo()
-        ], id="redo"
-    ),
+    pytest.param([ga.DeleteRod(12), ga.Undo(), ga.Redo()], id="redo"),
 ]
 
 
 @pytest.mark.parametrize("actions", amendment_operations)
-def test_amendment_operations(one_cam: RodTrackWindow, qtbot: QtBot,
-                              monkeypatch: MonkeyPatch, tmp_path: pathlib.Path,
-                              actions: List[ga.UserAction]):
+def test_amendment_operations(
+    one_cam: RodTrackWindow,
+    qtbot: QtBot,
+    monkeypatch: MonkeyPatch,
+    tmp_path: pathlib.Path,
+    actions: List[ga.UserAction],
+):
     try:
         for action in actions:
             one_cam = action.run(one_cam, qtbot, monkeypatch, tmp_path)
@@ -264,14 +286,13 @@ operations = [
 undo_operations = []
 redo_operations = []
 for op in operations:
-    mark_condition = (
-        isinstance(op, (ga.LengthAdjustment,)) or
-        (isinstance(op, ga.SwitchRodNumber) and op.mode is None)
+    mark_condition = isinstance(op, (ga.LengthAdjustment,)) or (
+        isinstance(op, ga.SwitchRodNumber) and op.mode is None
     )
     mark = pytest.mark.xfail(
         condition=mark_condition,
         reason=f"Incomplete {op.__class__.__name__}.undo() implementation",
-        strict=True
+        strict=True,
     )
     undo_operations.append(
         pytest.param([op, ga.Undo()], id=f"undo-{op}", marks=mark)
@@ -282,10 +303,13 @@ for op in operations:
 
 
 @pytest.mark.parametrize("actions", [*undo_operations, *redo_operations])
-def test_amendmendable_operations(both_cams: RodTrackWindow, qtbot: QtBot,
-                                  monkeypatch: MonkeyPatch,
-                                  tmp_path: pathlib.Path,
-                                  actions: List[ga.UserAction]):
+def test_amendmendable_operations(
+    both_cams: RodTrackWindow,
+    qtbot: QtBot,
+    monkeypatch: MonkeyPatch,
+    tmp_path: pathlib.Path,
+    actions: List[ga.UserAction],
+):
     try:
         for action in actions:
             both_cams = action.run(both_cams, qtbot, monkeypatch, tmp_path)
@@ -302,10 +326,13 @@ for op in operations:
 
 
 @pytest.mark.parametrize("actions", save_operations)
-def test_savable_operations(both_cams: RodTrackWindow, qtbot: QtBot,
-                            monkeypatch: MonkeyPatch,
-                            tmp_path: pathlib.Path,
-                            actions: List[ga.UserAction]):
+def test_savable_operations(
+    both_cams: RodTrackWindow,
+    qtbot: QtBot,
+    monkeypatch: MonkeyPatch,
+    tmp_path: pathlib.Path,
+    actions: List[ga.UserAction],
+):
     try:
         for action in actions:
             both_cams = action.run(both_cams, qtbot, monkeypatch, tmp_path)

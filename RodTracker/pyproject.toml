@@ -18,6 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Intended Audience :: Science/Research",
@@ -39,7 +40,7 @@ numpy = ">=1.21.0"
 PyQt3D = ">=5.15.5"
 matplotlib = ">=3.6.2"
 importlib-resources = {version = ">=1.4", python = "<3.9"}
-ParticleDetection = {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", tag = "v0.4.0+ParticleDetection"}
+ParticleDetection = {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "05c0c5e4"}
 
 pyinstaller = {version = ">=5.7", optional = true}
 qt5-applications = {version = ">=5.15", optional = true}

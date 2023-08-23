@@ -17,22 +17,32 @@
 import pathlib
 import sys
 import inspect
+
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
     # function, so use the PyPI version:
     import importlib_resources
-    importlib_resources.path = (
-        lambda module, file: importlib_resources.files(module).joinpath(file)
-    )
+
+    importlib_resources.path = lambda module, file: importlib_resources.files(
+        module
+    ).joinpath(file)
 else:
     # importlib.resources has files(), so use that:
     import importlib.resources as importlib_resources
+
+    if sys.version_info >= (3, 11):
+        importlib_resources.path = (
+            lambda module, file: importlib_resources.files(module).joinpath(
+                file
+            )
+        )
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 
 def main():
-    currentdir = pathlib.Path(
-        inspect.getfile(inspect.currentframe())).resolve().parent
+    currentdir = (
+        pathlib.Path(inspect.getfile(inspect.currentframe())).resolve().parent
+    )
     parentdir = currentdir.parent
     sys.path.insert(0, str(parentdir))
 
@@ -47,10 +57,12 @@ def main():
 
     splash.showMessage("Updating environment...", align, color)
     import RodTracker.backend.logger as lg
+
     sys.excepthook = lg.exception_logger
 
     splash.showMessage("Loading UI...", align, color)
     import RodTracker.ui.mainwindow as mw
+
     main_window = mw.RodTrackWindow()
     splash.finish(main_window)
 

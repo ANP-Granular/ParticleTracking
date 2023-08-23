@@ -34,14 +34,25 @@ else:
     # importlib.resources has files(), so use that:
     import importlib.resources as importlib_resources
 
+    if sys.version_info >= (3, 11):
+        importlib_resources.path = (
+            lambda module, file: importlib_resources.files(module).joinpath(
+                file
+            )
+        )
+
+
 random.seed(1)
 
 cam1_img1 = importlib_resources.files(
-    "RodTracker.resources.example_data.images.gp3").joinpath("0500.jpg")
+    "RodTracker.resources.example_data.images.gp3"
+).joinpath("0500.jpg")
 cam2_img1 = importlib_resources.files(
-    "RodTracker.resources.example_data.images.gp4").joinpath("0500.jpg")
+    "RodTracker.resources.example_data.images.gp4"
+).joinpath("0500.jpg")
 csv_data = importlib_resources.files(
-    "RodTracker.resources.example_data").joinpath("csv")
+    "RodTracker.resources.example_data"
+).joinpath("csv")
 
 
 @pytest.fixture()
@@ -59,7 +70,8 @@ def main_window(qtbot: QtBot) -> RodTrackWindow:
     qtbot.waitUntil(wait_maximized)
     previous_settings = main_window.settings._contents.copy()
     main_window.settings.update_field(
-        category="visual", field="position_scaling", value=10.0)
+        category="visual", field="position_scaling", value=10.0
+    )
     yield main_window
     main_window.settings.save(new_data=previous_settings)
     r_data.lock.lockForRead()
@@ -127,4 +139,8 @@ def load_rod_data(colors: List[str]):
 
 @pytest.fixture()
 def testing_data() -> pd.DataFrame:
-    return load_rod_data(["red", ])
+    return load_rod_data(
+        [
+            "red",
+        ]
+    )

@@ -26,6 +26,7 @@ from RodTracker.backend import reconstruction
 from ParticleDetection.reconstruct_3D import match2D
 import ParticleDetection.utils.data_loading as dl
 import logging
+
 _logger = logging.getLogger(__name__)
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
@@ -35,41 +36,60 @@ else:
     # importlib.resources has files(), so use that:
     import importlib.resources as importlib_resources
 
-
-@pytest.fixture()
-def default_reconstructor(monkeypatch: MonkeyPatch,
-                          testing_data: pd.DataFrame) -> Reconstructor:
-    calibration_folder = importlib_resources.files(
-        "RodTracker.resources.example_data.calibrations")
-    frames = list(range(500, 503))
-    calibration = dl.load_camera_calibration(
-        calibration_folder.joinpath("gp34.json"))
-    transformation = dl.load_world_transformation(
-        calibration_folder.joinpath("transformation.json"))
-    cams = ["gp3", "gp4"]
-    color = "red"
-    monkeypatch.setattr(match2D, 'match_frame',
-                        lambda *args, **kwargs: pd.DataFrame())
-    yield Reconstructor(testing_data, frames, calibration, transformation,
-                        cams, color)
+    if sys.version_info >= (3, 11):
+        importlib_resources.path = (
+            lambda module, file: importlib_resources.files(module).joinpath(
+                file
+            )
+        )
 
 
 @pytest.fixture()
-def default_tracker(monkeypatch: MonkeyPatch,
-                    testing_data: pd.DataFrame) -> Tracker:
+def default_reconstructor(
+    monkeypatch: MonkeyPatch, testing_data: pd.DataFrame
+) -> Reconstructor:
     calibration_folder = importlib_resources.files(
-        "RodTracker.resources.example_data.calibrations")
+        "RodTracker.resources.example_data.calibrations"
+    )
     frames = list(range(500, 503))
     calibration = dl.load_camera_calibration(
-        calibration_folder.joinpath("gp34.json"))
+        calibration_folder.joinpath("gp34.json")
+    )
     transformation = dl.load_world_transformation(
-        calibration_folder.joinpath("transformation.json"))
+        calibration_folder.joinpath("transformation.json")
+    )
     cams = ["gp3", "gp4"]
     color = "red"
-    monkeypatch.setattr(match2D, 'match_frame',
-                        lambda *args, **kwargs: pd.DataFrame())
-    yield Tracker(testing_data, frames, calibration, transformation, cams,
-                  color)
+    monkeypatch.setattr(
+        match2D, "match_frame", lambda *args, **kwargs: pd.DataFrame()
+    )
+    yield Reconstructor(
+        testing_data, frames, calibration, transformation, cams, color
+    )
+
+
+@pytest.fixture()
+def default_tracker(
+    monkeypatch: MonkeyPatch, testing_data: pd.DataFrame
+) -> Tracker:
+    calibration_folder = importlib_resources.files(
+        "RodTracker.resources.example_data.calibrations"
+    )
+    frames = list(range(500, 503))
+    calibration = dl.load_camera_calibration(
+        calibration_folder.joinpath("gp34.json")
+    )
+    transformation = dl.load_world_transformation(
+        calibration_folder.joinpath("transformation.json")
+    )
+    cams = ["gp3", "gp4"]
+    color = "red"
+    monkeypatch.setattr(
+        match2D, "match_frame", lambda *args, **kwargs: pd.DataFrame()
+    )
+    yield Tracker(
+        testing_data, frames, calibration, transformation, cams, color
+    )
 
 
 @pytest.fixture()
@@ -81,13 +101,15 @@ def default_plotter(testing_data: pd.DataFrame) -> Plotter:
 class TestPlotter:
     def test_run(self, qtbot: QtBot, default_plotter: Plotter):
         calibration_folder = importlib_resources.files(
-            "RodTracker.resources.example_data.calibrations")
+            "RodTracker.resources.example_data.calibrations"
+        )
         calibration = dl.load_camera_calibration(
-            calibration_folder.joinpath("gp34.json"))
+            calibration_folder.joinpath("gp34.json")
+        )
         signals = 3 * [default_plotter.signals.result_plot]
         default_plotter.kwargs = {
             "calibration": calibration,
-            "cam_ids": ["gp3", "gp4"]
+            "cam_ids": ["gp3", "gp4"],
         }
         with qtbot.wait_signals(signals):
             default_plotter.run()
@@ -108,63 +130,90 @@ class TestPlotter:
         with qtbot.wait_signal(default_plotter.signals.result_plot):
             default_plotter.plot_displacements_3d(default_plotter.data)
 
-    def test_displacements_multi_color(self, qtbot: QtBot,
-                                       default_plotter: Plotter):
+    def test_displacements_multi_color(
+        self, qtbot: QtBot, default_plotter: Plotter
+    ):
         test_colors = ["red", "blue"]
         test_data = load_rod_data(test_colors)
-        with qtbot.wait_signals(len(test_colors) *
-                                [default_plotter.signals.result_plot]):
+        with qtbot.wait_signals(
+            len(test_colors) * [default_plotter.signals.result_plot]
+        ):
             default_plotter.plot_displacements_3d(test_data, test_colors)
 
-    def test_displacements_no_data(self, qtbot: QtBot,
-                                   default_plotter: Plotter):
-        test_data = load_rod_data(["red", ])
-        with qtbot.assert_not_emitted(default_plotter.signals.result_plot,
-                                      wait=1000):
+    def test_displacements_no_data(
+        self, qtbot: QtBot, default_plotter: Plotter
+    ):
+        test_data = load_rod_data(
+            [
+                "red",
+            ]
+        )
+        with qtbot.assert_not_emitted(
+            default_plotter.signals.result_plot, wait=1000
+        ):
             default_plotter.plot_displacements_3d(test_data, "green")
 
-    def test_displacements_bad_frames(self, qtbot: QtBot,
-                                      default_plotter: Plotter,
-                                      caplog: LogCaptureFixture):
-        test_data = load_rod_data(["red", ])
-        with qtbot.assert_not_emitted(default_plotter.signals.result_plot,
-                                      wait=1000):
-            default_plotter.plot_displacements_3d(test_data, start_frame=100,
-                                                  end_frame=100)
-        assert caplog.record_tuples == [("RodTracker.backend.reconstruction",
-                                         logging.ERROR,
-                                         "Only received data for one frame. "
-                                         "Cannot compute a 3D displacement "
-                                         "plot.")]
+    def test_displacements_bad_frames(
+        self, qtbot: QtBot, default_plotter: Plotter, caplog: LogCaptureFixture
+    ):
+        test_data = load_rod_data(
+            [
+                "red",
+            ]
+        )
+        with qtbot.assert_not_emitted(
+            default_plotter.signals.result_plot, wait=1000
+        ):
+            default_plotter.plot_displacements_3d(
+                test_data, start_frame=100, end_frame=100
+            )
+        assert caplog.record_tuples == [
+            (
+                "RodTracker.backend.reconstruction",
+                logging.ERROR,
+                "Only received data for one frame. "
+                "Cannot compute a 3D displacement "
+                "plot.",
+            )
+        ]
 
     def test_plot_reprojections(self, qtbot: QtBot, default_plotter: Plotter):
         calibration_folder = importlib_resources.files(
-            "RodTracker.resources.example_data.calibrations")
+            "RodTracker.resources.example_data.calibrations"
+        )
         calibration = dl.load_camera_calibration(
-            calibration_folder.joinpath("gp34.json"))
+            calibration_folder.joinpath("gp34.json")
+        )
         with qtbot.wait_signal(default_plotter.signals.result_plot):
             default_plotter.plot_reprojection_errors(
-                default_plotter.data, ["gp3", "gp4"], calibration)
+                default_plotter.data, ["gp3", "gp4"], calibration
+            )
 
-    def test_reprojections_no_data(self, qtbot: QtBot,
-                                   default_plotter: Plotter,
-                                   caplog: LogCaptureFixture):
-        with qtbot.assert_not_emitted(default_plotter.signals.result_plot,
-                                      wait=1000):
+    def test_reprojections_no_data(
+        self, qtbot: QtBot, default_plotter: Plotter, caplog: LogCaptureFixture
+    ):
+        with qtbot.assert_not_emitted(
+            default_plotter.signals.result_plot, wait=1000
+        ):
             default_plotter.plot_reprojection_errors(None, ["gp3", "gp4"])
         assert len(caplog.records) == 2
 
-    def test_reprojections_no_calibration(self, qtbot: QtBot,
-                                          default_plotter: Plotter,
-                                          caplog: LogCaptureFixture):
-        with qtbot.assert_not_emitted(default_plotter.signals.result_plot,
-                                      wait=1000):
+    def test_reprojections_no_calibration(
+        self, qtbot: QtBot, default_plotter: Plotter, caplog: LogCaptureFixture
+    ):
+        with qtbot.assert_not_emitted(
+            default_plotter.signals.result_plot, wait=1000
+        ):
             default_plotter.plot_reprojection_errors(
-                default_plotter.data, ["gp3", "gp4"])
-        assert caplog.record_tuples == [("RodTracker.backend.reconstruction",
-                                         logging.ERROR,
-                                         f"Insufficient calibration data was "
-                                         f"provided: {None}")]
+                default_plotter.data, ["gp3", "gp4"]
+            )
+        assert caplog.record_tuples == [
+            (
+                "RodTracker.backend.reconstruction",
+                logging.ERROR,
+                f"Insufficient calibration data was " f"provided: {None}",
+            )
+        ]
 
     def test_plot_lengths(self, qtbot: QtBot, default_plotter: Plotter):
         with qtbot.wait_signal(default_plotter.signals.result_plot):
@@ -173,8 +222,9 @@ class TestPlotter:
     def test_lengths_no_data(self, qtbot: QtBot, default_plotter: Plotter):
         test_data = default_plotter.data.copy()
         test_data["l"] = float("NaN")
-        with qtbot.assert_not_emitted(default_plotter.signals.result_plot,
-                                      wait=1000):
+        with qtbot.assert_not_emitted(
+            default_plotter.signals.result_plot, wait=1000
+        ):
             default_plotter.plot_rod_lengths(test_data)
 
 
@@ -182,21 +232,28 @@ class TestReconstructor:
     def test_abort(self, qtbot: QtBot, default_reconstructor: Reconstructor):
         reconstruction.abort_reconstruction = True
         with qtbot.assert_not_emitted(
-                default_reconstructor.signals.progress, wait=1000):
+            default_reconstructor.signals.progress, wait=1000
+        ):
             with qtbot.wait_signal(default_reconstructor.signals.result):
                 default_reconstructor.run()
         reconstruction.abort_reconstruction = False
 
-    def test_finished(self, qtbot: QtBot,
-                      default_reconstructor: Reconstructor):
+    def test_finished(
+        self, qtbot: QtBot, default_reconstructor: Reconstructor
+    ):
         expected_emitted = len(default_reconstructor.frames) * [
-            default_reconstructor.signals.progress]
+            default_reconstructor.signals.progress
+        ]
         expected_emitted.append(default_reconstructor.signals.result)
-        with qtbot.wait_signals(expected_emitted, order='strict'):
+        with qtbot.wait_signals(expected_emitted, order="strict"):
             default_reconstructor.run()
 
-    def test_error(self, qtbot: QtBot, monkeypatch: MonkeyPatch,
-                   default_reconstructor: Reconstructor):
+    def test_error(
+        self,
+        qtbot: QtBot,
+        monkeypatch: MonkeyPatch,
+        default_reconstructor: Reconstructor,
+    ):
         with monkeypatch.context() as mp:
             mp.setattr(default_reconstructor, "calibration", None)
             with qtbot.wait_signal(default_reconstructor.signals.error):
@@ -207,20 +264,23 @@ class TestTracker:
     def test_abort(self, qtbot: QtBot, default_tracker: Tracker):
         reconstruction.abort_reconstruction = True
         with qtbot.assert_not_emitted(
-                default_tracker.signals.progress, wait=1000):
+            default_tracker.signals.progress, wait=1000
+        ):
             with qtbot.wait_signal(default_tracker.signals.result):
                 default_tracker.run()
         reconstruction.abort_reconstruction = False
 
     def test_finished(self, qtbot: QtBot, default_tracker: Tracker):
         expected_emitted = len(default_tracker.frames) * [
-            default_tracker.signals.progress]
+            default_tracker.signals.progress
+        ]
         expected_emitted.append(default_tracker.signals.result)
-        with qtbot.wait_signals(expected_emitted, order='strict'):
+        with qtbot.wait_signals(expected_emitted, order="strict"):
             default_tracker.run()
 
-    def test_error(self, qtbot: QtBot, monkeypatch: MonkeyPatch,
-                   default_tracker: Tracker):
+    def test_error(
+        self, qtbot: QtBot, monkeypatch: MonkeyPatch, default_tracker: Tracker
+    ):
         with monkeypatch.context() as mp:
             mp.setattr(default_tracker, "calibration", None)
             with qtbot.wait_signal(default_tracker.signals.error):

@@ -20,16 +20,26 @@ import os
 import subprocess
 from pathlib import Path
 import sys
+
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
     # function, so use the PyPI version:
     import importlib_resources
-    importlib_resources.path = (
-        lambda module, file: importlib_resources.files(module).joinpath(file)
-    )
+
+    importlib_resources.path = lambda module, file: importlib_resources.files(
+        module
+    ).joinpath(file)
 else:
     # importlib.resources has files(), so use that:
     import importlib.resources as importlib_resources
+
+    if sys.version_info >= (3, 11):
+        importlib_resources.path = (
+            lambda module, file: importlib_resources.files(module).joinpath(
+                file
+            )
+        )
+
 
 # use the online documentation unless the RodTracker is bundled
 _docs_url = "https://particletracking.readthedocs.io/"
@@ -45,8 +55,9 @@ def icon_path() -> str:
     str
         String representation of the path to the application icon.
     """
-    return str(importlib_resources.path("RodTracker.resources",
-                                        "icon_main.ico"))
+    return str(
+        importlib_resources.path("RodTracker.resources", "icon_main.ico")
+    )
 
 
 def undo_icon_path() -> str:
@@ -57,13 +68,14 @@ def undo_icon_path() -> str:
     str
         String representation of the path to the application undo icon.
     """
-    return str(importlib_resources.path("RodTracker.resources",
-                                        "left-arrow-96.png"))
+    return str(
+        importlib_resources.path("RodTracker.resources", "left-arrow-96.png")
+    )
 
 
 def open_docs() -> None:
     """Open the documenation for the RodTracker."""
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         os.startfile(_docs_url)
     else:
-        subprocess.Popen(['xdg-open', _docs_url])
+        subprocess.Popen(["xdg-open", _docs_url])
