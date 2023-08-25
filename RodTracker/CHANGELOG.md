@@ -1,6 +1,7 @@
 ## [Unreleased]
 ### Added
 - support for python3.11
+- support for more complex image file names, i.e. '...**_00000.png**'
 
 ### Fixed
 - missing installation requirement (Git)
