@@ -22,8 +22,12 @@ from typing import List, Callable
 from functools import partial
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import (QMessageBox, QRadioButton,
-                             QScrollArea, QTreeWidgetItem)
+from PyQt5.QtWidgets import (
+    QMessageBox,
+    QRadioButton,
+    QScrollArea,
+    QTreeWidgetItem,
+)
 from PyQt5.QtGui import QWheelEvent
 
 import RodTracker.backend.settings as se
@@ -87,6 +91,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         Manager objects for loaded/selected image datasets. There is one
         associated with each :class:`.RodImageWidget` in :attr:`cameras`.
     """
+
     request_undo = QtCore.pyqtSignal(str, name="request_undo")
     """pyqtSignal(str) : Is emitted when the user wants to revert an action.
 
@@ -133,11 +138,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.action_zoom_out.setShortcut("Ctrl+-")
         # Set maximum button/checkbox sizes to avoid text clipping
         pb_load_txt = self.ui.pb_load_images.text()
-        pb_load_size = self.ui.pb_load_images.fontMetrics().width(
-            pb_load_txt)
+        pb_load_size = self.ui.pb_load_images.fontMetrics().width(pb_load_txt)
         pb_rod_txt = self.ui.pb_load_rods.text()
-        pb_rod_size = self.ui.pb_load_rods.fontMetrics().width(
-            pb_rod_txt)
+        pb_rod_size = self.ui.pb_load_rods.fontMetrics().width(pb_rod_txt)
         max_width = pb_rod_size if pb_rod_size > pb_load_size else pb_load_size
         self.ui.pb_load_images.setMaximumWidth(int(2 * max_width))
         self.ui.pb_load_rods.setMaximumWidth(int(2 * max_width))
@@ -175,8 +178,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.logger = self.ui.lv_actions_list.get_new_logger(self.logger_id)
         self.ui.sa_camera_0.verticalScrollBar().installEventFilter(self)
         self.ui.sa_camera_1.verticalScrollBar().installEventFilter(self)
-        self.switch_right = QtWidgets.QShortcut(QtGui.QKeySequence(
-            "Ctrl+tab"), self)
+        self.switch_right = QtWidgets.QShortcut(
+            QtGui.QKeySequence("Ctrl+tab"), self
+        )
         self.ui.slider_frames.setMinimum(0)
         self.ui.slider_frames.setMaximum(1)
         self.settings = se.Settings()
@@ -187,7 +191,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.detector = init_detection(self.ui, self.image_managers)
         if self.detector is not None:
             self.detector._logger = self.ui.lv_actions_list.get_new_logger(
-                "Detector")
+                "Detector"
+            )
 
         # Tab icons for 'busy' indication
         default_icon = blank_icon()
@@ -202,20 +207,25 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         """Connect all signals and slots of the Rod Tracker objects."""
         tab_idx = self.ui.camera_tabs.currentIndex()
         # Opening files
-        self.ui.action_open_rods.triggered.connect(partial(
-            self.rod_data.select_rods, self.ui.le_rod_dir.text()))
-        self.ui.pb_load_rods.clicked.connect(partial(
-            self.rod_data.select_rods, self.ui.le_rod_dir.text()))
-        self.ui.le_rod_dir.returnPressed.connect(partial(
-            self.rod_data.select_rods, self.ui.le_rod_dir.text()))
+        self.ui.action_open_rods.triggered.connect(
+            partial(self.rod_data.select_rods, self.ui.le_rod_dir.text())
+        )
+        self.ui.pb_load_rods.clicked.connect(
+            partial(self.rod_data.select_rods, self.ui.le_rod_dir.text())
+        )
+        self.ui.le_rod_dir.returnPressed.connect(
+            partial(self.rod_data.select_rods, self.ui.le_rod_dir.text())
+        )
 
         # Data loading
         self.rod_data.data_loaded.connect(self.rods_loaded)
         self.rod_data.data_loaded[list].connect(
-            lambda colors: self.rods_loaded(None, None, colors))
+            lambda colors: self.rods_loaded(None, None, colors)
+        )
         self.rod_data.seen_loaded.connect(self.ui.tv_rods.setup_tree)
         self.rod_data.is_busy.connect(
-            lambda busy: self.tab_busy_changed(0, busy))
+            lambda busy: self.tab_busy_changed(0, busy)
+        )
 
         # Saving
         self.ui.pb_save_rods.clicked.connect(self.rod_data.save_changes)
@@ -229,10 +239,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_redo.triggered.connect(self.requesting_redo)
 
         # View controls
-        self.ui.action_zoom_in.triggered.connect(lambda: self.scale_image(
-            factor=1.25))
-        self.ui.action_zoom_out.triggered.connect(lambda: self.scale_image(
-            factor=0.8))
+        self.ui.action_zoom_in.triggered.connect(
+            lambda: self.scale_image(factor=1.25)
+        )
+        self.ui.action_zoom_out.triggered.connect(
+            lambda: self.scale_image(factor=0.8)
+        )
         self.ui.action_original_size.triggered.connect(self.original_size)
         self.ui.action_fit_to_window.triggered.connect(self.fit_to_window)
         self.ui.pb_front.clicked.connect(self.ui.view_3d.show_front)
@@ -243,7 +255,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             rb.toggled.connect(self.color_change)
         self.ui.pb_previous.clicked.connect(
-            lambda: self.show_next(direction=-1))
+            lambda: self.show_next(direction=-1)
+        )
         self.ui.pb_next.clicked.connect(lambda: self.show_next(direction=1))
         self.switch_right.activated.connect(lambda: self.change_view(1))
         self.ui.camera_tabs.currentChanged.connect(self.view_changed)
@@ -256,27 +269,32 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         if self.reconstructor is not None:
             self.reconstructor.is_busy.connect(
-                lambda busy: self.tab_busy_changed(5, busy))
+                lambda busy: self.tab_busy_changed(5, busy)
+            )
             self.rod_data.data_loaded[int, int, list].connect(
-                self.reconstructor.data_loaded)
+                self.reconstructor.data_loaded
+            )
             self.rod_data.data_loaded[str, str].connect(
-                self.reconstructor.set_cam_ids)
+                self.reconstructor.set_cam_ids
+            )
             self.reconstructor.request_data.connect(
-                lambda frames, colors: self.rod_data.get_data(
-                    frames, colors)
+                lambda frames, colors: self.rod_data.get_data(frames, colors)
             )
             self.rod_data.requested_data.connect(
-                self.reconstructor.data_update)
+                self.reconstructor.data_update
+            )
             self.reconstructor.updated_data.connect(
-                self.rod_data.receive_updated_data)
+                self.rod_data.receive_updated_data
+            )
             self.rod_data.data_loaded[str, str].connect(
-                self.reconstructor.set_cam_ids)
+                self.reconstructor.set_cam_ids
+            )
 
         if self.detector is not None:
             self.detector.is_busy.connect(
-                lambda busy: self.tab_busy_changed(4, busy))
-            self.detector.detected_data.connect(
-                self.rod_data.add_data)
+                lambda busy: self.tab_busy_changed(4, busy)
+            )
+            self.detector.detected_data.connect(self.rod_data.add_data)
             self.rod_data.saved.connect(self.detector._logger.actions_saved)
 
         # Display methods
@@ -299,14 +317,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             manager.next_img[QtGui.QImage].connect(cam.image)
             if str(tab_idx) in manager._logger_id:
                 self.ui.pb_load_images.clicked.connect(
-                    partial(manager.select_images,
-                            self.ui.le_image_dir.text()))
+                    partial(manager.select_images, self.ui.le_image_dir.text())
+                )
                 self.ui.action_open.triggered.connect(
-                    partial(manager.select_images,
-                            self.ui.le_image_dir.text()))
+                    partial(manager.select_images, self.ui.le_image_dir.text())
+                )
                 self.ui.le_image_dir.returnPressed.connect(
-                    partial(manager.select_images,
-                            self.ui.le_image_dir.text()))
+                    partial(manager.select_images, self.ui.le_image_dir.text())
+                )
             if self.ui.cb_overlay.isChecked():
                 manager.next_img[int, int].connect(self.rod_data.update_frame)
 
@@ -317,47 +335,58 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.logger.request_saving.connect(self.rod_data.save_changes)
             cam.logger.data_changed.connect(self.rod_data.catch_data)
             self.rod_data.saved.connect(cam.logger.actions_saved)
+            cam.number_switches[lg.NumberChangeActions, int, int, str].connect(
+                self.rod_data.catch_number_switch
+            )
             cam.number_switches[
-                lg.NumberChangeActions, int, int, str].connect(
-                self.rod_data.catch_number_switch)
-            cam.number_switches[
-                lg.NumberChangeActions, int, int, str, str, int].connect(
-                self.rod_data.catch_number_switch)
+                lg.NumberChangeActions, int, int, str, str, int
+            ].connect(self.rod_data.catch_number_switch)
             self.request_undo.connect(cam.logger.undo_last)
             self.request_redo.connect(cam.logger.redo_last)
             self.settings.settings_changed.connect(cam.update_settings)
             cam.loaded_rods.connect(
-                lambda n: self.ui.le_rod_disp.setText(
-                    f"Loaded Particles: {n}"))
+                lambda n: self.ui.le_rod_disp.setText(f"Loaded Particles: {n}")
+            )
             self.ui.action_autoselect_rods.toggled.connect(cam.set_autoselect)
 
         # Data manipulation
         self.ui.action_cleanup.triggered.connect(self.rod_data.clean_data)
         self.ui.action_shorten_displayed.triggered.connect(
             lambda: self.cameras[tab_idx].adjust_rod_length(
-                -self._rod_incr, False))
+                -self._rod_incr, False
+            )
+        )
         self.ui.action_lengthen_displayed.triggered.connect(
             lambda: self.cameras[tab_idx].adjust_rod_length(
-                self._rod_incr, False))
+                self._rod_incr, False
+            )
+        )
         self.ui.action_shorten_selected.triggered.connect(
             lambda: self.cameras[tab_idx].adjust_rod_length(
-                -self._rod_incr, True))
+                -self._rod_incr, True
+            )
+        )
         self.ui.action_lengthen_selected.triggered.connect(
             lambda: self.cameras[tab_idx].adjust_rod_length(
-                self._rod_incr, True))
+                self._rod_incr, True
+            )
+        )
 
         # Settings
         self.settings.settings_changed.connect(self.update_settings)
         self.settings.settings_changed.connect(
-            rn.RodNumberWidget.update_defaults)
+            rn.RodNumberWidget.update_defaults
+        )
         self.settings.settings_changed.connect(self.ui.view_3d.update_settings)
         self.settings.settings_changed.connect(self.rod_data.update_settings)
         if self.reconstructor is not None:
             self.settings.settings_changed.connect(
-                self.reconstructor.update_settings)
+                self.reconstructor.update_settings
+            )
         if self.detector is not None:
             self.settings.settings_changed.connect(
-                self.detector.update_settings)
+                self.detector.update_settings
+            )
 
         # Logging
         self.logger.notify_unsaved.connect(self.tab_has_changes)
@@ -365,10 +394,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         # Help
         self.ui.action_docs.triggered.connect(fl.open_docs)
-        self.ui.action_about.triggered.connect(lambda: dialogs.show_about(
-            self))
+        self.ui.action_about.triggered.connect(
+            lambda: dialogs.show_about(self)
+        )
         self.ui.action_about_qt.triggered.connect(
-            lambda: QMessageBox.aboutQt(self, "RodTracker"))
+            lambda: QMessageBox.aboutQt(self, "RodTracker")
+        )
         self.ui.action_logs.triggered.connect(lg.open_logs)
 
     @QtCore.pyqtSlot(QTreeWidgetItem, int)
@@ -480,8 +511,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         tab_text = self.ui.camera_tabs.tabText(tab_idx)
         front_text = tab_text.split("(")[0]
         end_text = tab_text.split(")")[-1]
-        new_text = front_text + "(" + cam_id + ")" +\
-            end_text
+        new_text = front_text + "(" + cam_id + ")" + end_text
         self.ui.camera_tabs.setTabText(tab_idx, new_text)
         self.cameras[tab_idx].cam_id = cam_id
 
@@ -516,7 +546,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.le_save_dir.setText(str(output))
 
         rb_colors = self.ui.group_rod_color.findChildren(
-            QtWidgets.QRadioButton)
+            QtWidgets.QRadioButton
+        )
         rb_color_texts = [btn.text().lower() for btn in rb_colors]
         group_layout: QtWidgets.QGridLayout = self.ui.group_rod_color.layout()
         for btn in rb_colors:
@@ -650,9 +681,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        current_sa = self.findChild(QScrollArea,
-                                    f"sa_camera_"
-                                    f"{self.ui.camera_tabs.currentIndex()}")
+        current_sa = self.findChild(
+            QScrollArea, f"sa_camera_" f"{self.ui.camera_tabs.currentIndex()}"
+        )
         to_size = current_sa.size()
         to_size = QtCore.QSize(to_size.width() - 20, to_size.height() - 20)
         tab_idx = self.ui.camera_tabs.currentIndex()
@@ -700,8 +731,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             color = self.get_selected_color()
             self.rod_data.update_color_2D(color)
             self.ui.tv_rods.update_tree_folding(self.logger.frame, color)
-            if self.ui.rb_color_3d.isChecked() or \
-                    self.ui.rb_one_3d.isChecked():
+            if (
+                self.ui.rb_color_3d.isChecked()
+                or self.ui.rb_one_3d.isChecked()
+            ):
                 self.rod_data.update_color_3D(color)
 
     @staticmethod
@@ -722,10 +755,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         msg.setIcon(QMessageBox.Warning)
         msg.setWindowTitle("Rod Tracker")
         msg.setText("There are unsaved changes!")
-        btn_discard = msg.addButton("Discard changes",
-                                    QMessageBox.ActionRole)
-        btn_cancel = msg.addButton("Cancel",
-                                   QMessageBox.ActionRole)
+        btn_discard = msg.addButton("Discard changes", QMessageBox.ActionRole)
+        btn_cancel = msg.addButton("Cancel", QMessageBox.ActionRole)
         msg.setDefaultButton(btn_cancel)
         msg.exec()
         if msg.clickedButton() == btn_discard:
@@ -752,8 +783,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             if rb.objectName()[3:] == to_color:
                 # Activate the last color
                 rb.toggle()
-                self.ui.tv_rods.update_tree_folding(self.logger.frame,
-                                                    to_color)
+                self.ui.tv_rods.update_tree_folding(
+                    self.logger.frame, to_color
+                )
 
     def change_view(self, direction: int) -> None:
         """Helper method for programmatic changes of the camera tabs."""
@@ -789,26 +821,33 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         reconnect(
             self.ui.action_shorten_displayed.triggered,
-            lambda: cam.adjust_rod_length(-self._rod_incr, False))
+            lambda: cam.adjust_rod_length(-self._rod_incr, False),
+        )
         reconnect(
             self.ui.action_lengthen_displayed.triggered,
-            lambda: cam.adjust_rod_length(self._rod_incr, False))
+            lambda: cam.adjust_rod_length(self._rod_incr, False),
+        )
         reconnect(
             self.ui.action_shorten_selected.triggered,
-            lambda: cam.adjust_rod_length(-self._rod_incr, True))
+            lambda: cam.adjust_rod_length(-self._rod_incr, True),
+        )
         reconnect(
             self.ui.action_lengthen_selected.triggered,
-            lambda: cam.adjust_rod_length(self._rod_incr, True))
+            lambda: cam.adjust_rod_length(self._rod_incr, True),
+        )
 
         reconnect(
             self.ui.pb_load_images.clicked,
-            lambda: manager.select_images(self.ui.le_image_dir.text()))
+            lambda: manager.select_images(self.ui.le_image_dir.text()),
+        )
         reconnect(
             self.ui.action_open.triggered,
-            lambda: manager.select_images(self.ui.le_image_dir.text()))
+            lambda: manager.select_images(self.ui.le_image_dir.text()),
+        )
         reconnect(
             self.ui.le_image_dir.returnPressed,
-            lambda: manager.select_images(self.ui.le_image_dir.text()))
+            lambda: manager.select_images(self.ui.le_image_dir.text()),
+        )
 
         if manager.folder is None:
             self.ui.le_image_dir.setText("")
@@ -886,8 +925,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             tab_icon = blank_icon()
         self.ui.right_tabs.setTabIcon(tab_idx, tab_icon)
 
-    def eventFilter(self, source: QtCore.QObject, event: QtCore.QEvent)\
-            -> bool:
+    def eventFilter(
+        self, source: QtCore.QObject, event: QtCore.QEvent
+    ) -> bool:
         """Intercepts events, here modified scroll events for zooming.
 
         Parameters
@@ -902,10 +942,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             ``False``, if the event shall be passed to the next object to be
             handled.
         """
-        if source not in [self.ui.sa_camera_0.verticalScrollBar(),
-                          self.ui.sa_camera_1.verticalScrollBar()]:
+        if source not in [
+            self.ui.sa_camera_0.verticalScrollBar(),
+            self.ui.sa_camera_1.verticalScrollBar(),
+        ]:
             return False
-        if type(event) != QtGui.QWheelEvent:
+        if not isinstance(event, QtGui.QWheelEvent):
             return False
 
         event = QWheelEvent(event)
@@ -958,8 +1000,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             msg.setText("There are unsaved changes!")
             btn_save = msg.addButton("Save", QMessageBox.ActionRole)
             msg.addButton("Discard", QMessageBox.ActionRole)
-            btn_cancel = msg.addButton("Cancel",
-                                       QMessageBox.ActionRole)
+            btn_cancel = msg.addButton("Cancel", QMessageBox.ActionRole)
             msg.setDefaultButton(btn_save)
             msg.exec()
             if msg.clickedButton() == btn_save:
@@ -975,8 +1016,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             a0.accept()
 
 
-def reconnect(signal: QtCore.pyqtSignal, newhandler: Callable = None,
-              oldhandler: Callable = None) -> None:
+def reconnect(
+    signal: QtCore.pyqtSignal,
+    newhandler: Callable = None,
+    oldhandler: Callable = None,
+) -> None:
     """(Re-)connect handler(s) to a signal.
 
     Connect a new handler function to a signal while either removing all other,
@@ -1008,8 +1052,9 @@ def busy_icon() -> QtGui.QIcon:
     busy_pix = QtGui.QPixmap(40, 100)
     busy_pix.fill(QtCore.Qt.transparent)
     busy_painter = QtGui.QPainter(busy_pix)
-    busy_painter.setBrush(QtGui.QBrush(QtCore.Qt.green,
-                                       QtCore.Qt.SolidPattern))
+    busy_painter.setBrush(
+        QtGui.QBrush(QtCore.Qt.green, QtCore.Qt.SolidPattern)
+    )
     busy_painter.setPen(QtCore.Qt.NoPen)
     busy_painter.drawEllipse(0, 0, 40, 40)
     busy_painter.end()
