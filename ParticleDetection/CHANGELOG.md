@@ -1,4 +1,6 @@
 ## [Unreleased]
+### Added
+- support for python3.11
 
 ## [v0.4.0]
 ### Added

@@ -4,7 +4,10 @@ This package provides a GUI encapsulating the most used functionality of the [Pa
 Please refer to the [documentation](https://particletracking.readthedocs.io/) for more detailed information.
 
 ## Installation
-Requirements: Python `>=3.8` is installed.
+**Requirements:**
+- Python `>=3.8`
+- pip
+- Git
 
 0. Upgrade your version of `pip`.
    ```shell

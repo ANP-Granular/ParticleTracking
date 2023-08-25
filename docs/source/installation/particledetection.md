@@ -1,6 +1,14 @@
 # Installation of ParticleDetection
-**Requirement:** Python `>=3.8` is installed, pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
+
+**Requirements:**
+- Python `>=3.8` is installed
+- pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
+
 ## Installation from source
+0. Upgrade your version of `pip`.
+   ```shell
+   python -m pip install --upgrade pip
+   ```
 1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the ParticleDetection package or only download the `ParticleDetection` folder, if you are not interested in the RodTracker application.
 2. Install it using pip
   ```shell
@@ -27,7 +35,7 @@ This package has three functionality options to be installed. These are realized
   - allows to run exported detection models on the CPU and GPU
 - `DETECTRON`:
   - **Requirement:** CUDA is installed
-  - attempts to install the CUDA/GPU version of `pytorch` 
+  - attempts to install the CUDA/GPU version of `pytorch`
   - attempts to install Detectron2
   - allows to train/run/export new Detectron2 models
   - allows to run exported detection models on the CPU and GPU
@@ -37,9 +45,9 @@ This package has three functionality options to be installed. These are realized
         ```shell
         pip install protobuf==3.20.1
         ```
-    - install Shapely 
+    - install Shapely
         ```shell
-        pip install shapely 
+        pip install shapely
         ```
     - refer to the [Detectron2 Installation Guide](https://detectron2.readthedocs.io/en/latest/tutorials/install.html) and the [PyTorch Get Started Page](https://pytorch.org/get-started/locally/)
   ```
@@ -74,4 +82,3 @@ If GPU support is necessary on a Windows machine the requirements of the `GPU` v
 4. Install your systems GPU version of torch, torchaudio and torchvision, that matches the installed CUDA version (see the [PyTorch Website](https://pytorch.org/get-started/locally/))
 
 The `DETECTRON` version is not available on Windows because Detectron2 does not support an installation on Windows.
-

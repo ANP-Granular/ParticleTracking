@@ -1,4 +1,9 @@
 ## [Unreleased]
+### Added
+- support for python3.11
+
+### Fixed
+- missing installation requirement (Git)
 
 ## [v0.6.0]
 ### Added

@@ -4,9 +4,16 @@ For both there is no further setup required and the executables work instantly n
 
 From now on all instructions for installation are only concerning installing the RodTracker from source.
 
-## Installation from source
+**Requirements:**
+- Python `>=3.8` is installed
+- pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
+- Git is installed
 
-**Requirement:** Python `>=3.8` is installed, pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
+## Installation from source
+  0. Upgrade your version of `pip`.
+   ```shell
+   python -m pip install --upgrade pip
+   ```
   1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the RodTracker. Do **NOT** just copy the `RodTracker` folder. This will lead to a missing dependency during the installation.
   2. Install it using `pip`.
    ```shell
@@ -17,12 +24,12 @@ From now on all instructions for installation are only concerning installing the
   ```shell
   (base) YOUR/CURRENT/DIRECTORY$ conda create -n RodTracker python=3.10
           ...
-  (base) YOUR/CURRENT/DIRECTORY$ 
+  (base) YOUR/CURRENT/DIRECTORY$
   ```
 2. Activate the just created environment.
   ```bash
   (base) YOUR/CURRENT/DIRECTORY$ conda activate RodTracker
-  (RodTracker) YOUR/CURRENT/DIRECTORY$ 
+  (RodTracker) YOUR/CURRENT/DIRECTORY$
   ```
 3. Follow the instructions in [Install from source](#installation-from-source)
 
