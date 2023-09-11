@@ -401,6 +401,20 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             lambda: QMessageBox.aboutQt(self, "RodTracker")
         )
         self.ui.action_logs.triggered.connect(lg.open_logs)
+        self.ui.action_bug_report.triggered.connect(
+            lambda: QtGui.QDesktopServices.openUrl(
+                QtCore.QUrl(
+                    "https://github.com/ANP-Granular/ParticleTracking/issues/new?labels=bug&projects=&template=bug_report.md&title="  # noqa: E501
+                )
+            )
+        )
+        self.ui.action_feature_request.triggered.connect(
+            lambda: QtGui.QDesktopServices.openUrl(
+                QtCore.QUrl(
+                    "https://github.com/ANP-Granular/ParticleTracking/issues/new?labels=enhancement&projects=&template=feature_request.md&title="  # noqa: E501
+                )
+            )
+        )
 
     @QtCore.pyqtSlot(QTreeWidgetItem, int)
     def tree_selection(self, item: QTreeWidgetItem, col: int):

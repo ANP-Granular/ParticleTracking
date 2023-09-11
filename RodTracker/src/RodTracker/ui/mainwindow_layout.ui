@@ -850,8 +850,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>100</width>
-                     <height>30</height>
+                     <width>616</width>
+                     <height>459</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -1094,7 +1094,7 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>255</width>
+                        <width>476</width>
                         <height>508</height>
                        </rect>
                       </property>
@@ -2145,6 +2145,9 @@
     <addaction name="action_docs"/>
     <addaction name="action_about"/>
     <addaction name="action_about_qt"/>
+    <addaction name="separator"/>
+    <addaction name="action_bug_report"/>
+    <addaction name="action_feature_request"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -2317,6 +2320,16 @@
    </property>
    <property name="shortcut">
     <string>G</string>
+   </property>
+  </action>
+  <action name="action_bug_report">
+   <property name="text">
+    <string>Report a BUG</string>
+   </property>
+  </action>
+  <action name="action_feature_request">
+   <property name="text">
+    <string>Request a FEATURE</string>
    </property>
   </action>
  </widget>

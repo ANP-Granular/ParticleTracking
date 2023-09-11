@@ -2,6 +2,7 @@
 ### Added
 - support for python3.11
 - support for more complex image file names, i.e. '...**_00000.png**'
+- buttons to report issues/request features on GitHub
 
 ### Fixed
 - missing installation requirement (Git)
