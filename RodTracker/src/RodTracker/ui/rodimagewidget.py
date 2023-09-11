@@ -125,6 +125,7 @@ class RodImageWidget(QLabel):
 
     rods: List[rn.RodNumberWidget]
     _logger: lg.ActionLogger = None
+    _current_color: str = "unknown"
     # Settings
     _rod_thickness = 3
     _number_offset = 15
@@ -1269,6 +1270,7 @@ class RodImageWidget(QLabel):
             del self.rods
             return
 
+        self._current_color = color
         new_rods = []
         cleaned = data.fillna(-1)
         for _, rod in cleaned.iterrows():
@@ -1302,7 +1304,7 @@ class RodImageWidget(QLabel):
         new_position : list
             Positon coordinates: [x1, y1, x2, y2]
         """
-        new_rod = rn.RodNumberWidget(self.rods[0].color, self, str(number))
+        new_rod = rn.RodNumberWidget(self._current_color, self, str(number))
         new_rod.rod_id = number
         new_rod.setObjectName(f"rn_{number}")
         new_rod.rod_points = new_position

@@ -5,6 +5,7 @@
 
 ### Fixed
 - missing installation requirement (Git)
+- capability to 'correct' rods when none are present in the loaded dataset on the current frame ([#73](https://github.com/ANP-Granular/ParticleTracking/issues/73))
 
 ## [v0.6.0]
 ### Added
