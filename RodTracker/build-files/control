@@ -1,0 +1,7 @@
+Package: RodTracker
+Version: 0.6.1
+Section: Science
+Architecture: amd64
+Maintainer: Adrian Niemann <adrian.niemann@gmx.de>
+Description: GUI to track rod-like particles on multiple cameras.
+Homepage: https://github.com/ANP-Granular/ParticleTracking

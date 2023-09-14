@@ -11,12 +11,13 @@ call make html
 cd %basedir%
 cd ..
 if [%1]==[] goto onedir
-if %1==-onefile goto onefile 
+if %1==-onefile goto onefile
 if %1==-onedir goto onedir
 goto unknown
 
 :onedir
-pyinstaller .\build-files\build_onedir.spec
+pyinstaller --distpath .\dist\windows --workpath .\build\windows ^
+    .\build-files\build_onedir.spec
 goto eof
 
 :onefile

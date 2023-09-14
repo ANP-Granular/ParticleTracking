@@ -14,7 +14,8 @@ cd $BASEDIR
 cd ..
 if [ $# -eq 0 ]; then
     # build as one directory
-    pyinstaller ./build-files/build_onedir.spec
+    pyinstaller --distpath ./dist/linux --workpath ./build/linux \
+      ./build-files/build_onedir.spec
   else
     if [ $1 == "-onefile" ]
       then
@@ -24,7 +25,8 @@ if [ $# -eq 0 ]; then
     if [ $1 == "-onedir" ]
       then
         # build as one directory
-        pyinstaller ./build-files/build_onedir.spec
+        pyinstaller --distpath ./dist/linux --workpath ./build/linux \
+          ./build-files/build_onedir.spec
     fi
     if [[ $1 != "-onedir" && $1 != "-onefile" ]]
       then
