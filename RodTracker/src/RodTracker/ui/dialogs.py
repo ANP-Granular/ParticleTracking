@@ -19,6 +19,7 @@
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 import RodTracker.backend.file_locations as fl
+from RodTracker._version import __version__, __date__
 
 
 class ConfirmDeleteDialog(QtWidgets.QDialog):
@@ -42,6 +43,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         ``True`` -> user confirms deletion
         ``False`` -> user denies deletion
     """
+
     def __init__(self, to_delete: pd.DataFrame, parent: QtWidgets.QWidget):
         super().__init__(parent=parent)
         self.to_delete = to_delete
@@ -82,26 +84,30 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.layout.addWidget(self.controls)
         self.layout.addStretch()
         self.table.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.Stretch)
+            QtWidgets.QHeaderView.Stretch
+        )
         self.setLayout(self.layout)
 
         next_row = 0
         for row in self.to_delete.iterrows():
             next_frame = QtWidgets.QTableWidgetItem(str(row[1].frame))
             next_color = QtWidgets.QTableWidgetItem(str(row[1].color))
-            next_particle = QtWidgets.QTableWidgetItem(
-                str(row[1].particle))
-            next_frame.setTextAlignment(QtCore.Qt.AlignHCenter |
-                                        QtCore.Qt.AlignVCenter)
-            next_color.setTextAlignment(QtCore.Qt.AlignHCenter |
-                                        QtCore.Qt.AlignVCenter)
-            next_particle.setTextAlignment(QtCore.Qt.AlignHCenter |
-                                           QtCore.Qt.AlignVCenter)
+            next_particle = QtWidgets.QTableWidgetItem(str(row[1].particle))
+            next_frame.setTextAlignment(
+                QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter
+            )
+            next_color.setTextAlignment(
+                QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter
+            )
+            next_particle.setTextAlignment(
+                QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter
+            )
 
             self.table.setItem(next_row, 1, next_frame)
             self.table.setItem(next_row, 2, next_color)
-            next_particle.setFlags(QtCore.Qt.ItemIsUserCheckable |
-                                   QtCore.Qt.ItemIsEnabled)
+            next_particle.setFlags(
+                QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
+            )
             next_particle.setCheckState(QtCore.Qt.Checked)
             self.table.setItem(next_row, 0, next_particle)
             next_row += 1
@@ -137,7 +143,8 @@ def show_warning(text: str):
 
 
 def show_about(parent: QtWidgets.QWidget):
-    about_txt = """
+    about_txt = (
+        """
     <style>
         table { background-color: transparent; }
         a { text-decoration:none; font-weight:bold; }
@@ -145,13 +152,16 @@ def show_about(parent: QtWidgets.QWidget):
     <table border="0" cellpadding="0" cellspacing="5" width="400"
      align="left" style="margin-top:0px;">
         <tr>
-            <td width="200", colspan="2"> <h3>Version:</h3> </td>
-            <td width="200"> <p> 0.6.0 </p> </td>
+            <td width="200", colspan="2"> <h3>Version:</h3> </td>"""
+        + """     <td width="200"> <p> {} </p> </td>
         </tr>
         <tr>
             <td width="200", colspan="2"> <h3>Date:</h3> </td>
-            <td width="200"> <p> 22.02.2023 </p> </td>
-        </tr>
+            <td width="200"> <p> {} </p> </td>
+        </tr>""".format(
+            __version__, __date__
+        )
+        + """
         <tr>
             <td width="200", colspan="2"> <h3><br>Developers:<br></h3> </td>
             <td width="200">
@@ -326,11 +336,13 @@ def show_about(parent: QtWidgets.QWidget):
     <p>
         Copyright © 2023 Adrian Niemann, Dmitry Puzyrev
     </p>"""
+    )
     QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
 
 
 class ConflictDialog(QtWidgets.QMessageBox):
     """Dialog for switching rod numbers in various modes."""
+
     def __init__(self, last_id, new_id, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -340,19 +352,24 @@ class ConflictDialog(QtWidgets.QMessageBox):
         self.setText(
             f"A rod number switching attempt of"
             f"#{last_id} <---> #{new_id} was detected. \nHow shall "
-            f"this conflict be resolved?")
+            f"this conflict be resolved?"
+        )
         self.btn_switch_all = self.addButton(
             "Switch in:\nBoth views, following frames",
-            QtWidgets.QMessageBox.ActionRole)
-        self.btn_one_cam = self.addButton("Switch in:\nThis view, following "
-                                          "frames",
-                                          QtWidgets.QMessageBox.ActionRole)
+            QtWidgets.QMessageBox.ActionRole,
+        )
+        self.btn_one_cam = self.addButton(
+            "Switch in:\nThis view, following " "frames",
+            QtWidgets.QMessageBox.ActionRole,
+        )
         self.btn_both_cams = self.addButton(
             "Switch in:\nBoth views, this frame",
-            QtWidgets.QMessageBox.ActionRole)
+            QtWidgets.QMessageBox.ActionRole,
+        )
         self.btn_only_this = self.addButton(
             "Switch in:\nThis view, this frame",
-            QtWidgets.QMessageBox.ActionRole)
+            QtWidgets.QMessageBox.ActionRole,
+        )
         self.btn_cancel = self.addButton(QtWidgets.QMessageBox.Abort)
         self.setDefaultButton(self.btn_switch_all)
         self.setEscapeButton(self.btn_cancel)
