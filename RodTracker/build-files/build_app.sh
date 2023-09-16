@@ -6,8 +6,9 @@ BASEDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Update version and build-date
 cd $BASEDIR
 VERSION=$(dunamai from any --bump)
-DATE=$(date +'%d/%m/%Y')
-printf "__version__ = '$VERSION'\n__date__ = '$DATE'\n" > ../src/RodTracker/_version.py
+DATE=$(date +'%d.%m.%Y')
+printf "__version__ = '$VERSION'\n__date__ = '$DATE'\n" > \
+  ../src/RodTracker/_version.py
 
 # (Re-)Generate documentation before application bundling
 cd $BASEDIR
@@ -24,7 +25,7 @@ cd $BASEDIR
 cd ..
 if [ $# -eq 0 ]; then
     # build as one directory
-    pyinstaller --distpath ./dist/linux --workpath ./build/linux \
+    pyinstaller --distpath ./dist/unix --workpath ./build/unix \
       ./build-files/build_onedir.spec
   else
     if [ $1 == "-onefile" ]
@@ -35,7 +36,7 @@ if [ $# -eq 0 ]; then
     if [ $1 == "-onedir" ]
       then
         # build as one directory
-        pyinstaller --distpath ./dist/linux --workpath ./build/linux \
+        pyinstaller --distpath ./dist/unix --workpath ./build/unix \
           ./build-files/build_onedir.spec
     fi
     if [[ $1 != "-onedir" && $1 != "-onefile" ]]

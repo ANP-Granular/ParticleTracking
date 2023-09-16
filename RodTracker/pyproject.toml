@@ -40,7 +40,7 @@ numpy = ">=1.21.0"
 PyQt3D = ">=5.15.5"
 matplotlib = ">=3.6.2"
 importlib-resources = {version = ">=1.4", python = "<3.9"}
-ParticleDetection = {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "05c0c5e4"}
+ParticleDetection = {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "ba90c773"}
 
 pyinstaller = {version = ">=5.7", optional = true}
 qt5-applications = {version = ">=5.15", optional = true}

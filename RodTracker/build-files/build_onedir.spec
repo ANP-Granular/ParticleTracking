@@ -1,12 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import platform
+import pulp
+from RodTracker._version import __version__
 
 block_cipher = None
-import pulp
+binaries = []
+icon_file = None
+
+if platform.system() == "Darwin":
+    from PyInstaller.utils.hooks import collect_dynamic_libs
+    binaries += collect_dynamic_libs('torch')
+    icon_file = '../src/RodTracker/resources/icon_main.icns'
+elif platform.system() == "Windows":
+    icon_file = '../src/RodTracker/resources/icon_main.ico'
 
 a = Analysis(['../src/RodTracker/RodTracker.py'],
              pathex=['.'],
-             binaries=[],
+             binaries=binaries,
              datas=[('../src/RodTracker/ui/*', './RodTracker/ui'),
              ('../src/RodTracker/backend/*', './RodTracker/backend'),
              ('../src/RodTracker/resources/*', './RodTracker/resources'),
@@ -43,7 +54,7 @@ exe = EXE(pyz,
           target_arch=None,
           codesign_identity=None,
           entitlements_file=None ,
-          icon='../src/RodTracker/resources/icon_main.ico')
+          icon=icon_file)
 
 coll = COLLECT(exe,
                a.binaries,
@@ -53,3 +64,11 @@ coll = COLLECT(exe,
                upx=True,
                upx_exclude=[],
                name='RodTracker')
+
+app = BUNDLE(
+    coll,
+    name="RodTracker.app",
+    icon=icon_file,
+    bundle_identifier=None,
+    version=__version__,
+)
