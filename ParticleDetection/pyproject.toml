@@ -42,20 +42,20 @@ trackpy = "^0.5.0"
 tensorboard =  {version = "*", optional = true}
 protobuf = {version = "==3.20.1", optional = true}
 torch = [
-    {version = "^2", markers = "sys_platform == 'win32' and (extra != 'detectron' and extra != 'gpu')"},   # default
+    {version = "^2", markers = "(sys_platform == 'win32' or sys_platform == 'darwin') and (extra != 'detectron' and extra != 'gpu')"},   # default
     {version = "*", source = "gpu-win", markers = "sys_platform == 'win32' and (extra == 'gpu' or extra == 'detectron')"},
     {version = ">=1.8", source = "cpu-linux", markers = "sys_platform == 'linux' and (extra != 'detectron' and extra != 'gpu')"},    # default
     {version = ">=1.8", markers = "sys_platform == 'linux' and (extra == 'detectron' or extra == 'gpu')"},
 
 ]
 torchvision = [
-    {version = ">=0.14.0", markers = "sys_platform == 'win32' and (extra != 'detectron' and extra != 'gpu')"},   # default
+    {version = ">=0.14.0", markers = "(sys_platform == 'win32' or sys_platform == 'darwin') and (extra != 'detectron' and extra != 'gpu')"},   # default
     {version = "*", source = "gpu-win", markers = "sys_platform == 'win32' and (extra == 'gpu' or extra == 'detectron')"},
     {version = "*", source = "cpu-linux", markers =  "sys_platform == 'linux' and (extra != 'detectron' and extra != 'gpu')"},      # default
     {version = "*", markers = "sys_platform == 'linux' and (extra == 'detectron' or extra == 'gpu')"},
 ]
 torchaudio = [
-    {version = ">=0.13.0", markers = "sys_platform == 'win32' and (extra != 'detectron' and extra != 'gpu')"},   # default
+    {version = ">=0.13.0", markers = "(sys_platform == 'win32' or sys_platform == 'darwin') and (extra != 'detectron' and extra != 'gpu')"},   # default
     {version = "*", source = "gpu-win", markers = "sys_platform == 'win32' and (extra == 'gpu' or extra == 'detectron')"},
     {version = "*", source = "cpu-linux", markers =  "sys_platform == 'linux' and (extra != 'detectron' and extra != 'gpu')"},      # default
     {version = "*", markers = "sys_platform == 'linux' and (extra == 'detectron' or extra == 'gpu')"},
@@ -71,7 +71,7 @@ pytest-cov = {version = ">=3.0.0", optional = true}
 
 [[tool.poetry.source]]
 name = "gpu-win"
-url = "https://download.pytorch.org/whl/cu116/"
+url = "https://download.pytorch.org/whl/cu118/"
 default = false
 secondary = false
 
