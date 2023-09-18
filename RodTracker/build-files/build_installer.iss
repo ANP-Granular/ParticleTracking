@@ -2,10 +2,11 @@
 ;   - Add a question to remove the settings/logs during uninstall
 ;   - ...
 #define MyAppName "RodTracker"
-#define MyAppVersion "0.6.1"
+#define MyAppVersion GetStringFileInfo("../dist/windows/RodTracker/RodTrackerApp.exe", "ProductVersion")
 #define MyAppPublisher "ANP-Granular"
 #define MyAppURL "https://github.com/ANP-Granular/ParticleTracking"
 #define MyAppExeName "RodTrackerApp.exe"
+#define copyright GetStringFileInfo("../dist/windows/RodTracker/RodTrackerApp.exe", "LegalCopyright")
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -13,7 +14,7 @@
 AppId={{BC653063-88E8-4A02-914A-EAE50231BF66}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-;AppVerName={#MyAppName} {#MyAppVersion}
+AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -31,7 +32,7 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 
-AppCopyright=Copyright (C) 2023 Adrian Niemann, Dmitry Puzyrev
+AppCopyright={#copyright}
 UsePreviousAppDir=yes
 UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayname={#MyAppName}

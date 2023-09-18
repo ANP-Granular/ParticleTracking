@@ -1,4 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
+# TODO: make exe( ... name='RodTrackerApp',...) dependent on the platform
+#       i.e. RodTracker (Win, Darwin) & RodTrackerApp (linux)
 
 import platform
 import pulp
@@ -41,7 +43,7 @@ pyz = PYZ(a.pure,
           cipher=block_cipher)
 
 exe = EXE(pyz,
-          a.scripts, 
+          a.scripts,
           [],
           exclude_binaries=True,
           name='RodTrackerApp',
@@ -54,12 +56,14 @@ exe = EXE(pyz,
           target_arch=None,
           codesign_identity=None,
           entitlements_file=None ,
-          icon=icon_file)
+          icon=icon_file,
+          version='version_info.txt',
+          )
 
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
-               a.datas, 
+               a.datas,
                strip=False,
                upx=True,
                upx_exclude=[],

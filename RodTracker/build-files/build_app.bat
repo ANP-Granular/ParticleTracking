@@ -27,6 +27,8 @@ if not exist ..\..\docs\build\html\ (
 @REM Bundle the application
 cd %basedir%
 cd ..
+python build-files\build_version_info.py
+
 if [%1]==[] goto onedir
 if %1==-onefile goto onefile
 if %1==-onedir goto onedir

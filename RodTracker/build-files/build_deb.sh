@@ -3,6 +3,9 @@
 
 MAIN_DIR="RodTracker-Setup"
 
+VERSION=$(dunamai from any --bump)
+sed -i "s/Version: .*/Version: $VERSION/" control
+
 mkdir -p ../dist/unix/$MAIN_DIR/DEBIAN
 cp control ../dist/unix/$MAIN_DIR/DEBIAN
 cp ../LICENSE ../dist/unix/$MAIN_DIR/DEBIAN
