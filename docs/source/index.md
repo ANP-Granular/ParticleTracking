@@ -1,5 +1,5 @@
 # Welcome to ParticleTracking's documentation!
-```{image} RodTrackerLogo_big.png
+```{image} ../../RodTracker/src/RodTracker/resources/logo.png
 :align: center
 ```
 ```{note}
@@ -7,7 +7,7 @@ This project is under active development.
 ```
 
 ParticleTracking is a repository containing two Python packages for extracting 3D particle coordinate data from the experimental video footage.
-In these experiments a granular gas (dilute ensemble of macroscopic particles) was observed with a 2-view stereo camera system. 
+In these experiments a granular gas (dilute ensemble of macroscopic particles) was observed with a 2-view stereo camera system.
 The current version of the program is used for experiments with rod-like particles. Each particle is parametrized by 2 endpoint coordinates.
 ParticleTracking's goal is to automatically extract the coordinate data and provide a Graphical User Interface (GUI) to correct detection errors manually in an efficient way.
 Then, the corrected particle data can be tracked and ensemble statistics (average velocity/kinetic energy, local packing fractions, etc.) can be extracted.

@@ -13,9 +13,9 @@ icon_file = None
 if platform.system() == "Darwin":
     from PyInstaller.utils.hooks import collect_dynamic_libs
     binaries += collect_dynamic_libs('torch')
-    icon_file = '../src/RodTracker/resources/icon_main.icns'
+    icon_file = '../src/RodTracker/resources/icon_macOS.icns'
 elif platform.system() == "Windows":
-    icon_file = '../src/RodTracker/resources/icon_main.ico'
+    icon_file = '../src/RodTracker/resources/icon_windows.ico'
 
 a = Analysis(['../src/RodTracker/RodTracker.py'],
              pathex=['.'],

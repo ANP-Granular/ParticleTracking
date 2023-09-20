@@ -4,16 +4,18 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 import sys
 import os
-sys.path.append(os.path.abspath('sphinxext'))
+
+sys.path.append(os.path.abspath("sphinxext"))
 sys.path.append(os.path.abspath("../../src"))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'ParticleTracking'
-copyright = '2023, Adrian Niemann, Dmitry Puzyrev'
-author = 'Adrian Niemann, Dmitry Puzyrev'
-release = '0.6.0'
+project = "ParticleTracking"
+copyright = "2023, Adrian Niemann, Dmitry Puzyrev"
+author = "Adrian Niemann, Dmitry Puzyrev"
+# TODO: dynamic versioning
+release = "0.6.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -28,9 +30,9 @@ extensions = [
     "sphinx_rtd_theme",
 ]
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.txt': 'markdown',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".txt": "markdown",
+    ".md": "markdown",
 }
 
 myst_enable_extensions = [
@@ -69,12 +71,12 @@ napoleon_attr_annotations = True
 autodoc_mock_imports = ["detectron2", "imgaug"]
 autodoc_preserve_defaults = True
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
-html_logo = "RodTrackerLogo.png"
-html_favicon = "../../RodTracker/src/RodTracker/resources/icon_main.ico"
+html_logo = "../../RodTracker/src/RodTracker/resources/logo_small.png"
+html_favicon = "../../RodTracker/src/RodTracker/resources/icon_windows.ico"

@@ -56,8 +56,19 @@ def icon_path() -> str:
         String representation of the path to the application icon.
     """
     return str(
-        importlib_resources.path("RodTracker.resources", "icon_main.ico")
+        importlib_resources.path("RodTracker.resources", "icon_windows.ico")
     )
+
+
+def logo_path() -> str:
+    """Get a string representation of the path to the application icon.
+
+    Returns
+    -------
+    str
+        String representation of the path to the application icon.
+    """
+    return str(importlib_resources.path("RodTracker.resources", "logo.png"))
 
 
 def undo_icon_path() -> str:

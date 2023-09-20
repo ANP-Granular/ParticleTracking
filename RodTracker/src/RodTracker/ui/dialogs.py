@@ -16,6 +16,7 @@
 
 """**TBD**"""
 
+import platform
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 import RodTracker.backend.file_locations as fl
@@ -337,7 +338,13 @@ def show_about(parent: QtWidgets.QWidget):
         Copyright © 2023 Adrian Niemann, Dmitry Puzyrev
     </p>"""
     )
-    QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
+    if platform.system() == "Darwin":
+        QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
+    else:
+        # Using the logo instead of the icon
+        _ = QtWidgets.QWidget()
+        _.setWindowIcon(QtGui.QIcon(fl.logo_path()))
+        QtWidgets.QMessageBox.about(_, "About RodTracker", about_txt)
 
 
 class ConflictDialog(QtWidgets.QMessageBox):

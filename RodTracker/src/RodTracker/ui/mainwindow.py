@@ -172,7 +172,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.cameras = [self.ui.camera_0, self.ui.camera_1]
         for cam in self.cameras:
             cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
-            cam.setPixmap(QtGui.QPixmap(fl.icon_path()))
+            cam.setPixmap(QtGui.QPixmap(fl.logo_path()))
             cam.autoselect = self.ui.action_autoselect_rods.isChecked()
 
         self.logger = self.ui.lv_actions_list.get_new_logger(self.logger_id)

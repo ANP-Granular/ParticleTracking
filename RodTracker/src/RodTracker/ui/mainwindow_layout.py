@@ -17,7 +17,7 @@ class Ui_MainWindow(object):
         MainWindow.resize(1190, 607)
         icon = QtGui.QIcon()
         icon.addPixmap(
-            QtGui.QPixmap("resources/icon_main.ico"),
+            QtGui.QPixmap("resources/icon_windows.ico"),
             QtGui.QIcon.Normal,
             QtGui.QIcon.Off,
         )
@@ -486,7 +486,7 @@ class Ui_MainWindow(object):
         self.camera_0.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.camera_0.setFrameShadow(QtWidgets.QFrame.Plain)
         self.camera_0.setText("")
-        self.camera_0.setPixmap(QtGui.QPixmap("resources/icon_main.ico"))
+        self.camera_0.setPixmap(QtGui.QPixmap("resources/logo.png"))
         self.camera_0.setScaledContents(False)
         self.camera_0.setAlignment(QtCore.Qt.AlignCenter)
         self.camera_0.setObjectName("camera_0")
@@ -531,7 +531,7 @@ class Ui_MainWindow(object):
         self.camera_1.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.camera_1.setFrameShadow(QtWidgets.QFrame.Plain)
         self.camera_1.setText("")
-        self.camera_1.setPixmap(QtGui.QPixmap("resources/icon_main.ico"))
+        self.camera_1.setPixmap(QtGui.QPixmap("resources/logo.png"))
         self.camera_1.setScaledContents(False)
         self.camera_1.setAlignment(QtCore.Qt.AlignCenter)
         self.camera_1.setObjectName("camera_1")
