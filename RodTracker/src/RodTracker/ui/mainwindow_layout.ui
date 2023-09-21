@@ -50,8 +50,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1176</width>
-         <height>622</height>
+         <width>1190</width>
+         <height>586</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -760,8 +760,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>616</width>
-                     <height>459</height>
+                     <width>679</width>
+                     <height>442</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -850,8 +850,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>616</width>
-                     <height>459</height>
+                     <width>679</width>
+                     <height>442</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -1094,8 +1094,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>476</width>
-                        <height>508</height>
+                        <width>431</width>
+                        <height>463</height>
                        </rect>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -2099,7 +2099,7 @@
      <x>0</x>
      <y>0</y>
      <width>1190</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -2141,8 +2141,15 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <widget class="QMenu" name="menu_docs">
+     <property name="title">
+      <string>Documentation</string>
+     </property>
+     <addaction name="action_docs_local"/>
+     <addaction name="action_docs_online"/>
+    </widget>
     <addaction name="action_logs"/>
-    <addaction name="action_docs"/>
+    <addaction name="menu_docs"/>
     <addaction name="action_about"/>
     <addaction name="action_about_qt"/>
     <addaction name="separator"/>
@@ -2250,11 +2257,6 @@
     <string>Preferences</string>
    </property>
   </action>
-  <action name="action_docs">
-   <property name="text">
-    <string>Documentation</string>
-   </property>
-  </action>
   <action name="action_about">
    <property name="text">
     <string>About</string>
@@ -2330,6 +2332,16 @@
   <action name="action_feature_request">
    <property name="text">
     <string>Request a FEATURE</string>
+   </property>
+  </action>
+  <action name="action_docs_local">
+   <property name="text">
+    <string>Local</string>
+   </property>
+  </action>
+  <action name="action_docs_online">
+   <property name="text">
+    <string>Online</string>
    </property>
   </action>
  </widget>

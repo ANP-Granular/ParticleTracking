@@ -393,7 +393,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.logger.data_changed.connect(self.rod_data.catch_data)
 
         # Help
-        self.ui.action_docs.triggered.connect(fl.open_docs)
+        self.ui.action_docs_local.triggered.connect(
+            lambda: fl.open_docs("local")
+        )
+        self.ui.action_docs_online.triggered.connect(
+            lambda: fl.open_docs("online")
+        )
         self.ui.action_about.triggered.connect(
             lambda: dialogs.show_about(self)
         )

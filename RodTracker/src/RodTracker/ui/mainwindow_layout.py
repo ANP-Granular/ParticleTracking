@@ -16,11 +16,7 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1190, 607)
         icon = QtGui.QIcon()
-        icon.addPixmap(
-            QtGui.QPixmap("resources/icon_windows.ico"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
+        icon.addPixmap(QtGui.QPixmap("resources/icon_windows.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         MainWindow.setWindowIcon(icon)
         self.centralized = QtWidgets.QWidget(MainWindow)
         self.centralized.setObjectName("centralized")
@@ -34,15 +30,9 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents_all = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_all.setGeometry(
-            QtCore.QRect(0, 0, 1176, 622)
-        )
-        self.scrollAreaWidgetContents_all.setObjectName(
-            "scrollAreaWidgetContents_all"
-        )
-        self.verticalLayout = QtWidgets.QVBoxLayout(
-            self.scrollAreaWidgetContents_all
-        )
+        self.scrollAreaWidgetContents_all.setGeometry(QtCore.QRect(0, 0, 1190, 586))
+        self.scrollAreaWidgetContents_all.setObjectName("scrollAreaWidgetContents_all")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_all)
         self.verticalLayout.setContentsMargins(0, 5, 0, 0)
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -56,92 +46,58 @@ class Ui_MainWindow(object):
         self.line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_2.setObjectName("line_2")
         self.grid_loads.addWidget(self.line_2, 1, 0, 1, 2)
-        self.pb_load_images = QtWidgets.QPushButton(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        self.pb_load_images = QtWidgets.QPushButton(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_load_images.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_load_images.sizePolicy().hasHeightForWidth())
         self.pb_load_images.setSizePolicy(sizePolicy)
         self.pb_load_images.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.pb_load_images.setObjectName("pb_load_images")
         self.grid_loads.addWidget(self.pb_load_images, 0, 0, 1, 1)
-        self.pb_load_rods = QtWidgets.QPushButton(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        self.pb_load_rods = QtWidgets.QPushButton(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_load_rods.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_load_rods.sizePolicy().hasHeightForWidth())
         self.pb_load_rods.setSizePolicy(sizePolicy)
         self.pb_load_rods.setObjectName("pb_load_rods")
         self.grid_loads.addWidget(self.pb_load_rods, 2, 0, 1, 1)
-        self.le_image_dir = QtWidgets.QLineEdit(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed
-        )
+        self.le_image_dir = QtWidgets.QLineEdit(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.le_image_dir.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.le_image_dir.sizePolicy().hasHeightForWidth())
         self.le_image_dir.setSizePolicy(sizePolicy)
         self.le_image_dir.setMinimumSize(QtCore.QSize(100, 0))
         self.le_image_dir.setMaximumSize(QtCore.QSize(400, 16777215))
         self.le_image_dir.setObjectName("le_image_dir")
         self.grid_loads.addWidget(self.le_image_dir, 0, 1, 1, 1)
-        self.le_rod_dir = QtWidgets.QLineEdit(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed
-        )
+        self.le_rod_dir = QtWidgets.QLineEdit(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.le_rod_dir.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.le_rod_dir.sizePolicy().hasHeightForWidth())
         self.le_rod_dir.setSizePolicy(sizePolicy)
         self.le_rod_dir.setMinimumSize(QtCore.QSize(100, 0))
         self.le_rod_dir.setMaximumSize(QtCore.QSize(400, 16777215))
         self.le_rod_dir.setObjectName("le_rod_dir")
         self.grid_loads.addWidget(self.le_rod_dir, 2, 1, 1, 1)
         self.hl_controlbar.addLayout(self.grid_loads)
-        spacerItem = QtWidgets.QSpacerItem(
-            13, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem = QtWidgets.QSpacerItem(13, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.hl_controlbar.addItem(spacerItem)
         self.line_3 = QtWidgets.QFrame(self.scrollAreaWidgetContents_all)
         self.line_3.setFrameShape(QtWidgets.QFrame.VLine)
         self.line_3.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_3.setObjectName("line_3")
         self.hl_controlbar.addWidget(self.line_3)
-        spacerItem1 = QtWidgets.QSpacerItem(
-            13, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem1 = QtWidgets.QSpacerItem(13, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.hl_controlbar.addItem(spacerItem1)
-        self.group_rod_color = QtWidgets.QGroupBox(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred
-        )
+        self.group_rod_color = QtWidgets.QGroupBox(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.group_rod_color.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.group_rod_color.sizePolicy().hasHeightForWidth())
         self.group_rod_color.setSizePolicy(sizePolicy)
         self.group_rod_color.setObjectName("group_rod_color")
         self.gridLayout_4 = QtWidgets.QGridLayout(self.group_rod_color)
@@ -166,84 +122,51 @@ class Ui_MainWindow(object):
         self.rb_yellow.setObjectName("rb_yellow")
         self.gridLayout_4.addWidget(self.rb_yellow, 1, 3, 1, 1)
         self.hl_controlbar.addWidget(self.group_rod_color)
-        spacerItem2 = QtWidgets.QSpacerItem(
-            40,
-            20,
-            QtWidgets.QSizePolicy.Maximum,
-            QtWidgets.QSizePolicy.Minimum,
-        )
+        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Minimum)
         self.hl_controlbar.addItem(spacerItem2)
         self.verticalLayout_3 = QtWidgets.QVBoxLayout()
         self.verticalLayout_3.setObjectName("verticalLayout_3")
-        self.le_rod_disp = QtWidgets.QLineEdit(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        self.le_rod_disp = QtWidgets.QLineEdit(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.le_rod_disp.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.le_rod_disp.sizePolicy().hasHeightForWidth())
         self.le_rod_disp.setSizePolicy(sizePolicy)
-        self.le_rod_disp.setStyleSheet(
-            "background-color: transparent; font-weight: bold;"
-        )
+        self.le_rod_disp.setStyleSheet("background-color: transparent; font-weight: bold;")
         self.le_rod_disp.setFrame(False)
         self.le_rod_disp.setReadOnly(True)
         self.le_rod_disp.setPlaceholderText("")
         self.le_rod_disp.setObjectName("le_rod_disp")
         self.verticalLayout_3.addWidget(self.le_rod_disp)
-        self.cb_overlay = QtWidgets.QCheckBox(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        self.cb_overlay = QtWidgets.QCheckBox(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.cb_overlay.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.cb_overlay.sizePolicy().hasHeightForWidth())
         self.cb_overlay.setSizePolicy(sizePolicy)
         self.cb_overlay.setMaximumSize(QtCore.QSize(100, 16777215))
         self.cb_overlay.setChecked(True)
         self.cb_overlay.setObjectName("cb_overlay")
         self.verticalLayout_3.addWidget(self.cb_overlay)
-        spacerItem3 = QtWidgets.QSpacerItem(
-            20, 6, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed
-        )
+        spacerItem3 = QtWidgets.QSpacerItem(20, 6, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
         self.verticalLayout_3.addItem(spacerItem3)
-        self.group_disp_method = QtWidgets.QGroupBox(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum
-        )
+        self.group_disp_method = QtWidgets.QGroupBox(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.group_disp_method.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.group_disp_method.sizePolicy().hasHeightForWidth())
         self.group_disp_method.setSizePolicy(sizePolicy)
-        self.group_disp_method.setAlignment(
-            QtCore.Qt.AlignBottom | QtCore.Qt.AlignHCenter
-        )
+        self.group_disp_method.setAlignment(QtCore.Qt.AlignBottom|QtCore.Qt.AlignHCenter)
         self.group_disp_method.setObjectName("group_disp_method")
         self.verticalLayout_4 = QtWidgets.QVBoxLayout(self.group_disp_method)
         self.verticalLayout_4.setContentsMargins(0, 0, -1, 4)
         self.verticalLayout_4.setSpacing(0)
         self.verticalLayout_4.setObjectName("verticalLayout_4")
         self.rb_disp_all = QtWidgets.QRadioButton(self.group_disp_method)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.rb_disp_all.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.rb_disp_all.sizePolicy().hasHeightForWidth())
         self.rb_disp_all.setSizePolicy(sizePolicy)
         self.rb_disp_all.setChecked(True)
         self.rb_disp_all.setObjectName("rb_disp_all")
@@ -251,27 +174,19 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.rb_disp_one = QtWidgets.QRadioButton(self.group_disp_method)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.rb_disp_one.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.rb_disp_one.sizePolicy().hasHeightForWidth())
         self.rb_disp_one.setSizePolicy(sizePolicy)
         self.rb_disp_one.setMinimumSize(QtCore.QSize(70, 0))
         self.rb_disp_one.setObjectName("rb_disp_one")
         self.horizontalLayout_3.addWidget(self.rb_disp_one)
         self.le_disp_one = QtWidgets.QLineEdit(self.group_disp_method)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.le_disp_one.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.le_disp_one.sizePolicy().hasHeightForWidth())
         self.le_disp_one.setSizePolicy(sizePolicy)
         self.le_disp_one.setMaximumSize(QtCore.QSize(40, 16777215))
         self.le_disp_one.setObjectName("le_disp_one")
@@ -279,36 +194,24 @@ class Ui_MainWindow(object):
         self.verticalLayout_4.addLayout(self.horizontalLayout_3)
         self.verticalLayout_3.addWidget(self.group_disp_method)
         self.hl_controlbar.addLayout(self.verticalLayout_3)
-        spacerItem4 = QtWidgets.QSpacerItem(
-            13, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem4 = QtWidgets.QSpacerItem(13, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.hl_controlbar.addItem(spacerItem4)
         self.line_4 = QtWidgets.QFrame(self.scrollAreaWidgetContents_all)
         self.line_4.setFrameShape(QtWidgets.QFrame.VLine)
         self.line_4.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_4.setObjectName("line_4")
         self.hl_controlbar.addWidget(self.line_4)
-        spacerItem5 = QtWidgets.QSpacerItem(
-            13, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem5 = QtWidgets.QSpacerItem(13, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.hl_controlbar.addItem(spacerItem5)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.le_frame_disp = QtWidgets.QLineEdit(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        self.le_frame_disp = QtWidgets.QLineEdit(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.le_frame_disp.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.le_frame_disp.sizePolicy().hasHeightForWidth())
         self.le_frame_disp.setSizePolicy(sizePolicy)
-        self.le_frame_disp.setStyleSheet(
-            "background-color: transparent;font-weight: bold;"
-        )
+        self.le_frame_disp.setStyleSheet("background-color: transparent;font-weight: bold;")
         self.le_frame_disp.setFrame(False)
         self.le_frame_disp.setAlignment(QtCore.Qt.AlignCenter)
         self.le_frame_disp.setReadOnly(True)
@@ -317,101 +220,64 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addWidget(self.le_frame_disp)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.pb_previous = QtWidgets.QPushButton(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        self.pb_previous = QtWidgets.QPushButton(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_previous.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_previous.sizePolicy().hasHeightForWidth())
         self.pb_previous.setSizePolicy(sizePolicy)
         self.pb_previous.setMaximumSize(QtCore.QSize(75, 16777215))
         self.pb_previous.setObjectName("pb_previous")
         self.horizontalLayout.addWidget(self.pb_previous)
-        spacerItem6 = QtWidgets.QSpacerItem(
-            40,
-            20,
-            QtWidgets.QSizePolicy.Preferred,
-            QtWidgets.QSizePolicy.Minimum,
-        )
+        spacerItem6 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem6)
         self.pb_next = QtWidgets.QPushButton(self.scrollAreaWidgetContents_all)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_next.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_next.sizePolicy().hasHeightForWidth())
         self.pb_next.setSizePolicy(sizePolicy)
         self.pb_next.setMaximumSize(QtCore.QSize(75, 16777215))
         self.pb_next.setObjectName("pb_next")
         self.horizontalLayout.addWidget(self.pb_next)
         self.verticalLayout_2.addLayout(self.horizontalLayout)
-        self.slider_frames = QtWidgets.QSlider(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        self.slider_frames = QtWidgets.QSlider(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.slider_frames.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.slider_frames.sizePolicy().hasHeightForWidth())
         self.slider_frames.setSizePolicy(sizePolicy)
         self.slider_frames.setOrientation(QtCore.Qt.Horizontal)
         self.slider_frames.setObjectName("slider_frames")
         self.verticalLayout_2.addWidget(self.slider_frames)
         self.hl_controlbar.addLayout(self.verticalLayout_2)
-        spacerItem7 = QtWidgets.QSpacerItem(
-            13, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem7 = QtWidgets.QSpacerItem(13, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.hl_controlbar.addItem(spacerItem7)
         self.line_5 = QtWidgets.QFrame(self.scrollAreaWidgetContents_all)
         self.line_5.setFrameShape(QtWidgets.QFrame.VLine)
         self.line_5.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_5.setObjectName("line_5")
         self.hl_controlbar.addWidget(self.line_5)
-        spacerItem8 = QtWidgets.QSpacerItem(
-            10, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem8 = QtWidgets.QSpacerItem(10, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.hl_controlbar.addItem(spacerItem8)
         self.grid_save = QtWidgets.QGridLayout()
         self.grid_save.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         self.grid_save.setObjectName("grid_save")
-        self.le_save_dir = QtWidgets.QLineEdit(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed
-        )
+        self.le_save_dir = QtWidgets.QLineEdit(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.le_save_dir.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.le_save_dir.sizePolicy().hasHeightForWidth())
         self.le_save_dir.setSizePolicy(sizePolicy)
         self.le_save_dir.setMinimumSize(QtCore.QSize(100, 0))
         self.le_save_dir.setMaximumSize(QtCore.QSize(400, 16777215))
         self.le_save_dir.setObjectName("le_save_dir")
         self.grid_save.addWidget(self.le_save_dir, 0, 1, 1, 1)
-        self.pb_save_rods = QtWidgets.QPushButton(
-            self.scrollAreaWidgetContents_all
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        self.pb_save_rods = QtWidgets.QPushButton(self.scrollAreaWidgetContents_all)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_save_rods.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_save_rods.sizePolicy().hasHeightForWidth())
         self.pb_save_rods.setSizePolicy(sizePolicy)
         self.pb_save_rods.setMaximumSize(QtCore.QSize(75, 16777215))
         self.pb_save_rods.setObjectName("pb_save_rods")
@@ -435,18 +301,12 @@ class Ui_MainWindow(object):
         self.splitter.setChildrenCollapsible(False)
         self.splitter.setObjectName("splitter")
         self.camera_tabs = QtWidgets.QTabWidget(self.splitter)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(5)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.camera_tabs.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.camera_tabs.sizePolicy().hasHeightForWidth())
         self.camera_tabs.setSizePolicy(sizePolicy)
-        self.camera_tabs.setStyleSheet(
-            "QTabWidget#camera_tabs{font-weight: bold;}"
-        )
+        self.camera_tabs.setStyleSheet("QTabWidget#camera_tabs{font-weight: bold;}")
         self.camera_tabs.setTabPosition(QtWidgets.QTabWidget.West)
         self.camera_tabs.setObjectName("camera_tabs")
         self.tab_0 = QtWidgets.QWidget()
@@ -460,27 +320,17 @@ class Ui_MainWindow(object):
         self.sa_camera_0.setWidgetResizable(True)
         self.sa_camera_0.setObjectName("sa_camera_0")
         self.scrollAreaWidgetContents_0 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_0.setGeometry(
-            QtCore.QRect(0, 0, 616, 459)
-        )
-        self.scrollAreaWidgetContents_0.setObjectName(
-            "scrollAreaWidgetContents_0"
-        )
-        self.verticalLayout_16 = QtWidgets.QVBoxLayout(
-            self.scrollAreaWidgetContents_0
-        )
+        self.scrollAreaWidgetContents_0.setGeometry(QtCore.QRect(0, 0, 679, 442))
+        self.scrollAreaWidgetContents_0.setObjectName("scrollAreaWidgetContents_0")
+        self.verticalLayout_16 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_0)
         self.verticalLayout_16.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_16.setSpacing(0)
         self.verticalLayout_16.setObjectName("verticalLayout_16")
         self.camera_0 = RodImageWidget(self.scrollAreaWidgetContents_0)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.camera_0.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.camera_0.sizePolicy().hasHeightForWidth())
         self.camera_0.setSizePolicy(sizePolicy)
         self.camera_0.setMouseTracking(True)
         self.camera_0.setFrameShape(QtWidgets.QFrame.NoFrame)
@@ -505,27 +355,17 @@ class Ui_MainWindow(object):
         self.sa_camera_1.setWidgetResizable(True)
         self.sa_camera_1.setObjectName("sa_camera_1")
         self.scrollAreaWidgetContents_8 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_8.setGeometry(
-            QtCore.QRect(0, 0, 616, 459)
-        )
-        self.scrollAreaWidgetContents_8.setObjectName(
-            "scrollAreaWidgetContents_8"
-        )
-        self.verticalLayout_18 = QtWidgets.QVBoxLayout(
-            self.scrollAreaWidgetContents_8
-        )
+        self.scrollAreaWidgetContents_8.setGeometry(QtCore.QRect(0, 0, 679, 442))
+        self.scrollAreaWidgetContents_8.setObjectName("scrollAreaWidgetContents_8")
+        self.verticalLayout_18 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_8)
         self.verticalLayout_18.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_18.setSpacing(0)
         self.verticalLayout_18.setObjectName("verticalLayout_18")
         self.camera_1 = RodImageWidget(self.scrollAreaWidgetContents_8)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.camera_1.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.camera_1.sizePolicy().hasHeightForWidth())
         self.camera_1.setSizePolicy(sizePolicy)
         self.camera_1.setMouseTracking(True)
         self.camera_1.setFrameShape(QtWidgets.QFrame.NoFrame)
@@ -541,20 +381,14 @@ class Ui_MainWindow(object):
         self.camera_tabs.addTab(self.tab_1, "")
         self.verticalLayoutWidget = QtWidgets.QWidget(self.splitter)
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
-        self.right_tabs_layout = QtWidgets.QVBoxLayout(
-            self.verticalLayoutWidget
-        )
-        self.right_tabs_layout.setSizeConstraint(
-            QtWidgets.QLayout.SetMaximumSize
-        )
+        self.right_tabs_layout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
+        self.right_tabs_layout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         self.right_tabs_layout.setContentsMargins(0, 0, 0, 5)
         self.right_tabs_layout.setSpacing(10)
         self.right_tabs_layout.setObjectName("right_tabs_layout")
         self.right_tabs = QtWidgets.QTabWidget(self.verticalLayoutWidget)
         self.right_tabs.setAutoFillBackground(True)
-        self.right_tabs.setStyleSheet(
-            " QTabWidget#right_tabs{font-weight: bold;}"
-        )
+        self.right_tabs.setStyleSheet(" QTabWidget#right_tabs{font-weight: bold;}")
         self.right_tabs.setTabPosition(QtWidgets.QTabWidget.East)
         self.right_tabs.setObjectName("right_tabs")
         self.tab_rods = QtWidgets.QWidget()
@@ -564,14 +398,10 @@ class Ui_MainWindow(object):
         self.verticalLayout_5.setSpacing(0)
         self.verticalLayout_5.setObjectName("verticalLayout_5")
         self.tv_rods = RodTree(self.tab_rods)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.tv_rods.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.tv_rods.sizePolicy().hasHeightForWidth())
         self.tv_rods.setSizePolicy(sizePolicy)
         self.tv_rods.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.tv_rods.setObjectName("tv_rods")
@@ -592,36 +422,24 @@ class Ui_MainWindow(object):
         self.verticalLayout_6.setSpacing(0)
         self.verticalLayout_6.setObjectName("verticalLayout_6")
         self.lv_actions_list = LoggerWidget(self.tab_history)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.lv_actions_list.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.lv_actions_list.sizePolicy().hasHeightForWidth())
         self.lv_actions_list.setSizePolicy(sizePolicy)
         self.lv_actions_list.setMaximumSize(QtCore.QSize(16777214, 16777215))
         self.lv_actions_list.setObjectName("lv_actions_list")
         self.verticalLayout_6.addWidget(self.lv_actions_list)
         self.pb_undo = QtWidgets.QPushButton(self.tab_history)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_undo.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_undo.sizePolicy().hasHeightForWidth())
         self.pb_undo.setSizePolicy(sizePolicy)
         self.pb_undo.setMinimumSize(QtCore.QSize(0, 0))
         self.pb_undo.setMaximumSize(QtCore.QSize(16777215, 16777215))
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(
-            QtGui.QPixmap("resources/left-arrow-96.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
+        icon1.addPixmap(QtGui.QPixmap("resources/left-arrow-96.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.pb_undo.setIcon(icon1)
         self.pb_undo.setObjectName("pb_undo")
         self.verticalLayout_6.addWidget(self.pb_undo)
@@ -637,20 +455,12 @@ class Ui_MainWindow(object):
         self.scrollArea_2.setWidgetResizable(True)
         self.scrollArea_2.setObjectName("scrollArea_2")
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_2.setGeometry(
-            QtCore.QRect(0, 0, 476, 508)
-        )
-        self.scrollAreaWidgetContents_2.setObjectName(
-            "scrollAreaWidgetContents_2"
-        )
-        self.verticalLayout_9 = QtWidgets.QVBoxLayout(
-            self.scrollAreaWidgetContents_2
-        )
+        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 431, 463))
+        self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
+        self.verticalLayout_9 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_2)
         self.verticalLayout_9.setObjectName("verticalLayout_9")
         self.label_18 = QtWidgets.QLabel(self.scrollAreaWidgetContents_2)
-        self.label_18.setStyleSheet(
-            "font-weight: bold;font: 20px;color: black;"
-        )
+        self.label_18.setStyleSheet("font-weight: bold;font: 20px;color: black;")
         self.label_18.setObjectName("label_18")
         self.verticalLayout_9.addWidget(self.label_18)
         self.horizontalLayout_28 = QtWidgets.QHBoxLayout()
@@ -660,26 +470,18 @@ class Ui_MainWindow(object):
         self.horizontalLayout_28.addWidget(self.lbl_rod_incr)
         self.rod_incr = QtWidgets.QLineEdit(self.scrollAreaWidgetContents_2)
         self.rod_incr.setObjectName("rod_incr")
-        self.horizontalLayout_28.addWidget(
-            self.rod_incr, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_28.addWidget(self.rod_incr, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_28)
         self.horizontalLayout_29 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_29.setObjectName("horizontalLayout_29")
         self.lbl_recalc_3D = QtWidgets.QLabel(self.scrollAreaWidgetContents_2)
         self.lbl_recalc_3D.setObjectName("lbl_recalc_3D")
         self.horizontalLayout_29.addWidget(self.lbl_recalc_3D)
-        self.cb_recalc_3D = QtWidgets.QCheckBox(
-            self.scrollAreaWidgetContents_2
-        )
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed
-        )
+        self.cb_recalc_3D = QtWidgets.QCheckBox(self.scrollAreaWidgetContents_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.cb_recalc_3D.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.cb_recalc_3D.sizePolicy().hasHeightForWidth())
         self.cb_recalc_3D.setSizePolicy(sizePolicy)
         self.cb_recalc_3D.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.cb_recalc_3D.setText("")
@@ -692,9 +494,7 @@ class Ui_MainWindow(object):
         self.line_8.setObjectName("line_8")
         self.verticalLayout_9.addWidget(self.line_8)
         self.label_17 = QtWidgets.QLabel(self.scrollAreaWidgetContents_2)
-        self.label_17.setStyleSheet(
-            "font-weight: bold;font: 20px;color: black;"
-        )
+        self.label_17.setStyleSheet("font-weight: bold;font: 20px;color: black;")
         self.label_17.setObjectName("label_17")
         self.verticalLayout_9.addWidget(self.label_17)
         self.horizontalLayout_20 = QtWidgets.QHBoxLayout()
@@ -705,9 +505,7 @@ class Ui_MainWindow(object):
         self.thickness = QtWidgets.QSpinBox(self.scrollAreaWidgetContents_2)
         self.thickness.setMaximum(15)
         self.thickness.setObjectName("thickness")
-        self.horizontalLayout_20.addWidget(
-            self.thickness, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_20.addWidget(self.thickness, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_20)
         self.horizontalLayout_19 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_19.setObjectName("horizontalLayout_19")
@@ -718,9 +516,7 @@ class Ui_MainWindow(object):
         self.rod_color.setText("")
         self.rod_color.setIconSize(QtCore.QSize(35, 25))
         self.rod_color.setObjectName("rod_color")
-        self.horizontalLayout_19.addWidget(
-            self.rod_color, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_19.addWidget(self.rod_color, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_19)
         self.horizontalLayout_18 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_18.setObjectName("horizontalLayout_18")
@@ -730,55 +526,37 @@ class Ui_MainWindow(object):
         self.offset = QtWidgets.QSpinBox(self.scrollAreaWidgetContents_2)
         self.offset.setMaximum(50)
         self.offset.setObjectName("offset")
-        self.horizontalLayout_18.addWidget(
-            self.offset, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_18.addWidget(self.offset, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_18)
         self.horizontalLayout_21 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_21.setObjectName("horizontalLayout_21")
-        self.lbl_number_color = QtWidgets.QLabel(
-            self.scrollAreaWidgetContents_2
-        )
+        self.lbl_number_color = QtWidgets.QLabel(self.scrollAreaWidgetContents_2)
         self.lbl_number_color.setObjectName("lbl_number_color")
         self.horizontalLayout_21.addWidget(self.lbl_number_color)
-        self.number_color = QtWidgets.QToolButton(
-            self.scrollAreaWidgetContents_2
-        )
+        self.number_color = QtWidgets.QToolButton(self.scrollAreaWidgetContents_2)
         self.number_color.setText("")
         self.number_color.setIconSize(QtCore.QSize(35, 25))
         self.number_color.setObjectName("number_color")
-        self.horizontalLayout_21.addWidget(
-            self.number_color, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_21.addWidget(self.number_color, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_21)
         self.horizontalLayout_22 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_22.setObjectName("horizontalLayout_22")
-        self.lbl_number_size = QtWidgets.QLabel(
-            self.scrollAreaWidgetContents_2
-        )
+        self.lbl_number_size = QtWidgets.QLabel(self.scrollAreaWidgetContents_2)
         self.lbl_number_size.setObjectName("lbl_number_size")
         self.horizontalLayout_22.addWidget(self.lbl_number_size)
         self.number_size = QtWidgets.QSpinBox(self.scrollAreaWidgetContents_2)
         self.number_size.setMaximum(30)
         self.number_size.setObjectName("number_size")
-        self.horizontalLayout_22.addWidget(
-            self.number_size, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_22.addWidget(self.number_size, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_22)
         self.horizontalLayout_27 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_27.setObjectName("horizontalLayout_27")
-        self.lbl_position_scaling = QtWidgets.QLabel(
-            self.scrollAreaWidgetContents_2
-        )
+        self.lbl_position_scaling = QtWidgets.QLabel(self.scrollAreaWidgetContents_2)
         self.lbl_position_scaling.setObjectName("lbl_position_scaling")
         self.horizontalLayout_27.addWidget(self.lbl_position_scaling)
-        self.position_scaling = QtWidgets.QLineEdit(
-            self.scrollAreaWidgetContents_2
-        )
+        self.position_scaling = QtWidgets.QLineEdit(self.scrollAreaWidgetContents_2)
         self.position_scaling.setObjectName("position_scaling")
-        self.horizontalLayout_27.addWidget(
-            self.position_scaling, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_27.addWidget(self.position_scaling, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_27)
         self.line_7 = QtWidgets.QFrame(self.scrollAreaWidgetContents_2)
         self.line_7.setFrameShape(QtWidgets.QFrame.HLine)
@@ -786,23 +564,17 @@ class Ui_MainWindow(object):
         self.line_7.setObjectName("line_7")
         self.verticalLayout_9.addWidget(self.line_7)
         self.label_23 = QtWidgets.QLabel(self.scrollAreaWidgetContents_2)
-        self.label_23.setStyleSheet(
-            "font-weight: bold;font: 20px;color: black;"
-        )
+        self.label_23.setStyleSheet("font-weight: bold;font: 20px;color: black;")
         self.label_23.setObjectName("label_23")
         self.verticalLayout_9.addWidget(self.label_23)
         self.horizontalLayout_24 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_24.setObjectName("horizontalLayout_24")
-        self.lbl_number_rods = QtWidgets.QLabel(
-            self.scrollAreaWidgetContents_2
-        )
+        self.lbl_number_rods = QtWidgets.QLabel(self.scrollAreaWidgetContents_2)
         self.lbl_number_rods.setObjectName("lbl_number_rods")
         self.horizontalLayout_24.addWidget(self.lbl_number_rods)
         self.number_rods = QtWidgets.QSpinBox(self.scrollAreaWidgetContents_2)
         self.number_rods.setObjectName("number_rods")
-        self.horizontalLayout_24.addWidget(
-            self.number_rods, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_24.addWidget(self.number_rods, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_24)
         self.horizontalLayout_23 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_23.setObjectName("horizontalLayout_23")
@@ -812,9 +584,7 @@ class Ui_MainWindow(object):
         self.box_width = QtWidgets.QSpinBox(self.scrollAreaWidgetContents_2)
         self.box_width.setMaximum(999)
         self.box_width.setObjectName("box_width")
-        self.horizontalLayout_23.addWidget(
-            self.box_width, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_23.addWidget(self.box_width, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_23)
         self.horizontalLayout_26 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_26.setObjectName("horizontalLayout_26")
@@ -824,9 +594,7 @@ class Ui_MainWindow(object):
         self.box_height = QtWidgets.QSpinBox(self.scrollAreaWidgetContents_2)
         self.box_height.setMaximum(999)
         self.box_height.setObjectName("box_height")
-        self.horizontalLayout_26.addWidget(
-            self.box_height, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_26.addWidget(self.box_height, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_26)
         self.horizontalLayout_25 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_25.setObjectName("horizontalLayout_25")
@@ -836,16 +604,9 @@ class Ui_MainWindow(object):
         self.box_depth = QtWidgets.QSpinBox(self.scrollAreaWidgetContents_2)
         self.box_depth.setMaximum(999)
         self.box_depth.setObjectName("box_depth")
-        self.horizontalLayout_25.addWidget(
-            self.box_depth, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_25.addWidget(self.box_depth, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_9.addLayout(self.horizontalLayout_25)
-        spacerItem9 = QtWidgets.QSpacerItem(
-            20,
-            40,
-            QtWidgets.QSizePolicy.Minimum,
-            QtWidgets.QSizePolicy.Expanding,
-        )
+        spacerItem9 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_9.addItem(spacerItem9)
         self.scrollArea_2.setWidget(self.scrollAreaWidgetContents_2)
         self.verticalLayout_8.addWidget(self.scrollArea_2)
@@ -868,12 +629,7 @@ class Ui_MainWindow(object):
         self.pb_top = QtWidgets.QPushButton(self.tab_3d)
         self.pb_top.setObjectName("pb_top")
         self.horizontalLayout_2.addWidget(self.pb_top)
-        spacerItem10 = QtWidgets.QSpacerItem(
-            40,
-            20,
-            QtWidgets.QSizePolicy.Expanding,
-            QtWidgets.QSizePolicy.Minimum,
-        )
+        spacerItem10 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem10)
         self.cb_show_3D = QtWidgets.QCheckBox(self.tab_3d)
         self.cb_show_3D.setChecked(True)
@@ -893,14 +649,10 @@ class Ui_MainWindow(object):
         self.rb_color_3d.setObjectName("rb_color_3d")
         self.horizontalLayout_4.addWidget(self.rb_color_3d)
         self.rb_one_3d = QtWidgets.QRadioButton(self.group_3D_mode)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.rb_one_3d.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.rb_one_3d.sizePolicy().hasHeightForWidth())
         self.rb_one_3d.setSizePolicy(sizePolicy)
         self.rb_one_3d.setMinimumSize(QtCore.QSize(70, 0))
         self.rb_one_3d.setObjectName("rb_one_3d")
@@ -908,14 +660,10 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addWidget(self.group_3D_mode)
         self.verticalLayout_10.addLayout(self.horizontalLayout_2)
         self.view_3d = View3D(self.tab_3d)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.view_3d.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.view_3d.sizePolicy().hasHeightForWidth())
         self.view_3d.setSizePolicy(sizePolicy)
         self.view_3d.setObjectName("view_3d")
         self.verticalLayout_10.addWidget(self.view_3d)
@@ -940,19 +688,12 @@ class Ui_MainWindow(object):
         self.horizontalLayout_12 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_12.setObjectName("horizontalLayout_12")
         self.lbl_start_frame_detection = QtWidgets.QLabel(self.tab_detection)
-        self.lbl_start_frame_detection.setObjectName(
-            "lbl_start_frame_detection"
-        )
+        self.lbl_start_frame_detection.setObjectName("lbl_start_frame_detection")
         self.horizontalLayout_12.addWidget(self.lbl_start_frame_detection)
         self.start_frame_detection = QtWidgets.QSpinBox(self.tab_detection)
         self.start_frame_detection.setObjectName("start_frame_detection")
         self.horizontalLayout_12.addWidget(self.start_frame_detection)
-        spacerItem11 = QtWidgets.QSpacerItem(
-            40,
-            20,
-            QtWidgets.QSizePolicy.Expanding,
-            QtWidgets.QSizePolicy.Minimum,
-        )
+        spacerItem11 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_12.addItem(spacerItem11)
         self.lbl_end_frame_detection = QtWidgets.QLabel(self.tab_detection)
         self.lbl_end_frame_detection.setObjectName("lbl_end_frame_detection")
@@ -963,26 +704,13 @@ class Ui_MainWindow(object):
         self.verticalLayout_13.addLayout(self.horizontalLayout_12)
         self.horizontalLayout_14 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_14.setObjectName("horizontalLayout_14")
-        self.lbl_expected_particles_default = QtWidgets.QLabel(
-            self.tab_detection
-        )
-        self.lbl_expected_particles_default.setObjectName(
-            "lbl_expected_particles_default"
-        )
+        self.lbl_expected_particles_default = QtWidgets.QLabel(self.tab_detection)
+        self.lbl_expected_particles_default.setObjectName("lbl_expected_particles_default")
         self.horizontalLayout_14.addWidget(self.lbl_expected_particles_default)
-        self.expected_particles_default = QtWidgets.QSpinBox(
-            self.tab_detection
-        )
-        self.expected_particles_default.setObjectName(
-            "expected_particles_default"
-        )
+        self.expected_particles_default = QtWidgets.QSpinBox(self.tab_detection)
+        self.expected_particles_default.setObjectName("expected_particles_default")
         self.horizontalLayout_14.addWidget(self.expected_particles_default)
-        spacerItem12 = QtWidgets.QSpacerItem(
-            40,
-            20,
-            QtWidgets.QSizePolicy.Expanding,
-            QtWidgets.QSizePolicy.Minimum,
-        )
+        spacerItem12 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_14.addItem(spacerItem12)
         self.verticalLayout_13.addLayout(self.horizontalLayout_14)
         self.group_colors_detection = QtWidgets.QGroupBox(self.tab_detection)
@@ -1024,19 +752,13 @@ class Ui_MainWindow(object):
         self.horizontalLayout_30.addWidget(self.lbl_threshold)
         self.le_threshold = QtWidgets.QLineEdit(self.tab_detection)
         self.le_threshold.setObjectName("le_threshold")
-        self.horizontalLayout_30.addWidget(
-            self.le_threshold, 0, QtCore.Qt.AlignRight
-        )
+        self.horizontalLayout_30.addWidget(self.le_threshold, 0, QtCore.Qt.AlignRight)
         self.verticalLayout_13.addLayout(self.horizontalLayout_30)
         self.table_detect_colors = QtWidgets.QTableWidget(self.tab_detection)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.table_detect_colors.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.table_detect_colors.sizePolicy().hasHeightForWidth())
         self.table_detect_colors.setSizePolicy(sizePolicy)
         self.table_detect_colors.setObjectName("table_detect_colors")
         self.table_detect_colors.setColumnCount(3)
@@ -1060,28 +782,17 @@ class Ui_MainWindow(object):
         item.setFont(font)
         self.table_detect_colors.setHorizontalHeaderItem(2, item)
         self.table_detect_colors.verticalHeader().setVisible(False)
-        self.table_detect_colors.verticalHeader().setCascadingSectionResizes(
-            False
-        )
+        self.table_detect_colors.verticalHeader().setCascadingSectionResizes(False)
         self.verticalLayout_13.addWidget(self.table_detect_colors)
         self.pb_detect = QtWidgets.QPushButton(self.tab_detection)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_detect.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_detect.sizePolicy().hasHeightForWidth())
         self.pb_detect.setSizePolicy(sizePolicy)
         self.pb_detect.setObjectName("pb_detect")
         self.verticalLayout_13.addWidget(self.pb_detect)
-        spacerItem13 = QtWidgets.QSpacerItem(
-            20,
-            40,
-            QtWidgets.QSizePolicy.Minimum,
-            QtWidgets.QSizePolicy.Expanding,
-        )
+        spacerItem13 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_13.addItem(spacerItem13)
         self.progress_detection = QtWidgets.QProgressBar(self.tab_detection)
         self.progress_detection.setProperty("value", 24)
@@ -1116,15 +827,9 @@ class Ui_MainWindow(object):
         self.end_frame.setObjectName("end_frame")
         self.horizontalLayout_7.addWidget(self.end_frame)
         self.verticalLayout_11.addLayout(self.horizontalLayout_7)
-        self.group_colors_reconstruction = QtWidgets.QGroupBox(
-            self.tab_reconstruct
-        )
-        self.group_colors_reconstruction.setObjectName(
-            "group_colors_reconstruction"
-        )
-        self.gridLayout_2 = QtWidgets.QGridLayout(
-            self.group_colors_reconstruction
-        )
+        self.group_colors_reconstruction = QtWidgets.QGroupBox(self.tab_reconstruct)
+        self.group_colors_reconstruction.setObjectName("group_colors_reconstruction")
+        self.gridLayout_2 = QtWidgets.QGridLayout(self.group_colors_reconstruction)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.cb_purple = QtWidgets.QCheckBox(self.group_colors_reconstruction)
         self.cb_purple.setObjectName("cb_purple")
@@ -1150,14 +855,10 @@ class Ui_MainWindow(object):
         self.verticalLayout_11.addWidget(self.cb_tracking)
         self.horizontalLayout_5.addLayout(self.verticalLayout_11)
         self.pb_solve = QtWidgets.QPushButton(self.tab_reconstruct)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_solve.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_solve.sizePolicy().hasHeightForWidth())
         self.pb_solve.setSizePolicy(sizePolicy)
         self.pb_solve.setObjectName("pb_solve")
         self.horizontalLayout_5.addWidget(self.pb_solve)
@@ -1204,14 +905,10 @@ class Ui_MainWindow(object):
         self.lbl_plots.setObjectName("lbl_plots")
         self.horizontalLayout_11.addWidget(self.lbl_plots)
         self.pb_update_plots = QtWidgets.QPushButton(self.tab_reconstruct)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_update_plots.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_update_plots.sizePolicy().hasHeightForWidth())
         self.pb_update_plots.setSizePolicy(sizePolicy)
         self.pb_update_plots.setObjectName("pb_update_plots")
         self.horizontalLayout_11.addWidget(self.pb_update_plots)
@@ -1221,14 +918,10 @@ class Ui_MainWindow(object):
         self.tb_plots_left.setObjectName("tb_plots_left")
         self.horizontalLayout_11.addWidget(self.tb_plots_left)
         self.lbl_current_plot = QtWidgets.QLabel(self.tab_reconstruct)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.lbl_current_plot.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.lbl_current_plot.sizePolicy().hasHeightForWidth())
         self.lbl_current_plot.setSizePolicy(sizePolicy)
         self.lbl_current_plot.setObjectName("lbl_current_plot")
         self.horizontalLayout_11.addWidget(self.lbl_current_plot)
@@ -1241,16 +934,9 @@ class Ui_MainWindow(object):
         self.stacked_plots.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.stacked_plots.setObjectName("stacked_plots")
         self.verticalLayout_12.addWidget(self.stacked_plots)
-        spacerItem14 = QtWidgets.QSpacerItem(
-            20,
-            40,
-            QtWidgets.QSizePolicy.Minimum,
-            QtWidgets.QSizePolicy.Expanding,
-        )
+        spacerItem14 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_12.addItem(spacerItem14)
-        self.progress_reconstruction = QtWidgets.QProgressBar(
-            self.tab_reconstruct
-        )
+        self.progress_reconstruction = QtWidgets.QProgressBar(self.tab_reconstruct)
         self.progress_reconstruction.setProperty("value", 24)
         self.progress_reconstruction.setInvertedAppearance(False)
         self.progress_reconstruction.setObjectName("progress_reconstruction")
@@ -1263,7 +949,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.addWidget(self.scrollArea)
         MainWindow.setCentralWidget(self.centralized)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1190, 20))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1190, 21))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -1274,6 +960,8 @@ class Ui_MainWindow(object):
         self.menuView.setObjectName("menuView")
         self.menuHelp = QtWidgets.QMenu(self.menubar)
         self.menuHelp.setObjectName("menuHelp")
+        self.menu_docs = QtWidgets.QMenu(self.menuHelp)
+        self.menu_docs.setObjectName("menu_docs")
         MainWindow.setMenuBar(self.menubar)
         self.action_open = QtWidgets.QAction(MainWindow)
         self.action_open.setObjectName("action_open")
@@ -1304,28 +992,20 @@ class Ui_MainWindow(object):
         self.action_open_rods.setObjectName("action_open_rods")
         self.action_preferences = QtWidgets.QAction(MainWindow)
         self.action_preferences.setObjectName("action_preferences")
-        self.action_docs = QtWidgets.QAction(MainWindow)
-        self.action_docs.setObjectName("action_docs")
         self.action_about = QtWidgets.QAction(MainWindow)
         self.action_about.setObjectName("action_about")
         self.action_about_qt = QtWidgets.QAction(MainWindow)
         self.action_about_qt.setObjectName("action_about_qt")
         self.action_shorten_selected = QtWidgets.QAction(MainWindow)
-        self.action_shorten_selected.setShortcutContext(
-            QtCore.Qt.WidgetShortcut
-        )
+        self.action_shorten_selected.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.action_shorten_selected.setObjectName("action_shorten_selected")
         self.action_lengthen_selected = QtWidgets.QAction(MainWindow)
-        self.action_lengthen_selected.setShortcutContext(
-            QtCore.Qt.WidgetShortcut
-        )
+        self.action_lengthen_selected.setShortcutContext(QtCore.Qt.WidgetShortcut)
         self.action_lengthen_selected.setObjectName("action_lengthen_selected")
         self.action_shorten_displayed = QtWidgets.QAction(MainWindow)
         self.action_shorten_displayed.setObjectName("action_shorten_displayed")
         self.action_lengthen_displayed = QtWidgets.QAction(MainWindow)
-        self.action_lengthen_displayed.setObjectName(
-            "action_lengthen_displayed"
-        )
+        self.action_lengthen_displayed.setObjectName("action_lengthen_displayed")
         self.action_logs = QtWidgets.QAction(MainWindow)
         self.action_logs.setObjectName("action_logs")
         self.action_autoselect_rods = QtWidgets.QAction(MainWindow)
@@ -1336,6 +1016,10 @@ class Ui_MainWindow(object):
         self.action_bug_report.setObjectName("action_bug_report")
         self.action_feature_request = QtWidgets.QAction(MainWindow)
         self.action_feature_request.setObjectName("action_feature_request")
+        self.action_docs_local = QtWidgets.QAction(MainWindow)
+        self.action_docs_local.setObjectName("action_docs_local")
+        self.action_docs_online = QtWidgets.QAction(MainWindow)
+        self.action_docs_online.setObjectName("action_docs_online")
         self.menuFile.addAction(self.action_open)
         self.menuFile.addAction(self.action_open_rods)
         self.menuFile.addAction(self.action_save)
@@ -1353,8 +1037,10 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.action_original_size)
         self.menuView.addAction(self.action_fit_to_window)
         self.menuView.addAction(self.action_autoselect_rods)
+        self.menu_docs.addAction(self.action_docs_local)
+        self.menu_docs.addAction(self.action_docs_online)
         self.menuHelp.addAction(self.action_logs)
-        self.menuHelp.addAction(self.action_docs)
+        self.menuHelp.addAction(self.menu_docs.menuAction())
         self.menuHelp.addAction(self.action_about)
         self.menuHelp.addAction(self.action_about_qt)
         self.menuHelp.addSeparator()
@@ -1375,22 +1061,16 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "Rod Tracker"))
         self.pb_load_images.setText(_translate("MainWindow", "Load Images"))
         self.pb_load_rods.setText(_translate("MainWindow", "Load Rods"))
-        self.group_rod_color.setTitle(
-            _translate("MainWindow", "Particle Color")
-        )
+        self.group_rod_color.setTitle(_translate("MainWindow", "Particle Color"))
         self.rb_red.setText(_translate("MainWindow", "red"))
         self.rb_purple.setText(_translate("MainWindow", "purple"))
         self.rb_black.setText(_translate("MainWindow", "black"))
         self.rb_green.setText(_translate("MainWindow", "green"))
         self.rb_blue.setText(_translate("MainWindow", "blue"))
         self.rb_yellow.setText(_translate("MainWindow", "yellow"))
-        self.le_rod_disp.setText(
-            _translate("MainWindow", "Loaded Particles: 0")
-        )
+        self.le_rod_disp.setText(_translate("MainWindow", "Loaded Particles: 0"))
         self.cb_overlay.setText(_translate("MainWindow", "Overlay Rods"))
-        self.group_disp_method.setTitle(
-            _translate("MainWindow", "Display Methods")
-        )
+        self.group_disp_method.setTitle(_translate("MainWindow", "Display Methods"))
         self.rb_disp_all.setText(_translate("MainWindow", "All Particles"))
         self.rb_disp_one.setText(_translate("MainWindow", "Particle No.:"))
         self.le_frame_disp.setText(_translate("MainWindow", "Frame: ???"))
@@ -1401,84 +1081,44 @@ class Ui_MainWindow(object):
         self.pb_next.setText(_translate("MainWindow", "Next"))
         self.pb_next.setShortcut(_translate("MainWindow", "Right"))
         self.pb_save_rods.setText(_translate("MainWindow", "Save"))
-        self.camera_tabs.setTabText(
-            self.camera_tabs.indexOf(self.tab_0),
-            _translate("MainWindow", "Front View (FV)"),
-        )
-        self.camera_tabs.setTabText(
-            self.camera_tabs.indexOf(self.tab_1),
-            _translate("MainWindow", "Top View (TV)"),
-        )
-        self.tv_rods.headerItem().setText(
-            0, _translate("MainWindow", "Loaded Particles:")
-        )
-        self.right_tabs.setTabText(
-            self.right_tabs.indexOf(self.tab_rods),
-            _translate("MainWindow", "Particles"),
-        )
+        self.camera_tabs.setTabText(self.camera_tabs.indexOf(self.tab_0), _translate("MainWindow", "Front View (FV)"))
+        self.camera_tabs.setTabText(self.camera_tabs.indexOf(self.tab_1), _translate("MainWindow", "Top View (TV)"))
+        self.tv_rods.headerItem().setText(0, _translate("MainWindow", "Loaded Particles:"))
+        self.right_tabs.setTabText(self.right_tabs.indexOf(self.tab_rods), _translate("MainWindow", "Particles"))
         self.pb_undo.setText(_translate("MainWindow", "Undo"))
-        self.right_tabs.setTabText(
-            self.right_tabs.indexOf(self.tab_history),
-            _translate("MainWindow", "History"),
-        )
+        self.right_tabs.setTabText(self.right_tabs.indexOf(self.tab_history), _translate("MainWindow", "History"))
         self.label_18.setText(_translate("MainWindow", "Functional Settings"))
-        self.lbl_rod_incr.setText(
-            _translate("MainWindow", "Rod length in-/decrements [px]")
-        )
+        self.lbl_rod_incr.setText(_translate("MainWindow", "Rod length in-/decrements [px]"))
         self.rod_incr.setInputMask(_translate("MainWindow", "00.00;0"))
-        self.lbl_recalc_3D.setText(
-            _translate("MainWindow", "Recalculate 3D-Points")
-        )
+        self.lbl_recalc_3D.setText(_translate("MainWindow", "Recalculate 3D-Points"))
         self.label_17.setText(_translate("MainWindow", "Visual Settings"))
         self.lbl_thickness.setText(_translate("MainWindow", "Rod Thickness"))
         self.lbl_rod_color.setText(_translate("MainWindow", "Rod Color"))
         self.lbl_offset.setText(_translate("MainWindow", "Number Offset"))
         self.lbl_number_color.setText(_translate("MainWindow", "Number Color"))
         self.lbl_number_size.setText(_translate("MainWindow", "Number Size"))
-        self.lbl_position_scaling.setText(
-            _translate("MainWindow", "Position Scaling")
-        )
+        self.lbl_position_scaling.setText(_translate("MainWindow", "Position Scaling"))
         self.position_scaling.setInputMask(_translate("MainWindow", "00.00;0"))
-        self.label_23.setText(
-            _translate("MainWindow", "Experiment Parameters")
-        )
-        self.lbl_number_rods.setText(
-            _translate("MainWindow", "True number of rods")
-        )
+        self.label_23.setText(_translate("MainWindow", "Experiment Parameters"))
+        self.lbl_number_rods.setText(_translate("MainWindow", "True number of rods"))
         self.lbl_box_width.setText(_translate("MainWindow", "Box Width [mm]"))
-        self.lbl_box_height.setText(
-            _translate("MainWindow", "Box Height [mm]")
-        )
+        self.lbl_box_height.setText(_translate("MainWindow", "Box Height [mm]"))
         self.lbl_box_depth.setText(_translate("MainWindow", "Box Depth [mm]"))
         self.pb_defaults.setText(_translate("MainWindow", "Restore Defaults"))
-        self.right_tabs.setTabText(
-            self.right_tabs.indexOf(self.tab_settings),
-            _translate("MainWindow", "Settings"),
-        )
+        self.right_tabs.setTabText(self.right_tabs.indexOf(self.tab_settings), _translate("MainWindow", "Settings"))
         self.pb_front.setText(_translate("MainWindow", "Front"))
         self.pb_top.setText(_translate("MainWindow", "Top"))
         self.cb_show_3D.setText(_translate("MainWindow", "Show 3D"))
         self.rb_all_3d.setText(_translate("MainWindow", "All"))
         self.rb_color_3d.setText(_translate("MainWindow", "Color"))
         self.rb_one_3d.setText(_translate("MainWindow", "Single"))
-        self.right_tabs.setTabText(
-            self.right_tabs.indexOf(self.tab_3d),
-            _translate("MainWindow", "3D-View"),
-        )
+        self.right_tabs.setTabText(self.right_tabs.indexOf(self.tab_3d), _translate("MainWindow", "3D-View"))
         self.lbl_model.setText(_translate("MainWindow", "Model: "))
         self.tb_model.setText(_translate("MainWindow", "..."))
-        self.lbl_start_frame_detection.setText(
-            _translate("MainWindow", "Start Frame:")
-        )
-        self.lbl_end_frame_detection.setText(
-            _translate("MainWindow", "End Frame:")
-        )
-        self.lbl_expected_particles_default.setText(
-            _translate("MainWindow", "Expected particles:")
-        )
-        self.group_colors_detection.setTitle(
-            _translate("MainWindow", "Default Particle Colors:")
-        )
+        self.lbl_start_frame_detection.setText(_translate("MainWindow", "Start Frame:"))
+        self.lbl_end_frame_detection.setText(_translate("MainWindow", "End Frame:"))
+        self.lbl_expected_particles_default.setText(_translate("MainWindow", "Expected particles:"))
+        self.group_colors_detection.setTitle(_translate("MainWindow", "Default Particle Colors:"))
         self.cb_red_3.setText(_translate("MainWindow", "red"))
         self.cb_purple_3.setText(_translate("MainWindow", "purple"))
         self.cb_yellow_3.setText(_translate("MainWindow", "yellow"))
@@ -1488,9 +1128,7 @@ class Ui_MainWindow(object):
         self.cb_brown.setText(_translate("MainWindow", "brown"))
         self.cb_black_3.setText(_translate("MainWindow", "black"))
         self.cb_orange.setText(_translate("MainWindow", "orange"))
-        self.lbl_threshold.setText(
-            _translate("MainWindow", "Confidence Threshold: ")
-        )
+        self.lbl_threshold.setText(_translate("MainWindow", "Confidence Threshold: "))
         self.le_threshold.setInputMask(_translate("MainWindow", "0.00;0"))
         self.le_threshold.setText(_translate("MainWindow", "."))
         item = self.table_detect_colors.horizontalHeaderItem(0)
@@ -1500,15 +1138,10 @@ class Ui_MainWindow(object):
         item = self.table_detect_colors.horizontalHeaderItem(2)
         item.setText(_translate("MainWindow", "Class"))
         self.pb_detect.setText(_translate("MainWindow", "Detect"))
-        self.right_tabs.setTabText(
-            self.right_tabs.indexOf(self.tab_detection),
-            _translate("MainWindow", "Detection"),
-        )
+        self.right_tabs.setTabText(self.right_tabs.indexOf(self.tab_detection), _translate("MainWindow", "Detection"))
         self.lbl_start.setText(_translate("MainWindow", "Start Frame:"))
         self.lbl_end.setText(_translate("MainWindow", "End Frame:"))
-        self.group_colors_reconstruction.setTitle(
-            _translate("MainWindow", "Particle Color")
-        )
+        self.group_colors_reconstruction.setTitle(_translate("MainWindow", "Particle Color"))
         self.cb_purple.setText(_translate("MainWindow", "purple"))
         self.cb_green.setText(_translate("MainWindow", "green"))
         self.cb_red.setText(_translate("MainWindow", "red"))
@@ -1517,31 +1150,23 @@ class Ui_MainWindow(object):
         self.cb_blue.setText(_translate("MainWindow", "blue"))
         self.cb_tracking.setText(_translate("MainWindow", "Tracking"))
         self.pb_solve.setText(_translate("MainWindow", "Solve"))
-        self.lbl_calibration.setText(
-            _translate("MainWindow", "Camera Calibration:")
-        )
+        self.lbl_calibration.setText(_translate("MainWindow", "Camera Calibration:"))
         self.tb_calibration.setText(_translate("MainWindow", "..."))
-        self.lbl_transformation.setText(
-            _translate("MainWindow", "World Transformation:")
-        )
+        self.lbl_transformation.setText(_translate("MainWindow", "World Transformation:"))
         self.tb_transformation.setText(_translate("MainWindow", "..."))
         self.lbl_solver.setText(_translate("MainWindow", "Custom solver:"))
         self.tb_solver.setText(_translate("MainWindow", "..."))
-        self.lbl_plots.setText(
-            _translate("MainWindow", "Reconstruction performances:")
-        )
+        self.lbl_plots.setText(_translate("MainWindow", "Reconstruction performances:"))
         self.pb_update_plots.setText(_translate("MainWindow", "Update Plots"))
         self.tb_plots_left.setText(_translate("MainWindow", "..."))
         self.lbl_current_plot.setText(_translate("MainWindow", "(0/0)"))
         self.tb_plots_right.setText(_translate("MainWindow", "..."))
-        self.right_tabs.setTabText(
-            self.right_tabs.indexOf(self.tab_reconstruct),
-            _translate("MainWindow", "3D-Reconstruct"),
-        )
+        self.right_tabs.setTabText(self.right_tabs.indexOf(self.tab_reconstruct), _translate("MainWindow", "3D-Reconstruct"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.menuEdit.setTitle(_translate("MainWindow", "Edit"))
         self.menuView.setTitle(_translate("MainWindow", "View"))
         self.menuHelp.setTitle(_translate("MainWindow", "Help"))
+        self.menu_docs.setTitle(_translate("MainWindow", "Documentation"))
         self.action_open.setText(_translate("MainWindow", "Open Images"))
         self.action_open.setShortcut(_translate("MainWindow", "Ctrl+O"))
         self.action_save.setText(_translate("MainWindow", "Save"))
@@ -1550,67 +1175,34 @@ class Ui_MainWindow(object):
         self.action_zoom_in.setShortcut(_translate("MainWindow", "+"))
         self.action_zoom_out.setText(_translate("MainWindow", "Zoom out"))
         self.action_zoom_out.setShortcut(_translate("MainWindow", "-"))
-        self.action_original_size.setText(
-            _translate("MainWindow", "Original Size")
-        )
-        self.action_original_size.setShortcut(
-            _translate("MainWindow", "Ctrl+R")
-        )
-        self.action_fit_to_window.setText(
-            _translate("MainWindow", "Fit to Window")
-        )
-        self.action_persistent_view.setText(
-            _translate("MainWindow", "Persistent View")
-        )
+        self.action_original_size.setText(_translate("MainWindow", "Original Size"))
+        self.action_original_size.setShortcut(_translate("MainWindow", "Ctrl+R"))
+        self.action_fit_to_window.setText(_translate("MainWindow", "Fit to Window"))
+        self.action_persistent_view.setText(_translate("MainWindow", "Persistent View"))
         self.action_revert.setText(_translate("MainWindow", "Undo"))
         self.action_revert.setShortcut(_translate("MainWindow", "Ctrl+Z"))
         self.action_redo.setText(_translate("MainWindow", "Redo"))
         self.action_redo.setShortcut(_translate("MainWindow", "Ctrl+Shift+Z"))
         self.action_cleanup.setText(_translate("MainWindow", "Cleanup Data"))
-        self.action_open_rods.setText(
-            _translate("MainWindow", "Open Rod Data")
-        )
-        self.action_preferences.setText(
-            _translate("MainWindow", "Preferences")
-        )
-        self.action_docs.setText(_translate("MainWindow", "Documentation"))
+        self.action_open_rods.setText(_translate("MainWindow", "Open Rod Data"))
+        self.action_preferences.setText(_translate("MainWindow", "Preferences"))
         self.action_about.setText(_translate("MainWindow", "About"))
         self.action_about_qt.setText(_translate("MainWindow", "About Qt"))
-        self.action_shorten_selected.setText(
-            _translate("MainWindow", "Shorten Selected Rod")
-        )
+        self.action_shorten_selected.setText(_translate("MainWindow", "Shorten Selected Rod"))
         self.action_shorten_selected.setShortcut(_translate("MainWindow", "S"))
-        self.action_lengthen_selected.setText(
-            _translate("MainWindow", "Lengthen Selected Rod")
-        )
-        self.action_lengthen_selected.setShortcut(
-            _translate("MainWindow", "A")
-        )
-        self.action_shorten_displayed.setText(
-            _translate("MainWindow", "Shorten Displayed Rods")
-        )
-        self.action_shorten_displayed.setShortcut(
-            _translate("MainWindow", "T")
-        )
-        self.action_lengthen_displayed.setText(
-            _translate("MainWindow", "Lengthen Displayed Rods")
-        )
-        self.action_lengthen_displayed.setShortcut(
-            _translate("MainWindow", "R")
-        )
+        self.action_lengthen_selected.setText(_translate("MainWindow", "Lengthen Selected Rod"))
+        self.action_lengthen_selected.setShortcut(_translate("MainWindow", "A"))
+        self.action_shorten_displayed.setText(_translate("MainWindow", "Shorten Displayed Rods"))
+        self.action_shorten_displayed.setShortcut(_translate("MainWindow", "T"))
+        self.action_lengthen_displayed.setText(_translate("MainWindow", "Lengthen Displayed Rods"))
+        self.action_lengthen_displayed.setShortcut(_translate("MainWindow", "R"))
         self.action_logs.setText(_translate("MainWindow", "Show Logs"))
-        self.action_autoselect_rods.setText(
-            _translate("MainWindow", "Autoselect rods")
-        )
+        self.action_autoselect_rods.setText(_translate("MainWindow", "Autoselect rods"))
         self.action_autoselect_rods.setShortcut(_translate("MainWindow", "G"))
-        self.action_bug_report.setText(
-            _translate("MainWindow", "Report a BUG")
-        )
-        self.action_feature_request.setText(
-            _translate("MainWindow", "Request a FEATURE")
-        )
-
-
+        self.action_bug_report.setText(_translate("MainWindow", "Report a BUG"))
+        self.action_feature_request.setText(_translate("MainWindow", "Request a FEATURE"))
+        self.action_docs_local.setText(_translate("MainWindow", "Local"))
+        self.action_docs_online.setText(_translate("MainWindow", "Online"))
 from RodTracker.ui.loggerwidget import LoggerWidget
 from RodTracker.ui.rod_tree import RodTree
 from RodTracker.ui.rodimagewidget import RodImageWidget

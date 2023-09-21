@@ -16,10 +16,12 @@
 
 """**TBD**"""
 
+import logging
 import os
-import subprocess
 from pathlib import Path
+import subprocess
 import sys
+from typing import Literal
 
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
@@ -39,12 +41,7 @@ else:
                 file
             )
         )
-
-
-# use the online documentation unless the RodTracker is bundled
-_docs_url = "https://particletracking.readthedocs.io/"
-if hasattr(sys, "_MEIPASS"):
-    _docs_url = Path("./docs/index.html")
+_logger = logging.getLogger(__name__)
 
 
 def icon_path() -> str:
@@ -84,9 +81,31 @@ def undo_icon_path() -> str:
     )
 
 
-def open_docs() -> None:
+def open_docs(location: Literal["online", "local"] = "online") -> None:
     """Open the documenation for the RodTracker."""
+    _docs_url = "https://particletracking.readthedocs.io/"
+    if location == "local":
+        local_docs = (
+            Path(__file__).parent / "../../../../docs/build/html/index.html"
+        ).resolve()
+        if hasattr(sys, "_MEIPASS"):
+            local_docs = Path("./docs/index.html").resolve()
+        if local_docs.exists():
+            _docs_url = local_docs
+        else:
+            _logger.warning(
+                "Local documentation not found at expected location "
+                f"({local_docs}).\n"
+                "Falling back to online version."
+            )
+
     if sys.platform == "win32":
         os.startfile(_docs_url)
-    else:
+    elif sys.platform == "linux":
         subprocess.Popen(["xdg-open", _docs_url])
+    elif sys.platform == "darwin":
+        subprocess.Popen(["open", _docs_url])
+    else:
+        _logger.warning(
+            f"Unknown platform ({sys.platform}) ... can't open documentation."
+        )
