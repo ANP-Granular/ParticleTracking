@@ -56,33 +56,31 @@ Some tests require a display (see [pytest-qt](https://pytest-qt.readthedocs.io/e
 
 Please make sure that the dependencies of the `BUILD`, or `DEV` extra are installed. On Linux there are additional requirements to be able to run the bundling script. Refer to the [PyInstaller documentation](https://pyinstaller.org/en/stable/requirements.html#gnu-linux) for that.
 
-There is a script to generate an executable for both Windows and Linux. Prior to bundling it will also (re-)build the documentation because this is supposed to be contained in the bundled app.
+There is a script to generate an executable for Windows, Linux, or macOS. Prior to bundling it will also (re-)build the documentation because this is supposed to be contained in the bundled app.
 
 **On Windows**:
 ```shell
 YOUR/REPO/PATH/RodTracker/build-files> build_app.bat
 ```
-**On Linux**:
+**On Linux & macOS**:
 ```shell
 YOUR/REPO/PATH/RodTracker/build-files$ build_app.sh
 ```
 
-There are two command line options `-onedir`(default)/`-onefile`.
-Both will generate a `.\RodTracker\build` and a `.\RodTracker\dist` folder.
-The generated executables are located in the `.\RodTracker\dist` folder.
+The build script will generate a `.\RodTracker\build` and a `.\RodTracker\dist` folder.
+The generated executables are located in the `.\RodTracker\dist` directory under either a `windows` or a `unix` subfolder.
 
-In the first case everything is bundled into one folder named `RodTracker`
-which can be copied or moved as a whole. Run the executable
-`dist\RodTracker\RodTrackerApp.exe` inside this folder to start the program.
-
-The build option generates only one file, i.e.
-`dist\RodTracker.exe`, that holds all necessary files to run the program
-and unpacks those during runtime.
+Everything is bundled into one folder named `RodTracker`
+which can be copied or moved as a whole. Run the executable inside this folder to start the program.
+On macOS the generated folder is additionally converted into a `RodTracker.app` bundle that should be used to execute the RodTracker.
+- (Windows) `dist\windows\RodTracker\RodTrackerApp.exe`
+- (Linux) `dist/unix/RodTracker/RodTracker`
+- (macOS) `dist/unix/RodTracker.app`
 
 ```{warning}
 On Windows make sure that no other process, e.g. Dropbox, attempts to access files necessary for the build during this step. Otherwise an `OSError: [WinError 110]` might occur and break the process.
 
-On Linux this problem does not seem to occur.
+On Linux/macOS this problem does not seem to occur.
 ```
 
 ## ParticleDetection
