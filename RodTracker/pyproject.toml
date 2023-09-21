@@ -63,7 +63,7 @@ dev = ["qt5-applications", "PyQt5-stubs", "flake8", "pytest", "pytest-qt",
 build = ["pyinstaller", "Sphinx", "docutils", "sphinx_rtd_theme",
          "myst_parser", "dunamai"]
 test = ["pytest", "pytest-qt", "pytest-cov"]
-docs = ["Sphinx", "docutils", "sphinx_rtd_theme", "myst_parser"]
+docs = ["Sphinx", "docutils", "sphinx_rtd_theme", "myst_parser", "dunamai"]
 
 [tool.poetry.scripts]
 RodTracker = 'RodTracker.RodTracker:main'

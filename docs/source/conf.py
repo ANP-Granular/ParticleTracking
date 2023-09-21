@@ -4,9 +4,14 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 import sys
 import os
+import dunamai
 
 sys.path.append(os.path.abspath("sphinxext"))
 sys.path.append(os.path.abspath("../../src"))
+
+__version__ = dunamai.Version.from_git().serialize(
+    style=dunamai.Style.Pep440, bump=True
+)
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -14,8 +19,8 @@ sys.path.append(os.path.abspath("../../src"))
 project = "ParticleTracking"
 copyright = "2023, Adrian Niemann, Dmitry Puzyrev"
 author = "Adrian Niemann, Dmitry Puzyrev"
-# TODO: dynamic versioning
-release = "0.6.0"
+release = __version__
+version = __version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
