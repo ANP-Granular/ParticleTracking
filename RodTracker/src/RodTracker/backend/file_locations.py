@@ -89,7 +89,7 @@ def open_docs(location: Literal["online", "local"] = "online") -> None:
             Path(__file__).parent / "../../../../docs/build/html/index.html"
         ).resolve()
         if hasattr(sys, "_MEIPASS"):
-            local_docs = Path("./docs/index.html").resolve()
+            local_docs = Path(sys._MEIPASS).resolve() / "docs/index.html"
         if local_docs.exists():
             _docs_url = local_docs
         else:
