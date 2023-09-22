@@ -198,6 +198,14 @@ def show_about(parent: QtWidgets.QWidget):
         </tr>
         <tr>
             <td width="50">
+                <p><a href="https://github.com/mtkennerly/dunamai">
+                dunamai</a>:</p>
+            </td>
+            <td width="150">1.18.0</td>
+            <td width="200"><p>MIT</p></td>
+        </tr>
+        <tr>
+            <td width="50">
                 <p><a href="https://github.com/pycqa/flake8">flake8</a>:</p>
             </td>
             <td width="150">5.0.4</td>
@@ -254,6 +262,14 @@ def show_about(parent: QtWidgets.QWidget):
             </td>
             <td width="150">0.4.0</td>
             <td width="200"><p> GPLv3 </p></td>
+        </tr>
+        <tr>
+            <td width="50">
+                <p><a href="https://python-pillow.org/">
+                Pillow</a>:</p>
+            </td>
+            <td width="150">10.0.0</td>
+            <td width="200"><p> HPND </p></td>
         </tr>
         <tr>
             <td width="50">
