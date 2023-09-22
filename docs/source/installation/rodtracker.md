@@ -1,25 +1,26 @@
 # Installation of the RodTracker
-As the RodTracker is a Python package usually you will be installing it from source or from a `*.whl` file, but there is also the possibility, that you are provided with a bundled standalone version. There are two standalone versions, one that is a single executable file and one that is a folder with library files and a single executable inside.
-For both there is no further setup required and the executables work instantly no matter where they are located on your machine.
+As the RodTracker is a Python package usually you will be installing it from source or from a `*.whl` file, but there is also the possibility, that you are provided with a bundled standalone version. This is either done as an executable installer (`RodTracker-Setup.exe` - Windows, `RodTracker-Setup.deb` - Linux, `RodTracker-Setup.dmg` - MacOS) or as folder from which the `RodTrackerApp` executable runs the RodTracker.
 
-From now on all instructions for installation are only concerning installing the RodTracker from source.
+The following installation instructions are only concerning installing the RodTracker from source.
 
+## Installation from source
+---
 **Requirements:**
 - Python `>=3.8` is installed
 - pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
 - Git is installed
+---
 
-## Installation from source
-  0. Upgrade your version of `pip`.
-   ```shell
-   python -m pip install --upgrade pip
-   ```
-  1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the RodTracker. Do **NOT** just copy the `RodTracker` folder. This will lead to a missing dependency during the installation.
-  2. Install it using `pip`.
-   ```shell
-   YOUR/REPO/PATH/RodTracker$ pip install .
-   ```
-## Installation in conda environments
+0. Upgrade your version of `pip`.
+  ```shell
+  python -m pip install --upgrade pip
+  ```
+1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the RodTracker. Do **NOT** just copy the `RodTracker` folder. This will lead to a missing dependency during the installation.
+2. Install it using `pip`.
+  ```shell
+  YOUR/REPO/PATH/RodTracker$ pip install .
+  ```
+### Installation in conda environments
 1. Create a fresh environment with Python `>=3.8`
   ```shell
   (base) YOUR/CURRENT/DIRECTORY$ conda create -n RodTracker python=3.10
@@ -73,3 +74,7 @@ On Linux the default installation allows running particle detections on a GPU, i
 
 On Windows the default installation only allows running particle detections on a CPU. This is due to the default behavior of PyTorch and the more complex installation process of CUDA on Windows.
 Please install CUDA first and then refer to the [GPU installation option](particledetection.md#installation-options) of ParticleDetection for further steps.
+
+```{note}
+CUDA is currently not available on Mac and therefore also not supported here.
+```

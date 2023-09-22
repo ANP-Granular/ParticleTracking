@@ -3,10 +3,20 @@
 - support for python3.11
 - support for more complex image file names, i.e. '...**_00000.png**'
 - buttons to report issues/request features on GitHub
+- dynamic versioning
+- support for macOS
+- creation of installers on Windows, Linux, and macOS
+- choice between opening a local/online version of the documentation
+
+### Changed
+- logo/icon
 
 ### Fixed
 - missing installation requirement (Git)
 - capability to 'correct' rods when none are present in the loaded dataset on the current frame ([#73](https://github.com/ANP-Granular/ParticleTracking/issues/73))
+
+### Removed
+- bundling into a single file
 
 ## [v0.6.0]
 ### Added

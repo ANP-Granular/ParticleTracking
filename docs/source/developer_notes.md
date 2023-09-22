@@ -59,7 +59,7 @@ Please make sure that the dependencies of the `BUILD`, or `DEV` extra are instal
 There is a script to generate an executable for Windows, Linux, or macOS. Prior to bundling it will also (re-)build the documentation because this is supposed to be contained in the bundled app.
 
 **On Windows**:
-```shell
+```bat
 YOUR/REPO/PATH/RodTracker/build-files> build_app.bat
 ```
 **On Linux & macOS**:
@@ -82,6 +82,34 @@ On Windows make sure that no other process, e.g. Dropbox, attempts to access fil
 
 On Linux/macOS this problem does not seem to occur.
 ```
+
+### Creating Installers
+After it can be useful to create installers for easy distribution to the end user. The following scripts require the RodTracker to already be bundled as per the [previous section](#bundling-the-app). 
+
+**On Windows**:
+
+An installer is created using [Inno Setup](https://jrsoftware.org/isinfo.php).
+Use Inno Setup to compile the `.\RodTracker\build-files\build_installer.iss` script. This will create the installer file `.\RodTracker\dist\windows\RodTracker-Setup.exe` that can then be distributed.
+
+**On Linux**:
+
+`dpkg-deb` is used to create a `*.deb` package.
+```shell
+YOUR/REPO/PATH/RodTracker/build-files$ build_deb.sh
+```
+
+**On macOS**:
+
+`create-dmg` is used to create a `*.dmg` installer.
+
+0. Install `create-dmg`:
+   ```shell
+   brew install create-dmg
+   ```
+1. Create the installer:
+   ```shell
+   YOUR/REPO/PATH/RodTracker/build-files$ build_dmg.sh
+   ```
 
 ## ParticleDetection
 
