@@ -21,9 +21,12 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Physics",
 ]
+documentation = "https://particletracking.readthedocs.io/"
+repository = "https://github.com/ANP-Granular/ParticleTracking"
 packages = [
     {include = "RodTracker", from = "src"},
 ]
@@ -40,7 +43,8 @@ numpy = ">=1.21.0"
 PyQt3D = ">=5.15.5"
 matplotlib = ">=3.6.2"
 importlib-resources = {version = ">=1.4", python = "<3.9"}
-ParticleDetection = {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "ba90c773"}
+# ParticleDetection = {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "ba90c773"}
+# ParticleDetection = {path= "../ParticleDetection", develop = true}
 
 pyinstaller = {version = ">=5.7", optional = true}
 qt5-applications = {version = ">=5.15", optional = true}
