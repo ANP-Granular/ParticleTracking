@@ -38,13 +38,12 @@ include = [
 python = "^3.8"
 platformdirs = ">=3.2.0"
 PyQt5 = ">=5.15.4"
-pandas= ">=1.2.5"
+pandas= ">=2.1.1"
 numpy = ">=1.21.0"
 PyQt3D = ">=5.15.5"
 matplotlib = ">=3.6.2"
 importlib-resources = {version = ">=1.4", python = "<3.9"}
-# ParticleDetection = {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "ba90c773"}
-# ParticleDetection = {path= "../ParticleDetection", develop = true}
+ParticleDetection = {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "c76f3c7a"}
 
 pyinstaller = {version = ">=5.7", optional = true}
 qt5-applications = {version = ">=5.15", optional = true}
