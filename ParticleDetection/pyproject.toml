@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "ParticleDetection"
 version = "0.4.0"
-description = "Tools to track rods with machine learning."
+description = "Tools to track particles with machine learning."
 authors = ["Adrian Niemann <adrian.niemann@gmx.de>"]
 readme = "README.md"
 classifiers = [
@@ -22,27 +22,29 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Image Processing",
     "Topic :: Scientific/Engineering :: Physics",
 ]
+documentation = "https://particletracking.readthedocs.io/"
+repository = "https://github.com/ANP-Granular/ParticleTracking"
 packages = [
     { include = "ParticleDetection", from = "src"},
 ]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-scipy = "^1.9.3"
-numpy = "^1.23.4"
-matplotlib = "^3.6.1"
-opencv-python-headless = "^4.6.0.66"
-tqdm = "^4.64.1"
-networkx = "^2.8.7"
-pandas = "^1.5.1"
-pulp = "^2.6.0"
-scikit-learn = "^1.1.3"
-scikit-image = "^0.21.0"
-trackpy = "^0.5.0"
+scipy = ">=1.9.3"
+numpy = ">=1.23.4"
+matplotlib = ">=3.6.1"
+opencv-python-headless = ">=4.6.0.66"
+tqdm = ">=4.64.1"
+networkx = ">=2.8.7"
+pandas = ">=2.1.1"
+pulp = ">=2.6.0"
+scikit-learn = ">=1.1.3"
+scikit-image = ">=0.21.0"
+trackpy = ">=0.5.0"
 tensorboard =  {version = "*", optional = true}
 protobuf = {version = "==3.20.1", optional = true}
 torch = [
-    {version = "^2", markers = "(sys_platform == 'win32' or sys_platform == 'darwin') and (extra != 'detectron' and extra != 'gpu')"},   # default
+    {version = ">=2", markers = "(sys_platform == 'win32' or sys_platform == 'darwin') and (extra != 'detectron' and extra != 'gpu')"},   # default
     {version = "*", source = "gpu-win", markers = "sys_platform == 'win32' and (extra == 'gpu' or extra == 'detectron')"},
     {version = ">=1.8", source = "cpu-linux", markers = "sys_platform == 'linux' and (extra != 'detectron' and extra != 'gpu')"},    # default
     {version = ">=1.8", markers = "sys_platform == 'linux' and (extra == 'detectron' or extra == 'gpu')"},
