@@ -23,13 +23,19 @@ import pandas as pd
 import matplotlib.colors as mpl_colors
 from PyQt5 import Qt3DCore, QtCore, QtWidgets, QtGui
 from PyQt5.Qt3DRender import QDirectionalLight, QCamera
-from PyQt5.Qt3DExtras import QPhongMaterial, \
-    QCylinderMesh, Qt3DWindow, QOrbitCameraController, QCuboidMesh, \
-    QExtrudedTextMesh, QPhongAlphaMaterial
+from PyQt5.Qt3DExtras import (
+    QPhongMaterial,
+    QCylinderMesh,
+    Qt3DWindow,
+    QOrbitCameraController,
+    QCuboidMesh,
+    QExtrudedTextMesh,
+    QPhongAlphaMaterial,
+)
 
-BOX_WIDTH = 112.
-BOX_HEIGHT = 80.
-BOX_DEPTH = 80.
+BOX_WIDTH = 112.0
+BOX_HEIGHT = 80.0
+BOX_DEPTH = 80.0
 ROD_RADIUS = 0.5
 _logger = logging.getLogger(__name__)
 
@@ -58,6 +64,7 @@ class View3D(QtWidgets.QWidget):
         Root entity for the 3D scene.
 
     """
+
     rods: List[Qt3DCore.QEntity] = []
     """List[QEntity] : Entities that resemble a rod each.
 
@@ -76,8 +83,13 @@ class View3D(QtWidgets.QWidget):
 
         # Create 3D scene
         self.scene = Qt3DCore.QEntity()
-        self.box, self.top, self.top_t, self.front, self.front_t = \
-            self.create_box(self.scene)
+        (
+            self.box,
+            self.top,
+            self.top_t,
+            self.front,
+            self.front_t,
+        ) = self.create_box(self.scene)
         self.fences = self.create_fences(self.scene)
 
         front_light = QDirectionalLight()
@@ -106,27 +118,15 @@ class View3D(QtWidgets.QWidget):
 
     def show_front(self):
         """Move the camera to display the front for the experiment box."""
-        self.camera.setViewCenter(
-            QtGui.QVector3D(0.0, 0.0, 0.0)
-        )
-        self.camera.setPosition(
-            QtGui.QVector3D(0.0, 0.0, 1.5 * BOX_WIDTH)
-        )
-        self.camera.setUpVector(
-            QtGui.QVector3D(0.0, 1.0, 0.0)
-        )
+        self.camera.setViewCenter(QtGui.QVector3D(0.0, 0.0, 0.0))
+        self.camera.setPosition(QtGui.QVector3D(0.0, 0.0, 1.5 * BOX_WIDTH))
+        self.camera.setUpVector(QtGui.QVector3D(0.0, 1.0, 0.0))
 
     def show_top(self):
         """Move the camera to display the top for the experiment box."""
-        self.camera.setViewCenter(
-            QtGui.QVector3D(0.0, 0.0, 0.0)
-        )
-        self.camera.setPosition(
-            QtGui.QVector3D(0.0, 1.5 * BOX_WIDTH, 0.0)
-        )
-        self.camera.setUpVector(
-            QtGui.QVector3D(0.0, 0.0, -1.0)
-        )
+        self.camera.setViewCenter(QtGui.QVector3D(0.0, 0.0, 0.0))
+        self.camera.setPosition(QtGui.QVector3D(0.0, 1.5 * BOX_WIDTH, 0.0))
+        self.camera.setUpVector(QtGui.QVector3D(0.0, 0.0, -1.0))
 
     @QtCore.pyqtSlot(pd.DataFrame)
     def update_rods(self, data: pd.DataFrame) -> None:
@@ -148,36 +148,46 @@ class View3D(QtWidgets.QWidget):
             c_data = data.loc[data.color == color]
             try:
                 rod_color = QtGui.QColor.fromRgbF(
-                    *mpl_colors.to_rgba(color, alpha=1.0))
+                    *mpl_colors.to_rgba(color, alpha=1.0)
+                )
             except ValueError as e:
-                _logger.error(f"Unknown color for 3D display!\n{e.args}\n"
-                              f"Using 'pink' instead.")
+                _logger.error(
+                    f"Unknown color for 3D display!\n{e.args}\n"
+                    f"Using 'pink' instead."
+                )
                 rod_color = QtGui.QColor.fromRgbF(
-                    *mpl_colors.to_rgba("pink", alpha=1.0))
+                    *mpl_colors.to_rgba("pink", alpha=1.0)
+                )
             xs = c_data[["x1", "x2"]].to_numpy()
             ys = c_data[["y1", "y2"]].to_numpy()
             zs = c_data[["z1", "z2"]].to_numpy()
-            dxs = np.diff(xs, axis=1)
-            dys = np.diff(ys, axis=1)
-            dzs = np.diff(zs, axis=1)
+            dxs = np.diff(xs, axis=1).squeeze()
+            dys = np.diff(ys, axis=1).squeeze()
+            dzs = np.diff(zs, axis=1).squeeze()
             k = 0
             for idx in range(len(c_data)):
                 if i + k < available_rods:
                     try:
                         rod = self.rods[i + k]
                         cm_rod, transformation, material = self._components[
-                            i + k]
+                            i + k
+                        ]
                         cm_rod.setRadius(ROD_RADIUS)
                         cm_rod.setLength(
                             np.linalg.norm(
-                                np.array((dxs[idx], dys[idx], dzs[idx]))))
-                        new_pos = QtGui.QVector3D(xs[idx, 0] + dxs[idx] / 2,
-                                                  ys[idx, 0] + dys[idx] / 2,
-                                                  zs[idx, 0] + dzs[idx] / 2)
+                                np.array((dxs[idx], dys[idx], dzs[idx]))
+                            )
+                        )
+                        new_pos = QtGui.QVector3D(
+                            xs[idx, 0] + dxs[idx] / 2,
+                            ys[idx, 0] + dys[idx] / 2,
+                            zs[idx, 0] + dzs[idx] / 2,
+                        )
                         transformation.setTranslation(new_pos)
                         rod_rot = QtGui.QQuaternion.rotationTo(
-                            QtGui.QVector3D(0., 1., 0.),
-                            QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]))
+                            QtGui.QVector3D(0.0, 1.0, 0.0),
+                            QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]),
+                        )
                         transformation.setRotation(rod_rot)
                         material.setDiffuse(rod_color)
                         k += 1
@@ -193,15 +203,18 @@ class View3D(QtWidgets.QWidget):
                 cm_rod.setRadius(ROD_RADIUS)
                 material.setDiffuse(rod_color)
                 cm_rod.setLength(
-                    np.linalg.norm(
-                        np.array((dxs[idx], dys[idx], dzs[idx]))))
-                new_pos = QtGui.QVector3D(xs[idx, 0] + dxs[idx] / 2,
-                                          ys[idx, 0] + dys[idx] / 2,
-                                          zs[idx, 0] + dzs[idx] / 2)
+                    np.linalg.norm(np.array((dxs[idx], dys[idx], dzs[idx])))
+                )
+                new_pos = QtGui.QVector3D(
+                    xs[idx, 0] + dxs[idx] / 2,
+                    ys[idx, 0] + dys[idx] / 2,
+                    zs[idx, 0] + dzs[idx] / 2,
+                )
                 transformation.setTranslation(new_pos)
                 rod_rot = QtGui.QQuaternion.rotationTo(
-                    QtGui.QVector3D(0., 1., 0.),
-                    QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]))
+                    QtGui.QVector3D(0.0, 1.0, 0.0),
+                    QtGui.QVector3D(dxs[idx], dys[idx], dzs[idx]),
+                )
                 transformation.setRotation(rod_rot)
 
                 rod.addComponent(cm_rod)
@@ -230,8 +243,9 @@ class View3D(QtWidgets.QWidget):
         # Camera
         camera = view.camera()
         camera.lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
-        camera.setPosition(QtGui.QVector3D(0.0, 1.5 * BOX_HEIGHT,
-                                           1.5 * BOX_DEPTH))
+        camera.setPosition(
+            QtGui.QVector3D(0.0, 1.5 * BOX_HEIGHT, 1.5 * BOX_DEPTH)
+        )
         camera.setViewCenter(QtGui.QVector3D(0.0, 0.0, 0.0))
 
         # Camera controls
@@ -242,9 +256,15 @@ class View3D(QtWidgets.QWidget):
         return camera
 
     @staticmethod
-    def create_box(root: Qt3DCore.QEntity) ->\
-        Tuple[QCuboidMesh, QExtrudedTextMesh, Qt3DCore.QTransform,
-              QExtrudedTextMesh, Qt3DCore.QTransform]:
+    def create_box(
+        root: Qt3DCore.QEntity,
+    ) -> Tuple[
+        QCuboidMesh,
+        QExtrudedTextMesh,
+        Qt3DCore.QTransform,
+        QExtrudedTextMesh,
+        Qt3DCore.QTransform,
+    ]:
         """Creates a shaded box as the representation of the experiment
         container.
 
@@ -281,7 +301,7 @@ class View3D(QtWidgets.QWidget):
         # Adding indicative text
         top_txt = QExtrudedTextMesh()
         top_txt.setText("TOP")
-        top_txt.setDepth(.1)
+        top_txt.setDepth(0.1)
         ind_font = top_txt.font()
         ind_font.setPixelSize(int(BOX_WIDTH / 10))
         ind_metric = QtGui.QFontMetrics(ind_font)
@@ -289,11 +309,14 @@ class View3D(QtWidgets.QWidget):
 
         top_transform = Qt3DCore.QTransform()
         top_transform.setTranslation(
-            QtGui.QVector3D(-BOX_WIDTH / 2, BOX_HEIGHT / 2, -BOX_DEPTH / 2))
+            QtGui.QVector3D(-BOX_WIDTH / 2, BOX_HEIGHT / 2, -BOX_DEPTH / 2)
+        )
         q1 = QtGui.QQuaternion.fromAxisAndAngle(
-            QtGui.QVector3D(0.0, 1.0, 0.0), 180.0)
+            QtGui.QVector3D(0.0, 1.0, 0.0), 180.0
+        )
         q2 = QtGui.QQuaternion.fromAxisAndAngle(
-            QtGui.QVector3D(1.0, 0.0, 0.0), -90.0)
+            QtGui.QVector3D(1.0, 0.0, 0.0), -90.0
+        )
         top_transform.setRotation(q1 * q2)
 
         text_obj = Qt3DCore.QEntity(root)
@@ -303,15 +326,19 @@ class View3D(QtWidgets.QWidget):
 
         front_txt = QExtrudedTextMesh()
         front_txt.setText("FRONT")
-        front_txt.setDepth(.1)
+        front_txt.setDepth(0.1)
         front_txt.setFont(ind_font)
         front_transform = Qt3DCore.QTransform()
         front_transform.setTranslation(
             QtGui.QVector3D(
-                (-BOX_WIDTH / 2), (-BOX_HEIGHT / 2) - ind_metric.capHeight(),
-                BOX_DEPTH / 2))
+                (-BOX_WIDTH / 2),
+                (-BOX_HEIGHT / 2) - ind_metric.capHeight(),
+                BOX_DEPTH / 2,
+            )
+        )
         q_front = QtGui.QQuaternion.fromAxisAndAngle(
-            QtGui.QVector3D(0.0, 0.0, 1.0), 180.0)
+            QtGui.QVector3D(0.0, 0.0, 1.0), 180.0
+        )
         front_transform.setRotation(q_front)
         front_obj = Qt3DCore.QEntity(root)
         front_obj.addComponent(front_txt)
@@ -331,8 +358,10 @@ class View3D(QtWidgets.QWidget):
 
         self.front_t.setTranslation(
             QtGui.QVector3D(
-                (-BOX_WIDTH / 2), (-BOX_HEIGHT / 2) - tmp_metric.capHeight(),
-                BOX_DEPTH / 2)
+                (-BOX_WIDTH / 2),
+                (-BOX_HEIGHT / 2) - tmp_metric.capHeight(),
+                BOX_DEPTH / 2,
+            )
         )
         self.top_t.setTranslation(
             QtGui.QVector3D(-BOX_WIDTH / 2, BOX_HEIGHT / 2, -BOX_DEPTH / 2)
@@ -366,9 +395,18 @@ class View3D(QtWidgets.QWidget):
 
         off_set = QtGui.QVector3D(-BOX_WIDTH / 2, 0, BOX_DEPTH / 2)
         lens = [
-            BOX_HEIGHT, BOX_HEIGHT, BOX_HEIGHT, BOX_HEIGHT, BOX_DEPTH,
-            BOX_DEPTH, BOX_WIDTH, BOX_WIDTH, BOX_DEPTH, BOX_DEPTH, BOX_WIDTH,
-            BOX_WIDTH
+            BOX_HEIGHT,
+            BOX_HEIGHT,
+            BOX_HEIGHT,
+            BOX_HEIGHT,
+            BOX_DEPTH,
+            BOX_DEPTH,
+            BOX_WIDTH,
+            BOX_WIDTH,
+            BOX_DEPTH,
+            BOX_DEPTH,
+            BOX_WIDTH,
+            BOX_WIDTH,
         ]
         positions = [
             QtGui.QVector3D(0, 0, 0),
@@ -382,33 +420,45 @@ class View3D(QtWidgets.QWidget):
             QtGui.QVector3D(0, BOX_HEIGHT / 2, -BOX_DEPTH / 2),
             QtGui.QVector3D(BOX_WIDTH, BOX_HEIGHT / 2, -BOX_DEPTH / 2),
             QtGui.QVector3D(BOX_WIDTH / 2, BOX_HEIGHT / 2, 0),
-            QtGui.QVector3D(BOX_WIDTH / 2, BOX_HEIGHT / 2, -BOX_DEPTH)
+            QtGui.QVector3D(BOX_WIDTH / 2, BOX_HEIGHT / 2, -BOX_DEPTH),
         ]
         rotations = [
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 0.0), 0.0),
+                QtGui.QVector3D(0.0, 0.0, 0.0), 0.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 0.0), 0.0),
+                QtGui.QVector3D(0.0, 0.0, 0.0), 0.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 0.0), 0.0),
+                QtGui.QVector3D(0.0, 0.0, 0.0), 0.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 0.0), 0.0),
+                QtGui.QVector3D(0.0, 0.0, 0.0), 0.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(1.0, 0.0, 0.0), 90.0),
+                QtGui.QVector3D(1.0, 0.0, 0.0), 90.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(1.0, 0.0, 0.0), 90.0),
+                QtGui.QVector3D(1.0, 0.0, 0.0), 90.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0),
+                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0),
+                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(1.0, 0.0, 0.0), 90.0),
+                QtGui.QVector3D(1.0, 0.0, 0.0), 90.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(1.0, 0.0, 0.0), 90.0),
+                QtGui.QVector3D(1.0, 0.0, 0.0), 90.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0),
+                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0)
+                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0
+            ),
         ]
 
         for i in range(12):
@@ -442,17 +492,21 @@ class View3D(QtWidgets.QWidget):
             QtGui.QVector3D(0, -BOX_HEIGHT / 2, 0),
             QtGui.QVector3D(-BOX_WIDTH / 2, 0, 0),
             QtGui.QVector3D(BOX_WIDTH / 2, 0, 0),
-            QtGui.QVector3D(0, 0, -BOX_HEIGHT / 2)
+            QtGui.QVector3D(0, 0, -BOX_HEIGHT / 2),
         ]
         plate_rotations = [
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 0.0), 0.0),
+                QtGui.QVector3D(0.0, 0.0, 0.0), 0.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0),
+                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0),
+                QtGui.QVector3D(0.0, 0.0, 1.0), 90.0
+            ),
             QtGui.QQuaternion.fromAxisAndAngle(
-                QtGui.QVector3D(1.0, 0.0, 0.0), 90.0)
+                QtGui.QVector3D(1.0, 0.0, 0.0), 90.0
+            ),
         ]
         for i in range(4):
             plate_transform = Qt3DCore.QTransform()
