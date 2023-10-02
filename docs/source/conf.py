@@ -73,7 +73,7 @@ napoleon_type_aliases = None
 napoleon_attr_annotations = True
 
 # autodoc settings
-autodoc_mock_imports = ["detectron2", "imgaug"]
+autodoc_mock_imports = ["detectron2", "imgaug", "shapely"]
 autodoc_preserve_defaults = True
 
 templates_path = ["_templates"]

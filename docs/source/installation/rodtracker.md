@@ -4,7 +4,7 @@ As the RodTracker is a Python package usually you will be installing it from sou
 The following installation instructions are only concerning installing the RodTracker from source.
 
 ## Installation from source
----
+
 **Requirements:**
 - Python `>=3.8` is installed
 - pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
