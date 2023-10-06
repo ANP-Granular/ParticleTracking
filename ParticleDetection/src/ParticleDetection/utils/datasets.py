@@ -27,6 +27,7 @@ import logging
 from typing import List, Set, Dict, TypedDict, Tuple
 from pathlib import Path
 from dataclasses import dataclass
+import warnings
 import cv2
 import numpy as np
 import pandas as pd
@@ -36,28 +37,59 @@ _logger = logging.getLogger(__name__)
 
 
 DEFAULT_CLASSES = {
-    0: 'blue', 1: 'green', 2: 'orange', 3: 'purple', 4: 'red',
-    5: 'yellow', 6: 'black', 7: 'lilac', 8: 'brown'
+    0: "blue",
+    1: "green",
+    2: "orange",
+    3: "purple",
+    4: "red",
+    5: "yellow",
+    6: "black",
+    7: "lilac",
+    8: "brown",
 }
 """Class-color correspondences most commonly used by the trained networks."""
 
-DEFAULT_COLUMNS = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
-                   'x1_{id1:s}', 'y1_{id1:s}', 'x2_{id1:s}', 'y2_{id1:s}',
-                   'x1_{id2:s}', 'y1_{id2:s}', 'x2_{id2:s}', 'y2_{id2:s}',
-                   'frame', 'seen_{id1:s}', 'seen_{id2:s}', 'color']
+DEFAULT_COLUMNS = [
+    "x1",
+    "y1",
+    "z1",
+    "x2",
+    "y2",
+    "z2",
+    "x",
+    "y",
+    "z",
+    "l",
+    "x1_{id1:s}",
+    "y1_{id1:s}",
+    "x2_{id1:s}",
+    "y2_{id1:s}",
+    "x1_{id2:s}",
+    "y1_{id2:s}",
+    "x2_{id2:s}",
+    "y2_{id2:s}",
+    "frame",
+    "seen_{id1:s}",
+    "seen_{id2:s}",
+    "color",
+]
 """Columns of rod position datasets used, e.g. in the RodTracker app."""
 
 RNG_SEED = 1
 """Seed to allow reproducibility of results, that are dependent on the
 generation of random numbers."""
 
-DetectionResult = TypedDict("DetectionResult",
-                            {'pred_boxes': torch.Tensor,
-                             'pred_classes': torch.Tensor,
-                             'pred_masks': torch.Tensor,
-                             'scored': torch.Tensor,
-                             'input_size': List[int],
-                             }, total=False)
+DetectionResult = TypedDict(
+    "DetectionResult",
+    {
+        "pred_boxes": torch.Tensor,
+        "pred_classes": torch.Tensor,
+        "pred_masks": torch.Tensor,
+        "scored": torch.Tensor,
+        "input_size": List[int],
+    },
+    total=False,
+)
 """Results of detecting particles in an image file.
 
 See also
@@ -69,6 +101,7 @@ See also
 
 class DataSet:
     """Representation of a dataset for training a network."""
+
     folder: str
     annotation: str
     name: str
@@ -82,8 +115,10 @@ class DataSet:
         with open(self.annotation) as metadata:
             annotations = json.load(metadata)
         return iter(
-            os.path.join(self.folder, anno["filename"]) for
-            anno in annotations.values() if anno["regions"])
+            os.path.join(self.folder, anno["filename"])
+            for anno in annotations.values()
+            if anno["regions"]
+        )
 
     def __len__(self):
         return get_dataset_size(self)
@@ -92,6 +127,7 @@ class DataSet:
 @dataclass
 class DataGroup:
     """Collection of training and test set for training a network."""
+
     train: DataSet
     val: DataSet
 
@@ -132,9 +168,12 @@ def get_object_counts(dataset: DataSet) -> List[int]:
     return [len(annotations[key]["regions"]) for key in annotations.keys()]
 
 
-def insert_missing_rods(dataset: pd.DataFrame, expected_rods: int,
-                        cam1_id: str = "gp1", cam2_id: str = "gp2") \
-        -> pd.DataFrame:
+def insert_missing_rods(
+    dataset: pd.DataFrame,
+    expected_rods: int,
+    cam1_id: str = "gp1",
+    cam2_id: str = "gp2",
+) -> pd.DataFrame:
     """Inserts *empty* rods into a dataset, depending on how many are expected.
 
     Parameters
@@ -160,17 +199,44 @@ def insert_missing_rods(dataset: pd.DataFrame, expected_rods: int,
             if rod_no == expected_rods:
                 continue
             elif rod_no > expected_rods:
-                _logger.warning(f"More rods than expected for frame #{frame}"
-                                f" of color '{color}'")
+                _logger.warning(
+                    f"More rods than expected for frame #{frame}"
+                    f" of color '{color}'"
+                )
             missing = expected_rods - rod_no
-            empty_rods = pd.DataFrame(missing * [
-                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-                 np.nan, np.nan, np.nan, -1, -1, -1, -1, -1, -1, -1, -1, frame,
-                 0, 0, color]],
-                columns=columns
+            empty_rods = pd.DataFrame(
+                missing
+                * [
+                    [
+                        np.nan,
+                        np.nan,
+                        np.nan,
+                        np.nan,
+                        np.nan,
+                        np.nan,
+                        np.nan,
+                        np.nan,
+                        np.nan,
+                        np.nan,
+                        -1,
+                        -1,
+                        -1,
+                        -1,
+                        -1,
+                        -1,
+                        -1,
+                        -1,
+                        frame,
+                        0,
+                        0,
+                        color,
+                    ]
+                ],
+                columns=columns,
             )
-            empty_rods["particle"] = np.arange(rod_no, expected_rods,
-                                               dtype=int)
+            empty_rods["particle"] = np.arange(
+                rod_no, expected_rods, dtype=int
+            )
             dataset = pd.concat([dataset, empty_rods], ignore_index=True)
     return dataset
 
@@ -192,9 +258,9 @@ def randomize_particles(file: Path) -> None:
     data = pd.read_csv(file, index_col=0)
     data_out = pd.DataFrame()
     for frame in data.frame.unique():
-        data_tmp = data.loc[data.frame == frame].sample(frac=1,
-                                                        ignore_index=True,
-                                                        random_state=RNG_SEED)
+        data_tmp = data.loc[data.frame == frame].sample(
+            frac=1, ignore_index=True, random_state=RNG_SEED
+        )
         data_out = pd.concat([data_out, data_tmp])
     data_out.reset_index(drop=True, inplace=True)
     data_out.to_csv(out, sep=",")
@@ -238,8 +304,9 @@ def randomize_endpoints(file: Path, cam_ids: List[str] = None) -> None:
     data.to_csv(out_p, sep=",")
 
 
-def replace_missing_rods(dataset: pd.DataFrame, cam1_id: str = "gp1",
-                         cam2_id: str = "gp2") -> pd.DataFrame:
+def replace_missing_rods(
+    dataset: pd.DataFrame, cam1_id: str = "gp1", cam2_id: str = "gp2"
+) -> pd.DataFrame:
     """Fills missing data in ``'seen_...'`` and ``'[xy][12]_...'`` columns.
 
     Replaces ``NaN`` values in columns of the format ``'seen_...'`` and
@@ -260,16 +327,18 @@ def replace_missing_rods(dataset: pd.DataFrame, cam1_id: str = "gp1",
     -------
     DataFrame
     """
-    cols_2d = [col for col in dataset.columns
-               if cam1_id in col or cam2_id in col]
+    cols_2d = [
+        col for col in dataset.columns if cam1_id in col or cam2_id in col
+    ]
     cols_seen = [col for col in dataset.columns if "seen" in col]
     dataset[cols_seen] = dataset[cols_seen].fillna(0)
-    dataset[cols_2d] = dataset[cols_2d].fillna(-1.)
+    dataset[cols_2d] = dataset[cols_2d].fillna(-1.0)
     return dataset
 
 
-def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
-               cam_id: str, frame: int):
+def add_points(
+    points: Dict[str, np.ndarray], data: pd.DataFrame, cam_id: str, frame: int
+):
     """Updates a ``DataFrame`` with new rod endpoint data for one camera and
     frame.
 
@@ -299,7 +368,7 @@ def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
         seen = np.ones((len(v), 1))
         # set rods to 'unseen', if all 2D coordinates are negative, i.e.
         # outside the frame
-        seen[(v < 0).all(axis=1)] = 0.
+        seen[(v < 0).all(axis=1)] = 0.0
 
         to_df = np.concatenate((v, seen), axis=1)
         temp_df = pd.DataFrame(to_df, columns=cols)
@@ -307,12 +376,16 @@ def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
             temp_df["frame"] = frame
             temp_df["color"] = color
             temp_df["particle"] = np.arange(0, len(temp_df), dtype=int)
-            data = pd.concat((data, temp_df))
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", FutureWarning)
+                data = pd.concat((data, temp_df))
         else:
             previous_data = data.loc[
-                (data.frame == frame) & (data.color == color)]
+                (data.frame == frame) & (data.color == color)
+            ]
             new_data = data.loc[
-                (data.frame == frame) & (data.color == color)].fillna(temp_df)
+                (data.frame == frame) & (data.color == color)
+            ].fillna(temp_df)
             data.loc[(data.frame == frame) & (data.color == color)] = new_data
             if len(previous_data) < len(temp_df):
                 temp_df["frame"] = frame
@@ -320,7 +393,7 @@ def add_points(points: Dict[str, np.ndarray], data: pd.DataFrame,
                 temp_df["particle"] = np.arange(0, len(temp_df), dtype=int)
                 idx_to_add = np.arange(len(previous_data), len(temp_df))
                 data = pd.concat((data, temp_df.iloc[idx_to_add]))
-    data = data.astype({"frame": 'int', "particle": 'int'})
+    data = data.astype({"frame": "int", "particle": "int"})
     return data
 
 
@@ -367,7 +440,7 @@ def get_pixel_stats(files: List[str]) -> Tuple[np.ndarray, np.ndarray]:
     means = np.zeros((3, len(files)))
     stds = np.zeros((3, len(files)))
     for idx_f, f in enumerate(files):
-        im = np.asanyarray(cv2.imread(f))   # in BGR
+        im = np.asanyarray(cv2.imread(f))  # in BGR
         means[:, idx_f] = np.mean(im, axis=(0, 1))
         stds[:, idx_f] = np.std(im, axis=(0, 1))
 
