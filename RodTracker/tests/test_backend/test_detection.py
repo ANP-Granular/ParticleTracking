@@ -14,30 +14,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import pytest
-from pytest import MonkeyPatch
-from pytestqt.qtbot import QtBot
+import importlib_resources
 import pandas as pd
-from RodTracker.backend import detection
 import ParticleDetection.utils.detection as p_detection
 import ParticleDetection.utils.helper_funcs as hf
 import ParticleDetection.utils.datasets as ds
+import pytest
+from pytest import MonkeyPatch
+from pytestqt.qtbot import QtBot
 
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
-
-    if sys.version_info >= (3, 11):
-        importlib_resources.path = (
-            lambda module, file: importlib_resources.files(module).joinpath(
-                file
-            )
-        )
+from RodTracker.backend import detection
 
 
 @pytest.fixture()

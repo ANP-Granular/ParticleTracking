@@ -14,37 +14,22 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import random
 import shutil
 import pathlib
 import itertools
 
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-
-    importlib_resources.path = lambda module, file: importlib_resources.files(
-        module
-    ).joinpath(file)
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
-
-    if sys.version_info >= (3, 11):
-        importlib_resources.path = (
-            lambda module, file: importlib_resources.files(module).joinpath(
-                file
-            )
-        )
+import importlib_resources
+from PyQt5 import QtWidgets
 import pytest
 from pytest import MonkeyPatch
 from pytestqt.qtbot import QtBot
-from PyQt5 import QtWidgets
+
 from RodTracker.backend import img_data
 
-EX_DATA = importlib_resources.path("RodTracker.resources", "example_data")
+EX_DATA = importlib_resources.files("RodTracker.resources").joinpath(
+    "example_data"
+)
 
 
 @pytest.fixture(scope="function")

@@ -14,43 +14,31 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import logging
+
+import importlib_resources
+import matplotlib.pyplot as plt
+import pandas as pd
+from ParticleDetection.reconstruct_3D import match2D
+import ParticleDetection.utils.data_loading as dl
 import pytest
 from pytest import MonkeyPatch, LogCaptureFixture
 from pytestqt.qtbot import QtBot
-import pandas as pd
-import matplotlib.pyplot as plt
+
 from conftest import load_rod_data
 from RodTracker.backend.reconstruction import Reconstructor, Tracker, Plotter
 from RodTracker.backend import reconstruction
-from ParticleDetection.reconstruct_3D import match2D
-import ParticleDetection.utils.data_loading as dl
-import logging
 
 _logger = logging.getLogger(__name__)
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
-
-    if sys.version_info >= (3, 11):
-        importlib_resources.path = (
-            lambda module, file: importlib_resources.files(module).joinpath(
-                file
-            )
-        )
+calibration_folder = importlib_resources.files(
+    "RodTracker.resources.example_data.calibrations"
+)
 
 
 @pytest.fixture()
 def default_reconstructor(
     monkeypatch: MonkeyPatch, testing_data: pd.DataFrame
 ) -> Reconstructor:
-    calibration_folder = importlib_resources.files(
-        "RodTracker.resources.example_data.calibrations"
-    )
     frames = list(range(500, 503))
     calibration = dl.load_camera_calibration(
         calibration_folder.joinpath("gp34.json")
@@ -72,9 +60,6 @@ def default_reconstructor(
 def default_tracker(
     monkeypatch: MonkeyPatch, testing_data: pd.DataFrame
 ) -> Tracker:
-    calibration_folder = importlib_resources.files(
-        "RodTracker.resources.example_data.calibrations"
-    )
     frames = list(range(500, 503))
     calibration = dl.load_camera_calibration(
         calibration_folder.joinpath("gp34.json")
@@ -100,9 +85,6 @@ def default_plotter(testing_data: pd.DataFrame) -> Plotter:
 
 class TestPlotter:
     def test_run(self, qtbot: QtBot, default_plotter: Plotter):
-        calibration_folder = importlib_resources.files(
-            "RodTracker.resources.example_data.calibrations"
-        )
         calibration = dl.load_camera_calibration(
             calibration_folder.joinpath("gp34.json")
         )
@@ -178,9 +160,6 @@ class TestPlotter:
         ]
 
     def test_plot_reprojections(self, qtbot: QtBot, default_plotter: Plotter):
-        calibration_folder = importlib_resources.files(
-            "RodTracker.resources.example_data.calibrations"
-        )
         calibration = dl.load_camera_calibration(
             calibration_folder.joinpath("gp34.json")
         )

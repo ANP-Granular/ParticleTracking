@@ -17,31 +17,18 @@
 """Tests to verify the basic functionality of user actions before further
 tests.
 """
-import sys
 import pathlib
 from typing import List
+
+import importlib_resources
 from PyQt5 import QtWidgets, QtCore
-from RodTracker.ui.mainwindow import RodTrackWindow
-from pytestqt.qtbot import QtBot
-from pytest import MonkeyPatch
 import pytest
-import RodTracker.backend.logger as lg
+from pytest import MonkeyPatch
+from pytestqt.qtbot import QtBot
+
 import gui_actions as ga
-
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
-
-    if sys.version_info >= (3, 11):
-        importlib_resources.path = (
-            lambda module, file: importlib_resources.files(module).joinpath(
-                file
-            )
-        )
+import RodTracker.backend.logger as lg
+from RodTracker.ui.mainwindow import RodTrackWindow
 
 
 def teardown_replacements(mp: MonkeyPatch):

@@ -47,6 +47,9 @@ pip install -e .[BUILD]
 ```
 Please remember to install in *editable* mode when attempting to change any functionality of the RodTracker.
 
+- **`GPU`:**
+  - installs dependencies necessary to run particle detections using the GPU
+
 - **`DEV`:**
   - intended to install all dependencies necessary or useful for the development of RodTracker
   - this will install all dependencies from the other extras as well
@@ -73,7 +76,7 @@ Refer to its [installation instructions](particledetection.md) for that.
 On Linux the default installation allows running particle detections on a GPU, if an appropriate detection model is selected and no further actions are required.
 
 On Windows the default installation only allows running particle detections on a CPU. This is due to the default behavior of PyTorch and the more complex installation process of CUDA on Windows.
-Please install CUDA first and then refer to the [GPU installation option](particledetection.md#installation-options) of ParticleDetection for further steps.
+Please install CUDA first and then install the RodTracker with the extra `GPU`.
 
 ```{note}
 CUDA is currently not available on Mac and therefore also not supported here.

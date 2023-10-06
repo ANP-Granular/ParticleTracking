@@ -23,24 +23,9 @@ import subprocess
 import sys
 from typing import Literal
 
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
+import importlib_resources
 
-    importlib_resources.path = lambda module, file: importlib_resources.files(
-        module
-    ).joinpath(file)
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
 
-    if sys.version_info >= (3, 11):
-        importlib_resources.path = (
-            lambda module, file: importlib_resources.files(module).joinpath(
-                file
-            )
-        )
 _logger = logging.getLogger(__name__)
 
 
@@ -53,7 +38,9 @@ def icon_path() -> str:
         String representation of the path to the application icon.
     """
     return str(
-        importlib_resources.path("RodTracker.resources", "icon_windows.ico")
+        importlib_resources.files("RodTracker.resources").joinpath(
+            "icon_windows.ico"
+        )
     )
 
 
@@ -65,7 +52,9 @@ def logo_path() -> str:
     str
         String representation of the path to the application icon.
     """
-    return str(importlib_resources.path("RodTracker.resources", "logo.png"))
+    return str(
+        importlib_resources.files("RodTracker.resources").joinpath("logo.png")
+    )
 
 
 def undo_icon_path() -> str:
@@ -77,7 +66,9 @@ def undo_icon_path() -> str:
         String representation of the path to the application undo icon.
     """
     return str(
-        importlib_resources.path("RodTracker.resources", "left-arrow-96.png")
+        importlib_resources.files("RodTracker.resources").joinpath(
+            "left-arrow-96.png"
+        )
     )
 
 

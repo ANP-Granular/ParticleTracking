@@ -14,35 +14,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import shutil
-import random
 import logging
 from pathlib import Path
+import random
+import shutil
 
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-
-    importlib_resources.path = lambda module, file: importlib_resources.files(
-        module
-    ).joinpath(file)
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
-
-    if sys.version_info >= (3, 11):
-        importlib_resources.path = (
-            lambda module, file: importlib_resources.files(module).joinpath(
-                file
-            )
-        )
+import importlib_resources
 import pandas as pd
+from PyQt5 import QtWidgets
 import pytest
 from pytest import MonkeyPatch
 from pytestqt.qtbot import QtBot
-from PyQt5 import QtWidgets
+
 from conftest import load_rod_data
 from RodTracker.backend import rod_data, logger as lg
 from RodTracker.backend.rod_data import RodData
@@ -53,9 +36,9 @@ _logger = logging.getLogger()
 @pytest.fixture(scope="function")
 def rod_manager() -> RodData:
     manager = RodData()
-    folder = importlib_resources.path(
-        "RodTracker.resources.example_data", "csv"
-    )
+    folder = importlib_resources.files(
+        "RodTracker.resources.example_data"
+    ).joinpath("csv")
     manager.open_rod_folder(folder)
     yield manager
     rod_data.rod_data = None
@@ -95,9 +78,9 @@ class TestRodData:
             (
                 [
                     "",
-                    importlib_resources.path(
-                        "RodTracker.resources.example_data", "images"
-                    ),
+                    importlib_resources.files(
+                        "RodTracker.resources.example_data"
+                    ).joinpath("images"),
                 ],
                 True,
                 1,
@@ -105,9 +88,9 @@ class TestRodData:
             (
                 [
                     "",
-                    importlib_resources.path(
-                        "RodTracker.resources.example_data", "csv"
-                    ),
+                    importlib_resources.files(
+                        "RodTracker.resources.example_data"
+                    ).joinpath("csv"),
                 ],
                 False,
                 0,

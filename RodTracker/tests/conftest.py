@@ -15,32 +15,18 @@
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
 """Put fixtures here, that should be available to (all) tests."""
-import sys
 import random
 from typing import List
 from pathlib import Path
+
+import importlib_resources
 import pandas as pd
 import pytest
 from pytestqt.qtbot import QtBot
+
+import gui_actions as ga
 from RodTracker.ui.mainwindow import RodTrackWindow
 import RodTracker.backend.rod_data as r_data
-import gui_actions as ga
-
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
-
-    if sys.version_info >= (3, 11):
-        importlib_resources.path = (
-            lambda module, file: importlib_resources.files(module).joinpath(
-                file
-            )
-        )
-
 
 random.seed(1)
 

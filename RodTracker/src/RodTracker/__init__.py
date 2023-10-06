@@ -18,12 +18,14 @@ import logging
 from pathlib import Path
 import platformdirs
 
+from RodTracker._version import __version__  # noqa: F401
 
 APPNAME = "RodTracker"
 APPAUTHOR = "ANP-Granular"
 
-LOG_DIR: Path = platformdirs.user_log_path(APPNAME, APPAUTHOR, opinion=False,
-                                           ensure_exists=True)
+LOG_DIR: Path = platformdirs.user_log_path(
+    APPNAME, APPAUTHOR, opinion=False, ensure_exists=True
+)
 LOG_FILE = LOG_DIR / "RodTracker.log"
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -31,15 +33,17 @@ f_handle = logging.FileHandler(LOG_FILE, mode="a")
 f_handle.setLevel(logging.INFO)
 formatter = logging.Formatter(
     "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-    datefmt="%m/%d %H:%M:%S"
+    datefmt="%m/%d %H:%M:%S",
 )
 f_handle.setFormatter(formatter)
 logger.addHandler(f_handle)
 logging.captureWarnings(True)
 
-CONFIG_DIR = platformdirs.user_config_path(APPNAME, APPAUTHOR, roaming=False,
-                                           ensure_exists=True)
+CONFIG_DIR = platformdirs.user_config_path(
+    APPNAME, APPAUTHOR, roaming=False, ensure_exists=True
+)
 SETTINGS_FILE = CONFIG_DIR / "settings.json"
 
-DATA_DIR = platformdirs.user_data_path(APPNAME, APPAUTHOR, roaming=False,
-                                       ensure_exists=True)
+DATA_DIR = platformdirs.user_data_path(
+    APPNAME, APPAUTHOR, roaming=False, ensure_exists=True
+)
