@@ -91,7 +91,7 @@ torchvision = [
     # The commented version below is the intended one, that does not work with
     # pip. The used version specifies the URLs manually which is not desirable.
     # {version = ">=0.14.0", platform = "linux", source = "pytorch_cpu", markers = "extra == 'cpu'"},
-    {python = "==3.8", platform = "linux", markers = "extra == 'cpu' and platform_machine == 'x86_64'", url = "https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp38-cp38-win_amd64.whl"},
+    {python = "==3.8", platform = "linux", markers = "extra == 'cpu' and platform_machine == 'x86_64'", url = "https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp38-cp38-linux_x86_64.whl"},
     {python = "==3.9", platform = "linux", markers = "extra == 'cpu' and platform_machine == 'x86_64'", url = "https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl"},
     {python = "==3.10", platform = "linux", markers = "extra == 'cpu' and platform_machine == 'x86_64'", url = "https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp310-cp310-linux_x86_64.whl"},
     {python = "==3.11", platform = "linux", markers = "extra == 'cpu' and platform_machine == 'x86_64'", url = "https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp311-cp311-linux_x86_64.whl"},
