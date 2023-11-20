@@ -15,11 +15,10 @@
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
-
-import platform
-from functools import partial
+import logging
 from pathlib import Path
-from typing import List
+import platform
+from typing import Any, Callable, Dict, List
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QWheelEvent
@@ -27,22 +26,15 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QRadioButton,
     QScrollArea,
-    QTreeWidgetItem,
 )
+from PyQt5.QtGui import QWheelEvent
+from RodTracker.backend import data
 
 import RodTracker.backend.file_locations as fl
-import RodTracker.backend.img_data as img_data
-import RodTracker.backend.logger as lg
-import RodTracker.backend.miscellaneous as misc
-import RodTracker.backend.rod_data as r_data
-import RodTracker.backend.settings as se
+from RodTracker.ui import dialogs, settings, tabs
 import RodTracker.ui.mainwindow_layout as mw_l
-import RodTracker.ui.rodnumberwidget as rn
-from RodTracker import APPNAME
-from RodTracker.ui import dialogs
-from RodTracker.ui.detection import init_detection
-from RodTracker.ui.reconstruction import init_reconstruction
-from RodTracker.ui.settings_setup import init_settings
+
+_logger = logging.getLogger(__name__)
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
@@ -94,6 +86,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         associated with each :class:`.RodImageWidget` in :attr:`cameras`.
     """
 
+    class_changed = QtCore.pyqtSignal(str, name="class_changed")
+
     request_undo = QtCore.pyqtSignal(str, name="request_undo")
     """pyqtSignal(str) : Is emitted when the user wants to revert an action.
 
@@ -121,8 +115,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     on the main window, i.e. data and image loading and saving.
     """
 
-    _rod_incr: float = 1.0
+    # Internal settings variables
+    _min_zoom: float = 0.11
+    _max_zoom: float = 9.0
+    _zoom_factor: float = 1.25  # zooms in by 1.25 (and out by 0.8)
+
     _fit_next_img: bool = False
+    _image_tabs: List[tabs.ImageInteractionTab] = []
+    _utility_tabs: List[tabs.UtilityTab] = []
+    _particle_data_conntections: Dict[str, data.PositionData] = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -132,9 +133,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Adaptations of the UI
         self.setWindowTitle(APPNAME)
         self.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-        self.ui.pb_undo.setIcon(QtGui.QIcon(fl.undo_icon_path()))
-        self.ui.tv_rods.header().setDefaultSectionSize(150)
-        self.ui.tv_rods.header().setMinimumSectionSize(125)
         # Adapt menu action shortcuts for Mac
         if platform.system() == "Darwin":
             self.ui.action_zoom_in.setShortcut("Ctrl+=")
@@ -147,55 +145,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         max_width = pb_rod_size if pb_rod_size > pb_load_size else pb_load_size
         self.ui.pb_load_images.setMaximumWidth(int(2 * max_width))
         self.ui.pb_load_rods.setMaximumWidth(int(2 * max_width))
-        cb_ov_txt = self.ui.cb_overlay.text()
-        cb_ov_size = self.ui.cb_overlay.fontMetrics().width(cb_ov_txt)
-        self.ui.cb_overlay.setMaximumWidth(int(2 * cb_ov_size))
         # Set possible inputs for rod selection field
         self.ui.le_disp_one.setInputMask("99")
         self.ui.le_disp_one.setText("00")
 
-        self.ui.action_autoselect_rods.setChecked(False)
         self.ui.action_fit_to_window.setShortcut(QtGui.QKeySequence("F"))
 
         self.setWindowState(QtCore.Qt.WindowMaximized)
         self.setFocus()
 
-        # Initialize
-        self.rod_data = r_data.RodData()
-        id = self.rod_data._logger_id
-        self.rod_data._logger = self.ui.lv_actions_list.get_new_logger(id)
-        self.rod_data.show_2D = self.ui.cb_overlay.isChecked()
-        self.rod_data.show_3D = self.ui.cb_show_3D.isChecked()
-
-        self.image_managers = [img_data.ImageData(0), img_data.ImageData(1)]
-        for manager in self.image_managers:
-            id = manager._logger_id
-            manager._logger = self.ui.lv_actions_list.get_new_logger(id)
-
-        self.cameras = [self.ui.camera_0, self.ui.camera_1]
-        for cam in self.cameras:
-            cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
-            cam.setPixmap(QtGui.QPixmap(fl.logo_path()))
-            cam.autoselect = self.ui.action_autoselect_rods.isChecked()
-
-        self.logger = self.ui.lv_actions_list.get_new_logger(self.logger_id)
-        self.ui.sa_camera_0.verticalScrollBar().installEventFilter(self)
-        self.ui.sa_camera_1.verticalScrollBar().installEventFilter(self)
+        self.logger = lg.MainLogger().get_new_logger(self.logger_id)
         self.switch_right = QtWidgets.QShortcut(
             QtGui.QKeySequence("Ctrl+tab"), self
         )
         self.ui.slider_frames.setMinimum(0)
         self.ui.slider_frames.setMaximum(1)
         self.settings = se.Settings()
-
-        init_settings(self.ui, self.settings)
-        rn.RodNumberWidget.settings_signal = self.settings.settings_changed
-        self.reconstructor = init_reconstruction(self.ui)
-        self.detector = init_detection(self.ui, self.image_managers)
-        if self.detector is not None:
-            self.detector._logger = self.ui.lv_actions_list.get_new_logger(
-                "Detector"
-            )
 
         # Tab icons for 'busy' indication
         default_icon = misc.blank_icon()
@@ -204,41 +169,34 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.right_tabs.setTabIcon(tab, default_icon)
 
         self.connect_signals()
-        self.settings.send_settings()
+
+        # TODO: add the 'busy' indication for the camera tabs too!
+        history_tab = tabs.HistoryTab("History")
+        self.add_utility_tab(history_tab, history_tab.ID)
+        history_tab.pb_undo.clicked.connect(self.requesting_undo)
+
+        self.settings_tab = tabs.SettingsTab("Settings")
+        self.add_utility_tab(self.settings_tab, self.settings_tab.ID)
+
+        # Add settings
+        min_zoom = settings.FloatSetting(
+            "General.min_zoom", self._min_zoom, "Minimal allowed zoom: "
+        )
+        max_zoom = settings.FloatSetting(
+            "General.max_zoom", self._max_zoom, "Maximal allowed zoom: "
+        )
+        zoom_factor = settings.FloatSetting(
+            "General.zoom_factor", self._zoom_factor, "Zoom factor: "
+        )
+
+        self.add_setting(min_zoom)
+        self.add_setting(max_zoom)
+        self.add_setting(zoom_factor)
 
     def connect_signals(self):
-        """Connect all signals and slots of the Rod Tracker objects."""
-        tab_idx = self.ui.camera_tabs.currentIndex()
-        # Opening files
-        self.ui.action_open_rods.triggered.connect(
-            partial(self.rod_data.select_rods, self.ui.le_rod_dir.text())
-        )
-        self.ui.pb_load_rods.clicked.connect(
-            partial(self.rod_data.select_rods, self.ui.le_rod_dir.text())
-        )
-        self.ui.le_rod_dir.returnPressed.connect(
-            partial(self.rod_data.select_rods, self.ui.le_rod_dir.text())
-        )
-
-        # Data loading
-        self.rod_data.data_loaded.connect(self.rods_loaded)
-        self.rod_data.data_loaded[list].connect(
-            lambda colors: self.rods_loaded(None, None, colors)
-        )
-        self.rod_data.seen_loaded.connect(self.ui.tv_rods.setup_tree)
-        self.rod_data.is_busy.connect(
-            lambda busy: self.tab_busy_changed(0, busy)
-        )
-
-        # Saving
-        self.ui.pb_save_rods.clicked.connect(self.rod_data.save_changes)
-        self.ui.action_save.triggered.connect(self.rod_data.save_changes)
-        self.rod_data.saved.connect(self.logger.actions_saved)
-        self.ui.le_save_dir.textChanged.connect(self.rod_data.set_out_folder)
-
+        """Connect all signals and slots of the RodTracker objects."""
         # Undo/Redo
         self.ui.action_revert.triggered.connect(self.requesting_undo)
-        self.ui.pb_undo.clicked.connect(self.requesting_undo)
         self.ui.action_redo.triggered.connect(self.requesting_redo)
 
         # View controls
@@ -250,11 +208,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         )
         self.ui.action_original_size.triggered.connect(self.original_size)
         self.ui.action_fit_to_window.triggered.connect(self.fit_to_window)
-        self.ui.pb_front.clicked.connect(self.ui.view_3d.show_front)
-        self.ui.pb_top.clicked.connect(self.ui.view_3d.show_top)
 
         # Displayed data
-        self.ui.cb_overlay.stateChanged.connect(self.show_2D_changed)
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             rb.toggled.connect(self.color_change)
         self.ui.pb_previous.clicked.connect(
@@ -263,137 +218,23 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.pb_next.clicked.connect(lambda: self.show_next(direction=1))
         self.switch_right.activated.connect(lambda: self.change_view(1))
         self.ui.camera_tabs.currentChanged.connect(self.view_changed)
+        self.ui.right_tabs.currentChanged.connect(self.utility_changed)
         self.ui.slider_frames.sliderMoved.connect(self.slider_moved)
-        self.ui.tv_rods.itemClicked.connect(self.tree_selection)
-        self.rod_data.data_2d.connect(self.cameras[tab_idx].extract_rods)
-        self.rod_data.data_3d.connect(self.ui.view_3d.update_rods)
-        self.rod_data.data_update.connect(self.ui.tv_rods.update_tree)
-        self.rod_data.batch_update.connect(self.ui.tv_rods.batch_update_tree)
-
-        if self.reconstructor is not None:
-            self.reconstructor.is_busy.connect(
-                lambda busy: self.tab_busy_changed(5, busy)
-            )
-            self.rod_data.data_loaded[int, int, list].connect(
-                self.reconstructor.data_loaded
-            )
-            self.rod_data.data_loaded[str, str].connect(
-                self.reconstructor.set_cam_ids
-            )
-            self.reconstructor.request_data.connect(
-                lambda frames, colors: self.rod_data.get_data(frames, colors)
-            )
-            self.rod_data.requested_data.connect(
-                self.reconstructor.data_update
-            )
-            self.reconstructor.updated_data.connect(
-                self.rod_data.receive_updated_data
-            )
-            self.rod_data.data_loaded[str, str].connect(
-                self.reconstructor.set_cam_ids
-            )
-
-        if self.detector is not None:
-            self.detector.is_busy.connect(
-                lambda busy: self.tab_busy_changed(4, busy)
-            )
-            self.detector.detected_data.connect(self.rod_data.add_data)
-            self.rod_data.saved.connect(self.detector._logger.actions_saved)
 
         # Display methods
-        self.ui.le_disp_one.textChanged.connect(self.display_rod_changed)
+        self.ui.le_disp_one.textChanged.connect(
+            lambda _: self.method_2D_changed()
+        )
         for rb in self.ui.group_disp_method.findChildren(QRadioButton):
             rb.toggled.connect(self.method_2D_changed)
 
-        # 3D display methods
-        for rb in self.ui.group_3D_mode.findChildren(QRadioButton):
-            rb.toggled.connect(self.method_3D_changed)
-        self.ui.cb_show_3D.stateChanged.connect(self.show_3D_changed)
-
-        # 2D display and data provider widgets
-        for cam, manager in zip(self.cameras, self.image_managers):
-            manager.data_loaded.connect(self.images_loaded)
-            manager.next_img[int, int].connect(self.next_image)
-            manager.next_img[int, int].connect(
-                lambda frame, idx: cam.frame(frame)
-            )
-            manager.next_img[QtGui.QImage].connect(cam.image)
-            if str(tab_idx) in manager._logger_id:
-                self.ui.pb_load_images.clicked.connect(
-                    partial(manager.select_images, self.ui.le_image_dir.text())
-                )
-                self.ui.action_open.triggered.connect(
-                    partial(manager.select_images, self.ui.le_image_dir.text())
-                )
-                self.ui.le_image_dir.returnPressed.connect(
-                    partial(manager.select_images, self.ui.le_image_dir.text())
-                )
-            if self.ui.cb_overlay.isChecked():
-                manager.next_img[int, int].connect(self.rod_data.update_frame)
-
-            cam.request_color_change.connect(self.change_color)
-            cam.request_frame_change.connect(manager.image_at)
-            cam.normal_frame_change.connect(self.show_next)
-            cam.logger.notify_unsaved.connect(self.tab_has_changes)
-            cam.logger.request_saving.connect(self.rod_data.save_changes)
-            cam.logger.data_changed.connect(self.rod_data.catch_data)
-            self.rod_data.saved.connect(cam.logger.actions_saved)
-            cam.number_switches[lg.NumberChangeActions, int, int, str].connect(
-                self.rod_data.catch_number_switch
-            )
-            cam.number_switches[
-                lg.NumberChangeActions, int, int, str, str, int
-            ].connect(self.rod_data.catch_number_switch)
-            self.request_undo.connect(cam.logger.undo_last)
-            self.request_redo.connect(cam.logger.redo_last)
-            self.settings.settings_changed.connect(cam.update_settings)
-            cam.loaded_rods.connect(
-                lambda n: self.ui.le_rod_disp.setText(f"Loaded Particles: {n}")
-            )
-            self.ui.action_autoselect_rods.toggled.connect(cam.set_autoselect)
-
-        # Data manipulation
-        self.ui.action_cleanup.triggered.connect(self.rod_data.clean_data)
-        self.ui.action_shorten_displayed.triggered.connect(
-            lambda: self.cameras[tab_idx].adjust_rod_length(
-                -self._rod_incr, False
-            )
-        )
-        self.ui.action_lengthen_displayed.triggered.connect(
-            lambda: self.cameras[tab_idx].adjust_rod_length(
-                self._rod_incr, False
-            )
-        )
-        self.ui.action_shorten_selected.triggered.connect(
-            lambda: self.cameras[tab_idx].adjust_rod_length(
-                -self._rod_incr, True
-            )
-        )
-        self.ui.action_lengthen_selected.triggered.connect(
-            lambda: self.cameras[tab_idx].adjust_rod_length(
-                self._rod_incr, True
-            )
-        )
-
         # Settings
-        self.settings.settings_changed.connect(self.update_settings)
-        self.settings.settings_changed.connect(
-            rn.RodNumberWidget.update_defaults
+        self.settings.setting_signals.setting_changed.connect(
+            self.update_settings
         )
-        self.settings.settings_changed.connect(self.ui.view_3d.update_settings)
-        self.settings.settings_changed.connect(self.rod_data.update_settings)
-        if self.reconstructor is not None:
-            self.settings.settings_changed.connect(
-                self.reconstructor.update_settings
-            )
-        if self.detector is not None:
-            self.settings.settings_changed.connect(
-                self.detector.update_settings
-            )
 
         # Logging
         self.logger.notify_unsaved.connect(self.tab_has_changes)
-        self.logger.data_changed.connect(self.rod_data.catch_data)
 
         # Help
         self.ui.action_docs_local.triggered.connect(
@@ -408,38 +249,21 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_about_qt.triggered.connect(
             lambda: QMessageBox.aboutQt(self, APPNAME)
         )
-        self.ui.action_logs.triggered.connect(misc.open_logs)
-        self.ui.action_bug_report.triggered.connect(misc.report_issue)
-        self.ui.action_feature_request.triggered.connect(misc.request_feature)
-
-    @QtCore.pyqtSlot(QTreeWidgetItem, int)
-    def tree_selection(self, item: QTreeWidgetItem, col: int):
-        """Handle the selection of a rod & frame in the :class:`.RodTree`
-        widget.
-
-        Parameters
-        ----------
-        item : QTreeWidgetItem
-            Selected item in the :class:`.RodTree` widget.
-        col : int
-            Column of the :class:`.RodTree` widget the item was selected in.
-        """
-        if not item.childCount():
-            # Change camera
-            # TODO
-            # Change color
-            color = item.parent().text(0)
-            self.change_color(color)
-            # Change frame
-            frame = int(item.parent().parent().text(0)[7:])
-            tab_idx = self.ui.camera_tabs.currentIndex()
-            self.image_managers[tab_idx].image(frame)
-            # Activate clicked rod
-            cam = self.cameras[tab_idx]
-            if cam.rods:
-                selected_rod = int(item.text(0)[4:6])
-                cam.rod_activated(selected_rod)
-        return
+        self.ui.action_logs.triggered.connect(lg.open_logs)
+        self.ui.action_bug_report.triggered.connect(
+            lambda: QtGui.QDesktopServices.openUrl(
+                QtCore.QUrl(
+                    "https://github.com/ANP-Granular/ParticleTracking/issues/new?labels=bug&projects=&template=bug_report.md&title="  # noqa: E501
+                )
+            )
+        )
+        self.ui.action_feature_request.triggered.connect(
+            lambda: QtGui.QDesktopServices.openUrl(
+                QtCore.QUrl(
+                    "https://github.com/ANP-Granular/ParticleTracking/issues/new?labels=enhancement&projects=&template=feature_request.md&title="  # noqa: E501
+                )
+            )
+        )
 
     @QtCore.pyqtSlot(int)
     def slider_moved(self, pos: int):
@@ -452,10 +276,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             be displayed.
         """
         tab_idx = self.ui.camera_tabs.currentIndex()
-        self.image_managers[tab_idx].image_at(pos)
+        self._image_tabs[tab_idx].image_manager.image_at(pos)
 
-    @QtCore.pyqtSlot(dict)
-    def update_settings(self, settings: dict):
+    @QtCore.pyqtSlot(str, object)
+    def update_settings(self, key: str, new_value: Any):
         """Catches updates of the settings from a :class:`.Settings` class.
 
         Checks for the keys relevant to itself and updates the corresponding
@@ -469,8 +293,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        if "rod_increment" in settings:
-            self._rod_incr = settings["rod_increment"]
+        if key == "General.min_zoom":
+            self._min_zoom = new_value
+            # TODO: verify new min_zoom is not exceeded and adjust accordingly
+        elif key == "General.max_zoom":
+            self._max_zoom = new_value
+            # TODO: verify new max_zoom is not exceeded and adjust accordingly
+        elif key == "General.zoom_factor":
+            self._zoom_factor = new_value
 
     @QtCore.pyqtSlot(int, int)
     def next_image(self, frame: int, frame_idx: int):
@@ -488,17 +318,20 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.le_frame_disp.setText(f"Frame: {frame}")
         self.ui.slider_frames.setSliderPosition(frame_idx)
         self.logger.frame = frame
-        self.cameras[self.ui.camera_tabs.currentIndex()].logger.frame = frame
         # Fit the first image of a newly loaded dataset to the screen
         if self._fit_next_img:
             self.fit_to_window()
             self._fit_next_img = False
 
-        self.ui.tv_rods.update_tree_folding(frame, self.get_selected_color())
-
+        # =====================================================================
+        # TODO: this should not be done here! It should be handled by the
+        #       extensions, because it is no longer part of the
+        #       base-application. Should instead be integrated into the tabs'
+        #       `activate()` function that is run above
         if not self.ui.action_persistent_view.isChecked():
             self.fit_to_window()
-            del self.cameras[self.ui.camera_tabs.currentIndex()].rods
+            # TODO: define what happens during the 'persistent_view' mode
+        # =====================================================================
 
     @QtCore.pyqtSlot(int, str, Path)
     def images_loaded(self, frames: int, cam_id: str, folder: Path):
@@ -519,11 +352,20 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Set new camera ID
         tab_idx = self.ui.camera_tabs.currentIndex()
         tab_text = self.ui.camera_tabs.tabText(tab_idx)
-        front_text = tab_text.split("(")[0]
-        end_text = tab_text.split(")")[-1]
+
+        # TODO: document this generation behaviour better
+        if "(" in tab_text:
+            front_text = tab_text.split("(")[0]
+        else:
+            front_text = tab_text
+        if ")" in tab_text:
+            end_text = tab_text.split(")")[-1]
+        else:
+            end_text = ""
         new_text = front_text + "(" + cam_id + ")" + end_text
+
         self.ui.camera_tabs.setTabText(tab_idx, new_text)
-        self.cameras[tab_idx].cam_id = cam_id
+        self._image_tabs[tab_idx].image_manager.ID = cam_id
 
         # Update slider
         self.ui.slider_frames.setMaximum(frames - 1)
@@ -533,8 +375,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Update folder display
         self.ui.le_image_dir.setText(str(folder))
 
+    # TODO: PROPERLY DEFINE A POS-DATA LOADING/SAVING FLOW
     @QtCore.pyqtSlot(Path, Path, list)
-    def rods_loaded(self, input: Path, output: Path, new_colors: List[str]):
+    def particles_loaded(
+        self, input: Path, output: Path, new_classes: List[str]
+    ):
         """Handles updates of loaded rod position datasets.
 
         Updates GUI elements to match the newly loaded rod position dataset.
@@ -555,102 +400,81 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if output is not None:
             self.ui.le_save_dir.setText(str(output))
 
-        rb_colors = self.ui.group_rod_color.findChildren(
+        rb_classes = self.ui.group_rod_color.findChildren(
             QtWidgets.QRadioButton
         )
-        rb_color_texts = [btn.text().lower() for btn in rb_colors]
+        rb_color_texts = [btn.text().lower() for btn in rb_classes]
         group_layout: QtWidgets.QGridLayout = self.ui.group_rod_color.layout()
-        for btn in rb_colors:
+        for btn in rb_classes:
             group_layout.removeWidget(btn)
-            if btn.text().lower() not in new_colors:
+            if btn.text().lower() not in new_classes:
                 btn.hide()
                 btn.deleteLater()
         row = 0
         col = 0
-        for color in new_colors:
+        for n_cls in new_classes:
             try:
-                btn = rb_colors[rb_color_texts.index(color)]
+                btn = rb_classes[rb_color_texts.index(n_cls)]
             except ValueError:
                 # Create new QRadioButton for this color
-                btn = QtWidgets.QRadioButton(text=color.lower())
-                btn.setObjectName(f"rb_{color}")
+                btn = QtWidgets.QRadioButton(text=n_cls.lower())
+                btn.setObjectName(f"rb_{n_cls}")
                 btn.toggled.connect(self.color_change)
             group_layout.addWidget(btn, row, col)
-            if row == 1:
+            # Allow 4 rows per column
+            if row == 3:
                 row = 0
                 col += 1
             else:
-                row = 1
+                row += 1
         group_layout.itemAtPosition(0, 0).widget().toggle()
         if platform.system() == "Windows":
             self.color_change(True)
 
+    # TODO: rename function (eliminate the '2D' in the name)
     @QtCore.pyqtSlot(bool)
-    def method_2D_changed(self, _: bool) -> None:
+    def method_2D_changed(self, activated: bool = None) -> None:
         """Handles changes of 2D display method selection."""
+        if activated is False:
+            # avoid triggering this multiple times when deactivating one
+            #   radio button and activating the next one
+            return
+        if activated is None and not self.ui.rb_disp_one.isChecked():
+            # 'activated' is only None when the selected particle changes.
+            # Therefore, avoid re-triggering the display of when a display
+            # method is selected that does not depend on the selected particle.
+            return
+        tab_idx = self.ui.camera_tabs.currentIndex()
+        particle_provider = self._particle_data_conntections[
+            self._image_tabs[tab_idx].ID
+        ]
+        selected_class = self.get_selected_class()
+        selected_particle = int(self.ui.le_disp_one.text())
+
         if self.ui.rb_disp_all.isChecked():
-            self.rod_data.update_rod_2D()
+            particle_provider.update_2D_data()
+            _logger.debug(
+                "RodTrackWindow.method_2D_changed() selected all "
+                "particles from all classes."
+            )
+        elif self.ui.rb_disp_class.isChecked():
+            particle_provider.update_2D_data(selected_class)
+            _logger.debug(
+                "RodTrackWindow.method_2D_changed() "
+                f"selected class: {selected_class}"
+            )
         elif self.ui.rb_disp_one.isChecked():
-            self.rod_data.update_rod_2D(int(self.ui.le_disp_one.text()))
-
-    @QtCore.pyqtSlot(bool)
-    def method_3D_changed(self, _: bool) -> None:
-        """Handles changes of 3D display method selection."""
-        self.ui.view_3d.clear()
-        if self.ui.rb_all_3d.isChecked():
-            self.rod_data.update_color_3D(send=False)
-            self.rod_data.update_rod_3D()
-        elif self.ui.rb_color_3d.isChecked():
-            self.rod_data.update_rod_3D(send=False)
-            self.rod_data.update_color_3D(self.get_selected_color())
-        elif self.ui.rb_one_3d.isChecked():
-            self.rod_data.update_color_3D(self.get_selected_color(), False)
-            self.rod_data.update_rod_3D(int(self.ui.le_disp_one.text()))
-
-    @QtCore.pyqtSlot(str)
-    def display_rod_changed(self, number: str):
-        """Handles a change of rod numbers in the user's input field."""
-        rod = int(number)
-        if self.ui.rb_disp_one.isChecked():
-            self.rod_data.update_rod_2D(rod)
-        if self.ui.rb_one_3d.isChecked():
-            self.rod_data.update_rod_3D(rod)
-
-    @QtCore.pyqtSlot(int)
-    def show_2D_changed(self, state: int):
-        """Catches a ``QCheckBox`` state change to display or clear rods in 2D.
-
-        Parameters
-        ----------
-        state : int
-            The new state of the QCheckbox {0, 2}
-
-        Returns
-        -------
-        None
-        """
-        if state == 0:
-            # Deactivated
-            self.cameras[self.ui.camera_tabs.currentIndex()].clear_screen()
-        self.rod_data.show_2D = bool(state)
-
-    @QtCore.pyqtSlot(int)
-    def show_3D_changed(self, state: int):
-        """Catches a ``QCheckBox`` state change to display or clear rods in 3D.
-
-        Parameters
-        ----------
-        state : int
-            The new state of the QCheckbox {0, 2}
-
-        Returns
-        -------
-        None
-        """
-        if state == 0:
-            # Deactivated
-            self.ui.view_3d.clear()
-        self.rod_data.show_3D = bool(state)
+            particle_provider.update_2D_data(selected_class, selected_particle)
+            _logger.debug(
+                "RodTrackWindow.method_2D_changed() selected particle: "
+                f"{selected_particle} of class: {selected_class}"
+            )
+        elif self.ui.rb_disp_none.isChecked():
+            self._image_tabs[tab_idx].clear_screen()
+            _logger.debug(
+                "RodTrackWindow.method_2D_changed() selected not to "
+                "display any particles"
+            )
 
     def show_next(self, direction: int):
         """Attempt to open the next image.
@@ -672,12 +496,12 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         None
         """
         tab_idx = self.ui.camera_tabs.currentIndex()
-        self.image_managers[tab_idx].next_image(direction)
+        self._image_tabs[tab_idx].image_manager.next_image(direction)
 
     def original_size(self):
         """Displays the currently loaded image in its native size."""
         tab_idx = self.ui.camera_tabs.currentIndex()
-        self.cameras[tab_idx].scale_factor = 1
+        self._image_tabs[tab_idx].scale_factor = 1
         self.ui.action_zoom_in.setEnabled(True)
         self.ui.action_zoom_out.setEnabled(True)
 
@@ -691,13 +515,14 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
+        # TODO: change this finding of the scroll area
         current_sa = self.findChild(
             QScrollArea, f"sa_camera_" f"{self.ui.camera_tabs.currentIndex()}"
         )
         to_size = current_sa.size()
         to_size = QtCore.QSize(to_size.width() - 20, to_size.height() - 20)
         tab_idx = self.ui.camera_tabs.currentIndex()
-        self.cameras[tab_idx].scale_to_size(to_size)
+        self._image_tabs[tab_idx].scale_to_size(to_size)
 
     def scale_image(self, factor: float):
         """Sets a new relative scaling for the current image.
@@ -716,13 +541,13 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         None
         """
         tab_idx = self.ui.camera_tabs.currentIndex()
-        new_zoom = self.cameras[tab_idx].scale_factor * factor
-        self.cameras[tab_idx].scale_factor = new_zoom
+        new_zoom = self._image_tabs[tab_idx].scale_factor * factor
+        self._image_tabs[tab_idx].scale_factor = new_zoom
         # Disable zoom, if zoomed too much
-        self.ui.action_zoom_in.setEnabled(new_zoom < 9.0)
-        self.ui.action_zoom_out.setEnabled(new_zoom > 0.11)
+        self.ui.action_zoom_in.setEnabled(new_zoom < self._max_zoom)
+        self.ui.action_zoom_out.setEnabled(new_zoom > self._min_zoom)
 
-    def get_selected_color(self):
+    def get_selected_class(self):
         """Gets the currently selected color in the GUI.
 
         Returns
@@ -734,18 +559,16 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             if rb.isChecked():
                 return rb.objectName()[3:]
 
+    # TODO: rename and implement details/define an interface
     @QtCore.pyqtSlot(bool)
     def color_change(self, state: bool) -> None:
         """Handles changes of the ``QRadioButtons`` for color selection."""
         if state:
-            color = self.get_selected_color()
-            self.rod_data.update_color_2D(color)
-            self.ui.tv_rods.update_tree_folding(self.logger.frame, color)
-            if (
-                self.ui.rb_color_3d.isChecked()
-                or self.ui.rb_one_3d.isChecked()
-            ):
-                self.rod_data.update_color_3D(color)
+            color = self.get_selected_class()  # noqa: F841
+            self.class_changed.emit(color)
+            _logger.warning(
+                "RodTrackWindow.color_change() is not (fully) implemented!"
+            )
 
     @staticmethod
     def warning_unsaved() -> bool:
@@ -777,25 +600,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             return False
 
     @QtCore.pyqtSlot(str)
-    def change_color(self, to_color: str):
-        """Activates the given color QRadioButton in the GUI.
+    def change_class(self, to_class: str):
+        """Activates the given classes' QRadioButton in the GUI.
 
         Parameters
         ----------
-        to_color : str
-            The color that is activated.
+        to_class : str
+            The class that is activated.
 
         Returns
         -------
         None
         """
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
-            if rb.objectName()[3:] == to_color:
+            if rb.objectName()[3:] == to_class:
                 # Activate the last color
                 rb.toggle()
-                self.ui.tv_rods.update_tree_folding(
-                    self.logger.frame, to_color
-                )
 
     def change_view(self, direction: int) -> None:
         """Helper method for programmatic changes of the camera tabs."""
@@ -824,27 +644,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
-        manager = self.image_managers[new_idx]
-        cam = self.cameras[new_idx]
-
-        misc.reconnect(self.rod_data.data_2d, cam.extract_rods)
-
-        misc.reconnect(
-            self.ui.action_shorten_displayed.triggered,
-            lambda: cam.adjust_rod_length(-self._rod_incr, False),
-        )
-        misc.reconnect(
-            self.ui.action_lengthen_displayed.triggered,
-            lambda: cam.adjust_rod_length(self._rod_incr, False),
-        )
-        misc.reconnect(
-            self.ui.action_shorten_selected.triggered,
-            lambda: cam.adjust_rod_length(-self._rod_incr, True),
-        )
-        misc.reconnect(
-            self.ui.action_lengthen_selected.triggered,
-            lambda: cam.adjust_rod_length(self._rod_incr, True),
-        )
+        manager = self._image_tabs[new_idx].image_manager
 
         misc.reconnect(
             self.ui.pb_load_images.clicked,
@@ -858,18 +658,60 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.le_image_dir.returnPressed,
             lambda: manager.select_images(self.ui.le_image_dir.text()),
         )
+        try:
+            data_obj = self._particle_data_conntections[
+                self._image_tabs[new_idx].ID
+            ]
+            reconnect(self.ui.pb_save_rods.clicked, data_obj.save)
+            reconnect(self.ui.pb_load_rods.clicked, data_obj.select_data)
+            reconnect(self.ui.le_rod_dir.returnPressed, data_obj.select_data)
+            reconnect(self.class_changed, data_obj.update_2D_data)
+            # connect the image tab with its data provider functions
+            reconnect(
+                data_obj.position_data_2d,
+                self._image_tabs[new_idx].extract_particles,
+            )
+
+        except KeyError:
+            # Image interaction tab is not associated to a position data object
+            pass
 
         if manager.folder is None:
             self.ui.le_image_dir.setText("")
         else:
             self.ui.le_image_dir.setText(str(manager.folder))
 
+        # Run custom activation code
+        self._image_tabs[new_idx].activate()
+
+        # =====================================================================
+        # TODO: this should not be done here! It should be handled by the
+        #       extensions, because it is no longer part of the
+        #       base-application. Should instead be integrated into the tabs'
+        #       `activate()` function that is run above
         if self.ui.action_persistent_view.isChecked():
             # Ensure the image/frame number is consistent over views
             old_frame = self.logger.frame
             if manager.frames:
                 idx_diff = manager.frames.index(old_frame) - manager.frame_idx
                 self.show_next(idx_diff)
+        # =====================================================================
+
+    @QtCore.pyqtSlot(int)
+    def utility_changed(self, new_idx: int):
+        """Triggers the activate() method of the newly shown utility tab.
+
+        Parameters
+        ----------
+        new_idx : int
+            The index of the tab that is shown next.
+
+        Returns
+        -------
+        None
+        """
+        # Run custom activation code
+        self._utility_tabs[new_idx].activate()
 
     def requesting_undo(self) -> None:
         """Helper method to emit a request for reverting the last action.
@@ -881,8 +723,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
                 - :attr:`request_undo`
         """
-        cam = self.cameras[self.ui.camera_tabs.currentIndex()]
-        self.request_undo.emit(cam.cam_id)
+        cam = self._image_tabs[self.ui.camera_tabs.currentIndex()]
+        self.request_undo.emit(cam.ID)
 
     def requesting_redo(self) -> None:
         """Helper method to emit a request for repeating the last action.
@@ -894,14 +736,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
                 - :attr:`request_redo`
         """
-        cam = self.cameras[self.ui.camera_tabs.currentIndex()]
-        self.request_redo.emit(cam.cam_id)
-
-    def attempt_saving(self) -> None:
-        """Handles the propagation of a saving attempt by a user."""
-        if not self.ui.lv_actions_list.unsaved_changes:
-            return
-        self.rod_data.save_changes()
+        cam = self._image_tabs[self.ui.camera_tabs.currentIndex()]
+        self.request_redo.emit(cam.ID)
 
     @QtCore.pyqtSlot(bool, str)
     def tab_has_changes(self, has_changes: bool, cam_id: str) -> None:
@@ -929,6 +765,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.camera_tabs.setTabText(i, new_text)
 
     def tab_busy_changed(self, tab_idx: int, is_busy: bool):
+        # TODO: add docs
         if is_busy:
             tab_icon = misc.busy_icon()
         else:
@@ -953,8 +790,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             handled.
         """
         if source not in [
-            self.ui.sa_camera_0.verticalScrollBar(),
-            self.ui.sa_camera_1.verticalScrollBar(),
+            tab.parent().parent().verticalScrollBar()
+            for tab in self._image_tabs
         ]:
             return False
         if not isinstance(event, QtGui.QWheelEvent):
@@ -965,26 +802,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             return False
         factor = 1.0
         if event.angleDelta().y() < 0:
-            factor = 0.8
+            factor = 1 / self._zoom_factor
         elif event.angleDelta().y() > 0:
-            factor = 1.25
+            factor = self._zoom_factor
         self.scale_image(factor)
         return True
-
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        """Reimplements QMainWindow.resizeEvent(a0).
-
-        Currently not used.
-
-        Parameters
-        ----------
-        a0 : QResizeEvent.
-
-        Returns
-        -------
-        None
-        """
-        super().resizeEvent(a0)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         """Reimplements ``QMainWindow.closeEvent(a0)``.
@@ -1002,7 +824,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         None
         """
         # Unsaved changes handling
-        if not self.ui.lv_actions_list.unsaved_changes == []:
+        if not lg.MainLogger().unsaved_changes == []:
             msg = QMessageBox()
             msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
             msg.setIcon(QMessageBox.Warning)
@@ -1014,7 +836,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             msg.setDefaultButton(btn_save)
             msg.exec()
             if msg.clickedButton() == btn_save:
-                self.rod_data.save_changes(temp_only=False)
+                # trigger saving for all registered position data providers
+                for data_provider in set(
+                    self._particle_data_conntections.values()
+                ):
+                    data_provider.save()
                 a0.accept()
                 pass
             elif msg.clickedButton() == btn_cancel:
@@ -1024,3 +850,133 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 a0.accept()
         else:
             a0.accept()
+
+    # TODO: add docs
+    def add_image_interaction_tab(
+        self, tab: tabs.ImageInteractionTab, tab_name: str = ""
+    ) -> None:
+        self._image_tabs.append(tab)
+
+        new_tab_num = self.ui.camera_tabs.count()
+        # TODO: evaluate, whether it is a good idea to change the ID here,
+        #       instead it might be better to leave the ID to extensions
+        if tab.ID == "unknown":
+            # Change the ID to something unique in cases where the extension
+            # did not handle this.
+            tab.ID = f"camera_{new_tab_num}"
+        if tab.image_manager.ID == "unknown":
+            tab.image_manager.ID = f"camera_{new_tab_num}"
+
+        new_tab_internal = QtWidgets.QWidget()
+        new_tab_internal.setObjectName(f"tab_{new_tab_num}")
+        layout = QtWidgets.QVBoxLayout(new_tab_internal)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        scroll_area = QtWidgets.QScrollArea(new_tab_internal)
+        scroll_area.setFrameShape(QtWidgets.QFrame.NoFrame)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setObjectName(f"sa_camera_{new_tab_num}")
+        layout.addWidget(scroll_area)
+
+        scroll_area.setWidget(tab)
+        self.ui.camera_tabs.addTab(new_tab_internal, tab_name)
+
+        # connect signals performed on each view
+        scroll_area.verticalScrollBar().installEventFilter(self)
+        tab.image_manager.data_loaded.connect(self.images_loaded)
+        tab.image_manager.next_img[int, int].connect(self.next_image)
+
+        tab.logger.notify_unsaved.connect(self.tab_has_changes)
+
+        # TODO: this should be handled by the extension instead. It has been
+        #   changed from the line below:
+        #   cam.logger.request_saving.connect(self.rod_data.save_changes)
+        tab.logger.request_saving.connect(self.ui.pb_save_rods.click)
+        self.request_undo.connect(tab.logger.undo_last)
+        self.request_redo.connect(tab.logger.redo_last)
+
+        tab.loaded_particles.connect(
+            lambda n: self.ui.le_rod_disp.setText(f"Loaded Particles: {n}")
+        )
+        _logger.info(f"Initialized a new image interaction tab: {tab}")
+
+    # TODO: add docs
+    def add_utility_tab(
+        self,
+        tab: tabs.UtilityTab,
+        tab_name: str = "",
+        add_scrollable: bool = True,
+    ) -> None:
+        self._utility_tabs.append(tab)
+        new_tab_num = self.ui.right_tabs.count()
+        if add_scrollable:
+            new_tab_internal = QtWidgets.QWidget()
+            new_tab_internal.setObjectName(f"utility_tab_{new_tab_num}")
+            layout = QtWidgets.QVBoxLayout(new_tab_internal)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(0)
+
+            scroll_area = QtWidgets.QScrollArea(new_tab_internal)
+            scroll_area.setFrameShape(QtWidgets.QFrame.NoFrame)
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setObjectName(f"sa_utility_{new_tab_num}")
+            layout.addWidget(scroll_area)
+
+            scroll_area.setWidget(tab)
+            self.ui.right_tabs.addTab(new_tab_internal, tab_name)
+        else:
+            self.ui.right_tabs.addTab(tab, tab_name)
+        _logger.info(f"Initialized a new utility tab: {tab}")
+
+    # TODO: add docs
+    def add_setting(self, widget: settings.Setting):
+        self.settings_tab.add_setting(widget)
+
+    # TODO: add docs
+    def ensure_usable(self):
+        """_summary_"""
+        if not len(self._image_tabs):
+            _logger.warning(
+                "No specialized image interaction tab loaded. "
+                "Using a default image viewer."
+            )
+            self.add_image_interaction_tab(
+                tabs.ImageInteractionTab("DefaultViewer"),
+                "Default Image Viewer",
+            )
+
+    def register_position_data(
+        self,
+        data_object: data.PositionData,
+        connected_viewers: List[tabs.ImageInteractionTab],
+    ):
+        """_summary_
+
+        Parameters
+        ----------
+        data_object : data.PositionData
+            _description_
+        connected_viewers : List[tabs.ImageInteractionTab]
+            _description_
+        connected_utility : List[tabs.UtilityTab]
+            _description_
+
+        Warnings
+        --------
+        It is unlikely that the connection between the `data_object` and one
+        of the `connected_viewers` is retained, if the ID of the viewer changes
+        after calling this function.
+        Therefore only call this function after you have added your tabs to the
+        main app.
+        """
+        data_object.data_loaded[Path, Path, list].connect(
+            self.particles_loaded
+        )
+        # save association of viewers with data provider
+        for view in connected_viewers:
+            self._particle_data_conntections[view.ID] = data_object
+            # 'reactivate' the current view, if a data object was added to it
+            tab_idx = self.ui.camera_tabs.currentIndex()
+            if tab_idx >= 0 and self._image_tabs[tab_idx] == view:
+                self.view_changed(tab_idx)
