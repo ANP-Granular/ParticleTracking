@@ -666,10 +666,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             reconnect(self.ui.pb_load_rods.clicked, data_obj.select_data)
             reconnect(self.ui.le_rod_dir.returnPressed, data_obj.select_data)
             reconnect(self.class_changed, data_obj.update_2D_data)
+
             # connect the image tab with its data provider functions
             reconnect(
                 data_obj.position_data_2d,
                 self._image_tabs[new_idx].extract_particles,
+            )
+            reconnect(
+                self._image_tabs[new_idx].image_manager.next_img[int, int],
+                data_obj.set_frame,
             )
 
         except KeyError:
