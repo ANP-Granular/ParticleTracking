@@ -9,6 +9,7 @@ The following installation instructions are only concerning installing the RodTr
 - Python `>=3.8` is installed
 - pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
 - Git is installed
+- It is strongly recommended to install RodTracker from a fresh virtual environment (created with `venv`)
 ---
 
 0. Upgrade your version of `pip`.
@@ -21,7 +22,7 @@ The following installation instructions are only concerning installing the RodTr
   YOUR/REPO/PATH/RodTracker$ pip install .
   ```
 ### Installation in conda environments
-1. Create a fresh environment with Python `>=3.8`
+1. Create a fresh conda environment with Python `>=3.8`
   ```shell
   (base) YOUR/CURRENT/DIRECTORY$ conda create -n RodTracker python=3.10
           ...
