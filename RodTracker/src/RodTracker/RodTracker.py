@@ -14,31 +14,28 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
+import inspect
 import pathlib
 import sys
-import inspect
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-    importlib_resources.path = (
-        lambda module, file: importlib_resources.files(module).joinpath(file)
-    )
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
+
+import importlib_resources
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 
 def main():
-    currentdir = pathlib.Path(
-        inspect.getfile(inspect.currentframe())).resolve().parent
+    currentdir = (
+        pathlib.Path(inspect.getfile(inspect.currentframe())).resolve().parent
+    )
     parentdir = currentdir.parent
     sys.path.insert(0, str(parentdir))
 
     app = QtWidgets.QApplication(sys.argv)
     pixmap = QtGui.QPixmap(
-        str(importlib_resources.path("RodTracker.resources", "splash.png"))
+        str(
+            importlib_resources.files("RodTracker.resources").joinpath(
+                "splash.png"
+            )
+        )
     )
     align = QtCore.Qt.AlignBottom | QtCore.Qt.AlignHCenter
     color = QtGui.QColorConstants.White
@@ -47,10 +44,12 @@ def main():
 
     splash.showMessage("Updating environment...", align, color)
     import RodTracker.backend.logger as lg
+
     sys.excepthook = lg.exception_logger
 
     splash.showMessage("Loading UI...", align, color)
     import RodTracker.ui.mainwindow as mw
+
     main_window = mw.RodTrackWindow()
     splash.finish(main_window)
 

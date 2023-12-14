@@ -16,25 +16,17 @@
 
 """**TBD**"""
 
+import logging
 import os
-import subprocess
 from pathlib import Path
+import subprocess
 import sys
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-    importlib_resources.path = (
-        lambda module, file: importlib_resources.files(module).joinpath(file)
-    )
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
+from typing import Literal
 
-# use the online documentation unless the RodTracker is bundled
-_docs_url = "https://particletracking.readthedocs.io/"
-if hasattr(sys, "_MEIPASS"):
-    _docs_url = Path("./docs/index.html")
+import importlib_resources
+
+
+_logger = logging.getLogger(__name__)
 
 
 def icon_path() -> str:
@@ -45,8 +37,24 @@ def icon_path() -> str:
     str
         String representation of the path to the application icon.
     """
-    return str(importlib_resources.path("RodTracker.resources",
-                                        "icon_main.ico"))
+    return str(
+        importlib_resources.files("RodTracker.resources").joinpath(
+            "icon_windows.ico"
+        )
+    )
+
+
+def logo_path() -> str:
+    """Get a string representation of the path to the application icon.
+
+    Returns
+    -------
+    str
+        String representation of the path to the application icon.
+    """
+    return str(
+        importlib_resources.files("RodTracker.resources").joinpath("logo.png")
+    )
 
 
 def undo_icon_path() -> str:
@@ -57,13 +65,38 @@ def undo_icon_path() -> str:
     str
         String representation of the path to the application undo icon.
     """
-    return str(importlib_resources.path("RodTracker.resources",
-                                        "left-arrow-96.png"))
+    return str(
+        importlib_resources.files("RodTracker.resources").joinpath(
+            "left-arrow-96.png"
+        )
+    )
 
 
-def open_docs() -> None:
+def open_docs(location: Literal["online", "local"] = "online") -> None:
     """Open the documenation for the RodTracker."""
-    if sys.platform == 'win32':
+    _docs_url = "https://particletracking.readthedocs.io/"
+    if location == "local":
+        local_docs = (
+            Path(__file__).parent / "../../../../docs/build/html/index.html"
+        ).resolve()
+        if hasattr(sys, "_MEIPASS"):
+            local_docs = Path(sys._MEIPASS).resolve() / "docs/index.html"
+        if local_docs.exists():
+            _docs_url = local_docs
+        else:
+            _logger.warning(
+                "Local documentation not found at expected location "
+                f"({local_docs}).\n"
+                "Falling back to online version."
+            )
+
+    if sys.platform == "win32":
         os.startfile(_docs_url)
+    elif sys.platform == "linux":
+        subprocess.Popen(["xdg-open", _docs_url])
+    elif sys.platform == "darwin":
+        subprocess.Popen(["open", _docs_url])
     else:
-        subprocess.Popen(['xdg-open', _docs_url])
+        _logger.warning(
+            f"Unknown platform ({sys.platform}) ... can't open documentation."
+        )
