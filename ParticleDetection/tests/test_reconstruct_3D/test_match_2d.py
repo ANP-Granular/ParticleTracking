@@ -34,7 +34,9 @@ def example_data() -> pd.DataFrame:
 
 @pytest.mark.parametrize("rematching", [False, True])
 def test_match_csv_complex(tmp_path: Path, rematching: bool):
-    colors = ["black", ]
+    colors = [
+        "black",
+    ]
     frames = list(range(505, 508))
 
     calibration = EXAMPLES / "gp34.json"
@@ -42,9 +44,17 @@ def test_match_csv_complex(tmp_path: Path, rematching: bool):
     data_folder = EXAMPLES
     assert not (tmp_path / "output").exists()
 
-    result = m2d.match_csv_complex(str(data_folder), str(tmp_path / "output"),
-                                   colors, "gp3", "gp4", frames, calibration,
-                                   transformation, rematching)
+    result = m2d.match_csv_complex(
+        str(data_folder),
+        str(tmp_path / "output"),
+        colors,
+        "gp3",
+        "gp4",
+        frames,
+        calibration,
+        transformation,
+        rematching,
+    )
     assert len(result) == 2
     assert (tmp_path / "output").exists()
     assert len(list((tmp_path / "output").iterdir())) == 1
@@ -53,8 +63,9 @@ def test_match_csv_complex(tmp_path: Path, rematching: bool):
 
 
 @pytest.mark.parametrize("renumber", [False, True])
-def test_match_complex(tmp_path: Path, example_data: pd.DataFrame,
-                       renumber: bool):
+def test_match_complex(
+    tmp_path: Path, example_data: pd.DataFrame, renumber: bool
+):
     color = "black"
     cam1 = "gp3"
     cam2 = "gp4"
@@ -62,9 +73,18 @@ def test_match_complex(tmp_path: Path, example_data: pd.DataFrame,
 
     calibration = dl.load_camera_calibration(EXAMPLES / "gp34.json")
     transformation = dl.load_world_transformation(
-        EXAMPLES / "transformation.json")
-    result = m2d.match_complex(example_data, frames, color, calibration,
-                               transformation, cam1, cam2, renumber)
+        EXAMPLES / "transformation.json"
+    )
+    result = m2d.match_complex(
+        example_data,
+        frames,
+        color,
+        calibration,
+        transformation,
+        cam1,
+        cam2,
+        renumber,
+    )
     assert len(result) == 3
     assert len(result[0].frame.unique()) == len(frames)
 
@@ -81,15 +101,24 @@ def test_match_frame(example_data: pd.DataFrame, renumber: bool):
     color = "black"
     cam1 = "gp3"
     cam2 = "gp4"
-    cols_2D = [f"x1_{cam1}", f"y1_{cam1}", f"x2_{cam1}", f"y2_{cam1}",
-               f"x1_{cam2}", f"y1_{cam2}", f"x2_{cam2}", f"y2_{cam2}"]
+    cols_2D = [
+        f"x1_{cam1}",
+        f"y1_{cam1}",
+        f"x2_{cam1}",
+        f"y2_{cam1}",
+        f"x1_{cam2}",
+        f"y1_{cam2}",
+        f"x2_{cam2}",
+        f"y2_{cam2}",
+    ]
     calibration = dl.load_camera_calibration(EXAMPLES / "gp34.json")
     transformation = dl.load_world_transformation(
-        EXAMPLES / "transformation.json")
+        EXAMPLES / "transformation.json"
+    )
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
-    t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+    t1 = np.expand_dims(np.array([0.0, 0.0, 0.0]), 1)
     P1 = np.vstack((r1.T, t1.T)) @ calibration["CM1"].T
     P1 = P1.T
 
@@ -102,9 +131,23 @@ def test_match_frame(example_data: pd.DataFrame, renumber: bool):
     rot = R.from_matrix(transformation["rotation"])
     trans = transformation["translation"]
 
-    result = m2d.match_frame(example_data, "gp3", "gp4", frame, color,
-                             calibration, P1, P2, rot, trans, r1, r2, t1, t2,
-                             renumber)
+    result = m2d.match_frame(
+        example_data,
+        "gp3",
+        "gp4",
+        frame,
+        color,
+        calibration,
+        P1,
+        P2,
+        rot,
+        trans,
+        r1,
+        r2,
+        t1,
+        t2,
+        renumber,
+    )
     assert len(result) == 3
     input_len = len(example_data.loc[example_data.frame == frame])
     assert len(result[0]) == input_len
@@ -113,9 +156,10 @@ def test_match_frame(example_data: pd.DataFrame, renumber: bool):
     if not renumber:
         input_data = example_data.loc[example_data.frame == frame]
         for particle in list(result[0].particle.unique()):
-            previous_data = input_data.loc[input_data.particle == particle,
-                                           cols_2D]
+            previous_data = input_data.loc[
+                input_data.particle == particle, cols_2D
+            ]
             for col in cols_2D:
                 assert previous_data.isin(
                     result[0].loc[result[0].particle == particle, col]
-                ).any(None)
+                ).any(axis=None)

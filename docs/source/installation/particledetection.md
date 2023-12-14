@@ -1,6 +1,14 @@
 # Installation of ParticleDetection
-**Requirement:** Python `>=3.8` is installed, pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
+
+**Requirements:**
+- Python `>=3.8` is installed
+- pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
+
 ## Installation from source
+0. Upgrade your version of `pip`.
+   ```shell
+   python -m pip install --upgrade pip
+   ```
 1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the ParticleDetection package or only download the `ParticleDetection` folder, if you are not interested in the RodTracker application.
 2. Install it using pip
   ```shell
@@ -11,37 +19,39 @@
   YOUR/REPO/PATH/ParticleDetection$ pip install .[OPTION]
   ```
 ## Installation options
-This package has three functionality options to be installed. These are realized as `extras` but are essentially variants, that do not necessarily built upon each other.
+This package has three functionality options. These are realized as `extras` but are essentially variants, that do not necessarily build upon each other.
 
 - `CPU`:
   - is the **default**
   - attempts to install the CPU version of `pytorch`
-  - no Detectron2 installation
-    - the `ParticleDetection.modelling` module is not usable
-  - allows to run exported detection model on the CPU only
+  - allows running exported detection models on the CPU only
+  ```{warning}
+  The `ParticleDetection.modelling` module is not usable.
+  ```
 - `GPU`:
   - **Requirement:** CUDA is installed
   - attempts to install the CUDA/GPU version of `pytorch`
-  - no Detectron2 installation
-    - the `ParticleDetection.modelling` module is not usable
-  - allows to run exported detection models on the CPU and GPU
+  - allows running exported detection models on the CPU and GPU
+  ```{warning}
+  The `ParticleDetection.modelling` module is not usable.
+  ```
 - `DETECTRON`:
   - **Requirement:** CUDA is installed
-  - attempts to install the CUDA/GPU version of `pytorch` 
-  - attempts to install Detectron2
-  - allows to train/run/export new Detectron2 models
-  - allows to run exported detection models on the CPU and GPU
+  - **Post-Installation-Step(s):**
+    - install Detectron2 as per their [Installation Guide](https://detectron2.readthedocs.io/en/latest/tutorials/install.html)
+  - attempts to install the CUDA/GPU version of `pytorch`
+  - allows training/running/exporting new Detectron2 models (see the `ParticleDetection.modelling` module)
+  - allows running exported detection models on the CPU and GPU
   ```{Admonition} Troubleshooting
   There have been problems during the use of `tensorboard` that could be used by the additional dependencies below. These have not been observed on all machines though.
     - change the `protobuf` version to 3.20.1
         ```shell
         pip install protobuf==3.20.1
         ```
-    - install Shapely 
+    - install Shapely
         ```shell
-        pip install shapely 
+        pip install shapely
         ```
-    - refer to the [Detectron2 Installation Guide](https://detectron2.readthedocs.io/en/latest/tutorials/install.html) and the [PyTorch Get Started Page](https://pytorch.org/get-started/locally/)
   ```
 - `TEST`:
   - intended for running (or developing) tests for the package
@@ -74,4 +84,3 @@ If GPU support is necessary on a Windows machine the requirements of the `GPU` v
 4. Install your systems GPU version of torch, torchaudio and torchvision, that matches the installed CUDA version (see the [PyTorch Website](https://pytorch.org/get-started/locally/))
 
 The `DETECTRON` version is not available on Windows because Detectron2 does not support an installation on Windows.
-

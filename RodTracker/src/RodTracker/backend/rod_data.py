@@ -41,17 +41,17 @@ import RodTracker.backend.parallelism as pl
 import RodTracker.ui.dialogs as dialogs
 import RodTracker
 
-RE_COLOR_DATA: re.Pattern = re.compile(r'rods_df_\w+\.csv')
+RE_COLOR_DATA: re.Pattern = re.compile(r"rods_df_\w+\.csv")
 """Pattern : Pattern how the rod position data file names are expected."""
-RE_SEEN: re.Pattern = re.compile(r'seen_.+')
+RE_SEEN: re.Pattern = re.compile(r"seen_.+")
 """Pattern : Pattern for columns indicating a particle's *seen* status.
 
 Pattern for column names in the rod position data indicating whether a
 particle was seen in the a specific camera.
 """
-RE_2D_POS: re.Pattern = re.compile(r'[xy][12]_.+')
+RE_2D_POS: re.Pattern = re.compile(r"[xy][12]_.+")
 """Pattern : Pattern for columns containing 2D position information."""
-RE_3D_POS: re.Pattern = re.compile(r'[xyz][12]')
+RE_3D_POS: re.Pattern = re.compile(r"[xyz][12]")
 """Pattern : Pattern for columns containing 3D position information."""
 POSITION_SCALING: float = 1.0
 """float : Scale factor for loaded position data."""
@@ -127,6 +127,7 @@ class RodData(QtCore.QObject):
     cols_3D : List[str]
         Columns of the loaded ``DataFrame`` relevant for 3D data display.
     """
+
     data_2d = QtCore.pyqtSignal([pd.DataFrame, str], name="data_2d")
     """pyqtSignal : Provide 2D rod position data for other objects to display,
     defined by :attr:`frame`, :attr:`color_2D`, and :attr:`rod_2D`.
@@ -137,9 +138,13 @@ class RodData(QtCore.QObject):
     to display, defined by :attr:`frame`, :attr:`color_3D`, and :attr:`rod_3D`.
     """
 
-    data_loaded = QtCore.pyqtSignal([Path, Path, list], [list],
-                                    [int, int, list], [str, str],
-                                    name="data_loaded")
+    data_loaded = QtCore.pyqtSignal(
+        [Path, Path, list],
+        [list],
+        [int, int, list],
+        [str, str],
+        name="data_loaded",
+    )
     """pyqtSignal : Propagates information about loaded position data.
 
     - **[Path, Path, list]**:\n
@@ -283,8 +288,9 @@ class RodData(QtCore.QObject):
         try_again = True
         while try_again:
             chosen_folder = QtWidgets.QFileDialog.getExistingDirectory(
-                None, 'Choose folder with position data', pre_selection)
-            if chosen_folder == '':
+                None, "Choose folder with position data", pre_selection
+            )
+            if chosen_folder == "":
                 return
             chosen_folder = Path(chosen_folder).resolve()
             # Check for eligible files
@@ -295,10 +301,11 @@ class RodData(QtCore.QObject):
                 msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
                 msg.setIcon(QMessageBox.Warning)
                 msg.setWindowTitle("Rod Tracker")
-                msg.setText(f"There were no useful files found in: "
-                            f"'{chosen_folder}'")
-                msg.setStandardButtons(
-                    QMessageBox.Retry | QMessageBox.Cancel)
+                msg.setText(
+                    f"There were no useful files found in: "
+                    f"'{chosen_folder}'"
+                )
+                msg.setStandardButtons(QMessageBox.Retry | QMessageBox.Cancel)
                 user_decision = msg.exec()
                 if user_decision == QMessageBox.Cancel:
                     # Stop folder selection
@@ -350,11 +357,14 @@ class RodData(QtCore.QObject):
             msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
             msg.setIcon(QMessageBox.Question)
             msg.setWindowTitle("Rod Tracker")
-            msg.setText("There seems to be corrected data "
-                        "already. Do you want to use that "
-                        "instead of the selected data?")
-            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No |
-                                   QMessageBox.Abort)
+            msg.setText(
+                "There seems to be corrected data "
+                "already. Do you want to use that "
+                "instead of the selected data?"
+            )
+            msg.setStandardButtons(
+                QMessageBox.Yes | QMessageBox.No | QMessageBox.Abort
+            )
             user_decision = msg.exec()
             if user_decision == QMessageBox.Yes:
                 # Load the previously corrected data and save any new changes
@@ -379,8 +389,9 @@ class RodData(QtCore.QObject):
         columns = list(rod_data.columns)
         lock.unlock()
 
-        cams = [col.split("_")[-1] for col in columns
-                if re.fullmatch(RE_SEEN, col)]
+        cams = [
+            col.split("_")[-1] for col in columns if re.fullmatch(RE_SEEN, col)
+        ]
         cols_pos_2d = [col for col in columns if re.fullmatch(RE_2D_POS, col)]
         cols_seen = [col for col in columns if re.fullmatch(RE_SEEN, col)]
         cols_pos_3d = [col for col in columns if re.fullmatch(RE_3D_POS, col)]
@@ -388,10 +399,12 @@ class RodData(QtCore.QObject):
         self.cols_3D = [*cols_pos_3d, "particle", "frame", "color"]
 
         self.data_loaded[Path, Path, list].emit(
-            self.folder, self.out_folder, found_colors)
+            self.folder, self.out_folder, found_colors
+        )
         self.data_loaded[str, str].emit(*cams)
         self.data_loaded[int, int, list].emit(
-            frame_min, frame_max, found_colors)
+            frame_min, frame_max, found_colors
+        )
 
         # Display as a tree
         worker = pl.Worker(self.extract_seen_information)
@@ -404,8 +417,11 @@ class RodData(QtCore.QObject):
 
         # Rod position data was selected correctly
         if self._logger is not None:
-            action = lg.FileAction(self.folder, lg.FileActions.LOAD_RODS,
-                                   parent_id=self._logger_id)
+            action = lg.FileAction(
+                self.folder,
+                lg.FileActions.LOAD_RODS,
+                parent_id=self._logger_id,
+            )
             self._logger.add_action(action)
         return True
 
@@ -446,8 +462,9 @@ class RodData(QtCore.QObject):
                 try_again = True
                 while try_again:
                     chosen_folder = QtWidgets.QFileDialog.getExistingDirectory(
-                        None, 'Save as')
-                    if chosen_folder == '':
+                        None, "Save as"
+                    )
+                    if chosen_folder == "":
                         return
                     chosen_folder = Path(chosen_folder).resolve()
                     data_files = self.folder_has_data(chosen_folder)
@@ -457,14 +474,18 @@ class RodData(QtCore.QObject):
                         msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
                         msg.setIcon(QMessageBox.Warning)
                         msg.setWindowTitle("Rod Tracker")
-                        msg.setText("There were files found, that might get "
-                                    "overwritten. Do you want to overwrite "
-                                    "these?")
+                        msg.setText(
+                            "There were files found, that might get "
+                            "overwritten. Do you want to overwrite "
+                            "these?"
+                        )
                         msg.addButton("Overwrite", QMessageBox.ActionRole)
                         btn_try_again = msg.addButton(
-                            "Try again", QMessageBox.ActionRole)
+                            "Try again", QMessageBox.ActionRole
+                        )
                         btn_cancel = msg.addButton(
-                            "Cancel", QMessageBox.ActionRole)
+                            "Cancel", QMessageBox.ActionRole
+                        )
                         msg.exec()
                         user_decision = msg.clickedButton()
                         if user_decision == btn_try_again:
@@ -482,17 +503,19 @@ class RodData(QtCore.QObject):
                     colors = list(rod_data["color"].unique())
                     lock.unlock()
                     self.data_loaded[Path, Path, list].emit(
-                        chosen_folder, chosen_folder, colors)
+                        chosen_folder, chosen_folder, colors
+                    )
             elif self.out_folder == self.folder and not self._allow_overwrite:
                 msg = QMessageBox()
                 msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
                 msg.setIcon(QMessageBox.Warning)
                 msg.setWindowTitle("Rod Tracker")
-                msg.setText("The saving path points to the original data!"
-                            "Do you want to overwrite it?")
+                msg.setText(
+                    "The saving path points to the original data!"
+                    "Do you want to overwrite it?"
+                )
                 msg.addButton("Overwrite", QMessageBox.ActionRole)
-                btn_cancel = msg.addButton("Cancel",
-                                           QMessageBox.ActionRole)
+                btn_cancel = msg.addButton("Cancel", QMessageBox.ActionRole)
                 msg.exec()
                 if msg.clickedButton() == btn_cancel:
                     return
@@ -504,7 +527,7 @@ class RodData(QtCore.QObject):
         for color in rod_data.color.unique():
             out_file = save_folder / f"rods_df_{color}.csv"
             df_out = rod_data.loc[rod_data.color == color].copy()
-            df_out = df_out.astype({"frame": 'int', "particle": 'int'})
+            df_out = df_out.astype({"frame": "int", "particle": "int"})
             df_out.to_csv(out_file, index_label="")
             if self._logger is not None and not temp_only:
                 action = lg.FileAction(out_file, lg.FileActions.SAVE)
@@ -635,8 +658,10 @@ class RodData(QtCore.QObject):
                 out_2d = out_2d.loc[out_2d.particle == self.rod_2D]
             self.data_2d.emit(out_2d[self.cols_2D].copy(), self.color_2D)
             if not len(out_2d):
-                _logger.info(f"No 2D rod position data available for "
-                             f"frame #{self.frame}.")
+                _logger.info(
+                    f"No 2D rod position data available for "
+                    f"frame #{self.frame}."
+                )
 
         if self._show_3D and data_3d:
             out_3d = out_data
@@ -649,10 +674,15 @@ class RodData(QtCore.QObject):
             out_3d[scale] = out_3d[scale] * POSITION_SCALING
             self.data_3d.emit(out_3d)
 
-    def get_data(self, frames: List[int] = None, colors: List[str] = None,
-                 rods: List[int] = None, callback: callable = None,
-                 data_2d: bool = True, data_3d: bool = True) -> pd.DataFrame:
-
+    def get_data(
+        self,
+        frames: List[int] = None,
+        colors: List[str] = None,
+        rods: List[int] = None,
+        callback: callable = None,
+        data_2d: bool = True,
+        data_3d: bool = True,
+    ) -> pd.DataFrame:
         """Get part of the loaded rod position data.
 
         Parameters
@@ -770,16 +800,20 @@ class RodData(QtCore.QObject):
             frame_max = rod_data.frame.max()
             columns = list(rod_data.columns)
 
-            cams = [col.split("_")[-1] for col in columns
-                    if re.fullmatch(RE_SEEN, col)]
+            cams = [
+                col.split("_")[-1]
+                for col in columns
+                if re.fullmatch(RE_SEEN, col)
+            ]
             while len(cams) < 2:
-                cams.append('')
+                cams.append("")
             cols_pos_2d = [
-                col for col in columns if re.fullmatch(RE_2D_POS, col)]
-            cols_seen = [
-                col for col in columns if re.fullmatch(RE_SEEN, col)]
+                col for col in columns if re.fullmatch(RE_2D_POS, col)
+            ]
+            cols_seen = [col for col in columns if re.fullmatch(RE_SEEN, col)]
             cols_pos_3d = [
-                col for col in columns if re.fullmatch(RE_3D_POS, col)]
+                col for col in columns if re.fullmatch(RE_3D_POS, col)
+            ]
             self.cols_2D = [*cols_pos_2d, *cols_seen, "particle", "frame"]
             self.cols_3D = [*cols_pos_3d, "particle", "frame", "color"]
 
@@ -789,42 +823,52 @@ class RodData(QtCore.QObject):
             worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
             self.is_busy.emit(True)
             worker.signals.result.connect(
-                lambda ret: self.seen_loaded.emit(*ret))
+                lambda ret: self.seen_loaded.emit(*ret)
+            )
             worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
             self.threads.start(worker)
 
             self.data_loaded[list].emit(colors)
             self.data_loaded[str, str].emit(*cams)
-            self.data_loaded[int, int, list].emit(
-                frame_min, frame_max, colors)
+            self.data_loaded[int, int, list].emit(frame_min, frame_max, colors)
             return
 
         else:
             if not data.columns.isin(rod_data.columns).all():
                 candidates = data.columns[~data.columns.isin(rod_data.columns)]
-                to_add = [col for col in candidates
-                          if re.fullmatch(RE_2D_POS, col)]
-                to_add.extend([col for col in candidates
-                               if re.fullmatch(RE_SEEN, col)])
+                to_add = [
+                    col for col in candidates if re.fullmatch(RE_2D_POS, col)
+                ]
+                to_add.extend(
+                    [col for col in candidates if re.fullmatch(RE_SEEN, col)]
+                )
                 self.cols_2D.extend(to_add)
                 with QtCore.QWriteLocker(lock):
-                    rod_data.set_index(["color", "frame", "particle"],
-                                       inplace=True)
+                    rod_data.set_index(
+                        ["color", "frame", "particle"], inplace=True
+                    )
                     rod_data = rod_data.join(
                         data.set_index(["color", "frame", "particle"]),
-                        how="outer", rsuffix="delete")
+                        how="outer",
+                        rsuffix="delete",
+                    )
                     rod_data.drop(
-                        columns=[col for col in rod_data.columns
-                                 if "delete" in col],
-                        inplace=True)
+                        columns=[
+                            col for col in rod_data.columns if "delete" in col
+                        ],
+                        inplace=True,
+                    )
                     rod_data.reset_index(inplace=True)
 
                 # Update the 'available' cameras in other parts of the app
                 columns = list(rod_data.columns)
-                cams = [col.split("_")[-1] for col in columns
-                        if re.fullmatch(RE_SEEN, col)]
+                cams = [
+                    col.split("_")[-1]
+                    for col in columns
+                    if re.fullmatch(RE_SEEN, col)
+                ]
                 while len(cams) < 2:
-                    cams.append('')
+                    cams.append("")
                 self.data_loaded[str, str].emit(*cams)
 
                 # Update the 'available' frames in other parts of the app
@@ -832,49 +876,54 @@ class RodData(QtCore.QObject):
                 frame_max = rod_data.frame.max()
                 colors = list(rod_data.color.unique())
                 self.data_loaded[int, int, list].emit(
-                    frame_min, frame_max, colors)
+                    frame_min, frame_max, colors
+                )
 
                 # Update/regenerate tree
                 worker = pl.Worker(self.extract_seen_information)
                 worker.signals.result.connect(
-                    lambda ret: self.is_busy.emit(False))
+                    lambda ret: self.is_busy.emit(False)
+                )
                 worker.signals.error.connect(
-                    lambda ret: self.is_busy.emit(False))
+                    lambda ret: self.is_busy.emit(False)
+                )
                 self.is_busy.emit(True)
                 worker.signals.result.connect(
-                    lambda ret: self.seen_loaded.emit(*ret))
+                    lambda ret: self.seen_loaded.emit(*ret)
+                )
                 worker.signals.error.connect(
-                    lambda ret: lg.exception_logger(*ret))
+                    lambda ret: lg.exception_logger(*ret)
+                )
                 self.threads.start(worker)
                 return
 
             with QtCore.QWriteLocker(lock):
-                rod_data.set_index(["color", "frame", "particle"],
-                                   inplace=True)
+                rod_data.set_index(
+                    ["color", "frame", "particle"], inplace=True
+                )
                 data.set_index(["color", "frame", "particle"], inplace=True)
                 idx_exists = data.index.isin(rod_data.index)
                 rod_data.update(data.loc[idx_exists])
                 rod_data = pd.concat(
-                    [rod_data, data.loc[~idx_exists]]).reset_index()
+                    [rod_data, data.loc[~idx_exists]]
+                ).reset_index()
 
             # Update the 'available' frames in other parts of the app
             frame_min = rod_data.frame.min()
             frame_max = rod_data.frame.max()
             colors = list(rod_data.color.unique())
-            self.data_loaded[int, int, list].emit(
-                frame_min, frame_max, colors)
+            self.data_loaded[int, int, list].emit(frame_min, frame_max, colors)
 
             # Update of the tree display
             data = data.reset_index(inplace=True)
-            worker = pl.Worker(
-                lambda: self.extract_seen_information(data))
+            worker = pl.Worker(lambda: self.extract_seen_information(data))
             worker.signals.result.connect(lambda ret: self.is_busy.emit(False))
             worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
             self.is_busy.emit(True)
             worker.signals.result.connect(
-                lambda ret: self.batch_update.emit(*ret))
-            worker.signals.error.connect(
-                lambda ret: lg.exception_logger(*ret))
+                lambda ret: self.batch_update.emit(*ret)
+            )
+            worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
             self.threads.start(worker)
 
     @QtCore.pyqtSlot(lg.Action)
@@ -904,7 +953,8 @@ class RodData(QtCore.QObject):
         worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
         self.is_busy.emit(True)
         worker.signals.result.connect(
-            lambda _: self.provide_data(data_3d=False))
+            lambda _: self.provide_data(data_3d=False)
+        )
         worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
         self.threads.start(worker)
 
@@ -917,7 +967,7 @@ class RodData(QtCore.QObject):
                     "color": new_data["color"][i],
                     "position": new_data["position"][i],
                     "rod_id": new_data["rod_id"][i],
-                    "seen": new_data["seen"][i]
+                    "seen": new_data["seen"][i],
                 }
                 self.data_update.emit(tmp_data)
         else:
@@ -925,9 +975,15 @@ class RodData(QtCore.QObject):
 
     @QtCore.pyqtSlot(lg.NumberChangeActions, int, int, str)
     @QtCore.pyqtSlot(lg.NumberChangeActions, int, int, str, str, int)
-    def catch_number_switch(self, mode: lg.NumberChangeActions, old_id: int,
-                            new_id: int, cam_id: str, color: str = None,
-                            frame: int = None):
+    def catch_number_switch(
+        self,
+        mode: lg.NumberChangeActions,
+        old_id: int,
+        new_id: int,
+        cam_id: str,
+        color: str = None,
+        frame: int = None,
+    ):
         """Change of rod numbers for more than one frame or camera.
 
         Exchanges rod numbers in more than one frame or camera according to the
@@ -953,14 +1009,21 @@ class RodData(QtCore.QObject):
         if frame is None:
             frame = self.frame
 
-        worker = pl.Worker(rod_number_swap, mode=mode,
-                           previous_id=old_id, new_id=new_id, color=color,
-                           frame=frame, cam_id=cam_id)
+        worker = pl.Worker(
+            rod_number_swap,
+            mode=mode,
+            previous_id=old_id,
+            new_id=new_id,
+            color=color,
+            frame=frame,
+            cam_id=cam_id,
+        )
         worker.signals.result.connect(lambda ret: self.is_busy.emit(False))
         worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
         self.is_busy.emit(True)
         worker.signals.result.connect(
-            lambda _: self.provide_data(data_3d=False))
+            lambda _: self.provide_data(data_3d=False)
+        )
         worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
         self.threads.start(worker)
         return
@@ -1037,8 +1100,9 @@ class RodData(QtCore.QObject):
         return dataset, found_colors
 
     @staticmethod
-    def extract_seen_information(data: pd.DataFrame = None) -> \
-            Tuple[Dict[int, Dict[str, Dict[int, list]]], list]:
+    def extract_seen_information(
+        data: pd.DataFrame = None,
+    ) -> Tuple[Dict[int, Dict[str, Dict[int, list]]], list]:
         """Extracts the seen/unseen parameter for all rods in :data:`rod_data`.
 
         Returns
@@ -1056,24 +1120,29 @@ class RodData(QtCore.QObject):
         seen_data = {}
         col_list = ["particle", "frame", "color"]
         to_include = [
-            col for col in rod_data.columns if re.fullmatch(RE_SEEN, col)]
+            col for col in rod_data.columns if re.fullmatch(RE_SEEN, col)
+        ]
         col_list.extend(to_include)
 
         df_part = rod_data[col_list]
         for item in df_part.iterrows():
             item = item[1]
-            current_seen = ['seen' if item[gp] else 'unseen' for gp in
-                            to_include]
+            current_seen = [
+                "seen" if item[gp] else "unseen" for gp in to_include
+            ]
             if item.frame in seen_data.keys():
                 if item.color in seen_data[item.frame].keys():
-                    seen_data[item.frame][item.color][item.particle] = \
-                        current_seen
+                    seen_data[item.frame][item.color][
+                        item.particle
+                    ] = current_seen
                 else:
-                    seen_data[item.frame][item.color] = {item.particle:
-                                                         current_seen}
+                    seen_data[item.frame][item.color] = {
+                        item.particle: current_seen
+                    }
             else:
-                seen_data[item.frame] = \
-                    {item.color: {item.particle: current_seen}}
+                seen_data[item.frame] = {
+                    item.color: {item.particle: current_seen}
+                }
         lock.unlock()
         return seen_data, [cam.split("_")[-1] for cam in to_include]
 
@@ -1110,14 +1179,18 @@ class RodData(QtCore.QObject):
                     # Update rods and tree display
                     worker = pl.Worker(self.extract_seen_information)
                     worker.signals.result.connect(
-                        lambda ret: self.is_busy.emit(False))
+                        lambda ret: self.is_busy.emit(False)
+                    )
                     worker.signals.error.connect(
-                        lambda ret: self.is_busy.emit(False))
+                        lambda ret: self.is_busy.emit(False)
+                    )
                     self.is_busy.emit(True)
                     worker.signals.result.connect(
-                        lambda ret: self.seen_loaded.emit(*ret))
+                        lambda ret: self.seen_loaded.emit(*ret)
+                    )
                     worker.signals.error.connect(
-                        lambda ret: lg.exception_logger(*ret))
+                        lambda ret: lg.exception_logger(*ret)
+                    )
                     self.threads.start(worker)
 
                     self.provide_data()
@@ -1152,8 +1225,9 @@ class RodData(QtCore.QObject):
 
         has_nans = rod_data[rod_data.isna().any(axis=1)]
         has_data = has_nans.loc[:, has_nans.columns.isin(to_include)].any(
-            axis=1)
-        unused = has_nans.loc[has_data == False]                # noqa: E712
+            axis=1
+        )
+        unused = has_nans.loc[has_data == False]  # noqa: E712
         lock.unlock()
         return unused
 
@@ -1175,8 +1249,10 @@ class RodData(QtCore.QObject):
         """
         global POSITION_SCALING
         settings_changed = False
-        if "position_scaling" in settings and \
-                POSITION_SCALING != settings["position_scaling"]:
+        if (
+            "position_scaling" in settings
+            and POSITION_SCALING != settings["position_scaling"]
+        ):
             settings_changed = True
             POSITION_SCALING = settings["position_scaling"]
 
@@ -1227,37 +1303,60 @@ def change_data(new_data: dict) -> None:
                 "color": color[i],
                 "position": points[i],
                 "rod_id": rod_id[i],
-                "seen": seen[i]
+                "seen": seen[i],
             }
             change_data(tmp_data)
         lock.unlock()
         return
 
-    data_unavailable = rod_data.loc[(rod_data.frame == frame) & (
-        rod_data.particle == rod_id) & (rod_data.color == color),
-        [f"x1_{cam_id}", f"y1_{cam_id}", f"x2_{cam_id}", f"y2_{cam_id}"]].empty
+    data_unavailable = rod_data.loc[
+        (rod_data.frame == frame)
+        & (rod_data.particle == rod_id)
+        & (rod_data.color == color),
+        [f"x1_{cam_id}", f"y1_{cam_id}", f"x2_{cam_id}", f"y2_{cam_id}"],
+    ].empty
     if data_unavailable:
         new_idx = rod_data.index.max() + 1
         rod_data.loc[new_idx] = len(rod_data.columns) * [math.nan]
-        rod_data.loc[new_idx, [f"x1_{cam_id}", f"y1_{cam_id}",
-                               f"x2_{cam_id}", f"y2_{cam_id}", "frame",
-                               f"seen_{cam_id}", "particle", "color"]] \
-            = [*points, frame, seen, rod_id, color]
+        rod_data.loc[
+            new_idx,
+            [
+                f"x1_{cam_id}",
+                f"y1_{cam_id}",
+                f"x2_{cam_id}",
+                f"y2_{cam_id}",
+                "frame",
+                f"seen_{cam_id}",
+                "particle",
+                "color",
+            ],
+        ] = [*points, frame, float(seen), rod_id, color]
     else:
-        rod_data.loc[(rod_data.frame == frame) &
-                     (rod_data.particle == rod_id) &
-                     (rod_data.color == color),
-                     [f"x1_{cam_id}", f"y1_{cam_id}",
-                     f"x2_{cam_id}", f"y2_{cam_id}", f"seen_{cam_id}"]] = \
-            [*points, seen]
-    rod_data = rod_data.astype({"frame": 'int', "particle": 'int'})
+        rod_data.loc[
+            (rod_data.frame == frame)
+            & (rod_data.particle == rod_id)
+            & (rod_data.color == color),
+            [
+                f"x1_{cam_id}",
+                f"y1_{cam_id}",
+                f"x2_{cam_id}",
+                f"y2_{cam_id}",
+                f"seen_{cam_id}",
+            ],
+        ] = [*points, float(seen)]
+    rod_data = rod_data.astype({"frame": "int", "particle": "int"})
     lock.unlock()
     return
 
 
-def rod_number_swap(mode: lg.NumberChangeActions, previous_id: int,
-                    new_id: int, color: str, frame: int,
-                    cam_id: str = None) -> pd.DataFrame:
+def rod_number_swap(
+    mode: lg.NumberChangeActions,
+    previous_id: int,
+    new_id: int,
+    color: str,
+    frame: int,
+    cam_id: str = None,
+) -> pd.DataFrame:
     """Change of rod numbers for more than one frame or camera.
 
     Exchanges rod numbers in more than one frame or camera according to the
@@ -1281,32 +1380,50 @@ def rod_number_swap(mode: lg.NumberChangeActions, previous_id: int,
     lock.lockForWrite()
     tmp_set = rod_data.copy()
     if mode == lg.NumberChangeActions.ALL:
-        rod_data.loc[(tmp_set.color == color) &
-                     (tmp_set.particle == previous_id) &
-                     (tmp_set.frame >= frame), "particle"] = new_id
-        rod_data.loc[(tmp_set.color == color) &
-                     (tmp_set.particle == new_id) &
-                     (tmp_set.frame >= frame), "particle"] = previous_id
+        rod_data.loc[
+            (tmp_set.color == color)
+            & (tmp_set.particle == previous_id)
+            & (tmp_set.frame >= frame),
+            "particle",
+        ] = new_id
+        rod_data.loc[
+            (tmp_set.color == color)
+            & (tmp_set.particle == new_id)
+            & (tmp_set.frame >= frame),
+            "particle",
+        ] = previous_id
     elif mode == lg.NumberChangeActions.ALL_ONE_CAM:
         cols = rod_data.columns
-        mask_previous = (tmp_set.color == color) & \
-                        (tmp_set.particle == previous_id) & \
-                        (tmp_set.frame >= frame)
-        mask_new = (tmp_set.color == color) & \
-                   (tmp_set.particle == new_id) & \
-                   (tmp_set.frame >= frame)
+        mask_previous = (
+            (tmp_set.color == color)
+            & (tmp_set.particle == previous_id)
+            & (tmp_set.frame >= frame)
+        )
+        mask_new = (
+            (tmp_set.color == color)
+            & (tmp_set.particle == new_id)
+            & (tmp_set.frame >= frame)
+        )
         cam_cols = [c for c in cols if cam_id in c]
-        rod_data.loc[mask_previous, cam_cols] = \
-            tmp_set.loc[mask_new, cam_cols].values
-        rod_data.loc[mask_new, cam_cols] = \
-            tmp_set.loc[mask_previous, cam_cols].values
+        rod_data.loc[mask_previous, cam_cols] = tmp_set.loc[
+            mask_new, cam_cols
+        ].values
+        rod_data.loc[mask_new, cam_cols] = tmp_set.loc[
+            mask_previous, cam_cols
+        ].values
     elif mode == lg.NumberChangeActions.ONE_BOTH_CAMS:
-        rod_data.loc[(tmp_set.color == color) &
-                     (tmp_set.particle == previous_id) &
-                     (tmp_set.frame == frame), "particle"] = new_id
-        rod_data.loc[(tmp_set.color == color) &
-                     (tmp_set.particle == new_id) &
-                     (tmp_set.frame == frame), "particle"] = previous_id
+        rod_data.loc[
+            (tmp_set.color == color)
+            & (tmp_set.particle == previous_id)
+            & (tmp_set.frame == frame),
+            "particle",
+        ] = new_id
+        rod_data.loc[
+            (tmp_set.color == color)
+            & (tmp_set.particle == new_id)
+            & (tmp_set.frame == frame),
+            "particle",
+        ] = previous_id
     else:
         # Unknown mode
         pass

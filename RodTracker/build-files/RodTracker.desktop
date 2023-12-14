@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=RodTracker
+Exec=/usr/local/RodTracker/RodTrackerApp
+Icon=/usr/local/RodTracker/_internal/RodTracker/resources/icon.png
+Terminal=false
+Type=Application

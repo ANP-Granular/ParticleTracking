@@ -37,6 +37,18 @@ except ModuleNotFoundError:
     submodule2.DatasetCatalog = None
     submodule2.MetadataCatalog = None
     sys.modules["detectron2.data"] = submodule2
+
+    module2 = ModuleType("shapely")
+    submod2_0 = ModuleType("geometry")
+    submod2_1 = ModuleType("point")
+    submod2_1.Point = None
+    submod2_2 = ModuleType("affinity")
+    submod2_2.scale = None
+    submod2_2.rotate = None
+    sys.modules["shapely"] = module2
+    sys.modules["shapely.geometry"] = submod2_0
+    sys.modules["shapely.geometry.point"] = submod2_1
+    sys.modules["shapely.affinity"] = submod2_2
 finally:
     from ParticleDetection.modelling import datasets
 

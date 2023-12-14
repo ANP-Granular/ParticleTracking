@@ -35,9 +35,9 @@ import matplotlib.animation as animation
 _logger = logging.getLogger(__name__)
 
 
-def matching_results(reprojection_errors: np.ndarray,
-                     rod_lengths: np.ndarray, show: bool = True)\
-        -> Union[None, Tuple[Figure]]:
+def matching_results(
+    reprojection_errors: np.ndarray, rod_lengths: np.ndarray, show: bool = True
+) -> Union[None, Tuple[Figure]]:
     """Plot the reprojection errors and rod lengths after the matching process.
 
     Plots histograms for the rod endpoint reprojection errors and the rod
@@ -80,12 +80,16 @@ def length_hist(rod_lengths: np.ndarray) -> Figure:
     """
     fig = plt.figure()
     try:
-        plt.hist(rod_lengths, alpha=.5,
-                 bins=np.arange(0, rod_lengths.max(), 0.1), edgecolor="black")
+        plt.hist(
+            rod_lengths,
+            alpha=0.5,
+            bins=np.arange(0, rod_lengths.max(), 0.1),
+            edgecolor="black",
+        )
     except ValueError as e:
         if "Maximum allowed size exceeded" in str(e):
             _logger.warning(f"{e}\nUsing a different binning strategy.")
-            plt.hist(rod_lengths, alpha=.5, bins="doane", edgecolor="black")
+            plt.hist(rod_lengths, alpha=0.5, bins="doane", edgecolor="black")
         else:
             raise e
     plt.axvline(np.median(rod_lengths), color="r")
@@ -110,13 +114,19 @@ def reprojection_errors_hist(reprojection_errors: np.ndarray) -> Figure:
     """
     fig = plt.figure()
     try:
-        plt.hist(reprojection_errors, alpha=.8,
-                 bins=np.arange(0, reprojection_errors.max(), 0.25))
+        plt.hist(
+            reprojection_errors,
+            alpha=0.8,
+            bins=np.arange(0, reprojection_errors.max(), 0.25),
+        )
     except ValueError as e:
         if "Maximum allowed size exceeded" in str(e):
             _logger.warning(f"{e}\nUsing a different binning strategy.")
-            plt.hist(reprojection_errors, alpha=.8,
-                     bins=np.arange(0, 2 * np.median(reprojection_errors), 5))
+            plt.hist(
+                reprojection_errors,
+                alpha=0.8,
+                bins=np.arange(0, 2 * np.median(reprojection_errors), 5),
+            )
         else:
             raise e
 
@@ -129,8 +139,9 @@ def reprojection_errors_hist(reprojection_errors: np.ndarray) -> Figure:
     return fig
 
 
-def displacement_fwise(data_3d: np.ndarray, frames: Iterable[int] = None,
-                       show: bool = True) -> Union[None, Figure]:
+def displacement_fwise(
+    data_3d: np.ndarray, frames: Iterable[int] = None, show: bool = True
+) -> Union[None, Figure]:
     """Plot the frame-wise (minimum) displacement per rod and average of rods.
 
     From the 3D positions of rods the between frames displacement is calculated
@@ -157,21 +168,27 @@ def displacement_fwise(data_3d: np.ndarray, frames: Iterable[int] = None,
     else:
         frames = np.asarray(frames)
     combo1 = np.linalg.norm(
-        np.diff(data_3d, axis=0).squeeze(), axis=2).squeeze()
+        np.diff(data_3d, axis=0).squeeze(), axis=2
+    ).squeeze()
     switched_data_3d = data_3d[:, :, :, ::-1]
     combo2 = np.linalg.norm(
         (switched_data_3d[:-1, :, :, :] - data_3d[1:, :, :, :]).squeeze(),
-        axis=2
+        axis=2,
     ).squeeze()
-    displacements = np.stack([np.sum(combo1, axis=-1),
-                              np.sum(combo2, axis=-1)])
+    displacements = np.stack(
+        [np.sum(combo1, axis=-1), np.sum(combo2, axis=-1)]
+    )
     min_disp = np.min(displacements, axis=0)
     if len(min_disp.shape) < 2:
         # Too few frames were given
         return
     fig = plt.figure()
-    plt.plot(frames, min_disp, alpha=0.3,
-             label=[f"p{p}" for p in range(min_disp.shape[1])])
+    plt.plot(
+        frames,
+        min_disp,
+        alpha=0.3,
+        label=[f"p{p}" for p in range(min_disp.shape[1])],
+    )
     plt.plot(frames, np.mean(min_disp, axis=-1), color="black", label="mean")
     plt.xlim(frames.min(), frames.max())
     plt.xlabel("Frame")
@@ -184,8 +201,9 @@ def displacement_fwise(data_3d: np.ndarray, frames: Iterable[int] = None,
     return
 
 
-def compare_diplacements(data: List[np.ndarray], labels: List[str] = None,
-                         show: bool = True) -> Union[None, Figure]:
+def compare_diplacements(
+    data: List[np.ndarray], labels: List[str] = None, show: bool = True
+) -> Union[None, Figure]:
     """Compare the frame-wise, average displacement between multiple datasets.
 
     From the 3D positions of rods the between frames displacement is calculated
@@ -214,14 +232,16 @@ def compare_diplacements(data: List[np.ndarray], labels: List[str] = None,
     frames = len(data[0])
     for data_3d in data:
         combo1 = np.linalg.norm(
-            np.diff(data_3d, axis=0).squeeze(), axis=2).squeeze()
+            np.diff(data_3d, axis=0).squeeze(), axis=2
+        ).squeeze()
         switched_data_3d = data_3d[:, :, :, ::-1]
         combo2 = np.linalg.norm(
             (switched_data_3d[:-1, :, :, :] - data_3d[1:, :, :, :]).squeeze(),
-            axis=2
+            axis=2,
         ).squeeze()
-        displacements = np.stack([np.sum(combo1, axis=-1),
-                                  np.sum(combo2, axis=-1)])
+        displacements = np.stack(
+            [np.sum(combo1, axis=-1), np.sum(combo2, axis=-1)]
+        )
         min_disp = np.min(displacements, axis=0)
         plt.plot(np.mean(min_disp, axis=-1), alpha=0.5)
     plt.ylim((0, 25))
@@ -238,8 +258,9 @@ def compare_diplacements(data: List[np.ndarray], labels: List[str] = None,
     return
 
 
-def show_3D(data: np.ndarray, comparison: np.ndarray = None,
-            show: bool = True) -> Union[None, Figure]:
+def show_3D(
+    data: np.ndarray, comparison: np.ndarray = None, show: bool = True
+) -> Union[None, Figure]:
     """Create/show a plot of rods in 3D with/without a comparison dataset.
 
     The data will be plotted in blue and the comparison in green. ``Right`` and
@@ -273,8 +294,13 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None,
 
     ax_frame = fig.add_axes([0.25, 0.1, 0.65, 0.03])
     sframe = Slider(
-        ax_frame, "Frame", 0, len(data), 0, valstep=list(range(0, len(data))),
-        color="green"
+        ax_frame,
+        "Frame",
+        0,
+        len(data),
+        valinit=0,
+        valstep=list(range(0, len(data))),
+        color="green",
     )
 
     orig_lines: List[Line3D] = []
@@ -296,12 +322,12 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None,
         fig.canvas.draw_idle()
 
     def arrow_key_image_control(event):
-        if event.key == 'left':
+        if event.key == "left":
             new_val = sframe.val - 1
             if new_val < 0:
                 return
             sframe.set_val(new_val)
-        elif event.key == 'right':
+        elif event.key == "right":
             new_val = sframe.val + 1
             if new_val >= len(data):
                 return
@@ -310,7 +336,7 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None,
             pass
 
     sframe.on_changed(update)
-    fig.canvas.mpl_connect('key_press_event', arrow_key_image_control)
+    fig.canvas.mpl_connect("key_press_event", arrow_key_image_control)
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
@@ -325,8 +351,9 @@ def show_3D(data: np.ndarray, comparison: np.ndarray = None,
     return
 
 
-def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
-               show: bool = True) -> Union[None, Figure]:
+def animate_3D(
+    data: np.ndarray, comparison: np.ndarray = None, show: bool = True
+) -> Union[None, Figure]:
     """Create/show an animation of rods in 3D with/out a comparison dataset.
 
     The data will be plotted in blue and the comparison in green.
@@ -358,8 +385,9 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
         rods = walks[num]
         if orig_lines is not None:
             rods_orig = comparison[num]
-            for line, orig_line, rod, rod_orig in \
-                    zip(lines, orig_lines, rods, rods_orig):
+            for line, orig_line, rod, rod_orig in zip(
+                lines, orig_lines, rods, rods_orig
+            ):
                 line.set_data_3d(*rod)
                 orig_line.set_data_3d(*rod_orig)
 
@@ -374,18 +402,22 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
         orig_lines = [ax.plot([], [], [], color="green")[0] for _ in f1]
 
     # Setting the axes properties
-    ax.set(xlim3d=(data[:, :, 0, :].min(), data[:, :, 0, :].max()), xlabel='X')
-    ax.set(ylim3d=(data[:, :, 1, :].min(), data[:, :, 1, :].max()), ylabel='Y')
-    ax.set(zlim3d=(data[:, :, 2, :].min(), data[:, :, 2, :].max()), zlabel='Z')
+    ax.set(xlim3d=(data[:, :, 0, :].min(), data[:, :, 0, :].max()), xlabel="X")
+    ax.set(ylim3d=(data[:, :, 1, :].min(), data[:, :, 1, :].max()), ylabel="Y")
+    ax.set(zlim3d=(data[:, :, 2, :].min(), data[:, :, 2, :].max()), zlabel="Z")
     if comparison is not None:
         ax.legend([orig_lines[0], lines[0]], ["manual", "auto"])
     else:
         ax.legend([lines[0]], ["auto"])
 
     # Creating the Animation object
-    anim = animation.FuncAnimation(                             # noqa: F841
-        fig, update_lines, len(data), fargs=(data, lines, orig_lines),
-        interval=50)
+    anim = animation.FuncAnimation(  # noqa: F841
+        fig,
+        update_lines,
+        len(data),
+        fargs=(data, lines, orig_lines),
+        interval=50,
+    )
 
     if not show:
         writer = animation.PillowWriter(fps=30)
@@ -395,8 +427,9 @@ def animate_3D(data: np.ndarray, comparison: np.ndarray = None,
     return
 
 
-def match_nd(weights: np.ndarray, whr: Tuple[np.ndarray], show: bool = True)\
-        -> Union[None, Figure]:
+def match_nd(
+    weights: np.ndarray, whr: Tuple[np.ndarray], show: bool = True
+) -> Union[None, Figure]:
     """Plot the result :func:`.npartite_matching` as all nodes with edges
     between the matched nodes.
 
@@ -448,21 +481,23 @@ def match_nd(weights: np.ndarray, whr: Tuple[np.ndarray], show: bool = True)\
         pairs = list(zip(whi[:-1], whi[1:]))
         # loop over consecutive node pairs along path
         for idp, (id0, id1) in enumerate(pairs):
-            edges.append(((idp + 0, id0), (idp + 1, id1), {'weight': weight}))
+            edges.append(((idp + 0, id0), (idp + 1, id1), {"weight": weight}))
     graph.add_edges_from(edges)
 
     # set path weights as edge widths for plotting
-    width = np.array([edge['weight'] for id0, id1, edge in
-                      graph.edges(data=True)])
+    width = np.array(
+        [edge["weight"] for id0, id1, edge in graph.edges(data=True)]
+    )
     width = 3.0 * width / max(width)
 
     # plot network
     fig = plt.figure(figsize=(16, 9))
     obj = weights[whr].sum()
-    plt.title('total matching weight = %.2f' % obj)
-    nx.draw_networkx(graph, pos=pos, width=width, node_color='orange',
-                     node_size=700)
-    plt.axis('off')
+    plt.title("total matching weight = %.2f" % obj)
+    nx.draw_networkx(
+        graph, pos=pos, width=width, node_color="orange", node_size=700
+    )
+    plt.axis("off")
 
     if not show:
         return fig

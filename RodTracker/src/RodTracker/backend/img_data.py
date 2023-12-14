@@ -63,6 +63,7 @@ class ImageData(QtCore.QObject):
         Index of the currently displayed frame/image.
         By default None.
     """
+
     data_loaded = QtCore.pyqtSignal((int, str, Path))
     """pyqtSignal(int, str, Path) : A new image containing folder has been
     loaded successfully.
@@ -116,11 +117,15 @@ class ImageData(QtCore.QObject):
         """
         kwargs = {}
         # handle file path issue when running on linux as a snap
-        if 'SNAP' in os.environ:
+        if "SNAP" in os.environ:
             kwargs["options"] = QtWidgets.QFileDialog.DontUseNativeDialog
         chosen_file, _ = QtWidgets.QFileDialog.getOpenFileName(
-            None, 'Open an image', pre_selection,
-            'Images (*.png *.jpeg *.jpg)', **kwargs)
+            None,
+            "Open an image",
+            pre_selection,
+            "Images (*.png *.jpeg *.jpg)",
+            **kwargs,
+        )
         if chosen_file == "":
             # File selection was aborted
             return
@@ -156,12 +161,13 @@ class ImageData(QtCore.QObject):
         if not chosen_file:
             return
         chosen_file = chosen_file.resolve()
-        frame = int(chosen_file.stem)
+        frame = int(chosen_file.stem.split("_")[-1])
         # Open file
         loaded_image = QtGui.QImage(str(chosen_file))
         if loaded_image.isNull():
             QtWidgets.QMessageBox.information(
-                None, "Image Viewer", f"Cannot load {chosen_file}")
+                None, "Image Viewer", f"Cannot load {chosen_file}"
+            )
             return
         # Directory
         self.folder = chosen_file.parent
@@ -180,12 +186,17 @@ class ImageData(QtCore.QObject):
         # Send update signals
         self.data_loaded.emit(len(self.files), self.data_id, self.folder)
         self.next_img[QtGui.QImage].emit(loaded_image)
-        self.next_img[int, int].emit(self.frames[self.frame_idx],
-                                     self.frame_idx)
+        self.next_img[int, int].emit(
+            self.frames[self.frame_idx], self.frame_idx
+        )
         if self._logger is not None:
-            action = lg.FileAction(self.folder, lg.FileActions.LOAD_IMAGES,
-                                   len(self.files), cam_id=self.data_id,
-                                   parent_id=self._logger_id)
+            action = lg.FileAction(
+                self.folder,
+                lg.FileActions.LOAD_IMAGES,
+                len(self.files),
+                cam_id=self.data_id,
+                parent_id=self._logger_id,
+            )
             action.parent_id = self._logger_id
             self._logger.add_action(action)
 
@@ -252,16 +263,20 @@ class ImageData(QtCore.QObject):
             if image_next.isNull():
                 # The file is not a valid image, remove it from the list
                 # and try to load the next one
-                _logger.warning(f"The image {filename.stem} is corrupted and "
-                                f"therefore excluded.")
+                _logger.warning(
+                    f"The image {filename.stem} is corrupted and "
+                    f"therefore excluded."
+                )
                 self.files.remove(filename)
-                self.data_loaded.emit(len(self.files), self.data_id,
-                                      self.folder)
+                self.data_loaded.emit(
+                    len(self.files), self.data_id, self.folder
+                )
                 self.next_image(1)
             else:
                 self.next_img[QtGui.QImage].emit(image_next)
-                self.next_img[int, int].emit(self.frames[self.frame_idx],
-                                             self.frame_idx)
+                self.next_img[int, int].emit(
+                    self.frames[self.frame_idx], self.frame_idx
+                )
         else:
             # No files loaded yet. Let the user select images.
             self.select_images()
@@ -288,8 +303,10 @@ def get_images(read_dir: Path) -> Tuple[List[Path], List[int]]:
     files = []
     file_ids = []
     for f in read_dir.iterdir():
-        if f.is_file() and f.suffix in ['.png', '.jpg', '.jpeg']:
+        if f.is_file() and f.suffix in [".png", ".jpg", ".jpeg"]:
             # Add all image files to a list
             files.append(f)
-            file_ids.append(int(f.stem))
+            # Split any non-frame describing part of the filename
+            tmp_id = f.stem.split("_")[-1]
+            file_ids.append(int(tmp_id))
     return files, file_ids

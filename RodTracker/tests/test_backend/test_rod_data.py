@@ -14,26 +14,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import shutil
-import random
 import logging
 from pathlib import Path
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-    importlib_resources.path = (
-        lambda module, file: importlib_resources.files(module).joinpath(file)
-    )
-else:
-    # importlib.resources has files(), so use that:
-    import importlib.resources as importlib_resources
+import random
+import shutil
+
+import importlib_resources
 import pandas as pd
+from PyQt5 import QtWidgets
 import pytest
 from pytest import MonkeyPatch
 from pytestqt.qtbot import QtBot
-from PyQt5 import QtWidgets
+
 from conftest import load_rod_data
 from RodTracker.backend import rod_data, logger as lg
 from RodTracker.backend.rod_data import RodData
@@ -44,8 +36,9 @@ _logger = logging.getLogger()
 @pytest.fixture(scope="function")
 def rod_manager() -> RodData:
     manager = RodData()
-    folder = importlib_resources.path("RodTracker.resources.example_data",
-                                      "csv")
+    folder = importlib_resources.files(
+        "RodTracker.resources.example_data"
+    ).joinpath("csv")
     manager.open_rod_folder(folder)
     yield manager
     rod_data.rod_data = None
@@ -54,8 +47,9 @@ def rod_manager() -> RodData:
 
 class TestRodData:
     @pytest.mark.parametrize("show", [False, True])
-    def test_show_2D_setter(self, qtbot: QtBot, rod_manager: RodData,
-                            show: bool):
+    def test_show_2D_setter(
+        self, qtbot: QtBot, rod_manager: RodData, show: bool
+    ):
         rod_manager.frame = 500
         with qtbot.assert_not_emitted(rod_manager.data_3d):
             if show:
@@ -66,8 +60,9 @@ class TestRodData:
                     rod_manager.show_2D = show
 
     @pytest.mark.parametrize("show", [False, True])
-    def test_show_3D_setter(self, qtbot: QtBot, rod_manager: RodData,
-                            show: bool):
+    def test_show_3D_setter(
+        self, qtbot: QtBot, rod_manager: RodData, show: bool
+    ):
         rod_manager.frame = 500
         with qtbot.assert_not_emitted(rod_manager.data_2d):
             if show:
@@ -77,16 +72,40 @@ class TestRodData:
                 with qtbot.assert_not_emitted(rod_manager.data_3d):
                     rod_manager.show_3D = show
 
-    @pytest.mark.parametrize("folders,abort,retries", [
-        (["", importlib_resources.path("RodTracker.resources.example_data",
-                                       "images")], True, 1),
-        (["", importlib_resources.path("RodTracker.resources.example_data",
-                                       "csv")], False, 0),
-    ])
-    def test_select_rods(self, qtbot: QtBot, monkeypatch: MonkeyPatch,
-                         rod_manager: RodData, folders: list, abort: bool,
-                         retries: int):
-
+    @pytest.mark.parametrize(
+        "folders,abort,retries",
+        [
+            (
+                [
+                    "",
+                    importlib_resources.files(
+                        "RodTracker.resources.example_data"
+                    ).joinpath("images"),
+                ],
+                True,
+                1,
+            ),
+            (
+                [
+                    "",
+                    importlib_resources.files(
+                        "RodTracker.resources.example_data"
+                    ).joinpath("csv"),
+                ],
+                False,
+                0,
+            ),
+        ],
+    )
+    def test_select_rods(
+        self,
+        qtbot: QtBot,
+        monkeypatch: MonkeyPatch,
+        rod_manager: RodData,
+        folders: list,
+        abort: bool,
+        retries: int,
+    ):
         def assertions(chosen_folder):
             assert issubclass(type(chosen_folder), Path)
             assert chosen_folder.is_dir()
@@ -102,8 +121,11 @@ class TestRodData:
 
         for folder in folders:
             with monkeypatch.context() as mp:
-                mp.setattr(QtWidgets.QFileDialog, "getExistingDirectory",
-                           lambda *args, **kwargs: str(folder))
+                mp.setattr(
+                    QtWidgets.QFileDialog,
+                    "getExistingDirectory",
+                    lambda *args, **kwargs: str(folder),
+                )
                 mp.setattr(QtWidgets.QMessageBox, "exec", mb_exec_replacement)
                 mp.setattr(rod_manager, "open_rod_folder", assertions)
                 prev_retries = entered
@@ -116,10 +138,12 @@ class TestRodData:
         chosen_folder = tmp_path / "test"
         chosen_folder.mkdir(exist_ok=True)
         ex_folder = importlib_resources.files(
-            "RodTracker.resources.example_data.csv")
+            "RodTracker.resources.example_data.csv"
+        )
         ex_file = "rods_df_black.csv"
-        shutil.copy2(ex_folder.joinpath(ex_file),
-                     chosen_folder.joinpath(ex_file))
+        shutil.copy2(
+            ex_folder.joinpath(ex_file), chosen_folder.joinpath(ex_file)
+        )
         manager = RodData()
         with qtbot.wait_signals(
             [manager.data_loaded[int, int, list], manager.seen_loaded],
@@ -127,14 +151,17 @@ class TestRodData:
             # This had to be nested, as otherwise only one data_loaded signal
             # was detected (pytest-qt: 4.2.0)
             with qtbot.wait_signal(
-                    manager.data_loaded[Path, Path, list]) as bl_inner:
+                manager.data_loaded[Path, Path, list]
+            ) as bl_inner:
                 manager.open_rod_folder(chosen_folder)
         ret_dl = bl_outer.all_signals_and_args[0].args
         ret_sl = bl_outer.all_signals_and_args[1].args
 
         assert ret_dl[0] == 500
         assert ret_dl[1] == 550
-        assert ret_dl[2] == ["black", ]
+        assert ret_dl[2] == [
+            "black",
+        ]
 
         assert list(ret_sl[0].keys()) == list(range(500, 551))
         assert ret_sl[1] == ["gp3", "gp4"]
@@ -147,27 +174,39 @@ class TestRodData:
 
     @pytest.mark.parametrize(
         "decision,expected_return",
-        [(QtWidgets.QMessageBox.Yes, True), (QtWidgets.QMessageBox.No, True),
-         (QtWidgets.QMessageBox.Abort, False)])
+        [
+            (QtWidgets.QMessageBox.Yes, True),
+            (QtWidgets.QMessageBox.No, True),
+            (QtWidgets.QMessageBox.Abort, False),
+        ],
+    )
     def test_open_folder_corrected(
-            self, qtbot: QtBot, monkeypatch: MonkeyPatch, tmp_path: Path,
-            rod_manager: RodData,
-            decision: QtWidgets.QMessageBox.StandardButton,
-            expected_return: bool):
+        self,
+        qtbot: QtBot,
+        monkeypatch: MonkeyPatch,
+        tmp_path: Path,
+        rod_manager: RodData,
+        decision: QtWidgets.QMessageBox.StandardButton,
+        expected_return: bool,
+    ):
         chosen_folder = tmp_path / "test"
         corrected_folder = tmp_path / "test_corrected"
         chosen_folder.mkdir(exist_ok=True)
         corrected_folder.mkdir(exist_ok=True)
 
         ex_folder = importlib_resources.files(
-            "RodTracker.resources.example_data.csv")
+            "RodTracker.resources.example_data.csv"
+        )
         ex_file = "rods_df_black.csv"
-        shutil.copy2(ex_folder.joinpath(ex_file),
-                     chosen_folder.joinpath(ex_file))
-        shutil.copy2(ex_folder.joinpath(ex_file),
-                     corrected_folder.joinpath(ex_file))
-        monkeypatch.setattr(QtWidgets.QMessageBox, "exec",
-                            lambda *args, **kwargs: decision)
+        shutil.copy2(
+            ex_folder.joinpath(ex_file), chosen_folder.joinpath(ex_file)
+        )
+        shutil.copy2(
+            ex_folder.joinpath(ex_file), corrected_folder.joinpath(ex_file)
+        )
+        monkeypatch.setattr(
+            QtWidgets.QMessageBox, "exec", lambda *args, **kwargs: decision
+        )
         result = rod_manager.open_rod_folder(chosen_folder)
         if decision == QtWidgets.QMessageBox.Yes:
             assert rod_manager._allow_overwrite is True
@@ -180,53 +219,77 @@ class TestRodData:
         assert result == expected_return
 
     @pytest.mark.parametrize("subfolder", ["", "missing"])
-    def test_save_changes(self, qtbot: QtBot, tmp_path: Path,
-                          rod_manager: RodData, subfolder: str):
+    def test_save_changes(
+        self,
+        qtbot: QtBot,
+        tmp_path: Path,
+        rod_manager: RodData,
+        subfolder: str,
+    ):
         test_folder = tmp_path / subfolder
         rod_manager.out_folder = test_folder
         with qtbot.wait_signal(rod_manager.saved):
             rod_manager.save_changes()
-        assert len(
-            [file for file in test_folder.iterdir() if file.is_file()]) == 8
+        assert (
+            len([file for file in test_folder.iterdir() if file.is_file()])
+            == 8
+        )
 
     @pytest.mark.parametrize("overwrite", [True, False])
-    def test_save_overwrite(self, qtbot: QtBot, tmp_path: Path,
-                            monkeypatch: MonkeyPatch, rod_manager: RodData,
-                            overwrite: bool):
+    def test_save_overwrite(
+        self,
+        qtbot: QtBot,
+        tmp_path: Path,
+        monkeypatch: MonkeyPatch,
+        rod_manager: RodData,
+        overwrite: bool,
+    ):
         rod_manager.folder = tmp_path
         rod_manager.out_folder = tmp_path
         rod_manager._allow_overwrite = False
 
         def msg_clicked_btn(msg_box):
             return msg_box.buttons()[int(not overwrite)]
+
         monkeypatch.setattr(QtWidgets.QMessageBox, "exec", lambda args: None)
-        monkeypatch.setattr(QtWidgets.QMessageBox, "clickedButton",
-                            msg_clicked_btn)
+        monkeypatch.setattr(
+            QtWidgets.QMessageBox, "clickedButton", msg_clicked_btn
+        )
 
         if overwrite:
             with qtbot.wait_signal(rod_manager.saved):
                 rod_manager.save_changes()
-            assert len(
-                [file for file in tmp_path.iterdir() if file.is_file()]) == 8
+            assert (
+                len([file for file in tmp_path.iterdir() if file.is_file()])
+                == 8
+            )
         else:
             with qtbot.assert_not_emitted(rod_manager.saved):
                 rod_manager.save_changes()
-            assert len(
-                [file for file in tmp_path.iterdir() if file.is_file()]) == 0
+            assert (
+                len([file for file in tmp_path.iterdir() if file.is_file()])
+                == 0
+            )
 
-    def test_save_no_folder(self, monkeypatch: MonkeyPatch, tmp_path: Path,
-                            rod_manager: RodData):
+    def test_save_no_folder(
+        self, monkeypatch: MonkeyPatch, tmp_path: Path, rod_manager: RodData
+    ):
         monkeypatch.setattr(rod_manager, "out_folder", None)
-        monkeypatch.setattr(QtWidgets.QFileDialog, "getExistingDirectory",
-                            lambda *args: str(tmp_path.absolute()))
+        monkeypatch.setattr(
+            QtWidgets.QFileDialog,
+            "getExistingDirectory",
+            lambda *args: str(tmp_path.absolute()),
+        )
         rod_manager.save_changes()
         assert len([file for file in tmp_path.iterdir() if file.is_file()])
 
-    def test_save_no_folder_abort(self, monkeypatch: MonkeyPatch,
-                                  rod_manager: RodData):
+    def test_save_no_folder_abort(
+        self, monkeypatch: MonkeyPatch, rod_manager: RodData
+    ):
         monkeypatch.setattr(rod_manager, "out_folder", None)
-        monkeypatch.setattr(QtWidgets.QFileDialog, "getExistingDirectory",
-                            lambda *args: "")
+        monkeypatch.setattr(
+            QtWidgets.QFileDialog, "getExistingDirectory", lambda *args: ""
+        )
         rod_manager.save_changes()
         assert rod_manager.out_folder is None
 
@@ -234,21 +297,24 @@ class TestRodData:
         frames = rod_data.rod_data.frame.unique()
         chosen_frame = random.choice(frames)
         with qtbot.wait_signals([rod_manager.data_2d, rod_manager.data_3d]):
-            rod_manager.update_frame(chosen_frame,
-                                     random.randrange(len(frames)))
+            rod_manager.update_frame(
+                chosen_frame, random.randrange(len(frames))
+            )
         assert chosen_frame == rod_manager.frame
 
     @pytest.mark.parametrize("color", [None, "black", "stuff"])
-    def test_update_color_2D(self, qtbot: QtBot, rod_manager: RodData,
-                             color: str):
+    def test_update_color_2D(
+        self, qtbot: QtBot, rod_manager: RodData, color: str
+    ):
         rod_manager.frame = 500
         with qtbot.assert_not_emitted(rod_manager.data_3d):
             with qtbot.wait_signal(rod_manager.data_2d):
                 rod_manager.update_color_2D(color)
         assert rod_manager.color_2D == color
 
-    def test_update_color_2D_defaults(self, qtbot: QtBot,
-                                      rod_manager: RodData):
+    def test_update_color_2D_defaults(
+        self, qtbot: QtBot, rod_manager: RodData
+    ):
         rod_manager.frame = 500
         with qtbot.assert_not_emitted(rod_manager.data_3d):
             with qtbot.wait_signal(rod_manager.data_2d):
@@ -257,8 +323,9 @@ class TestRodData:
 
     @pytest.mark.parametrize("send", [True, False])
     @pytest.mark.parametrize("color", [None, "black", "stuff"])
-    def test_update_color_3D(self, qtbot: QtBot, rod_manager: RodData,
-                             color: str, send: bool):
+    def test_update_color_3D(
+        self, qtbot: QtBot, rod_manager: RodData, color: str, send: bool
+    ):
         rod_manager.frame = 500
         with qtbot.assert_not_emitted(rod_manager.data_2d):
             if send:
@@ -269,8 +336,9 @@ class TestRodData:
                     rod_manager.update_color_3D(color, send)
         assert rod_manager.color_3D == color
 
-    def test_update_color_3D_defaults(self, qtbot: QtBot,
-                                      rod_manager: RodData):
+    def test_update_color_3D_defaults(
+        self, qtbot: QtBot, rod_manager: RodData
+    ):
         rod_manager.frame = 500
         with qtbot.assert_not_emitted(rod_manager.data_2d):
             with qtbot.wait_signal(rod_manager.data_3d):
@@ -278,8 +346,9 @@ class TestRodData:
         assert rod_manager.color_3D is None
 
     @pytest.mark.parametrize("use_number", [True, False])
-    def test_update_rod_2D(self, qtbot: QtBot, rod_manager: RodData,
-                           use_number: bool):
+    def test_update_rod_2D(
+        self, qtbot: QtBot, rod_manager: RodData, use_number: bool
+    ):
         rod_manager.frame = 500
         if use_number:
             rod = random.randrange(0, 24)
@@ -299,8 +368,9 @@ class TestRodData:
 
     @pytest.mark.parametrize("use_number", [True, False])
     @pytest.mark.parametrize("send", [True, False])
-    def test_update_rod_3D(self, qtbot: QtBot, rod_manager: RodData,
-                           use_number: bool, send: bool):
+    def test_update_rod_3D(
+        self, qtbot: QtBot, rod_manager: RodData, use_number: bool, send: bool
+    ):
         rod_manager.frame = 500
         if use_number:
             rod = random.randrange(0, 24)
@@ -327,10 +397,12 @@ class TestRodData:
         with qtbot.wait_signals([rod_manager.data_2d, rod_manager.data_3d]):
             rod_manager.provide_data()
 
-    @pytest.mark.parametrize("frame,data", [(False, True), (True, False),
-                                            (False, False)])
-    def test_provide_data_abort(self, qtbot: QtBot, rod_manager: RodData,
-                                frame: bool, data: bool):
+    @pytest.mark.parametrize(
+        "frame,data", [(False, True), (True, False), (False, False)]
+    )
+    def test_provide_data_abort(
+        self, qtbot: QtBot, rod_manager: RodData, frame: bool, data: bool
+    ):
         if not frame:
             rod_manager.frame = None
         else:
@@ -346,24 +418,38 @@ class TestRodData:
 
     @pytest.mark.parametrize("all_colors", [True, False])
     @pytest.mark.parametrize("all_rods", [True, False])
-    def test_provide_data_2d(self, qtbot: QtBot, rod_manager: RodData,
-                             all_colors: bool, all_rods: bool):
+    def test_provide_data_2d(
+        self,
+        qtbot: QtBot,
+        rod_manager: RodData,
+        all_colors: bool,
+        all_rods: bool,
+    ):
         rod_manager.frame = 500
         assert rod_data.rod_data is not None
         if all_colors:
             rod_manager.color_2D = None
             expected_colors = list(rod_data.rod_data.color.unique())
         else:
-            expected_colors = [random.choice(
-                rod_data.rod_data.color.unique()), ]
+            expected_colors = [
+                random.choice(rod_data.rod_data.color.unique()),
+            ]
             rod_manager.color_2D = expected_colors[0]
         if all_rods:
-            expected_rods = list(rod_data.rod_data.loc[
-                rod_data.rod_data.frame == 500].particle.unique())
+            expected_rods = list(
+                rod_data.rod_data.loc[
+                    rod_data.rod_data.frame == 500
+                ].particle.unique()
+            )
             rod_manager.rod_2D = None
         else:
-            expected_rods = [random.choice(rod_data.rod_data.loc[
-                rod_data.rod_data.frame == 500].particle.unique()), ]
+            expected_rods = [
+                random.choice(
+                    rod_data.rod_data.loc[
+                        rod_data.rod_data.frame == 500
+                    ].particle.unique()
+                ),
+            ]
             rod_manager.rod_2D = expected_rods[0]
 
         with qtbot.wait_signal(rod_manager.data_2d) as bl:
@@ -372,7 +458,7 @@ class TestRodData:
         sent_data = bl.args[0]
         sent_color = bl.args[1]
         if all_colors:
-            assert sent_color == ''
+            assert sent_color == ""
         else:
             assert sent_color == expected_colors[0]
         assert sorted(expected_rods) == sorted(sent_data.particle.unique())
@@ -381,24 +467,38 @@ class TestRodData:
 
     @pytest.mark.parametrize("all_colors", [True, False])
     @pytest.mark.parametrize("all_rods", [True, False])
-    def test_provide_data_3d(self, qtbot: QtBot, rod_manager: RodData,
-                             all_colors: bool, all_rods: bool):
+    def test_provide_data_3d(
+        self,
+        qtbot: QtBot,
+        rod_manager: RodData,
+        all_colors: bool,
+        all_rods: bool,
+    ):
         rod_manager.frame = 500
         assert rod_data.rod_data is not None
         if all_colors:
             rod_manager.color_3D = None
             expected_colors = list(rod_data.rod_data.color.unique())
         else:
-            expected_colors = [random.choice(
-                rod_data.rod_data.color.unique()), ]
+            expected_colors = [
+                random.choice(rod_data.rod_data.color.unique()),
+            ]
             rod_manager.color_3D = expected_colors[0]
         if all_rods:
-            expected_rods = list(rod_data.rod_data.loc[
-                rod_data.rod_data.frame == 500].particle.unique())
+            expected_rods = list(
+                rod_data.rod_data.loc[
+                    rod_data.rod_data.frame == 500
+                ].particle.unique()
+            )
             rod_manager.rod_3D = None
         else:
-            expected_rods = [random.choice(rod_data.rod_data.loc[
-                rod_data.rod_data.frame == 500].particle.unique()), ]
+            expected_rods = [
+                random.choice(
+                    rod_data.rod_data.loc[
+                        rod_data.rod_data.frame == 500
+                    ].particle.unique()
+                ),
+            ]
             rod_manager.rod_3D = expected_rods[0]
 
         with qtbot.wait_signal(rod_manager.data_3d) as bl:
@@ -412,10 +512,12 @@ class TestRodData:
         assert sent_data.frame.unique()[0] == 500
 
     @pytest.mark.parametrize(
-        "data3d, data2d, rods", [(False, True, [1, 2, 4]),
-                                 (True, False, [1, 2, 4])])
-    def test_get_data(self, qtbot: QtBot, rod_manager: RodData, data3d, data2d,
-                      rods):
+        "data3d, data2d, rods",
+        [(False, True, [1, 2, 4]), (True, False, [1, 2, 4])],
+    )
+    def test_get_data(
+        self, qtbot: QtBot, rod_manager: RodData, data3d, data2d, rods
+    ):
         with qtbot.wait_signal(rod_manager.requested_data) as blocker:
             rod_manager.get_data(rods=rods, data_2d=data2d, data_3d=data3d)
         particles = blocker.args[0]["particle"].unique()
@@ -424,35 +526,43 @@ class TestRodData:
         assert (list(columns) == rod_manager.cols_2D) == data2d
         assert (list(columns) == rod_manager.cols_3D) == data3d
 
-    def test_get_data_missing_data(self, qtbot: QtBot,
-                                   monkeypatch: MonkeyPatch,
-                                   rod_manager: RodData):
+    def test_get_data_missing_data(
+        self, qtbot: QtBot, monkeypatch: MonkeyPatch, rod_manager: RodData
+    ):
         monkeypatch.setattr(rod_data, "rod_data", None)
         with qtbot.assert_not_emitted(rod_manager.requested_data):
             rod_manager.get_data()
 
     def test_receive_updated_data(self, rod_manager: RodData):
         test_data = rod_data.rod_data.loc[
-            rod_data.rod_data["frame"] == 500].copy()
+            rod_data.rod_data["frame"] == 500
+        ].copy()
         test_particles = test_data.particle.unique()[0]
-        columns = [col for col in test_data.columns
-                   if col not in ["particle", "color", "frame"]]
-        test_data.loc[
-            test_data.particle == test_particles, columns] = 1
+        columns = [
+            col
+            for col in test_data.columns
+            if col not in ["particle", "color", "frame"]
+        ]
+        test_data.loc[test_data.particle == test_particles, columns] = 1
         rod_manager.receive_updated_data(test_data)
         changed_data = rod_data.rod_data.loc[rod_data.rod_data.frame == 500]
-        pd.testing.assert_frame_equal(changed_data[test_data.columns],
-                                      test_data, check_dtype=False)
+        pd.testing.assert_frame_equal(
+            changed_data[test_data.columns], test_data, check_dtype=False
+        )
 
-    def test_receive_updated_data_current_frame(self, qtbot: QtBot,
-                                                rod_manager: RodData):
+    def test_receive_updated_data_current_frame(
+        self, qtbot: QtBot, rod_manager: RodData
+    ):
         test_data = rod_data.rod_data.loc[
-            rod_data.rod_data["frame"] == 500].copy()
+            rod_data.rod_data["frame"] == 500
+        ].copy()
         test_particles = test_data.particle.unique()[0]
-        columns = [col for col in test_data.columns
-                   if col not in ["particle", "color", "frame"]]
-        test_data.loc[
-            test_data.particle == test_particles, columns] = 1
+        columns = [
+            col
+            for col in test_data.columns
+            if col not in ["particle", "color", "frame"]
+        ]
+        test_data.loc[test_data.particle == test_particles, columns] = 1
         rod_manager.frame = 500
         with qtbot.wait_signals([rod_manager.data_2d, rod_manager.data_3d]):
             rod_manager.receive_updated_data(test_data)
@@ -463,13 +573,13 @@ class TestRodData:
         rod_manager.add_data(test_data)
         # raise NotImplementedError
 
-    def test_add_data_not_loaded(self, qtbot: QtBot, monkeypatch: MonkeyPatch,
-                                 rod_manager: RodData):
+    def test_add_data_not_loaded(
+        self, qtbot: QtBot, monkeypatch: MonkeyPatch, rod_manager: RodData
+    ):
         rod_data.rod_data = None
         test_data = load_rod_data(["red"])
         expected = [rod_manager.is_busy, rod_manager.data_loaded[list]]
-        monkeypatch.setattr(rod_manager.threads, "start",
-                            lambda *args: None)
+        monkeypatch.setattr(rod_manager.threads, "start", lambda *args: None)
         with qtbot.wait_signals(expected):
             rod_manager.add_data(test_data)
         pd.testing.assert_frame_equal(rod_data.rod_data, test_data)
@@ -488,7 +598,8 @@ class TestRodData:
         rod_manager.frame = 500
 
         with qtbot.wait_signals(
-                [rod_manager.data_update, rod_manager.data_2d]) as bl:
+            [rod_manager.data_update, rod_manager.data_2d]
+        ) as bl:
             rod_manager.catch_data(test_action)
         assert len(bl.all_signals_and_args) == 2
         for sig in bl.all_signals_and_args:
@@ -502,13 +613,14 @@ class TestRodData:
             "color": ["black", "black", "green"],
             "position": [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
             "rod_id": [0, 5, 5],
-            "seen": [False, False, False]
+            "seen": [False, False, False],
         }
         test_action = lg.Action()
         test_action.to_save = lambda: test_data
         rod_manager.frame = 500
         with qtbot.wait_signals(
-                [rod_manager.data_update, rod_manager.data_2d]) as bl:
+            [rod_manager.data_update, rod_manager.data_2d]
+        ) as bl:
             rod_manager.catch_data(test_action)
         assert len(bl.all_signals_and_args) == 4
 
@@ -520,22 +632,39 @@ class TestRodData:
             with qtbot.assert_not_emitted(rod_manager.data_2d):
                 rod_manager.catch_data(test_action)
 
-    @pytest.mark.parametrize("action", [lg.NumberChangeActions.ALL,
-                                        lg.NumberChangeActions.ALL_ONE_CAM,
-                                        lg.NumberChangeActions.ONE_BOTH_CAMS])
-    def test_catch_number_switch(self, qtbot: QtBot, rod_manager: RodData,
-                                 action: lg.NumberChangeActions):
+    @pytest.mark.parametrize(
+        "action",
+        [
+            lg.NumberChangeActions.ALL,
+            lg.NumberChangeActions.ALL_ONE_CAM,
+            lg.NumberChangeActions.ONE_BOTH_CAMS,
+        ],
+    )
+    def test_catch_number_switch(
+        self,
+        qtbot: QtBot,
+        rod_manager: RodData,
+        action: lg.NumberChangeActions,
+    ):
         rod_manager.frame = 501
         rod_manager.color_2D = "green"
         with qtbot.wait_signal(rod_manager.data_2d):
             rod_manager.catch_number_switch(action, 0, 1, "gp3", "black", 500)
 
-    @pytest.mark.parametrize("action", [lg.NumberChangeActions.ALL,
-                                        lg.NumberChangeActions.ALL_ONE_CAM,
-                                        lg.NumberChangeActions.ONE_BOTH_CAMS])
-    def test_catch_number_switch_default(self, qtbot: QtBot,
-                                         rod_manager: RodData,
-                                         action: lg.NumberChangeActions):
+    @pytest.mark.parametrize(
+        "action",
+        [
+            lg.NumberChangeActions.ALL,
+            lg.NumberChangeActions.ALL_ONE_CAM,
+            lg.NumberChangeActions.ONE_BOTH_CAMS,
+        ],
+    )
+    def test_catch_number_switch_default(
+        self,
+        qtbot: QtBot,
+        rod_manager: RodData,
+        action: lg.NumberChangeActions,
+    ):
         rod_manager.frame = 500
         with qtbot.wait_signal(rod_manager.data_2d):
             rod_manager.catch_number_switch(action, 0, 1, "gp3")
@@ -545,13 +674,13 @@ class TestRodData:
         assert RodData.folder_has_data(dir.joinpath("csv"))
 
     def test_has_data_avoid_wrong_files(self):
-        dir = importlib_resources.files(
-            "RodTracker.resources.example_data")
+        dir = importlib_resources.files("RodTracker.resources.example_data")
         assert not RodData.folder_has_data(dir.joinpath("images"))
 
     def test_has_data_raises_on_file(self):
         dir = importlib_resources.files(
-            "RodTracker.resources.example_data.csv")
+            "RodTracker.resources.example_data.csv"
+        )
         file_path = dir.joinpath("rods_df_black.csv")
         with pytest.raises(NotADirectoryError):
             RodData.folder_has_data(file_path)
@@ -560,13 +689,15 @@ class TestRodData:
         assert not RodData.folder_has_data(tmp_path)
 
     def test_has_data_non_existent(self):
-        dir = importlib_resources.files(
-            "RodTracker.resources").joinpath("test")
+        dir = importlib_resources.files("RodTracker.resources").joinpath(
+            "test"
+        )
         assert not RodData.folder_has_data(dir)
 
     def test_get_color_data(self, tmp_path: Path):
         dir = importlib_resources.files(
-            "RodTracker.resources.example_data.csv")
+            "RodTracker.resources.example_data.csv"
+        )
         test_colors = ["blue", "green", "red"]
         read_data = []
         for i in range(1, len(test_colors) + 1):
@@ -585,10 +716,16 @@ class TestRodData:
         for i in range(1, len(read_data)):
             tmp_colors = test_colors[:i]
             for color in tmp_colors:
-                tmp_small = read_data[i - 1].loc[
-                    read_data[i - 1]["color"] == color].reset_index(drop=True)
-                tmp_big = read_data[i].loc[
-                    read_data[i]["color"] == color].reset_index(drop=True)
+                tmp_small = (
+                    read_data[i - 1]
+                    .loc[read_data[i - 1]["color"] == color]
+                    .reset_index(drop=True)
+                )
+                tmp_big = (
+                    read_data[i]
+                    .loc[read_data[i]["color"] == color]
+                    .reset_index(drop=True)
+                )
                 assert tmp_small.isin(tmp_big).all().all()
 
     def test_color_data_empty_folder(self, tmp_path: Path):
@@ -598,15 +735,18 @@ class TestRodData:
         assert data is None
         assert colors == []
 
-    @pytest.mark.parametrize("name",
-                             ["test.csv", "testing.txt", "rods_blue.csv"])
+    @pytest.mark.parametrize(
+        "name", ["test.csv", "testing.txt", "rods_blue.csv"]
+    )
     def test_color_data_avoid_wrong_files(self, tmp_path: Path, name: str):
         dir = importlib_resources.files(
-            "RodTracker.resources.example_data.csv")
+            "RodTracker.resources.example_data.csv"
+        )
         test_colors = ["blue", "green", "red"]
         avoid_color = "black"
-        test_files = [f"rods_df_{color}.csv"
-                      for color in [*test_colors, avoid_color]]
+        test_files = [
+            f"rods_df_{color}.csv" for color in [*test_colors, avoid_color]
+        ]
         for f in test_files:
             shutil.copy2(dir.joinpath(f), tmp_path.joinpath(f))
 
@@ -618,12 +758,14 @@ class TestRodData:
         assert data is not None
         assert sorted(data["color"].unique()) == sorted(test_colors)
 
-    def test_extract_seen_information(self, qtbot: QtBot,
-                                      rod_manager: RodData):
+    def test_extract_seen_information(
+        self, qtbot: QtBot, rod_manager: RodData
+    ):
         expected_cams = ["gp3", "gp4"]
         seen_cols = ["seen_" + cam for cam in expected_cams]
         expected_seen = [
-            random.choices([0, 1], k=2) for _ in range(len(rod_data.rod_data))]
+            random.choices([0, 1], k=2) for _ in range(len(rod_data.rod_data))
+        ]
         rod_data.rod_data[seen_cols] = expected_seen
         previous = rod_data.rod_data.copy()
         previous.set_index(["color", "frame", "particle"], inplace=True)
@@ -633,8 +775,10 @@ class TestRodData:
             for color in seen_info[frame].keys():
                 for particle in seen_info[frame][color].keys():
                     expect = previous.loc[(color, frame, particle), seen_cols]
-                    real = [1 if item == "seen" else 0
-                            for item in seen_info[frame][color][particle]]
+                    real = [
+                        1 if item == "seen" else 0
+                        for item in seen_info[frame][color][particle]
+                    ]
                     assert (expect == real).all(None)
 
     @pytest.mark.skip("Function under test needs adjustments.")
@@ -645,18 +789,26 @@ class TestRodData:
     def test_find_unused_rods(self):
         raise NotImplementedError
 
-    @pytest.mark.parametrize("settings", [
-        {"position_scaling": random.random() - 1.0},
-        {"position_scaling": random.random() - 1.0,
-         "other": random.random() - 1.0},
-        {"other": random.random() - 1.0}],
-        ids=["relevant", "with_distraction", "irrelevant"])
-    def test_update_settings(self, qtbot: QtBot, rod_manager: RodData,
-                             settings: dict):
+    @pytest.mark.parametrize(
+        "settings",
+        [
+            {"position_scaling": random.random() - 1.0},
+            {
+                "position_scaling": random.random() - 1.0,
+                "other": random.random() - 1.0,
+            },
+            {"other": random.random() - 1.0},
+        ],
+        ids=["relevant", "with_distraction", "irrelevant"],
+    )
+    def test_update_settings(
+        self, qtbot: QtBot, rod_manager: RodData, settings: dict
+    ):
         rod_manager.frame = 500
         if "position_scaling" in settings:
-            with qtbot.wait_signals([rod_manager.data_2d,
-                                     rod_manager.data_3d]):
+            with qtbot.wait_signals(
+                [rod_manager.data_2d, rod_manager.data_3d]
+            ):
                 rod_manager.update_settings(settings)
             assert settings["position_scaling"] == rod_data.POSITION_SCALING
         else:
@@ -681,32 +833,45 @@ def test_change_data(qtbot: QtBot, rod_manager: RodData):
     particle = test_data["rod_id"]
     position = test_data["position"]
     seen = test_data["seen"]
-    cam_cols = [col for col in rod_data.rod_data.columns
-                if test_data["cam_id"] in col]
+    cam_cols = [
+        col for col in rod_data.rod_data.columns if test_data["cam_id"] in col
+    ]
 
     # Ensure, that some values will be changed by the function under test.
     previous = rod_data.rod_data.copy()
     assert (
         previous.loc[
-            (previous.frame == frame) & (previous.particle == particle) &
-            (previous.color == color), cam_cols
-        ] != [*position, seen]).any(axis=None)
+            (previous.frame == frame)
+            & (previous.particle == particle)
+            & (previous.color == color),
+            cam_cols,
+        ]
+        != [*position, seen]
+    ).any(axis=None)
 
     rod_data.change_data(test_data)
     changed = rod_data.rod_data
     assert (
         changed.loc[
-            (changed.frame == frame) & (changed.particle == particle) &
-            (changed.color == color), cam_cols
-        ] == [*position, seen]).all(None)
+            (changed.frame == frame)
+            & (changed.particle == particle)
+            & (changed.color == color),
+            cam_cols,
+        ]
+        == [*position, seen]
+    ).all(None)
     assert (
         changed.loc[
-            (changed.frame != frame) | (changed.particle != particle) |
-            (changed.color != color)
-        ] == previous.loc[
-            (previous.frame != frame) | (previous.particle != particle) |
-            (previous.color != color)
-        ]).all(None)
+            (changed.frame != frame)
+            | (changed.particle != particle)
+            | (changed.color != color)
+        ]
+        == previous.loc[
+            (previous.frame != frame)
+            | (previous.particle != particle)
+            | (previous.color != color)
+        ]
+    ).all(None)
 
 
 def test_change_data_multiple(qtbot: QtBot, rod_manager: RodData):
@@ -716,7 +881,7 @@ def test_change_data_multiple(qtbot: QtBot, rod_manager: RodData):
         "color": ["black", "black", "green"],
         "position": [[random.random() for _ in range(4)] for _ in range(3)],
         "rod_id": [0, 5, 5],
-        "seen": [False, False, False]
+        "seen": [False, False, False],
     }
     # Ensure, that some values will be changed by the function under test.
     previous = rod_data.rod_data.copy()
@@ -726,13 +891,20 @@ def test_change_data_multiple(qtbot: QtBot, rod_manager: RodData):
         particle = test_data["rod_id"][i]
         position = test_data["position"][i]
         seen = test_data["seen"][i]
-        cam_cols = [col for col in rod_data.rod_data.columns
-                    if test_data["cam_id"][i] in col]
+        cam_cols = [
+            col
+            for col in rod_data.rod_data.columns
+            if test_data["cam_id"][i] in col
+        ]
         assert (
             previous.loc[
-                (previous.frame == frame) & (previous.particle == particle) &
-                (previous.color == color), cam_cols
-            ] != [*position, seen]).any(axis=None)
+                (previous.frame == frame)
+                & (previous.particle == particle)
+                & (previous.color == color),
+                cam_cols,
+            ]
+            != [*position, seen]
+        ).any(axis=None)
 
     rod_data.change_data(test_data)
     changed = rod_data.rod_data
@@ -743,13 +915,20 @@ def test_change_data_multiple(qtbot: QtBot, rod_manager: RodData):
         particle = test_data["rod_id"][i]
         position = test_data["position"][i]
         seen = test_data["seen"][i]
-        cam_cols = [col for col in rod_data.rod_data.columns
-                    if test_data["cam_id"][i] in col]
+        cam_cols = [
+            col
+            for col in rod_data.rod_data.columns
+            if test_data["cam_id"][i] in col
+        ]
         assert (
             changed.loc[
-                (changed.frame == frame) & (changed.particle == particle) &
-                (changed.color == color), cam_cols
-            ] == [*position, seen]).all(None)
+                (changed.frame == frame)
+                & (changed.particle == particle)
+                & (changed.color == color),
+                cam_cols,
+            ]
+            == [*position, seen]
+        ).all(None)
 
 
 def test_change_data_new(qtbot: QtBot, rod_manager: RodData):
@@ -766,35 +945,53 @@ def test_change_data_new(qtbot: QtBot, rod_manager: RodData):
     particle = test_data["rod_id"]
     position = test_data["position"]
     seen = test_data["seen"]
-    cam_cols = [col for col in rod_data.rod_data.columns
-                if test_data["cam_id"] in col]
+    cam_cols = [
+        col for col in rod_data.rod_data.columns if test_data["cam_id"] in col
+    ]
     # Ensure, the test data rod does not exist yet.
     previous = rod_data.rod_data.copy()
-    assert particle not in previous.loc[
-        (previous.frame == frame) &
-        (previous.color == color)].particle.unique()
+    assert (
+        particle
+        not in previous.loc[
+            (previous.frame == frame) & (previous.color == color)
+        ].particle.unique()
+    )
     rod_data.change_data(test_data)
     changed = rod_data.rod_data
     assert (
         changed.loc[
-            (changed.frame == frame) & (changed.particle == particle) &
-            (changed.color == color), cam_cols
-        ] == [*position, seen]).all(None)
+            (changed.frame == frame)
+            & (changed.particle == particle)
+            & (changed.color == color),
+            cam_cols,
+        ]
+        == [*position, seen]
+    ).all(None)
     assert (
         changed.loc[
-            (changed.frame != frame) | (changed.particle != particle) |
-            (changed.color != color)
-        ] == previous.loc[
-            (previous.frame != frame) | (previous.particle != particle) |
-            (previous.color != color)
-        ]).all(None)
+            (changed.frame != frame)
+            | (changed.particle != particle)
+            | (changed.color != color)
+        ]
+        == previous.loc[
+            (previous.frame != frame)
+            | (previous.particle != particle)
+            | (previous.color != color)
+        ]
+    ).all(None)
 
 
-@pytest.mark.parametrize("mode", [lg.NumberChangeActions.ALL,
-                                  lg.NumberChangeActions.ALL_ONE_CAM,
-                                  lg.NumberChangeActions.ONE_BOTH_CAMS])
-def test_rod_number_swap(qtbot: QtBot, rod_manager: RodData,
-                         mode: lg.NumberChangeActions):
+@pytest.mark.parametrize(
+    "mode",
+    [
+        lg.NumberChangeActions.ALL,
+        lg.NumberChangeActions.ALL_ONE_CAM,
+        lg.NumberChangeActions.ONE_BOTH_CAMS,
+    ],
+)
+def test_rod_number_swap(
+    qtbot: QtBot, rod_manager: RodData, mode: lg.NumberChangeActions
+):
     old_id = 4
     new_id = 2
     color = "black"
@@ -805,65 +1002,87 @@ def test_rod_number_swap(qtbot: QtBot, rod_manager: RodData,
     prev_unchanged = prev_data.loc[prev_data.frame < frame]
     unchanged = rod_data.rod_data.loc[rod_data.rod_data.frame < frame]
     assert (prev_unchanged == unchanged).all(None)
-    prev_unchanged_color = prev_data.loc[(prev_data.frame >= frame) &
-                                         (prev_data.color != color)]
+    prev_unchanged_color = prev_data.loc[
+        (prev_data.frame >= frame) & (prev_data.color != color)
+    ]
     unchanged_color = rod_data.rod_data.loc[
-        (rod_data.rod_data.frame >= frame) &
-        (rod_data.rod_data.color != color)]
-    assert (prev_unchanged_color.reset_index() ==
-            unchanged_color.reset_index()).all(None)
+        (rod_data.rod_data.frame >= frame) & (rod_data.rod_data.color != color)
+    ]
+    assert (
+        prev_unchanged_color.reset_index() == unchanged_color.reset_index()
+    ).all(None)
 
     if mode == lg.NumberChangeActions.ALL:
         changed = rod_data.rod_data.loc[rod_data.rod_data.frame >= frame]
         prev_old = prev_data.loc[
-            (prev_data.particle == old_id) &
-            (prev_data.frame >= frame) &
-            (prev_data.color == color)].drop(columns=["particle"])
+            (prev_data.particle == old_id)
+            & (prev_data.frame >= frame)
+            & (prev_data.color == color)
+        ].drop(columns=["particle"])
         prev_new = prev_data.loc[
-            (prev_data.particle == new_id) &
-            (prev_data.frame >= frame) &
-            (prev_data.color == color)].drop(columns=["particle"])
+            (prev_data.particle == new_id)
+            & (prev_data.frame >= frame)
+            & (prev_data.color == color)
+        ].drop(columns=["particle"])
         changed_old = changed.loc[
-            (changed.particle == old_id) &
-            (changed.color == color)].drop(columns=["particle"])
+            (changed.particle == old_id) & (changed.color == color)
+        ].drop(columns=["particle"])
         changed_new = changed.loc[
-            (changed.particle == new_id) &
-            (changed.color == color)].drop(columns=["particle"])
-        assert (prev_old.reset_index(drop=True) ==
-                changed_new.reset_index(drop=True)).all(None)
-        assert (prev_new.reset_index(drop=True) ==
-                changed_old.reset_index(drop=True)).all(None)
+            (changed.particle == new_id) & (changed.color == color)
+        ].drop(columns=["particle"])
+        assert (
+            prev_old.reset_index(drop=True)
+            == changed_new.reset_index(drop=True)
+        ).all(None)
+        assert (
+            prev_new.reset_index(drop=True)
+            == changed_old.reset_index(drop=True)
+        ).all(None)
 
     elif mode == lg.NumberChangeActions.ALL_ONE_CAM:
         changed_cols = [col for col in prev_data.columns if cam in col]
         unchanged_cols = [col for col in prev_data.columns if cam not in col]
 
-        unchanged = rod_data.rod_data.loc[rod_data.rod_data.frame >= frame,
-                                          unchanged_cols]
-        prev_unchanged = prev_data.loc[prev_data.frame >= frame,
-                                       unchanged_cols]
-        assert (prev_unchanged.reset_index(drop=True) ==
-                unchanged.reset_index(drop=True)).all(None)
+        unchanged = rod_data.rod_data.loc[
+            rod_data.rod_data.frame >= frame, unchanged_cols
+        ]
+        prev_unchanged = prev_data.loc[
+            prev_data.frame >= frame, unchanged_cols
+        ]
+        assert (
+            prev_unchanged.reset_index(drop=True)
+            == unchanged.reset_index(drop=True)
+        ).all(None)
 
         changed = rod_data.rod_data.loc[rod_data.rod_data.frame >= frame]
         prev_old = prev_data.loc[
-            (prev_data.particle == old_id) &
-            (prev_data.frame >= frame) &
-            (prev_data.color == color), changed_cols]
+            (prev_data.particle == old_id)
+            & (prev_data.frame >= frame)
+            & (prev_data.color == color),
+            changed_cols,
+        ]
         prev_new = prev_data.loc[
-            (prev_data.particle == new_id) &
-            (prev_data.frame >= frame) &
-            (prev_data.color == color), changed_cols]
+            (prev_data.particle == new_id)
+            & (prev_data.frame >= frame)
+            & (prev_data.color == color),
+            changed_cols,
+        ]
         changed_old = changed.loc[
-            (changed.particle == old_id) &
-            (changed.color == color), changed_cols]
+            (changed.particle == old_id) & (changed.color == color),
+            changed_cols,
+        ]
         changed_new = changed.loc[
-            (changed.particle == new_id) &
-            (changed.color == color), changed_cols]
-        assert (prev_old.reset_index(drop=True) ==
-                changed_new.reset_index(drop=True)).all(None)
-        assert (prev_new.reset_index(drop=True) ==
-                changed_old.reset_index(drop=True)).all(None)
+            (changed.particle == new_id) & (changed.color == color),
+            changed_cols,
+        ]
+        assert (
+            prev_old.reset_index(drop=True)
+            == changed_new.reset_index(drop=True)
+        ).all(None)
+        assert (
+            prev_new.reset_index(drop=True)
+            == changed_old.reset_index(drop=True)
+        ).all(None)
 
     elif mode == lg.NumberChangeActions.ONE_BOTH_CAMS:
         prev_unchanged = prev_data.loc[prev_data.frame != frame]
@@ -872,20 +1091,26 @@ def test_rod_number_swap(qtbot: QtBot, rod_manager: RodData,
 
         changed = rod_data.rod_data.loc[rod_data.rod_data.frame == frame]
         prev_old = prev_data.loc[
-            (prev_data.particle == old_id) &
-            (prev_data.frame == frame) &
-            (prev_data.color == color)].drop(columns=["particle"])
+            (prev_data.particle == old_id)
+            & (prev_data.frame == frame)
+            & (prev_data.color == color)
+        ].drop(columns=["particle"])
         prev_new = prev_data.loc[
-            (prev_data.particle == new_id) &
-            (prev_data.frame == frame) &
-            (prev_data.color == color)].drop(columns=["particle"])
+            (prev_data.particle == new_id)
+            & (prev_data.frame == frame)
+            & (prev_data.color == color)
+        ].drop(columns=["particle"])
         changed_old = changed.loc[
-            (changed.particle == old_id) &
-            (changed.color == color)].drop(columns=["particle"])
+            (changed.particle == old_id) & (changed.color == color)
+        ].drop(columns=["particle"])
         changed_new = changed.loc[
-            (changed.particle == new_id) &
-            (changed.color == color)].drop(columns=["particle"])
-        assert (prev_old.reset_index(drop=True) ==
-                changed_new.reset_index(drop=True)).all(None)
-        assert (prev_new.reset_index(drop=True) ==
-                changed_old.reset_index(drop=True)).all(None)
+            (changed.particle == new_id) & (changed.color == color)
+        ].drop(columns=["particle"])
+        assert (
+            prev_old.reset_index(drop=True)
+            == changed_new.reset_index(drop=True)
+        ).all(None)
+        assert (
+            prev_new.reset_index(drop=True)
+            == changed_old.reset_index(drop=True)
+        ).all(None)

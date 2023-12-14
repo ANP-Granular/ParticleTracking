@@ -16,9 +16,11 @@
 
 """**TBD**"""
 
+import platform
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 import RodTracker.backend.file_locations as fl
+from RodTracker._version import __version__, __date__
 
 
 class ConfirmDeleteDialog(QtWidgets.QDialog):
@@ -42,6 +44,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         ``True`` -> user confirms deletion
         ``False`` -> user denies deletion
     """
+
     def __init__(self, to_delete: pd.DataFrame, parent: QtWidgets.QWidget):
         super().__init__(parent=parent)
         self.to_delete = to_delete
@@ -82,26 +85,30 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.layout.addWidget(self.controls)
         self.layout.addStretch()
         self.table.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.Stretch)
+            QtWidgets.QHeaderView.Stretch
+        )
         self.setLayout(self.layout)
 
         next_row = 0
         for row in self.to_delete.iterrows():
             next_frame = QtWidgets.QTableWidgetItem(str(row[1].frame))
             next_color = QtWidgets.QTableWidgetItem(str(row[1].color))
-            next_particle = QtWidgets.QTableWidgetItem(
-                str(row[1].particle))
-            next_frame.setTextAlignment(QtCore.Qt.AlignHCenter |
-                                        QtCore.Qt.AlignVCenter)
-            next_color.setTextAlignment(QtCore.Qt.AlignHCenter |
-                                        QtCore.Qt.AlignVCenter)
-            next_particle.setTextAlignment(QtCore.Qt.AlignHCenter |
-                                           QtCore.Qt.AlignVCenter)
+            next_particle = QtWidgets.QTableWidgetItem(str(row[1].particle))
+            next_frame.setTextAlignment(
+                QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter
+            )
+            next_color.setTextAlignment(
+                QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter
+            )
+            next_particle.setTextAlignment(
+                QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter
+            )
 
             self.table.setItem(next_row, 1, next_frame)
             self.table.setItem(next_row, 2, next_color)
-            next_particle.setFlags(QtCore.Qt.ItemIsUserCheckable |
-                                   QtCore.Qt.ItemIsEnabled)
+            next_particle.setFlags(
+                QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
+            )
             next_particle.setCheckState(QtCore.Qt.Checked)
             self.table.setItem(next_row, 0, next_particle)
             next_row += 1
@@ -137,21 +144,114 @@ def show_warning(text: str):
 
 
 def show_about(parent: QtWidgets.QWidget):
-    about_txt = """
-    <style>
-        table { background-color: transparent; }
-        a { text-decoration:none; font-weight:bold; }
-    </style>
-    <table border="0" cellpadding="0" cellspacing="5" width="400"
-     align="left" style="margin-top:0px;">
-        <tr>
-            <td width="200", colspan="2"> <h3>Version:</h3> </td>
-            <td width="200"> <p> 0.6.0 </p> </td>
-        </tr>
-        <tr>
-            <td width="200", colspan="2"> <h3>Date:</h3> </td>
-            <td width="200"> <p> 22.02.2023 </p> </td>
-        </tr>
+    dependency_format = """
+    <tr>
+        <td width="50">
+            <p><a href="{}">{}</a>:</p>
+        </td>
+        <td width="150">{}</td>
+        <td width="200"><p>{}</p></td>
+    </tr>
+    """
+    dependencies = [
+        # (link, name, version, license(s))
+        (
+            "https://docutils.sourceforge.io/",
+            "docutils",
+            "0.18.1",
+            "BSD 2, GPL, PSF",
+        ),
+        ("https://github.com/mtkennerly/dunamai", "dunamai", "1.19.0", "MIT"),
+        ("https://github.com/pycqa/flake8", "flake8", "6.1.0", "MIT"),
+        (
+            "https://github.com/python/importlib_resources",
+            "importlib-resources",
+            "6.1.0",
+            "Apache-2.0",
+        ),
+        ("https://material.io/", "Material Design", "2", "Apache-2.0"),
+        ("https://matplotlib.org/", "matplotlib", "3.8.0", "matplotlib"),
+        (
+            "https://myst-parser.readthedocs.io/",
+            "MyST-Parser",
+            "2.0.0",
+            "MIT",
+        ),
+        ("https://numpy.org/", "NumPy", "1.26.0", "BSD 3"),
+        ("https://pandas.pydata.org/", "Pandas", "2.1.1", "BSD 3"),
+        (
+            "https://github.com/ANP-Granular/ParticleTracking",
+            "particledetection",
+            "0.4.0",
+            "GPLv3",
+        ),
+        ("https://python-pillow.org/", "Pillow", "10.0.1", "HPND"),
+        (
+            "https://github.com/platformdirs/platformdirs",
+            "platformdirs",
+            "3.11.0",
+            "MIT",
+        ),
+        ("https://www.pyinstaller.org/", "PyInstaller", "6.0.0", "GPLv2+"),
+        (
+            "https://www.riverbankcomputing.com/software/pyqt",
+            "PyQt3D",
+            "5.15.6",
+            "GPLv3+",
+        ),
+        (
+            "https://www.riverbankcomputing.com/software/pyqt",
+            "PyQt5",
+            "5.15.9",
+            "GPLv3+",
+        ),
+        ("https://docs.pytest.org/", "pytest", "7.4.2", "MIT"),
+        (
+            "https://github.com/pytest-dev/pytest-cov",
+            "pytest-cov",
+            "4.1.0",
+            "MIT",
+        ),
+        (
+            "https://github.com/pytest-dev/pytest-qt",
+            "pytest-qt",
+            "4.2.0",
+            "MIT",
+        ),
+        ("https://www.qt.io", "Qt5", "5.15.2", "LGPLv3"),
+        ("https://www.sphinx-doc.org/", "Sphinx", "7.2.6", "BSD"),
+        (
+            "https://sphinx-rtd-theme.readthedocs.io/",
+            "sphinx_rtd_theme",
+            "1.3.0",
+            "MIT",
+        ),
+    ]
+    dependency_string = """"""
+    for dep in dependencies:
+        dependency_string += dependency_format.format(*dep)
+
+    about_txt = (
+        """
+        <style>
+            table { background-color: transparent; }
+            a { text-decoration:none; font-weight:bold; }
+        </style>
+        <table border="0" cellpadding="0" cellspacing="5" width="400"
+        align="left" style="margin-top:0px;">
+            <tr>
+                <td width="200", colspan="2"> <h3>Version:</h3> </td>
+        """
+        + """   <td width="200"> <p> {} </p> </td>
+            </tr>
+            <tr>
+                <td width="200", colspan="2"> <h3>Date:</h3> </td>
+                <td width="200"> <p> {} </p> </td>
+            </tr>
+        """.format(
+            __version__, __date__
+        )
+        + """
         <tr>
             <td width="200", colspan="2"> <h3><br>Developers:<br></h3> </td>
             <td width="200">
@@ -173,164 +273,33 @@ def show_about(parent: QtWidgets.QWidget):
         <tr>
             <td width="400", colspan="3"> <br><h3>3rd Party Software:</h3>
             <p> This application either uses code and tools from the
-                 following projects in part or in their entirety as deemed
-                 permissible by each project's open-source license.</p>
+                following projects in part or in their entirety as deemed
+                permissible by each project's open-source license.</p>
             </td>
         </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://docutils.sourceforge.io/">
-                docutils</a>:</p>
-            </td>
-            <td width="150">0.16</td>
-            <td width="200"><p>BSD 2, GPL, PSF</p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://github.com/pycqa/flake8">flake8</a>:</p>
-            </td>
-            <td width="150">5.0.4</td>
-            <td width="200"><p>MIT</p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://github.com/python/importlib_resources">
-                importlib-resources</a>:</p>
-            </td>
-            <td width="150">1.4.0</td>
-            <td width="200"><p>Apache-2.0</p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://material.io/">Material Design</a>:</p>
-            </td>
-            <td width="150">2</td>
-            <td width="200"><p> Apache-2.0 </p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://matplotlib.org/">matplotlib</a>:</p>
-            </td>
-            <td width="150">3.6.2</td>
-            <td width="200"><p>matplotlib</p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://myst-parser.readthedocs.io/">
-                MyST-Parser</a>:</p>
-            </td>
-            <td width="150">0.18.1</td>
-            <td width="200"><p>MIT</p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://numpy.org/">NumPy</a>:</p>
-            </td>
-            <td width="150">1.21.0</td>
-            <td width="200"><p>BSD 3</p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://pandas.pydata.org/">Pandas</a>:</p>
-            </td>
-            <td width="150">1.2.5</td>
-            <td width="200"><p> BSD 3 </p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://github.com/ANP-Granular/ParticleTracking">
-                particledetection</a>:</p>
-            </td>
-            <td width="150">0.4.0</td>
-            <td width="200"><p> GPLv3 </p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://github.com/platformdirs/platformdirs">
-                platformdirs</a>:</p>
-            </td>
-            <td width="150">3.2.0</td>
-            <td width="200"><p> MIT </p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://www.pyinstaller.org/">PyInstaller</a>:</p>
-            </td>
-            <td width="150">5.7</td>
-            <td width="200"><p> GPLv2+ </p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a  href="https://www.riverbankcomputing.com/software
-                /pyqt">PyQt3D</a>:</p>
-            </td>
-            <td width="150">5.15.5</td>
-            <td width="200"><p> GPLv3+ </p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a  href="https://www.riverbankcomputing.com/software
-                /pyqt">PyQt5</a>:</p>
-            </td>
-            <td width="150">5.15.4</td>
-            <td width="200"><p> GPLv3+ </p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://docs.pytest.org/">pytest</a>:</p>
-            </td>
-            <td width="150">7.1.2</td>
-            <td width="200"><p>MIT</p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://github.com/pytest-dev/pytest-cov">
-                pytest-cov</a>:</p>
-            </td>
-            <td width="150">3.0.0</td>
-            <td width="200"><p>MIT</p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://github.com/pytest-dev/pytest-qt">
-                pytest-qt</a>:</p>
-            </td>
-            <td width="150">4.0.0</td>
-            <td width="200"><p>MIT</p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://www.qt.io">Qt5</a>:</p>
-            </td>
-            <td width="150">5.15.2</td>
-            <td width="200"><p> LGPLv3 </p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://www.sphinx-doc.org/">Sphinx</a>:</p>
-            </td>
-            <td width="150">5.3</td>
-            <td width="200"><p>BSD</p></td>
-        </tr>
-        <tr>
-            <td width="50">
-                <p><a href="https://sphinx-rtd-theme.readthedocs.io/">
-                sphinx_rtd_theme</a>:</p>
-            </td>
-            <td width="150">0.5.1</td>
-            <td width="200"><p>MIT</p></td>
-        </tr>
-    </table>
-    <br>
-    <br>
-    <p>
-        Copyright © 2023 Adrian Niemann, Dmitry Puzyrev
-    </p>"""
-    QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
+        """
+        + dependency_string
+        + """
+        </table>
+        <br>
+        <br>
+        <p>
+            Copyright © 2023 Adrian Niemann, Dmitry Puzyrev
+        </p>
+        """
+    )
+    if platform.system() == "Darwin":
+        QtWidgets.QMessageBox.about(parent, "About RodTracker", about_txt)
+    else:
+        # Using the logo instead of the icon
+        _ = QtWidgets.QWidget()
+        _.setWindowIcon(QtGui.QIcon(fl.logo_path()))
+        QtWidgets.QMessageBox.about(_, "About RodTracker", about_txt)
 
 
 class ConflictDialog(QtWidgets.QMessageBox):
     """Dialog for switching rod numbers in various modes."""
+
     def __init__(self, last_id, new_id, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -340,19 +309,24 @@ class ConflictDialog(QtWidgets.QMessageBox):
         self.setText(
             f"A rod number switching attempt of"
             f"#{last_id} <---> #{new_id} was detected. \nHow shall "
-            f"this conflict be resolved?")
+            f"this conflict be resolved?"
+        )
         self.btn_switch_all = self.addButton(
             "Switch in:\nBoth views, following frames",
-            QtWidgets.QMessageBox.ActionRole)
-        self.btn_one_cam = self.addButton("Switch in:\nThis view, following "
-                                          "frames",
-                                          QtWidgets.QMessageBox.ActionRole)
+            QtWidgets.QMessageBox.ActionRole,
+        )
+        self.btn_one_cam = self.addButton(
+            "Switch in:\nThis view, following " "frames",
+            QtWidgets.QMessageBox.ActionRole,
+        )
         self.btn_both_cams = self.addButton(
             "Switch in:\nBoth views, this frame",
-            QtWidgets.QMessageBox.ActionRole)
+            QtWidgets.QMessageBox.ActionRole,
+        )
         self.btn_only_this = self.addButton(
             "Switch in:\nThis view, this frame",
-            QtWidgets.QMessageBox.ActionRole)
+            QtWidgets.QMessageBox.ActionRole,
+        )
         self.btn_cancel = self.addButton(QtWidgets.QMessageBox.Abort)
         self.setDefaultButton(self.btn_switch_all)
         self.setEscapeButton(self.btn_cancel)

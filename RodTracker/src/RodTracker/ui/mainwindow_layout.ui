@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>resources/icon_main.ico</normaloff>resources/icon_main.ico</iconset>
+    <normaloff>resources/icon_windows.ico</normaloff>resources/icon_windows.ico</iconset>
   </property>
   <widget class="QWidget" name="centralized">
    <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -50,8 +50,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1176</width>
-         <height>622</height>
+         <width>1190</width>
+         <height>586</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -760,8 +760,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>616</width>
-                     <height>459</height>
+                     <width>679</width>
+                     <height>442</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -801,7 +801,7 @@
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>resources/icon_main.ico</pixmap>
+                       <pixmap>resources/logo.png</pixmap>
                       </property>
                       <property name="scaledContents">
                        <bool>false</bool>
@@ -850,8 +850,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>100</width>
-                     <height>30</height>
+                     <width>679</width>
+                     <height>442</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -891,7 +891,7 @@
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>resources/icon_main.ico</pixmap>
+                       <pixmap>resources/logo.png</pixmap>
                       </property>
                       <property name="scaledContents">
                        <bool>false</bool>
@@ -1094,8 +1094,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>255</width>
-                        <height>508</height>
+                        <width>431</width>
+                        <height>463</height>
                        </rect>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -2099,7 +2099,7 @@
      <x>0</x>
      <y>0</y>
      <width>1190</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -2141,10 +2141,20 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <widget class="QMenu" name="menu_docs">
+     <property name="title">
+      <string>Documentation</string>
+     </property>
+     <addaction name="action_docs_local"/>
+     <addaction name="action_docs_online"/>
+    </widget>
     <addaction name="action_logs"/>
-    <addaction name="action_docs"/>
+    <addaction name="menu_docs"/>
     <addaction name="action_about"/>
     <addaction name="action_about_qt"/>
+    <addaction name="separator"/>
+    <addaction name="action_bug_report"/>
+    <addaction name="action_feature_request"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -2247,11 +2257,6 @@
     <string>Preferences</string>
    </property>
   </action>
-  <action name="action_docs">
-   <property name="text">
-    <string>Documentation</string>
-   </property>
-  </action>
   <action name="action_about">
    <property name="text">
     <string>About</string>
@@ -2317,6 +2322,26 @@
    </property>
    <property name="shortcut">
     <string>G</string>
+   </property>
+  </action>
+  <action name="action_bug_report">
+   <property name="text">
+    <string>Report a BUG</string>
+   </property>
+  </action>
+  <action name="action_feature_request">
+   <property name="text">
+    <string>Request a FEATURE</string>
+   </property>
+  </action>
+  <action name="action_docs_local">
+   <property name="text">
+    <string>Local</string>
+   </property>
+  </action>
+  <action name="action_docs_online">
+   <property name="text">
+    <string>Online</string>
    </property>
   </action>
  </widget>
