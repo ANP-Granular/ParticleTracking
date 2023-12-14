@@ -50,8 +50,8 @@ pandas= [
     {version = ">=1.2.5,<2.1", python = "<3.9"}
 ]
 ParticleDetection = [
-    {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "3b87967a", extras=["cpu"], markers = "extra != 'gpu'"},
-    {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "3b87967a", extras=["gpu"], markers = "extra == 'gpu'"},
+    {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "110f20d", extras=["cpu"], markers = "extra != 'gpu'"},
+    {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "110f20d", extras=["gpu"], markers = "extra == 'gpu'"},
 ]
 platformdirs = ">=3.2.0"
 PyQt3D = ">=5.15.5"
