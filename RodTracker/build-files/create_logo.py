@@ -1,12 +1,28 @@
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
+#
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
+
 from pathlib import Path
-import numpy as np
-import matplotlib.pyplot as plt
+
 import matplotlib.colors as mpl_colors
+import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import patches
 from matplotlib.transforms import Bbox
 from mpl_toolkits.mplot3d import art3d
 from PIL import Image
-
 
 if __name__ == "__main__":
     output_path = Path(__file__).parent / "../src/RodTracker/resources"

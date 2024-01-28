@@ -1,25 +1,27 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
 
 import logging
 import tempfile
 from typing import List
+
 from PyQt5 import QtCore, QtWidgets
+
 import RodTracker.backend.logger as lg
 from RodTracker import DATA_DIR
 
@@ -56,7 +58,8 @@ class LoggerWidget(QtWidgets.QListWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.temp_manager = tempfile.TemporaryDirectory(
-            prefix="Session_", dir=str(DATA_DIR))
+            prefix="Session_", dir=str(DATA_DIR)
+        )
         _logger.info(self.temp_manager.name)
 
     @property
@@ -74,8 +77,11 @@ class LoggerWidget(QtWidgets.QListWidget):
         -------
         List[Action]
         """
-        all_unsaved = [item for changes in self._loggers for item in
-                       changes.unsaved_changes]
+        all_unsaved = [
+            item
+            for changes in self._loggers
+            for item in changes.unsaved_changes
+        ]
         return all_unsaved
 
     @property
@@ -93,8 +99,11 @@ class LoggerWidget(QtWidgets.QListWidget):
         -------
         List[Action]
         """
-        all_repeatable = [item for changes in self._loggers for item in
-                          changes.repeatable_changes]
+        all_repeatable = [
+            item
+            for changes in self._loggers
+            for item in changes.repeatable_changes
+        ]
         return all_repeatable
 
     def get_new_logger(self, parent_id: str) -> lg.ActionLogger:

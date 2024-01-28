@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
 from PyQt5 import QtCore, QtWidgets
@@ -36,6 +36,7 @@ class RodTree(QtWidgets.QTreeWidget):
         Dimensions: ``(frame, color, particle, camera)``
 
     """
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.rod_info = None
@@ -73,13 +74,11 @@ class RodTree(QtWidgets.QTreeWidget):
                 current_color = QtWidgets.QTreeWidgetItem(current_frame)
                 current_color.setText(0, color)
                 for particle in self.rod_info[frame][color].keys():
-                    current_particle = QtWidgets.QTreeWidgetItem(
-                        current_color)
-                    current_particle.setText(
-                        0, f"Rod{particle:3d}: "
-                    )
+                    current_particle = QtWidgets.QTreeWidgetItem(current_color)
+                    current_particle.setText(0, f"Rod{particle:3d}: ")
                     for idx, gp in enumerate(
-                            self.rod_info[frame][color][particle]):
+                        self.rod_info[frame][color][particle]
+                    ):
                         current_particle.setText(idx + 1, gp)
                 current_color.sortChildren(0, QtCore.Qt.AscendingOrder)
             current_frame.sortChildren(0, QtCore.Qt.AscendingOrder)
@@ -101,27 +100,31 @@ class RodTree(QtWidgets.QTreeWidget):
             headings.append(header.text(i))
         insert_idx = headings.index(new_data["cam_id"])
         try:
-            self.rod_info[new_data["frame"]][new_data["color"]][new_data[
-                "rod_id"]][insert_idx] = ("seen" if new_data["seen"]
-                                          else "unseen")
+            self.rod_info[new_data["frame"]][new_data["color"]][
+                new_data["rod_id"]
+            ][insert_idx] = ("seen" if new_data["seen"] else "unseen")
         except KeyError:
-            self.new_rod(new_data["frame"], new_data["color"],
-                         new_data["rod_id"])
-            self.rod_info[new_data["frame"]][new_data["color"]][new_data[
-                "rod_id"]][insert_idx] = ("seen" if new_data["seen"]
-                                          else "unseen")
+            self.new_rod(
+                new_data["frame"], new_data["color"], new_data["rod_id"]
+            )
+            self.rod_info[new_data["frame"]][new_data["color"]][
+                new_data["rod_id"]
+            ][insert_idx] = ("seen" if new_data["seen"] else "unseen")
 
         # Update visual elements
-        f_it = self.findItems(str(new_data["frame"]),
-                              QtCore.Qt.MatchFlag.MatchEndsWith)[0]
+        f_it = self.findItems(
+            str(new_data["frame"]), QtCore.Qt.MatchFlag.MatchEndsWith
+        )[0]
         for i in range(f_it.childCount()):
             color = f_it.child(i)
             if new_data["color"] in color.text(0):
                 for k in range(color.childCount()):
                     rod = color.child(k)
                     if f"Rod{new_data['rod_id']:3d}:" in rod.text(0):
-                        rod.setText(insert_idx + 1, ("seen" if new_data["seen"]
-                                                     else "unseen"))
+                        rod.setText(
+                            insert_idx + 1,
+                            ("seen" if new_data["seen"] else "unseen"),
+                        )
                         break
                 break
 
@@ -153,7 +156,8 @@ class RodTree(QtWidgets.QTreeWidget):
         for frame in new_data.keys():
             try:
                 current_frame = self.findItems(
-                    str(frame), QtCore.Qt.MatchFlag.MatchEndsWith)[0]
+                    str(frame), QtCore.Qt.MatchFlag.MatchEndsWith
+                )[0]
             except IndexError:
                 current_frame = QtWidgets.QTreeWidgetItem(self)
                 current_frame.setText(0, f"Frame: {frame}")
@@ -176,14 +180,15 @@ class RodTree(QtWidgets.QTreeWidget):
                             current_particle = p_child
                     if current_particle is None:
                         current_particle = QtWidgets.QTreeWidgetItem(
-                            current_color)
-                        current_particle.setText(
-                            0, f"Rod{particle:3d}: "
+                            current_color
                         )
-                        self.rod_info[frame][color][particle] = \
-                            len(headings) * ["unseen"]
+                        current_particle.setText(0, f"Rod{particle:3d}: ")
+                        self.rod_info[frame][color][particle] = len(
+                            headings
+                        ) * ["unseen"]
                     current_particle.setText(
-                        insert_idx + 1, new_data[frame][color][particle][0])
+                        insert_idx + 1, new_data[frame][color][particle][0]
+                    )
 
     def update_tree_folding(self, frame: int, color: str):
         """Updates the folding of the tree view.
@@ -199,15 +204,18 @@ class RodTree(QtWidgets.QTreeWidget):
         """
         self.collapseAll()
         root = self.invisibleRootItem()
-        frames = [int(root.child(i).text(0)[7:])
-                  for i in range(root.childCount())]
+        frames = [
+            int(root.child(i).text(0)[7:]) for i in range(root.childCount())
+        ]
         try:
             expand_frame = root.child(frames.index(frame))
         except ValueError:
             # Frame not found in list -> unable to update the list
             return
-        colors = [expand_frame.child(i).text(0)
-                  for i in range(expand_frame.childCount())]
+        colors = [
+            expand_frame.child(i).text(0)
+            for i in range(expand_frame.childCount())
+        ]
 
         try:
             to_expand = colors.index(color)
@@ -217,8 +225,9 @@ class RodTree(QtWidgets.QTreeWidget):
 
         self.expandItem(expand_frame)
         self.expandItem(expand_color)
-        self.scrollToItem(expand_frame,
-                          QtWidgets.QAbstractItemView.PositionAtTop)
+        self.scrollToItem(
+            expand_frame, QtWidgets.QAbstractItemView.PositionAtTop
+        )
         return
 
     def new_rod(self, frame: int, color: str, rod_number: int):

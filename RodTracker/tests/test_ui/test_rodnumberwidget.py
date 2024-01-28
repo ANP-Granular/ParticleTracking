@@ -1,23 +1,25 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
+
+from functools import partial
 
 import pytest
-from pytestqt.qtbot import QtBot
-from functools import partial
 from PyQt5 import QtCore
+from pytestqt.qtbot import QtBot
+
 import RodTracker.ui.rodnumberwidget as rn
 
 number = 12
@@ -28,8 +30,7 @@ confirm_btns = [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]
 
 @pytest.fixture()
 def basic_number_widget(qtbot: QtBot) -> rn.RodNumberWidget:
-    n_widget = rn.RodNumberWidget(color, None, str(number),
-                                  init_pos)
+    n_widget = rn.RodNumberWidget(color, None, str(number), init_pos)
     n_widget.rod_id = number
     n_widget.show()
     qtbot.addWidget(n_widget)
@@ -45,14 +46,14 @@ def test_init(qtbot: QtBot):
 
 
 def test_copy(qtbot: QtBot):
-    n_widget = rn.RodNumberWidget(color, None, str(number),
-                                  init_pos)
+    n_widget = rn.RodNumberWidget(color, None, str(number), init_pos)
     n_widget.rod_id = number
     n_widget.show()
     copied = n_widget.copy()
 
     def check_exists(var: str):
         assert var not in locals()
+
     n_widget.deleteLater()
     del n_widget
     test_func = partial(check_exists, "n_widget")
@@ -74,8 +75,9 @@ def test_enter_editing(basic_number_widget: rn.RodNumberWidget, qtbot: QtBot):
 
 
 @pytest.mark.parametrize("btn", confirm_btns)
-def test_confirm_editing(basic_number_widget: rn.RodNumberWidget, qtbot: QtBot,
-                         btn):
+def test_confirm_editing(
+    basic_number_widget: rn.RodNumberWidget, qtbot: QtBot, btn
+):
     new_val = 34
     qtbot.mouseDClick(basic_number_widget, QtCore.Qt.MouseButton.LeftButton)
     qtbot.keyClicks(basic_number_widget, str(new_val))

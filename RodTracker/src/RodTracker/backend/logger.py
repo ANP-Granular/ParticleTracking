@@ -1,34 +1,36 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
 
-import os
 import logging
+import os
 import pathlib
-import sys
 import subprocess
+import sys
 from abc import abstractmethod
 from enum import Enum, auto
-from typing import Optional, Iterable, Union, List
+from typing import Iterable, List, Optional, Union
+
 import numpy as np
-from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
-from RodTracker import LOG_FILE
+from PyQt5.QtWidgets import QListWidgetItem
+
 import RodTracker.ui.rodnumberwidget as rn
+from RodTracker import LOG_FILE
 
 _logger = logging.getLogger(__name__)
 
@@ -38,12 +40,15 @@ def exception_logger(e_type, e_value, e_tb):
     _logger.exception("Uncaught exception:", exc_info=(e_type, e_value, e_tb))
 
 
-def qt_error_handler(mode: QtCore.QtMsgType,
-                     context: QtCore.QMessageLogContext, msg: str):
+def qt_error_handler(
+    mode: QtCore.QtMsgType, context: QtCore.QMessageLogContext, msg: str
+):
     """Handler for logging uncaught Qt exceptions during the program flow."""
-    context_info = (f"category: {context.category}\n"
-                    f"function: {context.function}, line: {context.line}\n"
-                    f"file: {context.file}\n")
+    context_info = (
+        f"category: {context.category}\n"
+        f"function: {context.function}, line: {context.line}\n"
+        f"file: {context.file}\n"
+    )
     if mode == QtCore.QtInfoMsg:
         _logger.info(context_info + f"{msg}")
     elif mode == QtCore.QtWarningMsg:
@@ -114,6 +119,7 @@ class NumberChangeActions(Enum):
         Indicates a switch of rod numbers in the current camera only and the
         current frame only.
     """
+
     ALL = auto()
     ALL_ONE_CAM = auto()
     ONE_BOTH_CAMS = auto()
@@ -122,6 +128,7 @@ class NumberChangeActions(Enum):
 
 class NotInvertableError(Exception):
     """Raised when a not invertable action is attempted to be inverted."""
+
     pass
 
 
@@ -220,9 +227,16 @@ class FileAction(Action):
 
     action: FileActions
 
-    def __init__(self, path: pathlib.Path, action: FileActions, file_num=None,
-                 cam_id=None, parent_id: str = None, *args, **kwargs):
-
+    def __init__(
+        self,
+        path: pathlib.Path,
+        action: FileActions,
+        file_num=None,
+        cam_id=None,
+        parent_id: str = None,
+        *args,
+        **kwargs,
+    ):
         self._parent_id = parent_id
         self.file = path
         self.action = action
@@ -298,9 +312,14 @@ class ChangedRodNumberAction(Action):
         reverted.
     """
 
-    def __init__(self, old_rod: rn.RodNumberWidget, new_id: int,
-                 coupled_action: Action = None, *args,
-                 **kwargs):
+    def __init__(
+        self,
+        old_rod: rn.RodNumberWidget,
+        new_id: int,
+        coupled_action: Action = None,
+        *args,
+        **kwargs,
+    ):
         self.rod = old_rod
         self.new_id = new_id
         self.action = "Changed rod"
@@ -346,8 +365,10 @@ class ChangedRodNumberAction(Action):
             if rod.rod_id == self.new_id:
                 rod.rod_id = self.rod.rod_id
                 rod.setText(str(rod.rod_id))
-            elif rod.rod_id == self.rod.rod_id and type(self.coupled_action)\
-                    is ChangedRodNumberAction:
+            elif (
+                rod.rod_id == self.rod.rod_id
+                and type(self.coupled_action) is ChangedRodNumberAction
+            ):
                 rod.rod_id = self.new_id
                 rod.setText(str(rod.rod_id))
         return rods
@@ -366,7 +387,7 @@ class ChangedRodNumberAction(Action):
             "cam_id": self.parent_id,
             "frame": self.frame,
             "color": self.rod.color,
-            "seen": self.rod.seen
+            "seen": self.rod.seen,
         }
         if self.revert:
             # If the action was reverted
@@ -426,9 +447,14 @@ class DeleteRodAction(Action):
         reverted.
 
     """
-    def __init__(self, old_rod: rn.RodNumberWidget,
-                 coupled_action: Union[Action, ChangedRodNumberAction] = None,
-                 *args, **kwargs):
+
+    def __init__(
+        self,
+        old_rod: rn.RodNumberWidget,
+        coupled_action: Union[Action, ChangedRodNumberAction] = None,
+        *args,
+        **kwargs,
+    ):
         self.rod = old_rod
         self.action = "Deleted rod"
         self.coupled_action = coupled_action
@@ -486,7 +512,7 @@ class DeleteRodAction(Action):
             "rod_id": self.rod.rod_id,
             "cam_id": self.parent_id,
             "frame": self.frame,
-            "color": self.rod.color
+            "color": self.rod.color,
         }
         if self.revert:
             # If the action was reverted
@@ -542,8 +568,13 @@ class ChangeRodPositionAction(Action):
         Default is "Rod position updated".
     """
 
-    def __init__(self, old_rod: rn.RodNumberWidget, new_position: List[int],
-                 *args, **kwargs):
+    def __init__(
+        self,
+        old_rod: rn.RodNumberWidget,
+        new_position: List[int],
+        *args,
+        **kwargs,
+    ):
         self.rod = old_rod
         self.new_pos = new_position
         self.action = "Rod position updated"
@@ -564,8 +595,10 @@ class ChangeRodPositionAction(Action):
         initial_pos += ")]"
         end_pos += ")]"
 
-        to_str = f") #{self.rod.rod_id} {self.action}: {initial_pos} ---" \
-                 f"> {end_pos}"
+        to_str = (
+            f") #{self.rod.rod_id} {self.action}: {initial_pos} ---"
+            f"> {end_pos}"
+        )
         if self.rod is not None:
             to_str = f"{self.rod.color}" + to_str
         if self.frame is not None:
@@ -575,8 +608,9 @@ class ChangeRodPositionAction(Action):
         to_str = "(" + to_str
         return to_str
 
-    def undo(self, rods: List[rn.RodNumberWidget] = None) \
-            -> List[rn.RodNumberWidget]:
+    def undo(
+        self, rods: List[rn.RodNumberWidget] = None
+    ) -> List[rn.RodNumberWidget]:
         """Triggers events to revert this action.
 
         Parameters
@@ -614,7 +648,7 @@ class ChangeRodPositionAction(Action):
             "cam_id": self.parent_id,
             "frame": self.frame,
             "color": self.rod.color,
-            "seen": self.rod.seen
+            "seen": self.rod.seen,
         }
         if self.revert:
             # If the action was reverted
@@ -660,9 +694,13 @@ class CreateRodAction(Action):
         Default is "Created new rod".
     """
 
-    def __init__(self, new_rod: rn.RodNumberWidget,
-                 coupled_action: Union[Action, ChangedRodNumberAction] = None,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        new_rod: rn.RodNumberWidget,
+        coupled_action: Union[Action, ChangedRodNumberAction] = None,
+        *args,
+        **kwargs,
+    ):
         self.rod = new_rod
         self.action = "Created new rod"
         self.coupled_action = coupled_action
@@ -686,8 +724,9 @@ class CreateRodAction(Action):
         to_str = "(" + to_str
         return to_str
 
-    def undo(self, rods: List[rn.RodNumberWidget] = None) -> \
-            List[rn.RodNumberWidget]:
+    def undo(
+        self, rods: List[rn.RodNumberWidget] = None
+    ) -> List[rn.RodNumberWidget]:
         """Triggers events to revert this action.
 
         Parameters
@@ -726,7 +765,7 @@ class CreateRodAction(Action):
             "rod_id": self.rod.rod_id,
             "cam_id": self.parent_id,
             "frame": self.frame,
-            "color": self.rod.color
+            "color": self.rod.color,
         }
         if self.revert:
             # If the action was reverted
@@ -768,6 +807,7 @@ class PermanentRemoveAction(Action):
     **kwargs : dict
         Keyword arguments for the ``QListWidgetItem`` superclass.
     """
+
     def __init__(self, rod_quantity: int, *args, **kwargs):
         self.quantity = rod_quantity
         self.action = "Permanently deleted {:d} unused rods"
@@ -806,10 +846,15 @@ class PruneLength(Action):
     action : str
         Default is "Rod length pruned: ".
     """
-    def __init__(self,
-                 old_rods: Union[rn.RodNumberWidget, List[rn.RodNumberWidget]],
-                 new_positions: List[List[int]], adjustment: float,
-                 *args, **kwargs):
+
+    def __init__(
+        self,
+        old_rods: Union[rn.RodNumberWidget, List[rn.RodNumberWidget]],
+        new_positions: List[List[int]],
+        adjustment: float,
+        *args,
+        **kwargs,
+    ):
         self.rods = old_rods
         self.new_pos = new_positions
         self.adjustment = adjustment
@@ -820,8 +865,10 @@ class PruneLength(Action):
         if len(self.rods) > 1:
             to_str += f"All rod lengths adjusted by: {self.adjustment}"
         else:
-            to_str += (f"#{self.rods[0].rod_id} length adjusted "
-                       f"by: {self.adjustment}")
+            to_str += (
+                f"#{self.rods[0].rod_id} length adjusted "
+                f"by: {self.adjustment}"
+            )
 
         if self.rods is not None:
             to_str = f"{self.rods[0].color}" + to_str
@@ -832,8 +879,9 @@ class PruneLength(Action):
         to_str = "(" + to_str
         return to_str
 
-    def undo(self, rods: List[rn.RodNumberWidget] = None) -> \
-            List[rn.RodNumberWidget]:
+    def undo(
+        self, rods: List[rn.RodNumberWidget] = None
+    ) -> List[rn.RodNumberWidget]:
         """Triggers events to revert this action.
 
         Parameters
@@ -874,7 +922,7 @@ class PruneLength(Action):
             "cam_id": [self.parent_id] * len(self.rods),
             "frame": [self.frame] * len(self.rods),
             "color": [rod.color for rod in self.rods],
-            "seen": [rod.seen for rod in self.rods]
+            "seen": [rod.seen for rod in self.rods],
         }
         if self.revert:
             # If the action was reverted
@@ -907,8 +955,15 @@ class PruneLength(Action):
 class NumberExchange(Action):
     color: str = None
 
-    def __init__(self, mode: NumberChangeActions, previous_id: int,
-                 new_id: int, color: str, frame: int, cam_id: str = None):
+    def __init__(
+        self,
+        mode: NumberChangeActions,
+        previous_id: int,
+        new_id: int,
+        color: str,
+        frame: int,
+        cam_id: str = None,
+    ):
         self.mode = mode
         self.previous_id = previous_id
         self.new_id = new_id
@@ -923,8 +978,10 @@ class NumberExchange(Action):
         # return rods
 
     def __str__(self):
-        to_str = f") Changed rod #{self.previous_id} ---> #{self.new_id} "\
-                 f"of color {self.color}"
+        to_str = (
+            f") Changed rod #{self.previous_id} ---> #{self.new_id} "
+            f"of color {self.color}"
+        )
         if self.mode == NumberChangeActions.ALL:
             to_str += f" in frames >= {self.frame} and cameras."
         elif self.mode == NumberChangeActions.ALL_ONE_CAM:
@@ -955,8 +1012,14 @@ class NumberExchange(Action):
         -------
         NumberExchange
         """
-        return NumberExchange(self.mode, self.new_id, self.previous_id,
-                              self.color, self.frame, self.cam_id)
+        return NumberExchange(
+            self.mode,
+            self.new_id,
+            self.previous_id,
+            self.color,
+            self.frame,
+            self.cam_id,
+        )
 
 
 class ActionLogger(QtCore.QObject):
@@ -1011,6 +1074,7 @@ class ActionLogger(QtCore.QObject):
         associated with.
         Default is None.
     """
+
     __pyqtSignals__ = ("undoAction(Action)",)
     # Create custom signals
     undo_action = QtCore.pyqtSignal(Action, name="undoAction")
