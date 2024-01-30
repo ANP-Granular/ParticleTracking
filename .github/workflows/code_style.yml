@@ -31,7 +31,7 @@ jobs:
         - name: Lint
           run: |
             flake8 --append-config ./RodTracker/setup.cfg ./RodTracker
-            flake8 ./ParticleDetection
+            flake8 --append-config ./ParticleDetection/setup.cfg ./ParticleDetection
         - name: Import Sorting
           run: |
             isort --settings-file ./RodTracker/pyproject.toml --check ./RodTracker
