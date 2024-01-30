@@ -99,3 +99,16 @@ enable = true
 vcs = "git"
 style = "pep440"
 bump = true
+
+[tool.black]
+line-length = 79
+target-version = ['py38', 'py39', 'py310', 'py311']
+extend-exclude = '''
+( 
+    .*mainwindow_layout..*
+)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 79
