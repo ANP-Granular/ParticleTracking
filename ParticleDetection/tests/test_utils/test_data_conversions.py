@@ -1,26 +1,28 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 import shutil
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
-import ParticleDetection.utils.data_conversions as dc
 from conftest import EXAMPLES as csv_files
+
+import ParticleDetection.utils.data_conversions as dc
 
 
 def test_csv_extract_colors(tmp_path: Path):
@@ -52,8 +54,9 @@ def test_csv_extract_colors(tmp_path: Path):
 
 def test_csv_combine(tmp_path: Path):
     test_colors = {"black", "green"}
-    test_files = [csv_files / (f"rods_df_{color}.csv")
-                  for color in test_colors]
+    test_files = [
+        csv_files / (f"rods_df_{color}.csv") for color in test_colors
+    ]
     output_file = tmp_path / "test.csv"
     result = dc.csv_combine(test_files, str(output_file))
     saved_file = pd.read_csv(output_file, index_col=0)
@@ -64,8 +67,9 @@ def test_csv_combine(tmp_path: Path):
 
 def test_csv_combine_unknown_files(tmp_path: Path):
     test_colors = {"test0", "test1"}
-    test_files = [csv_files.joinpath(f"rods_df_{color}.csv")
-                  for color in test_colors]
+    test_files = [
+        csv_files.joinpath(f"rods_df_{color}.csv") for color in test_colors
+    ]
     output_file = tmp_path / "test.csv"
     result = dc.csv_combine(test_files, str(output_file))
     assert result == ""

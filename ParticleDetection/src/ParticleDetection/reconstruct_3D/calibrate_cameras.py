@@ -1,21 +1,22 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 from typing import Tuple, Union
+
 import cv2
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -59,9 +60,12 @@ def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
         [8] : fundamental matrix (F)\n
     """
     # Setup
-    corner_distance = 5     # mm
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
-                1000, 1e-6)     # Termination criteria: (type, count, eps)
+    corner_distance = 5  # mm
+    criteria = (
+        cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
+        1000,
+        1e-6,
+    )  # Termination criteria: (type, count, eps)
     obj_p = np.zeros((4 * 5, 3), np.float32)
     obj_p[:, :2] = np.mgrid[0:4, 0:5].T.reshape(-1, 2)
     obj_p = corner_distance * obj_p
@@ -87,40 +91,55 @@ def stereo_calibrate(cam1_path: str, cam2_path: str, visualize: bool = False):
         img_grey2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
         ret2, corners2 = cv2.findChessboardCorners(img_grey2, (4, 5), None)
 
-        if ret == True and ret2 == True:                    # noqa: E712
+        if ret == True and ret2 == True:  # noqa: E712
             obj_points.append(obj_p)
-            corners_fine = cv2.cornerSubPix(img_grey, corners, (11, 11),
-                                            (-1, -1), criteria)
+            corners_fine = cv2.cornerSubPix(
+                img_grey, corners, (11, 11), (-1, -1), criteria
+            )
             img_points.append(corners_fine)
 
             obj_points2.append(obj_p)
-            corners2_fine = cv2.cornerSubPix(img_grey2, corners2, (11, 11),
-                                             (-1, -1), criteria)
+            corners2_fine = cv2.cornerSubPix(
+                img_grey2, corners2, (11, 11), (-1, -1), criteria
+            )
             img_points2.append(corners2_fine)
 
             if visualize:
                 cv2.drawChessboardCorners(img, (4, 5), corners_fine, ret)
-                cv2.imshow('img', img)
+                cv2.imshow("img", img)
                 cv2.waitKey(1500)
 
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points,
-                                                       img_grey.shape[::-1],
-                                                       None, None)
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
+        obj_points, img_points, img_grey.shape[::-1], None, None
+    )
     ret2, mtx2, dist2, rvecs2, tvecs2 = cv2.calibrateCamera(
-        obj_points2, img_points2, img_grey2.shape[::-1], None, None)
+        obj_points2, img_points2, img_grey2.shape[::-1], None, None
+    )
 
     # Stereo calibration
     stereocalibration_flags = cv2.CALIB_FIX_INTRINSIC
     ret, CM1, dist1, CM2, dist2, R, T, E, F = cv2.stereoCalibrate(
-        obj_points, img_points, img_points2, mtx, dist,
-        mtx2, dist2, img_grey.shape[::-1], criteria=criteria,
-        flags=stereocalibration_flags)
+        obj_points,
+        img_points,
+        img_points2,
+        mtx,
+        dist,
+        mtx2,
+        dist2,
+        img_grey.shape[::-1],
+        criteria=criteria,
+        flags=stereocalibration_flags,
+    )
 
     return ret, CM1, dist1, CM2, dist2, R, T, E, F
 
 
-def project_points(p_cam1: np.ndarray, p_cam2: np.ndarray, calibration: dict,
-                   transforms: Union[dict, None] = None):
+def project_points(
+    p_cam1: np.ndarray,
+    p_cam2: np.ndarray,
+    calibration: dict,
+    transforms: Union[dict, None] = None,
+):
     """Project points from a stereocamera system to 3D coordinates.
 
     Parameters
@@ -160,7 +179,7 @@ def project_points(p_cam1: np.ndarray, p_cam2: np.ndarray, calibration: dict,
     """
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
-    t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+    t1 = np.expand_dims(np.array([0.0, 0.0, 0.0]), 1)
     P1 = np.vstack((r1.T, t1.T)) @ calibration["CM1"].T
     P1 = P1.T
 
@@ -180,9 +199,9 @@ def project_points(p_cam1: np.ndarray, p_cam2: np.ndarray, calibration: dict,
     return p3d
 
 
-def reproject_points(points: np.ndarray, calibration: dict,
-                     transforms: Union[dict, None] = None
-                     ) -> Tuple[np.ndarray, np.ndarray]:
+def reproject_points(
+    points: np.ndarray, calibration: dict, transforms: Union[dict, None] = None
+) -> Tuple[np.ndarray, np.ndarray]:
     """Project 3D coordinates to 2D stereocamera coordinates.
 
     Parameters
@@ -218,7 +237,7 @@ def reproject_points(points: np.ndarray, calibration: dict,
     """
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
-    t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+    t1 = np.expand_dims(np.array([0.0, 0.0, 0.0]), 1)
     P1 = np.vstack((r1.T, t1.T)) @ calibration["CM1"].T
     P1 = P1.T
 
@@ -234,10 +253,10 @@ def reproject_points(points: np.ndarray, calibration: dict,
         points = rot_inv.apply(points - trans)
 
     repr_cam1 = cv2.projectPoints(
-        points, r1, t1, calibration["CM1"],
-        calibration["dist1"])[0].squeeze()
+        points, r1, t1, calibration["CM1"], calibration["dist1"]
+    )[0].squeeze()
     repr_cam2 = cv2.projectPoints(
-        points, r2, t2, calibration["CM2"],
-        calibration["dist2"])[0].squeeze()
+        points, r2, t2, calibration["CM2"], calibration["dist2"]
+    )[0].squeeze()
 
     return repr_cam1, repr_cam2

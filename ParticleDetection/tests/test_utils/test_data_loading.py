@@ -1,31 +1,33 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 import json
 from pathlib import Path
-import pytest
+
 import cv2
-import torch
 import numpy as np
-import ParticleDetection.utils.data_loading as dl
+import pytest
+import torch
 from conftest import load_rod_data
+
+import ParticleDetection.utils.data_loading as dl
 
 transformation = {
     "rotation": np.random.rand(3, 3).tolist(),
-    "translation": np.random.rand(1, 3).tolist()
+    "translation": np.random.rand(1, 3).tolist(),
 }
 legacy_transformation = {
     "transformations": {
@@ -33,7 +35,7 @@ legacy_transformation = {
         "M_rotate_y": np.random.rand(3, 4).tolist(),
         "M_rotate_z": np.random.rand(3, 4).tolist(),
         "M_trans": np.random.rand(3, 4).tolist(),
-        "M_trans2": np.random.rand(3, 4).tolist()
+        "M_trans2": np.random.rand(3, 4).tolist(),
     }
 }
 
@@ -50,15 +52,17 @@ def test_load_world_transformation(trafo: dict, tmpdir: Path):
     assert isinstance(loaded["rotation"], np.ndarray)
     assert isinstance(loaded["translation"], np.ndarray)
     assert loaded["rotation"].shape == (3, 3)
-    assert ((loaded["translation"].shape == (3, 1)) or
-            (loaded["translation"].shape == (1, 3)) or
-            (loaded["translation"].shape == (3,)))
+    assert (
+        (loaded["translation"].shape == (3, 1))
+        or (loaded["translation"].shape == (1, 3))
+        or (loaded["translation"].shape == (3,))
+    )
 
 
 def test_load_transformation_wrong_format(tmpdir: Path):
     trafo = {
         "rot": np.random.rand(3, 3).tolist(),
-        "trans": np.random.rand(1, 3).tolist()
+        "trans": np.random.rand(1, 3).tolist(),
     }
     trafo_file = tmpdir / "transformation.json"
     with open(trafo_file, "w") as f:
@@ -69,7 +73,9 @@ def test_load_transformation_wrong_format(tmpdir: Path):
 
 def test_load_calibration(tmpdir: Path):
     calib = {
-        "test0": np.random.rand(3,).tolist(),
+        "test0": np.random.rand(
+            3,
+        ).tolist(),
         "test1": np.random.rand(3, 1).tolist(),
         "test2": np.random.rand(3, 2).tolist(),
         "test3": np.random.rand(3, 3).tolist(),
@@ -120,7 +126,7 @@ def test_extract_stereo_params():
         "FundamentalMatrix": np.random.rand(3, 3).tolist(),
         "EssentialMatrix": np.random.rand(3, 3).tolist(),
         "RotationOfCamera2": np.random.rand(3, 3).tolist(),
-        "TranslationOfCamera2": np.random.rand(3, 1).tolist()
+        "TranslationOfCamera2": np.random.rand(3, 1).tolist(),
     }
     loaded = dl.extract_stereo_params(calibration)
     assert set(loaded.keys()) == {"F", "R", "T", "E"}

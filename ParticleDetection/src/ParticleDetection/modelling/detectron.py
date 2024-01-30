@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Collection of custom Detectron2 objects to provide a customized training
@@ -22,26 +22,32 @@ process with more sophisticated outputs.
 **Date:**       31.10.2022
 
 """
-import time
+import copy
 import datetime
 import logging
-import copy
+import time
 from typing import List
 
-import numpy as np
-import torch
-from detectron2.engine.hooks import HookBase
-from detectron2.config.config import CfgNode
-from detectron2.engine.defaults import DefaultTrainer
-from detectron2.evaluation import COCOEvaluator, DatasetEvaluators
 import detectron2.data.detection_utils as utils
 import detectron2.data.transforms as T
-from detectron2.utils.events import EventWriter, get_event_storage, \
-    CommonMetricPrinter
-from detectron2.utils.logger import log_every_n_seconds
-from detectron2.data import DatasetMapper, build_detection_test_loader, \
-    build_detection_train_loader
 import detectron2.utils.comm as comm
+import numpy as np
+import torch
+from detectron2.config.config import CfgNode
+from detectron2.data import (
+    DatasetMapper,
+    build_detection_test_loader,
+    build_detection_train_loader,
+)
+from detectron2.engine.defaults import DefaultTrainer
+from detectron2.engine.hooks import HookBase
+from detectron2.evaluation import COCOEvaluator, DatasetEvaluators
+from detectron2.utils.events import (
+    CommonMetricPrinter,
+    EventWriter,
+    get_event_storage,
+)
+from detectron2.utils.logger import log_every_n_seconds
 
 
 class CustomTrainer(DefaultTrainer):
@@ -77,22 +83,28 @@ class CustomTrainer(DefaultTrainer):
             tasks = ["segm"]
 
         if "keypoints" in tasks:
-            sigmas = (np.array([0.25, 0.25]) / 10.0)
+            sigmas = np.array([0.25, 0.25]) / 10.0
             sigmas = sigmas.tolist()
         else:
             sigmas = []
 
         dataset_evaluators = [
-            COCOEvaluator(dataset_name, output_dir=cfg.OUTPUT_DIR,
-                          max_dets_per_image=cfg.TEST.DETECTIONS_PER_IMAGE,
-                          tasks=tuple(tasks), kpt_oks_sigmas=sigmas)
+            COCOEvaluator(
+                dataset_name,
+                output_dir=cfg.OUTPUT_DIR,
+                max_dets_per_image=cfg.TEST.DETECTIONS_PER_IMAGE,
+                tasks=tuple(tasks),
+                kpt_oks_sigmas=sigmas,
+            )
         ]
         return DatasetEvaluators(dataset_evaluators)
 
     def build_writers(self):
         """Builds additional/custom writers for use during training."""
-        return [CustomTensorboardWriter(self.cfg.OUTPUT_DIR, window_size=1),
-                CommonMetricPrinter(self.cfg.SOLVER.MAX_ITER)]
+        return [
+            CustomTensorboardWriter(self.cfg.OUTPUT_DIR, window_size=1),
+            CommonMetricPrinter(self.cfg.SOLVER.MAX_ITER),
+        ]
 
     def build_hooks(self):
         """
@@ -100,15 +112,20 @@ class CustomTrainer(DefaultTrainer):
         and a custom loss hook used during evaluation.
         """
         hooks = super().build_hooks()
-        hooks.insert(-1, EvalLossHook(
-            self.cfg.TEST.EVAL_PERIOD,   # 1,
-            self.model,
-            build_detection_test_loader(
-                self.cfg,
-                self.cfg.DATASETS.TEST[0],
-                DatasetMapper(self.cfg, True)  # TODO: might need replacement
-            )
-        ))
+        hooks.insert(
+            -1,
+            EvalLossHook(
+                self.cfg.TEST.EVAL_PERIOD,  # 1,
+                self.model,
+                build_detection_test_loader(
+                    self.cfg,
+                    self.cfg.DATASETS.TEST[0],
+                    DatasetMapper(
+                        self.cfg, True
+                    ),  # TODO: might need replacement
+                ),
+            ),
+        )
         return hooks
 
     @classmethod
@@ -128,10 +145,12 @@ class CustomTrainer(DefaultTrainer):
         # to properly load settings from the configuration
         is_train = True
         import detectron2.data.detection_utils as du
+
         augs = du.build_augmentation(cfg, is_train)
         if cfg.INPUT.CROP.ENABLED:
-            augs.insert(0, T.RandomCrop(cfg.INPUT.CROP.TYPE,
-                                        cfg.INPUT.CROP.SIZE))
+            augs.insert(
+                0, T.RandomCrop(cfg.INPUT.CROP.TYPE, cfg.INPUT.CROP.SIZE)
+            )
             recompute_boxes = cfg.MODEL.MASK_ON
         else:
             recompute_boxes = False
@@ -145,8 +164,9 @@ class CustomTrainer(DefaultTrainer):
             "recompute_boxes": recompute_boxes,
         }
         if cfg.MODEL.KEYPOINT_ON:
-            mapper_conf["keypoint_hflip_indices"] = \
+            mapper_conf["keypoint_hflip_indices"] = (
                 utils.create_keypoint_hflip_indices(cfg.DATASETS.TRAIN)
+            )
         if cfg.MODEL.LOAD_PROPOSALS:
             mapper_conf["precomputed_proposal_topk"] = (
                 cfg.DATASETS.PRECOMPUTED_PROPOSAL_TOPK_TRAIN
@@ -159,12 +179,14 @@ class CustomTrainer(DefaultTrainer):
             mapper_conf["augmentations"].extend(cls.augmentations)
 
         return build_detection_train_loader(
-            cfg, mapper=DatasetMapper(**mapper_conf))
+            cfg, mapper=DatasetMapper(**mapper_conf)
+        )
 
 
 # Currently not used
-class CompleteMapper(DatasetMapper):    # pragma: no cover
+class CompleteMapper(DatasetMapper):  # pragma: no cover
     """Provides annotation data in training and testing context."""
+
     def __call__(self, dataset_dict):
         """
         Args:
@@ -175,16 +197,19 @@ class CompleteMapper(DatasetMapper):    # pragma: no cover
             dict: a format that builtin models in detectron2 accept
         """
         dataset_dict = copy.deepcopy(
-            dataset_dict)  # it will be modified by code below
+            dataset_dict
+        )  # it will be modified by code below
         # USER: Write your own image loading if it's not from a file
-        image = utils.read_image(dataset_dict["file_name"],
-                                 format=self.image_format)
+        image = utils.read_image(
+            dataset_dict["file_name"], format=self.image_format
+        )
         utils.check_image_size(dataset_dict, image)
 
         # USER: Remove if you don't do semantic/panoptic segmentation.
         if "sem_seg_file_name" in dataset_dict:
             sem_seg_gt = utils.read_image(
-                dataset_dict.pop("sem_seg_file_name"), "L").squeeze(2)
+                dataset_dict.pop("sem_seg_file_name"), "L"
+            ).squeeze(2)
         else:
             sem_seg_gt = None
 
@@ -198,17 +223,21 @@ class CompleteMapper(DatasetMapper):    # pragma: no cover
         # to the use of pickle & mp.Queue. Therefore it's important to use
         # torch.Tensor.
         dataset_dict["image"] = torch.as_tensor(
-            np.ascontiguousarray(image.transpose(2, 0, 1)))
+            np.ascontiguousarray(image.transpose(2, 0, 1))
+        )
         if sem_seg_gt is not None:
             dataset_dict["sem_seg"] = torch.as_tensor(
-                sem_seg_gt.astype("long"))
+                sem_seg_gt.astype("long")
+            )
 
         # USER: Remove if you don't use pre-computed proposals.
         # Most users would not need this feature.
         if self.proposal_topk is not None:
             utils.transform_proposals(
-                dataset_dict, image_shape, transforms,
-                proposal_topk=self.proposal_topk
+                dataset_dict,
+                image_shape,
+                transforms,
+                proposal_topk=self.proposal_topk,
             )
 
         if "annotations" in dataset_dict:
@@ -224,6 +253,7 @@ class EvalLossHook(HookBase):
     dataset. This hook is intended for evaluating the loss on the test dataset
     during the training process.
     """
+
     def __init__(self, eval_period, model, data_loader):
         self._model = model
         self._period = eval_period
@@ -245,17 +275,18 @@ class EvalLossHook(HookBase):
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             total_compute_time += time.perf_counter() - start_compute_time
-            iters_after_start = idx + 1 - num_warmup * int(
-                idx >= num_warmup)
+            iters_after_start = idx + 1 - num_warmup * int(idx >= num_warmup)
             seconds_per_img = total_compute_time / iters_after_start
             if idx >= num_warmup * 2 or seconds_per_img > 5:
                 total_seconds_per_img = (
-                    time.perf_counter() - start_time) / iters_after_start
+                    time.perf_counter() - start_time
+                ) / iters_after_start
                 eta = datetime.timedelta(
-                    seconds=int(total_seconds_per_img * (total - idx - 1)))
+                    seconds=int(total_seconds_per_img * (total - idx - 1))
+                )
                 log_every_n_seconds(
                     logging.INFO,
-                    "Loss on Validation  done {}/{}. {:.4f} s / img. ETA={}".format(    # noqa: E501
+                    "Loss on Validation  done {}/{}. {:.4f} s / img. ETA={}".format(  # noqa: E501
                         idx + 1, total, seconds_per_img, str(eta)
                     ),
                     n=5,
@@ -267,7 +298,7 @@ class EvalLossHook(HookBase):
             next_loss = np.mean(values)
             self.trainer.storage.put_scalar("test/" + loss, next_loss)
             total_loss += next_loss
-        self.trainer.storage.put_scalar('test/total_loss', total_loss)
+        self.trainer.storage.put_scalar("test/total_loss", total_loss)
         comm.synchronize()
         return losses
 
@@ -275,7 +306,7 @@ class EvalLossHook(HookBase):
         # How loss is calculated on train_loop
         metrics_dict = self._model(data)
         for k, v in metrics_dict.items():
-            float_v = 0.
+            float_v = 0.0
             if isinstance(v, torch.Tensor):
                 float_v = v.detach().cpu().item()
             else:
@@ -317,7 +348,8 @@ class CustomTensorboardWriter(EventWriter):
         self._writer = SummaryWriter(log_dir + "/test", **kwargs)
         self._writers = {
             "test": SummaryWriter(log_dir + "/test"),
-            "train": SummaryWriter(log_dir + "/train")}
+            "train": SummaryWriter(log_dir + "/train"),
+        }
         self._last_write = -1
         self.train_kw = ["fast_rcnn"]
 
@@ -326,7 +358,8 @@ class CustomTensorboardWriter(EventWriter):
         # custom stuff
         new_last_write = self._last_write
         for k, (v, iter) in storage.latest_with_smoothing_hint(
-                self._window_size).items():
+            self._window_size
+        ).items():
             if iter > self._last_write:
                 for id, writer in self._writers.items():
                     if id == "test":

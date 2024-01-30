@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Collection of function to convert between different file formats used over the
@@ -23,11 +23,12 @@ to the now used json-format.
 **Date:**       02.11.2022
 
 """
-import os
 import json
 import logging
-from typing import Iterable, List
+import os
 from pathlib import Path
+from typing import Iterable, List
+
 import numpy as np
 import pandas as pd
 import scipy.io as sio
@@ -38,9 +39,14 @@ import ParticleDetection.utils.datasets as ds
 _logger = logging.getLogger(__name__)
 
 
-def txt2mat(input_folder: Path, frames: Iterable[int], expected_rods: int,
-            cam1_id: str = "gp1", cam2_id: str = "gp2",
-            output_folder: Path = None) -> None:
+def txt2mat(
+    input_folder: Path,
+    frames: Iterable[int],
+    expected_rods: int,
+    cam1_id: str = "gp1",
+    cam2_id: str = "gp2",
+    output_folder: Path = None,
+) -> None:
     """Read rod position data in old ``*.txt`` format and save it in ``*.mat``
     format.
 
@@ -68,20 +74,24 @@ def txt2mat(input_folder: Path, frames: Iterable[int], expected_rods: int,
         Parent folder of the two output folders.
         By default set to the parent folder of the input folder.
     """
-    col_names = [col.format(id1=cam1_id, id2=cam2_id)
-                 for col in ds.DEFAULT_COLUMNS if "seen" not in col]
+    col_names = [
+        col.format(id1=cam1_id, id2=cam2_id)
+        for col in ds.DEFAULT_COLUMNS
+        if "seen" not in col
+    ]
     data_format = str(input_folder.resolve()) + "/{:05d}.txt"
     if output_folder is None:
         output_folder = input_folder.parent
     output_format = str(output_folder.resolve()) + "/{cam:s}/{frame:05d}.mat"
-    dt = np.dtype(
-        [('Point1', np.float, (2,)), ('Point2', np.float, (2,))])
+    dt = np.dtype([("Point1", np.float, (2,)), ("Point2", np.float, (2,))])
 
     data = dl.load_positions_from_txt(data_format, col_names, frames)
-    rods_cam1 = data[[f'x1_{cam1_id}', f'y1_{cam1_id}', f'x2_{cam1_id}',
-                      f'y2_{cam1_id}']].to_numpy()
-    rods_cam2 = data[[f'x1_{cam2_id}', f'y1_{cam2_id}', f'x2_{cam2_id}',
-                      f'y2_{cam2_id}']].to_numpy()
+    rods_cam1 = data[
+        [f"x1_{cam1_id}", f"y1_{cam1_id}", f"x2_{cam1_id}", f"y2_{cam1_id}"]
+    ].to_numpy()
+    rods_cam2 = data[
+        [f"x1_{cam2_id}", f"y1_{cam2_id}", f"x2_{cam2_id}", f"y2_{cam2_id}"]
+    ].to_numpy()
     rods_cam1 = rods_cam1.reshape((-1, expected_rods, 4))
     rods_cam2 = rods_cam2.reshape((-1, expected_rods, 4))
 
@@ -93,15 +103,15 @@ def txt2mat(input_folder: Path, frames: Iterable[int], expected_rods: int,
 
     for r_c1, r_c2, fr in zip(rods_cam1, rods_cam2, frames):
         arr = np.zeros((expected_rods,), dtype=dt)
-        arr[:]['Point1'] = r_c1[:, 0:2]
-        arr[:]['Point2'] = r_c1[:, 2:]
+        arr[:]["Point1"] = r_c1[:, 0:2]
+        arr[:]["Point2"] = r_c1[:, 2:]
         out_file1 = output_format.format(cam=cam1_id, frame=fr)
-        sio.savemat(out_file1, {'rod_data_links': arr})
+        sio.savemat(out_file1, {"rod_data_links": arr})
         arr2 = np.zeros((expected_rods,), dtype=dt)
-        arr2[:]['Point1'] = r_c2[:, 0:2]
-        arr2[:]['Point2'] = r_c2[:, 2:]
+        arr2[:]["Point1"] = r_c2[:, 0:2]
+        arr2[:]["Point2"] = r_c2[:, 2:]
         out_file2 = output_format.format(cam=cam2_id, frame=fr)
-        sio.savemat(out_file2, {'rod_data_links': arr2})
+        sio.savemat(out_file2, {"rod_data_links": arr2})
 
 
 def csv_extract_colors(input_file: str) -> List[str]:
@@ -130,14 +140,15 @@ def csv_extract_colors(input_file: str) -> List[str]:
         new_file = file_base + f"_{color}.csv"
         colored_data = data_main.loc[data_main.color == color]
         colored_data.reset_index(drop=True, inplace=True)
-        colored_data = colored_data.astype({"frame": 'int', "particle": 'int'})
+        colored_data = colored_data.astype({"frame": "int", "particle": "int"})
         colored_data.to_csv(new_file, sep=",")
         written.append(new_file)
     return written
 
 
-def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
-        -> str:
+def csv_combine(
+    input_files: List[str], output_file: str = "rods_df.csv"
+) -> str:
     """Concatenates multiple ``*.csv`` files to a single one.
 
     The given input files are combined into a single one. The function does not
@@ -170,8 +181,9 @@ def csv_combine(input_files: List[str], output_file: str = "rods_df.csv") \
         combined = pd.concat([combined, new_data])
     if len(combined) > 0:
         if not os.path.dirname(output_file):
-            output_file = os.path.join(os.path.dirname(input_files[0]),
-                                       output_file)
+            output_file = os.path.join(
+                os.path.dirname(input_files[0]), output_file
+            )
         combined.reset_index(drop=True, inplace=True)
         combined.to_csv(output_file, sep=",")
         written = output_file
@@ -219,7 +231,8 @@ def csv_split_by_frames(input_file: str, cut_frames: List[int]) -> List[str]:
             next_max = data_main.frame.max() + 1
 
         next_slice = data_main.loc[
-            (data_main.frame >= next_min) & (data_main.frame < next_max)]
+            (data_main.frame >= next_min) & (data_main.frame < next_max)
+        ]
         if len(next_slice) == 0:
             continue
         next_slice.reset_index(drop=True, inplace=True)
@@ -251,11 +264,11 @@ def convert_txt_config(folder: Path):
     cm1 = np.zeros((3, 3))
     cm1[[0, 1], [2, 2]] = np.loadtxt(folder / "c.txt")
     cm1[[0, 1], [0, 1]] = np.loadtxt(folder / "f.txt")
-    cm1[2, 2] = 1.
+    cm1[2, 2] = 1.0
     cm2 = np.zeros((3, 3))
     cm2[[0, 1], [2, 2]] = np.loadtxt(folder / "c2.txt")
     cm2[[0, 1], [0, 1]] = np.loadtxt(folder / "f2.txt")
-    cm2[2, 2] = 1.
+    cm2[2, 2] = 1.0
 
     dist1 = np.loadtxt(folder / "kc.txt")
     dist2 = np.loadtxt(folder / "kc2.txt")
@@ -274,8 +287,9 @@ def convert_txt_config(folder: Path):
     with open(folder / "converted.json", "w") as f:
         json.dump(to_json, f, indent=2)
 
-    trafos = sio.loadmat(
-        folder / "transformations.mat")["transformations"][0][0]
+    trafos = sio.loadmat(folder / "transformations.mat")["transformations"][0][
+        0
+    ]
     world_to_json = {
         "transformations": {
             "M_rotate_x": trafos[0].tolist(),

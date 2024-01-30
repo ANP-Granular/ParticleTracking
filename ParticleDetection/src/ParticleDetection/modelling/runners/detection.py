@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Functions to run inference with a trained network and save the results for
@@ -24,28 +24,29 @@ further computations.
 """
 import logging
 import os
-from pathlib import Path
 import random
-from typing import Union, List, overload, Iterable, Callable, Literal
 import warnings
+from pathlib import Path
+from typing import Callable, Iterable, List, Literal, Union, overload
 
 import cv2
+import numpy as np
+from detectron2.config import CfgNode
 from detectron2.engine import DefaultPredictor
 from detectron2.utils.logger import setup_logger
-from detectron2.config import CfgNode
-import numpy as np
 
+import ParticleDetection.modelling.export as export
+import ParticleDetection.modelling.visualization as visualization
 import ParticleDetection.utils.datasets as ds
 from ParticleDetection.modelling.configs import write_configs
-import ParticleDetection.modelling.visualization as visualization
-import ParticleDetection.modelling.export as export
 
 _logger = logging.getLogger(__name__)
 
 
 SavingFunction = Callable[
     [ds.DetectionResult, Union[Path, str, np.ndarray], dict, Union[Path, str]],
-    None]
+    None,
+]
 """Minimal signature for a function intended for saving
 :data:`~ParticleDetection.utils.datasets.DetectionResult`.
 
@@ -58,54 +59,83 @@ See also
 
 
 @overload
-def detect(dataset: Union[str, Path, np.ndarray, ds.DataSet, Iterable[str],
-                          Iterable[Path], Iterable[np.ndarray]],
-           configuration: Union[CfgNode, str, Path],
-           weights: Union[str, Path],
-           **kwargs) -> None:
+def detect(
+    dataset: Union[
+        str,
+        Path,
+        np.ndarray,
+        ds.DataSet,
+        Iterable[str],
+        Iterable[Path],
+        Iterable[np.ndarray],
+    ],
+    configuration: Union[CfgNode, str, Path],
+    weights: Union[str, Path],
+    **kwargs,
+) -> None:
     # Minimal version
     ...
 
 
 @overload
-def detect(dataset: Union[str, Path, np.ndarray, ds.DataSet, Iterable[str],
-                          Iterable[Path], Iterable[np.ndarray]],
-           configuration: Union[CfgNode, str, Path],
-           weights: Union[str, Path],
-           classes: dict = {},
-           output_dir: Union[str, Path] = Path.cwd(),
-           threshold: float = 0.5,
-           saving_functions: Iterable[SavingFunction] = [],
-           **kwargs) -> None:
+def detect(
+    dataset: Union[
+        str,
+        Path,
+        np.ndarray,
+        ds.DataSet,
+        Iterable[str],
+        Iterable[Path],
+        Iterable[np.ndarray],
+    ],
+    configuration: Union[CfgNode, str, Path],
+    weights: Union[str, Path],
+    classes: dict = {},
+    output_dir: Union[str, Path] = Path.cwd(),
+    threshold: float = 0.5,
+    saving_functions: Iterable[SavingFunction] = [],
+    **kwargs,
+) -> None:
     # Mostly intended function use.
     ...
 
 
 @overload
-def detect(dataset: str,
-           configuration: Union[CfgNode, str, Path],
-           weights: Union[Path, str],
-           frames: List[int],
-           cam1_name: str,
-           cam2_name: str,
-           **kwargs) -> None:
+def detect(
+    dataset: str,
+    configuration: Union[CfgNode, str, Path],
+    weights: Union[Path, str],
+    frames: List[int],
+    cam1_name: str,
+    cam2_name: str,
+    **kwargs,
+) -> None:
     # Datasetformat version. Requires the dataset string to be 'formattable'.
     ...
 
 
-def detect(dataset: Union[str, Path, np.ndarray, ds.DataSet, Iterable[str],
-                          Iterable[Path], Iterable[np.ndarray]],
-           configuration: Union[CfgNode, str, Path],
-           weights: Union[Path, str],
-           classes: dict = {},
-           output_dir: Union[str, Path] = Path.cwd(),
-           threshold: float = 0.5,
-           saving_functions: Iterable[SavingFunction] = [],
-           log_name: str = "detection.log",
-           visualize: bool = False,
-           vis_random_samples: int = -1,
-           device: Literal["cpu", "cuda"] = "cpu",
-           **kwargs) -> None:
+def detect(
+    dataset: Union[
+        str,
+        Path,
+        np.ndarray,
+        ds.DataSet,
+        Iterable[str],
+        Iterable[Path],
+        Iterable[np.ndarray],
+    ],
+    configuration: Union[CfgNode, str, Path],
+    weights: Union[Path, str],
+    classes: dict = {},
+    output_dir: Union[str, Path] = Path.cwd(),
+    threshold: float = 0.5,
+    saving_functions: Iterable[SavingFunction] = [],
+    log_name: str = "detection.log",
+    visualize: bool = False,
+    vis_random_samples: int = -1,
+    device: Literal["cpu", "cuda"] = "cpu",
+    **kwargs,
+) -> None:
     """Run object detection on a dataset with custom result saving.
 
     Run object detection on a given dataset with the possibility to visualize
@@ -224,8 +254,9 @@ def detect(dataset: Union[str, Path, np.ndarray, ds.DataSet, Iterable[str],
 
     predictor = DefaultPredictor(cfg)
     if classes is {}:
-        classes = {i: str(i)
-                   for i in range(0, cfg.MODEL.ROI_HEADS.NUM_CLASSES)}
+        classes = {
+            i: str(i) for i in range(0, cfg.MODEL.ROI_HEADS.NUM_CLASSES)
+        }
 
     # Handle a dataset given as a formattable string
     cam_1 = kwargs.get("cam1_name", None)
@@ -238,12 +269,18 @@ def detect(dataset: Union[str, Path, np.ndarray, ds.DataSet, Iterable[str],
             if frames is not None:
                 if cam_1 is not None:
                     formatted_dataset.extend(
-                        [dataset.format(cam_id=cam_1, frame=frame)
-                         for frame in frames])
+                        [
+                            dataset.format(cam_id=cam_1, frame=frame)
+                            for frame in frames
+                        ]
+                    )
                 if cam_2 is not None:
                     formatted_dataset.extend(
-                        [dataset.format(cam_id=cam_2, frame=frame)
-                         for frame in frames])
+                        [
+                            dataset.format(cam_id=cam_2, frame=frame)
+                            for frame in frames
+                        ]
+                    )
             else:
                 if cam_1 is not None:
                     formatted_dataset.append(dataset.format(cam_id=cam_1))
@@ -255,20 +292,25 @@ def detect(dataset: Union[str, Path, np.ndarray, ds.DataSet, Iterable[str],
             kwargs["dataset_format"] = dataset
             dataset = formatted_dataset
         else:
-            warnings.warn("The given 'dataset' must be of type 'str' to use "
-                          "the keywords 'cam_1', 'cam_2', 'frames'.",
-                          UserWarning)
+            warnings.warn(
+                "The given 'dataset' must be of type 'str' to use "
+                "the keywords 'cam_1', 'cam_2', 'frames'.",
+                UserWarning,
+            )
 
     # create Iterable for images
     if not isinstance(dataset, Iterable):
-        dataset = [dataset, ]
+        dataset = [
+            dataset,
+        ]
     num_images = len(dataset)
     # Randomly select several samples to visualize the prediction results.
     to_visualize = np.zeros(num_images)
     if visualize:
         if vis_random_samples >= 0:
-            samples = random.sample(range(0, len(to_visualize)),
-                                    vis_random_samples)
+            samples = random.sample(
+                range(0, len(to_visualize)), vis_random_samples
+            )
             to_visualize[samples] = 1
         else:
             # visualize all
@@ -280,10 +322,15 @@ def detect(dataset: Union[str, Path, np.ndarray, ds.DataSet, Iterable[str],
         if not isinstance(image, np.ndarray):
             # read image
             if not Path(file).exists():
-                warnings.warn(f"The following image is skipped because it "
-                              f"does not exist: {file}", UserWarning)
-                _logger.warning(f"The following image is skipped because it "
-                                f"does not exist: {file}")
+                warnings.warn(
+                    "The following image is skipped because it "
+                    f"does not exist: {file}",
+                    UserWarning,
+                )
+                _logger.warning(
+                    "The following image is skipped because it "
+                    f"does not exist: {file}"
+                )
                 continue
             _logger.info(f"Inference on: {file}")
             image = cv2.imread(str(file))
@@ -293,7 +340,8 @@ def detect(dataset: Union[str, Path, np.ndarray, ds.DataSet, Iterable[str],
 
         # Thresholding/cleaning results
         outputs["instances"] = outputs["instances"][
-            outputs["instances"].scores > threshold]
+            outputs["instances"].scores > threshold
+        ]
         _logger.info(f"Found {len(outputs['instances'])} valid objects.")
 
         # Save (intermediate) results
@@ -302,16 +350,23 @@ def detect(dataset: Union[str, Path, np.ndarray, ds.DataSet, Iterable[str],
 
         # Visualizations
         if visualize:
-            visualization.visualize(outputs, file, output_dir=output_dir,
-                                    **kwargs)
+            visualization.visualize(
+                outputs, file, output_dir=output_dir, **kwargs
+            )
 
 
-def run_detection(dataset: Union[ds.DataSet, List[str]],
-                  configuration: Union[CfgNode, str],
-                  weights: str = None, classes: dict = None,
-                  output_dir: str = "./", log_name: str = "detection.log",
-                  visualize: bool = True, vis_random_samples: int = -1,
-                  threshold: float = 0.5, **kwargs) -> list:
+def run_detection(
+    dataset: Union[ds.DataSet, List[str]],
+    configuration: Union[CfgNode, str],
+    weights: str = None,
+    classes: dict = None,
+    output_dir: str = "./",
+    log_name: str = "detection.log",
+    visualize: bool = True,
+    vis_random_samples: int = -1,
+    threshold: float = 0.5,
+    **kwargs,
+) -> list:
     """Runs inference on a given set of images and can visualize the output.
 
     In addition to running inference this script also generates rod endpoints
@@ -371,33 +426,51 @@ def run_detection(dataset: Union[ds.DataSet, List[str]],
     --------
     :func:`~ParticleDetection.modelling.export.rods_to_mat`
     """
-    warnings.warn("This function to output in a format for use in MATLAB is "
-                  "deprecated. Please use `detect()` with an appropriate "
-                  "saving function instead.",
-                  DeprecationWarning)
-    warnings.warn("This function no longer returns the detection results. "
-                  "Instead an empty list [] is returned to not completely "
-                  "break older scripts.", UserWarning)
+    warnings.warn(
+        "This function to output in a format for use in MATLAB is "
+        "deprecated. Please use `detect()` with an appropriate "
+        "saving function instead.",
+        DeprecationWarning,
+    )
+    warnings.warn(
+        "This function no longer returns the detection results. "
+        "Instead an empty list [] is returned to not completely "
+        "break older scripts.",
+        UserWarning,
+    )
     if classes is None:
         classes = {}
     saving_functions = [
         export.rods_to_mat,
     ]
-    detect(dataset=dataset, configuration=configuration, weights=weights,
-           classes=classes, output_dir=output_dir, threshold=threshold,
-           log_name=log_name, visualize=visualize,
-           saving_functions=saving_functions,
-           vis_random_samples=vis_random_samples, **kwargs)
-    return []   # only for compatibility
+    detect(
+        dataset=dataset,
+        configuration=configuration,
+        weights=weights,
+        classes=classes,
+        output_dir=output_dir,
+        threshold=threshold,
+        log_name=log_name,
+        visualize=visualize,
+        saving_functions=saving_functions,
+        vis_random_samples=vis_random_samples,
+        **kwargs,
+    )
+    return []  # only for compatibility
 
 
-def run_detection_csv(dataset_format: str,
-                      configuration: Union[CfgNode, str],
-                      weights: str = None, classes: dict = None,
-                      output_dir: str = "./", log_name: str = "detection.log",
-                      threshold: float = 0.5,
-                      frames: List[int] = [], cam1_name: str = "gp1",
-                      cam2_name: str = "gp2") -> None:
+def run_detection_csv(
+    dataset_format: str,
+    configuration: Union[CfgNode, str],
+    weights: str = None,
+    classes: dict = None,
+    output_dir: str = "./",
+    log_name: str = "detection.log",
+    threshold: float = 0.5,
+    frames: List[int] = [],
+    cam1_name: str = "gp1",
+    cam2_name: str = "gp2",
+) -> None:
     """Runs inference on a given set of images and saves the output to a
     ``*.csv``.
 
@@ -460,27 +533,36 @@ def run_detection_csv(dataset_format: str,
     --------
     :func:`~ParticleDetection.modelling.export.rods_to_csv`
     """
-    warnings.warn("This function to output in format csv format is "
-                  "deprecated. Please use `detect()` with an appropriate "
-                  "saving function instead.",
-                  DeprecationWarning)
+    warnings.warn(
+        "This function to output in format csv format is deprecated. "
+        "Please use `detect()` with an appropriate saving function instead.",
+        DeprecationWarning,
+    )
     if classes is None:
         classes = {}
 
     if weights is None:
-        warnings.warn("The argument 'weights' is going to be a required "
-                      "argument!", DeprecationWarning)
+        warnings.warn(
+            "The argument 'weights' is going to be a required " "argument!",
+            DeprecationWarning,
+        )
         if isinstance(configuration, str):
             cfg = CfgNode(CfgNode.load_yaml_with_base(configuration))
             weights = cfg.MODEL.WEIGHTS
         else:
             weights = configuration.MODEL.WEIGHTS
 
-    saving_functions = [
-        export.rods_to_csv
-    ]
-    detect(dataset=dataset_format, configuration=configuration,
-           weights=weights, classes=classes, output_dir=output_dir,
-           threshold=threshold, saving_functions=saving_functions,
-           log_name=log_name, frames=frames, cam1_name=cam1_name,
-           cam2_name=cam2_name)
+    saving_functions = [export.rods_to_csv]
+    detect(
+        dataset=dataset_format,
+        configuration=configuration,
+        weights=weights,
+        classes=classes,
+        output_dir=output_dir,
+        threshold=threshold,
+        saving_functions=saving_functions,
+        log_name=log_name,
+        frames=frames,
+        cam1_name=cam1_name,
+        cam2_name=cam2_name,
+    )

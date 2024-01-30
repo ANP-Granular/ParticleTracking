@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Collection of helper functions to be used with CfgNode configuration objects
@@ -32,20 +32,25 @@ from detectron2.config import get_cfg
 from detectron2.config.config import CfgNode
 from detectron2.data import transforms as T
 
-from ParticleDetection.utils.datasets import DataSet
-import ParticleDetection.utils.datasets as ds
 import ParticleDetection.modelling.augmentations as ca
-
+import ParticleDetection.utils.datasets as ds
+from ParticleDetection.utils.datasets import DataSet
 
 PORTED_AUGMENTATIONS = [
-    ca.SomeOf([T.RandomFlip(prob=1.0, horizontal=True, vertical=False),
-               T.RandomFlip(prob=1.0, horizontal=False, vertical=True),
-               T.RandomRotation([90, 180, 270], sample_style="choice",
-                                expand=False),
-               ca.MultiplyAugmentation((0.9, 1.1)),
-               ca.GaussianBlurAugmentation(sigmas=(0.0, 2.0)),
-               ca.SharpenAugmentation(alpha=(0.4, 0.6), lightness=(0.9, 1.1))
-               ], lower=0, upper=3)
+    ca.SomeOf(
+        [
+            T.RandomFlip(prob=1.0, horizontal=True, vertical=False),
+            T.RandomFlip(prob=1.0, horizontal=False, vertical=True),
+            T.RandomRotation(
+                [90, 180, 270], sample_style="choice", expand=False
+            ),
+            ca.MultiplyAugmentation((0.9, 1.1)),
+            ca.GaussianBlurAugmentation(sigmas=(0.0, 2.0)),
+            ca.SharpenAugmentation(alpha=(0.4, 0.6), lightness=(0.9, 1.1)),
+        ],
+        lower=0,
+        upper=3,
+    )
 ]
 """List of augmentations used during training of a rod detection network."""
 
@@ -93,8 +98,9 @@ def get_iters(cfg: CfgNode, image_count: int, desired_epochs: int) -> int:
     return desired_epochs * (image_count / batch_size)
 
 
-def write_configs(cfg: CfgNode, directory: str,
-                  augmentations: List[T.Augmentation] = None) -> None:
+def write_configs(
+    cfg: CfgNode, directory: str, augmentations: List[T.Augmentation] = None
+) -> None:
     """Write network configurations to a target directory.
 
     Writes a ``config.yaml`` file from the configuration and possibly an
@@ -127,8 +133,9 @@ def run_test_config(dataset: DataSet) -> CfgNode:
     return cfg
 
 
-def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
-        -> CfgNode:
+def old_ported_config(
+    dataset: DataSet = None, test_dataset: DataSet = None
+) -> CfgNode:
     """Creates a configuration resembling one previously used with an older
     implementation of a R-CNN.
 
@@ -146,20 +153,24 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     CfgNode
     """
     cfg = get_cfg()
-    cfg.merge_from_file(model_zoo.get_config_file(
-        "COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+    cfg.merge_from_file(
+        model_zoo.get_config_file(
+            "COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"
+        )
+    )
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
-        "COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
+        "COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"
+    )
 
-    cfg.NAME = "hgs"    # Todo: check, if there's adverse effects by introducing it     # noqa: E501
+    cfg.NAME = "hgs"  # Todo: check, if there's adverse effects by introducing it     # noqa: E501
     cfg.DATASETS.TRAIN = ()
     cfg.DATASETS.TEST = ()
     cfg.DATALOADER.NUM_WORKERS = 2
     cfg.SOLVER.CHECKPOINT_PERIOD = 1500
 
     # INPUT
-    cfg.INPUT.MIN_SIZE_TRAIN = (512,)   # (256,)
-    cfg.INPUT.MAX_SIZE_TRAIN = (768,)   # (256,)
+    cfg.INPUT.MIN_SIZE_TRAIN = (512,)  # (256,)
+    cfg.INPUT.MAX_SIZE_TRAIN = (768,)  # (256,)
     # cfg.INPUT.MIN_SIZE_TEST = (512,)
     # cfg.INPUT.MAX_SIZE_TEST = (768,)
     cfg.INPUT.CROP.ENABLED = True
@@ -173,7 +184,7 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 500
     # only has one class (polygon), DON'T add 1 for background
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
-    cfg.MODEL.FPN.OUT_CHANNELS = 256    # 256 is the original, it works
+    cfg.MODEL.FPN.OUT_CHANNELS = 256  # 256 is the original, it works
     # significantly better because the previously learned weights are not
     # discarded (i.e. 'backbone.fpn_lateral2.weight')
     cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[16, 24, 36, 48, 60]]
@@ -186,18 +197,24 @@ def old_ported_config(dataset: DataSet = None, test_dataset: DataSet = None) \
     cfg.TEST.DETECTIONS_PER_IMAGE = 400
 
     # Ported "default" configs
-    cfg.MODEL.RPN.PRE_NMS_TOPK_TEST = 6000          # default: 1000
-    cfg.MODEL.RPN.PRE_NMS_TOPK_TRAIN = 6000         # default: 2000
-    cfg.MODEL.RPN.POST_NMS_TOPK_TRAIN = 2000        # default: 1000
+    cfg.MODEL.RPN.PRE_NMS_TOPK_TEST = 6000  # default: 1000
+    cfg.MODEL.RPN.PRE_NMS_TOPK_TRAIN = 6000  # default: 2000
+    cfg.MODEL.RPN.POST_NMS_TOPK_TRAIN = 2000  # default: 1000
     # cfg.ROI_HEADS.NMS_THRESH_TEST = 0.3             # default: 0.5
-    cfg.MODEL.ROI_HEADS.POSITIVE_FRACTION = 0.3     # default: 0.25
+    cfg.MODEL.ROI_HEADS.POSITIVE_FRACTION = 0.3  # default: 0.25
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 200  # default: 512
-    cfg.SOLVER.CLIP_GRADIENTS.CLIP_VALUE = 5.0      # default: 1.0
-    cfg.MODEL.PIXEL_MEAN = [62., 75., 60.]          # default: [103.53, 116.28, 123.675]    # noqa: E501
+    cfg.SOLVER.CLIP_GRADIENTS.CLIP_VALUE = 5.0  # default: 1.0
+    cfg.MODEL.PIXEL_MEAN = [
+        62.0,
+        75.0,
+        60.0,
+    ]  # default: [103.53, 116.28, 123.675]    # noqa: E501
 
     if dataset is None:
-        warn("No DataSet was given and the constructed configuration is "
-             "therefore not directly usable for training a network.")
+        warn(
+            "No DataSet was given and the constructed configuration is "
+            "therefore not directly usable for training a network."
+        )
         return cfg
 
     # Configurations with the given dataset
