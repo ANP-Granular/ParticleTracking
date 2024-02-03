@@ -89,7 +89,11 @@ gpu = []
 RodTracker = 'RodTracker.RodTracker:main'
 
 [tool.pytest.ini_options]
-addopts = "--cov=src --cov-report=html"
+addopts = [
+    "--cov=RodTracker",
+    "--cov-report=term",
+    "--cov-fail-under=70"
+]
 testpaths = [
     "tests/",
 ]
