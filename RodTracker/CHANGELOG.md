@@ -1,4 +1,9 @@
 ## [Unreleased]
+### Fixed
+- import sorting ([#80](https://github.com/ANP-Granular/ParticleTracking/issues/80))
+- outdated ParticleDetection dependency ([#74](https://github.com/ANP-Granular/ParticleTracking/issues/74))
+
+## [v0.6.1]
 ### Added
 - support for python3.11
 - support for more complex image file names, i.e. '...**_00000.png**'
@@ -146,7 +151,8 @@ This especially improves performance and responsiveness of the `RodTracker` when
 ### Added
 - a versioning system
 
-[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.1...HEAD
+[v0.6.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.0...v0.6.1
 [v0.6.0]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.8...v0.6.0
 [v0.5.8]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.7...v0.5.8
 [v0.5.7]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.4...v0.5.7
