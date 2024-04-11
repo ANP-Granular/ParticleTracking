@@ -1,29 +1,32 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
 
 import logging
 from pathlib import Path
-from typing import List, Dict
-import torch
+from typing import Dict, List
+
 import pandas as pd
+import torch
+from ParticleDetection.utils import datasets as ds
+from ParticleDetection.utils import detection
+from ParticleDetection.utils import helper_funcs as hf
 from PyQt5 import QtCore
-from ParticleDetection.utils import (detection, helper_funcs as hf,
-                                     datasets as ds)
+
 from RodTracker.backend.logger import Action, NotInvertableError
 
 _logger = logging.getLogger(__name__)
@@ -54,19 +57,23 @@ class RodDetection(Action):
     num_detected : int
         Total number of rods that have been detected, i.e. all colors combined.
     """
+
     cam_id: str
     """str : ID of the camera the image was produced by."""
 
-    def __init__(self, frame: int, cam_id: str, num_detected: int, *args,
-                 **kwargs):
+    def __init__(
+        self, frame: int, cam_id: str, num_detected: int, *args, **kwargs
+    ):
         self.cam_id = cam_id
         self.num_detected = num_detected
         self._frame = frame
         super().__init__(str(self), *args, **kwargs)
 
     def __str__(self):
-        return (f"({self.cam_id}, {self._frame}) Detected {self.num_detected} "
-                f"rods.")
+        return (
+            f"({self.cam_id}, {self._frame}) Detected {self.num_detected} "
+            f"rods."
+        )
 
     def undo(self, _):
         """
@@ -80,6 +87,7 @@ class RodDetection(Action):
 
 class DetectorSignals(QtCore.QObject):
     """Helper object to provide :class:`Detector` access to ``pyqtSignal``."""
+
     error = QtCore.pyqtSignal(tuple, name="error")
     """pyqtSignal(tuple) : Signal for propagating errors occuring in the
     :class:`Worker`'s thread.\n
@@ -184,22 +192,30 @@ class Detector(QtCore.QRunnable):
         detected.
         ``expected[class] = amount``
     """
+
     classes: Dict[int, str] = {}
     """Dict[int, str] : Classes of objects to detect in the images, i.e.
     rod colors that will be detected.
 
     Default is ``{}``."""
 
-    def __init__(self, cam_id: str, model: torch.ScriptModule,
-                 images: List[Path], frames: List[int],
-                 classes: Dict[int, list], threshold: float = 0.5):
+    def __init__(
+        self,
+        cam_id: str,
+        model: torch.ScriptModule,
+        images: List[Path],
+        frames: List[int],
+        classes: Dict[int, list],
+        threshold: float = 0.5,
+    ):
         super().__init__()
         self.cam_id = cam_id
         self.model = model
         self.signals = DetectorSignals()
         if len(images) != len(frames):
-            raise ValueError("There must be the same number of images and "
-                             "frames.")
+            raise ValueError(
+                "There must be the same number of images and frames."
+            )
         self.images = images
         self.frames = frames
         self.expected: Dict[int, int] = {}
@@ -208,10 +224,10 @@ class Detector(QtCore.QRunnable):
             amount = description[1]
             self.classes[id] = color
             self.expected[id] = amount
-        if threshold > 1.:
-            threshold = 1.
-        elif threshold < 0.:
-            threshold = 0.
+        if threshold > 1.0:
+            threshold = 1.0
+        elif threshold < 0.0:
+            threshold = 0.0
         self.threshold = threshold
 
     def run(self):
@@ -229,8 +245,10 @@ class Detector(QtCore.QRunnable):
             - :attr:`DetectorSignals.finished`
         """
         global abort_requested
-        cols = [col.format(id1=self.cam_id, id2=self.cam_id)
-                for col in ds.DEFAULT_COLUMNS]
+        cols = [
+            col.format(id1=self.cam_id, id2=self.cam_id)
+            for col in ds.DEFAULT_COLUMNS
+        ]
         data = pd.DataFrame(columns=cols)
         data = data.loc[:, ~data.columns.duplicated()]
         num_frames = len(self.images)
@@ -245,8 +263,9 @@ class Detector(QtCore.QRunnable):
             frame = self.frames[i]
             outputs = detection._run_detection(self.model, img)
             if "pred_masks" in outputs:
-                points = hf.rod_endpoints(outputs, self.classes,
-                                          expected_particles=self.expected)
+                points = hf.rod_endpoints(
+                    outputs, self.classes, expected_particles=self.expected
+                )
                 tmp_data = ds.add_points(points, data, self.cam_id, frame)
             self.signals.progress.emit(1 / num_frames, tmp_data, self.cam_id)
         data.reset_index(drop=True, inplace=True)

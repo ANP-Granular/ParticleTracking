@@ -1,35 +1,39 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
+
 """**TBD**"""
 
-import os
 import logging
-from typing import List
+import os
 from functools import partial
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
+from typing import List
+
 import matplotlib.backends.backend_qtagg as b_qt
-from PyQt5 import QtWidgets, QtCore
+import matplotlib.pyplot as plt
+import pandas as pd
 import ParticleDetection.utils.data_loading as dl
-from RodTracker.backend.reconstruction import Plotter, Tracker, Reconstructor
-from RodTracker.backend import reconstruction
-import RodTracker.ui.mainwindow_layout as mw_l
+from matplotlib.figure import Figure
+from PyQt5 import QtCore, QtWidgets
+
 import RodTracker.backend.logger as lg
+import RodTracker.ui.mainwindow_layout as mw_l
+from RodTracker.backend import reconstruction
+from RodTracker.backend.reconstruction import Plotter, Reconstructor, Tracker
 from RodTracker.ui.dialogs import show_warning
+
 _logger = logging.getLogger(__name__)
 
 
@@ -103,6 +107,7 @@ class ReconstructorUI(QtWidgets.QWidget):
         - :meth:`update_settings`
 
     """
+
     position_scaling: float = 1.0
     """float : Scale factor to scale the loaded data for display (is usually
     kept as ``1.0``).
@@ -152,7 +157,7 @@ class ReconstructorUI(QtWidgets.QWidget):
     """
 
     _calibration = QtCore.pyqtSignal([dict])
-    _progress_val: float = 0.
+    _progress_val: float = 0.0
     _colors_to_solve: int = 0
 
     def __init__(self, ui: QtWidgets.QWidget, *args, **kwargs):
@@ -175,13 +180,16 @@ class ReconstructorUI(QtWidgets.QWidget):
         tb_calibration.clicked.connect(
             lambda: choose_calibration(le_calibration, self.set_calibration)
         )
-        tb_transformation = ui.findChild(QtWidgets.QToolButton,
-                                         "tb_transformation")
-        le_transformation = ui.findChild(QtWidgets.QLineEdit,
-                                         "le_transformation")
+        tb_transformation = ui.findChild(
+            QtWidgets.QToolButton, "tb_transformation"
+        )
+        le_transformation = ui.findChild(
+            QtWidgets.QLineEdit, "le_transformation"
+        )
         tb_transformation.clicked.connect(
-            lambda: choose_calibration(le_transformation,
-                                       self.set_transformation)
+            lambda: choose_calibration(
+                le_transformation, self.set_transformation
+            )
         )
         start_f = ui.findChild(QtWidgets.QSpinBox, "start_frame")
         start_f.valueChanged.connect(self._change_start_frame)
@@ -193,17 +201,20 @@ class ReconstructorUI(QtWidgets.QWidget):
                 continue
             cb.stateChanged.connect(self._toggle_color)
 
-        self.stacked_plots = ui.findChild(QtWidgets.QStackedWidget,
-                                          "stacked_plots")
-        self.lbl_current_plot = ui.findChild(QtWidgets.QLabel,
-                                             "lbl_current_plot")
+        self.stacked_plots = ui.findChild(
+            QtWidgets.QStackedWidget, "stacked_plots"
+        )
+        self.lbl_current_plot = ui.findChild(
+            QtWidgets.QLabel, "lbl_current_plot"
+        )
         tb_left = self.ui.findChild(QtWidgets.QToolButton, "tb_plots_left")
         tb_left.clicked.connect(lambda: self.switch_plot_page(-1))
         tb_right = self.ui.findChild(QtWidgets.QToolButton, "tb_plots_right")
         tb_right.clicked.connect(lambda: self.switch_plot_page(1))
 
-        self.pb_plots = self.ui.findChild(QtWidgets.QPushButton,
-                                          "pb_update_plots")
+        self.pb_plots = self.ui.findChild(
+            QtWidgets.QPushButton, "pb_update_plots"
+        )
         self.pb_plots.clicked.connect(self.update_plots)
 
         self.pb_solve = ui.findChild(QtWidgets.QPushButton, "pb_solve")
@@ -215,8 +226,9 @@ class ReconstructorUI(QtWidgets.QWidget):
         ui.findChild(QtWidgets.QLabel, "lbl_solver").setEnabled(False)
         self.pb_solve.setEnabled(False)
 
-        self.progress = ui.findChild(QtWidgets.QProgressBar,
-                                     "progress_reconstruction")
+        self.progress = ui.findChild(
+            QtWidgets.QProgressBar, "progress_reconstruction"
+        )
         self.progress.setValue(100)
 
     @QtCore.pyqtSlot(str)
@@ -240,8 +252,9 @@ class ReconstructorUI(QtWidgets.QWidget):
         """
         self._calibration = dl.load_camera_calibration(path)
         if self._calibration and self._transformation:
-            self.ui.findChild(
-                QtWidgets.QPushButton, "pb_solve").setEnabled(True)
+            self.ui.findChild(QtWidgets.QPushButton, "pb_solve").setEnabled(
+                True
+            )
         if self.data is not None:
             self.pb_plots.setEnabled(True)
 
@@ -263,8 +276,9 @@ class ReconstructorUI(QtWidgets.QWidget):
         """
         self._transformation = dl.load_world_transformation(path)
         if self._calibration and self._transformation:
-            self.ui.findChild(
-                QtWidgets.QPushButton, "pb_solve").setEnabled(True)
+            self.ui.findChild(QtWidgets.QPushButton, "pb_solve").setEnabled(
+                True
+            )
         if self.data is not None:
             self.pb_plots.setEnabled(True)
 
@@ -340,8 +354,9 @@ class ReconstructorUI(QtWidgets.QWidget):
 
                 - :attr:`request_data`
         """
-        self.request_data.emit(list(range(self.start_frame,
-                                    self.end_frame + 1)), self.used_colors)
+        self.request_data.emit(
+            list(range(self.start_frame, self.end_frame + 1)), self.used_colors
+        )
 
     def solve(self):
         """(Re-)Starts the reconstruction/tracking of particles.
@@ -357,14 +372,18 @@ class ReconstructorUI(QtWidgets.QWidget):
         None
         """
         track = self.ui.findChild(
-            QtWidgets.QCheckBox, "cb_tracking").isChecked()
-        if (self.data is None or len(self.data) == 0 or
-                any([cam == "" for cam in self.cam_ids])):
+            QtWidgets.QCheckBox, "cb_tracking"
+        ).isChecked()
+        if (
+            self.data is None
+            or len(self.data) == 0
+            or any([cam == "" for cam in self.cam_ids])
+        ):
             # insufficient data for 3D reconstruction given
             _logger.info("Insufficient data for 3D reconstruction given.")
             return
         frames = list(range(self.start_frame, self.end_frame + 1))
-        self._progress_val = 0.
+        self._progress_val = 0.0
         self.progress.setValue(0)
         num_colors = len(self.used_colors)
         self._colors_to_solve = num_colors
@@ -373,20 +392,35 @@ class ReconstructorUI(QtWidgets.QWidget):
             color = self.used_colors[i]
             tmp = self.data.loc[self.data.color == color]
             if track:
-                tracker = Tracker(tmp, frames, self._calibration,
-                                  self._transformation, self.cam_ids, color)
+                tracker = Tracker(
+                    tmp,
+                    frames,
+                    self._calibration,
+                    self._transformation,
+                    self.cam_ids,
+                    color,
+                )
             else:
-                tracker = Reconstructor(tmp, frames, self._calibration,
-                                        self._transformation, self.cam_ids,
-                                        color)
+                tracker = Reconstructor(
+                    tmp,
+                    frames,
+                    self._calibration,
+                    self._transformation,
+                    self.cam_ids,
+                    color,
+                )
             tracker.signals.progress.connect(
-                lambda val: self._progress_update(val / num_colors))
+                lambda val: self._progress_update(val / num_colors)
+            )
             tracker.signals.error.connect(
-                lambda ret: lg.exception_logger(*ret))
+                lambda ret: lg.exception_logger(*ret)
+            )
             tracker.signals.error.connect(
-                lambda ret: self._solver_result(None))
+                lambda ret: self._solver_result(None)
+            )
             tracker.signals.error.connect(
-                lambda ret: partial(self._notify_error, color))
+                lambda ret: partial(self._notify_error, color)
+            )
             tracker.signals.error.connect(partial(self._notify_error, color))
             tracker.signals.result.connect(self._solver_result)
             self._threads.start(tracker)
@@ -402,9 +436,11 @@ class ReconstructorUI(QtWidgets.QWidget):
         reconstruction.lock.unlock()
 
     def _notify_error(self, color: str):
-        show_warning(f"Something went wrong during 3D reconstruction of "
-                     f"'{color}' particles.\n"
-                     f"Please consult the logs for more information.")
+        show_warning(
+            "Something went wrong during 3D reconstruction of "
+            f"'{color}' particles.\n"
+            "Please consult the logs for more information."
+        )
 
     def _solver_result(self, result: pd.DataFrame):
         """Hook to handle the result of each reconstruction process.
@@ -483,8 +519,10 @@ class ReconstructorUI(QtWidgets.QWidget):
         elif idx_new < 0:
             idx_new = idx_max
         self.stacked_plots.setCurrentIndex(idx_new)
-        self.lbl_current_plot.setText(f"({self.stacked_plots.currentIndex()+1}"
-                                      f"/{self.stacked_plots.count()})")
+        self.lbl_current_plot.setText(
+            f"({self.stacked_plots.currentIndex()+1}"
+            f"/{self.stacked_plots.count()})"
+        )
 
     @QtCore.pyqtSlot(str, str)
     def set_cam_ids(self, cam1: str, cam2: str):
@@ -609,18 +647,24 @@ class ReconstructorUI(QtWidgets.QWidget):
         """
         while self.stacked_plots.count():
             self.stacked_plots.removeWidget(self.stacked_plots.currentWidget())
-        plt.close('all')
+        plt.close("all")
         if self.data is None or len(self.data) == 0:
             return
-        data_plt = self.data.loc[(self.data["frame"] >= self.start_frame) &
-                                 (self.data["frame"] <= self.end_frame) &
-                                 (self.data["color"].isin(self.used_colors))]
+        data_plt = self.data.loc[
+            (self.data["frame"] >= self.start_frame)
+            & (self.data["frame"] <= self.end_frame)
+            & (self.data["color"].isin(self.used_colors))
+        ]
         self.is_busy.emit(True)
         plotter = Plotter(
-            data_plt.copy(), colors=self.used_colors,
-            start_frame=self.start_frame, end_frame=self.end_frame,
-            position_scaling=self.position_scaling, cam_ids=self.cam_ids,
-            calibration=self._calibration, transformation=self._transformation
+            data_plt.copy(),
+            colors=self.used_colors,
+            start_frame=self.start_frame,
+            end_frame=self.end_frame,
+            position_scaling=self.position_scaling,
+            cam_ids=self.cam_ids,
+            calibration=self._calibration,
+            transformation=self._transformation,
         )
         plotter.signals.result_plot.connect(self.add_plot)
         plotter.signals.error.connect(lambda ret: lg.exception_logger(*ret))
@@ -652,8 +696,10 @@ class ReconstructorUI(QtWidgets.QWidget):
         widget.layout().addWidget(nav_bar)
         self.stacked_plots.insertWidget(self.stacked_plots.count(), widget)
         fig.tight_layout()
-        self.lbl_current_plot.setText(f"({self.stacked_plots.currentIndex()+1}"
-                                      f"/{self.stacked_plots.count()})")
+        self.lbl_current_plot.setText(
+            f"({self.stacked_plots.currentIndex()+1}"
+            f"/{self.stacked_plots.count()})"
+        )
         if self._threads.activeThreadCount() == 0:
             self.is_busy.emit(False)
         return
@@ -682,8 +728,9 @@ class ReconstructorUI(QtWidgets.QWidget):
             self.pb_plots.setEnabled(True)
 
 
-def choose_calibration(line_edit: QtWidgets.QLineEdit,
-                       destination_func: callable):
+def choose_calibration(
+    line_edit: QtWidgets.QLineEdit, destination_func: callable
+):
     """Let a user select a calibration/transformation file and load it.
 
     Lets a user select a ``*.json`` file that should contain one kind of
@@ -707,11 +754,11 @@ def choose_calibration(line_edit: QtWidgets.QLineEdit,
     # opens directory to select image
     kwargs = {}
     # handle file path issue when running on linux as a snap
-    if 'SNAP' in os.environ:
+    if "SNAP" in os.environ:
         kwargs["options"] = QtWidgets.QFileDialog.DontUseNativeDialog
     chosen_file, _ = QtWidgets.QFileDialog.getOpenFileName(
-        line_edit, 'Open a calibration', ui_dir, '*.json',
-        **kwargs)
+        line_edit, "Open a calibration", ui_dir, "*.json", **kwargs
+    )
     if chosen_file == "":
         # File selection was aborted
         return None

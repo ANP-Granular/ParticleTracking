@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Collection of previously used automatic rod tracking approaches. These are just
@@ -26,6 +26,7 @@ implemented for comparison with new, more promising methods.
 """
 import itertools
 from typing import Tuple
+
 import numpy as np
 import pandas as pd
 import trackpy as tp
@@ -59,13 +60,16 @@ def tracking_trackpy(data: pd.DataFrame, report: bool = False) -> pd.DataFrame:
 
     # Report
     if report:
-        print(f"Before: {data['particle'].nunique()}\tAfter: "
-              f"{data_out['particle'].nunique()}")
+        print(
+            f"Before: {data['particle'].nunique()}\tAfter: "
+            f"{data_out['particle'].nunique()}"
+        )
     return data_out
 
 
-def tracking_global_assignment(data: pd.DataFrame) \
-        -> Tuple[pd.DataFrame, np.ndarray]:
+def tracking_global_assignment(
+    data: pd.DataFrame,
+) -> Tuple[pd.DataFrame, np.ndarray]:
     """Tracks rods (one colour) over multiple frames with optimal assignment.
 
     The rods given are matched with all others in the next frame and the
@@ -93,25 +97,28 @@ def tracking_global_assignment(data: pd.DataFrame) \
     data_p1 = data[["x1", "y1", "z1"]].to_numpy().reshape((len(frames), -1, 3))
     data_p2 = data[["x2", "y2", "z2"]].to_numpy().reshape((len(frames), -1, 3))
 
-    point_combos = [list(itertools.product(p1, p2)) for p1, p2 in
-                    zip(data_p1, data_p2)]
+    point_combos = [
+        list(itertools.product(p1, p2)) for p1, p2 in zip(data_p1, data_p2)
+    ]
     point_combos = np.asarray(point_combos)
     p1s = point_combos[:, :, 0, :]
     p2s = point_combos[:, :, 1, :]
 
     # distances: (combination, frame, data_p1 x data_p2)
     distances = np.zeros((2, len(frames) - 1, p1s.shape[1]))
-    distances[0, :] = np.linalg.norm(np.diff(p1s, axis=0), axis=2) + \
-        np.linalg.norm(np.diff(p2s, axis=0), axis=2)
-    distances[1, :] = \
-        np.linalg.norm(p1s[0:-1, :] - p2s[1:, :], axis=2) + \
-        np.linalg.norm(p2s[0:-1, :] - p1s[1:, :], axis=2)
+    distances[0, :] = np.linalg.norm(
+        np.diff(p1s, axis=0), axis=2
+    ) + np.linalg.norm(np.diff(p2s, axis=0), axis=2)
+    distances[1, :] = np.linalg.norm(
+        p1s[0:-1, :] - p2s[1:, :], axis=2
+    ) + np.linalg.norm(p2s[0:-1, :] - p1s[1:, :], axis=2)
 
     # TODO: double weight/distance, if rods were "unseen"
 
     cost = np.min(distances, axis=0)
-    cost = np.reshape(cost, (len(frames) - 1, data_p1.shape[1],
-                             data_p2.shape[1]))
+    cost = np.reshape(
+        cost, (len(frames) - 1, data_p1.shape[1], data_p2.shape[1])
+    )
     results = [[linear_sum_assignment(f_c)] for f_c in cost]
     results = np.asarray(results).squeeze()
 

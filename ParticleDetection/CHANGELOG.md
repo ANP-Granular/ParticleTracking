@@ -2,6 +2,9 @@
 ### Added
 - support for python3.11
 
+### Fixed
+- import sorting ([#80](https://github.com/ANP-Granular/ParticleTracking/issues/80))
+
 ## [v0.4.0]
 ### Added
 - documentation with Sphinx

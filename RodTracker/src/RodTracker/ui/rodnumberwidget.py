@@ -1,45 +1,56 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
 
 from enum import Enum
 from typing import List
+
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class RodStyle(str, Enum):
     """Styles for rod numbers."""
-    GENERAL = "background-color: transparent;" \
-              "color: rgb({},{},{}); " \
-              "font: {}px; font-weight: bold;"
-    SELECTED = "background-color: transparent;" \
-               "color: white; " \
-               "font: {}px; font-weight: bold;"
-    CONFLICT = "background-color: transparent;" \
-               "color: red; " \
-               "font: {}px; font-weight: bold;"
-    CHANGED = "background-color: transparent;" \
-              "color: green; " \
-              "font: {}px; font-weight: bold;"
+
+    GENERAL = (
+        "background-color: transparent;"
+        "color: rgb({},{},{}); "
+        "font: {}px; font-weight: bold;"
+    )
+    SELECTED = (
+        "background-color: transparent;"
+        "color: white; "
+        "font: {}px; font-weight: bold;"
+    )
+    CONFLICT = (
+        "background-color: transparent;"
+        "color: red; "
+        "font: {}px; font-weight: bold;"
+    )
+    CHANGED = (
+        "background-color: transparent;"
+        "color: green; "
+        "font: {}px; font-weight: bold;"
+    )
 
 
 class RodState(Enum):
     """States of a rod."""
+
     NORMAL = 0
     SELECTED = 1
     EDITING = 2
@@ -50,9 +61,12 @@ class RodState(Enum):
 class RodStateError(ValueError):
     """Custom error that is raised when an unknown :class:`RodState` is
     encountered."""
+
     def __init__(self):
-        self.message = "The assigned RodState is invalid. Please assign a " \
-                       "known RodState."
+        self.message = (
+            "The assigned RodState is invalid. Please assign a "
+            "known RodState."
+        )
         super().__init__(self.message)
 
 
@@ -94,6 +108,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
     color : str
         The color of the rod being represented.
     """
+
     activated = QtCore.pyqtSignal(int, name="activated")
     """pyqtSignal(int) : Notifies, that this rod has been activated."""
 
@@ -101,13 +116,13 @@ class RodNumberWidget(QtWidgets.QLineEdit):
     """pyqtSignal(QPoint) : Notifies, that his widget has been dropped after
     dragging it to a new location."""
 
-    id_changed = QtCore.pyqtSignal(QtWidgets.QLineEdit, int,
-                                   name="id_changed")
+    id_changed = QtCore.pyqtSignal(QtWidgets.QLineEdit, int, name="id_changed")
     """pyqtSignal(QLineEdit, int) : Notifies, that this rod has changed its ID
     (number)."""
 
-    request_delete = QtCore.pyqtSignal(QtWidgets.QLineEdit,
-                                       name="request_delete")
+    request_delete = QtCore.pyqtSignal(
+        QtWidgets.QLineEdit, name="request_delete"
+    )
     """pyqtSignal(QLineEdit) : Requests the deletion of this rod by the
     managing object."""
 
@@ -150,8 +165,9 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         self.setMouseTracking(False)
         self.setFrame(False)
         self.setReadOnly(True)
-        self.setStyleSheet(RodStyle.GENERAL.format(*self._number_color,
-                                                   self._number_size))
+        self.setStyleSheet(
+            RodStyle.GENERAL.format(*self._number_color, self._number_size)
+        )
 
         tmp_font = self.font()
         tmp_font.setPixelSize(self._number_size)
@@ -198,8 +214,9 @@ class RodNumberWidget(QtWidgets.QLineEdit):
     def rod_state(self, new_state: RodState):
         new_style = ""
         if new_state == RodState.NORMAL:
-            new_style = RodStyle.GENERAL.format(*self._number_color,
-                                                self._number_size)
+            new_style = RodStyle.GENERAL.format(
+                *self._number_color, self._number_size
+            )
         elif new_state == RodState.SELECTED:
             new_style = RodStyle.SELECTED.format(self._number_size)
         elif new_state == RodState.EDITING:
@@ -234,8 +251,10 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         pen.setWidth(self._rod_thickness)
         if self.rod_state == RodState.NORMAL:
             pen.setColor(QtGui.QColor(*self._rod_color))
-        elif (self.rod_state == RodState.SELECTED or
-              self.rod_state == RodState.EDITING):
+        elif (
+            self.rod_state == RodState.SELECTED
+            or self.rod_state == RodState.EDITING
+        ):
             new_color = QtGui.QColor(QtCore.Qt.white)
             new_color.setAlphaF(0.5)
             pen.setColor(new_color)
@@ -249,7 +268,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     # Controlling "editing" behaviour
     def mouseDoubleClickEvent(self, e: QtGui.QMouseEvent) -> None:
-        """ Reimplements ``QLineEdit.mouseDoubleClickEvent(e)``.
+        """Reimplements ``QLineEdit.mouseDoubleClickEvent(e)``.
 
         Handles the selection of a rod number for editing.
 
@@ -265,7 +284,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         self.selectAll()
 
     def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
-        """ Reimplements ``QLineEdit.keyPressEvent(e)``.
+        """Reimplements ``QLineEdit.keyPressEvent(e)``.
 
         Handles the confirmation and exiting during rod number editing using
         keyboard keys.
@@ -310,7 +329,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
     # Controlling "movement" behaviour
     def mouseMoveEvent(self, e: QtGui.QMouseEvent) -> None:
-        """ Reimplements ``QLineEdit.mouseMoveEvent(e)``.
+        """Reimplements ``QLineEdit.mouseMoveEvent(e)``.
 
         Handles the position updating during drag&drop of this widget by the
         user.
@@ -338,7 +357,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
             return
 
     def mousePressEvent(self, event):
-        """ Reimplements ``QLineEdit.mousePressEvent(event)``.
+        """Reimplements ``QLineEdit.mousePressEvent(event)``.
 
         Handles the selection of a rod for corrections and drag&drop of this
         widget by the user.
@@ -371,7 +390,7 @@ class RodNumberWidget(QtWidgets.QLineEdit):
                 self.activated.emit(self.rod_id)
 
     def mouseReleaseEvent(self, event) -> None:
-        """ Reimplements ``QLineEdit.mouseReleaseEvent(event)``.
+        """Reimplements ``QLineEdit.mouseReleaseEvent(event)``.
 
         Handles ending of drag&drop of this widget by the user.
 
@@ -418,8 +437,9 @@ class RodNumberWidget(QtWidgets.QLineEdit):
         -------
         RodNumberWidget
         """
-        copied = RodNumberWidget(self.color, self.parent(), self.text(),
-                                 self.pos())
+        copied = RodNumberWidget(
+            self.color, self.parent(), self.text(), self.pos()
+        )
         copied.rod_state = self.rod_state
         copied.rod_points = self.rod_points
         copied.rod_id = self.rod_id
@@ -475,8 +495,11 @@ class RodNumberWidget(QtWidgets.QLineEdit):
 
         if settings_changed:
             if self.rod_state == RodState.NORMAL:
-                self.setStyleSheet(RodStyle.GENERAL.format(
-                    *self._number_color, self._number_size))
+                self.setStyleSheet(
+                    RodStyle.GENERAL.format(
+                        *self._number_color, self._number_size
+                    )
+                )
             elif self.rod_state == RodState.SELECTED:
                 self.setStyleSheet(RodStyle.SELECTED.format(self._number_size))
             elif self.rod_state == RodState.EDITING:

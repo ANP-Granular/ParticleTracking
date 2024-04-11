@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Functions to visualize predictions of Detectron2 models.
@@ -23,11 +23,11 @@ Functions to visualize predictions of Detectron2 models.
 """
 import logging
 import os
-from typing import Union, Iterable
+from typing import Iterable, Union
 
 import cv2
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from detectron2.utils.visualizer import GenericMask
@@ -35,8 +35,14 @@ from detectron2.utils.visualizer import GenericMask
 _logger = logging.getLogger(__name__)
 
 
-def visualize(prediction, original: Union[dict, str, np.ndarray],
-              hide_tags=True, output_dir="", colors: Iterable = None, **_):
+def visualize(
+    prediction,
+    original: Union[dict, str, np.ndarray],
+    hide_tags=True,
+    output_dir="",
+    colors: Iterable = None,
+    **_,
+):
     """Visualizes predictions on one image with/without it's ground truth.
 
     Parameters
@@ -149,9 +155,7 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
         for m, c, s in zip(masks, color, confidences):
             for segment in m.polygons:
                 polygon = mpl.patches.Polygon(
-                    segment.reshape(-1, 2),
-                    fill=False,
-                    color=c
+                    segment.reshape(-1, 2), fill=False, color=c
                 )
                 axes.add_patch(polygon)
             axes.text(*m.bbox()[0:2], f"{s.numpy():.2f}")
@@ -162,6 +166,7 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
             return len_data * ["black"]
         else:
             return [colors[lbl] for lbl in class_data]
+
     try:
         scores = predictions.scores
     except KeyError:
@@ -177,21 +182,24 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
             2 * (height + 1e-2) / dpi,
         )
         # Prediction axes
-        ax1 = fig.add_axes([0, .5, 1, .5])
+        ax1 = fig.add_axes([0, 0.5, 1, 0.5])
         ax1.imshow(img)
         ax1.axis("off")
         try:
-            class_colors = get_colors(len(predictions.pred_classes),
-                                      predictions.pred_classes)
+            class_colors = get_colors(
+                len(predictions.pred_classes), predictions.pred_classes
+            )
             add_outlines(predictions.pred_masks, ax1, class_colors, scores)
         except AttributeError:
             # predictions does not have mask data, e.g. because it predicted
             # only keypoints
-            _logger.warning("Predictions don't have segmentation masks. "
-                            "Skipping mask visualization...")
+            _logger.warning(
+                "Predictions don't have segmentation masks. "
+                "Skipping mask visualization..."
+            )
 
         # Groundtruth axes
-        ax2 = fig.add_axes([0, 0, 1, .5])
+        ax2 = fig.add_axes([0, 0, 1, 0.5])
         ax2.imshow(img)
         ax2.axis("off")
         try:
@@ -202,8 +210,10 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
         except IndexError:
             # annotations don't have the "segmentation" field, e.g. because
             # they only have keypoints
-            _logger.warning("Ground-truth does not have segmentation masks. "
-                            "Skipping mask visualization...")
+            _logger.warning(
+                "Ground-truth does not have segmentation masks. "
+                "Skipping mask visualization..."
+            )
 
     else:
         fig.set_size_inches(
@@ -215,13 +225,16 @@ def create_figure(img, predictions, gt: dict = None, colors: Iterable = None):
         ax1.imshow(img)
         ax1.axis("off")
         try:
-            class_colors = get_colors(len(predictions.pred_classes),
-                                      predictions.pred_classes)
+            class_colors = get_colors(
+                len(predictions.pred_classes), predictions.pred_classes
+            )
             add_outlines(predictions.pred_masks, ax1, class_colors, scores)
         except AttributeError:
             # predictions does not have mask data, e.g. because it predicted
             # only keypoints
-            _logger.warning("Predictions don't have segmentation masks. "
-                            "Skipping mask visualization...")
+            _logger.warning(
+                "Predictions don't have segmentation masks. "
+                "Skipping mask visualization..."
+            )
 
     return fig

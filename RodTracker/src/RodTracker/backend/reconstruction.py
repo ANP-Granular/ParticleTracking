@@ -1,36 +1,36 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
 
+import logging
 import sys
 import warnings
-import logging
 from typing import List
-import pandas as pd
-import numpy as np
-from matplotlib.figure import Figure
-from scipy.spatial.transform import Rotation as R
 
-from PyQt5 import QtCore
+import numpy as np
+import pandas as pd
+from matplotlib.figure import Figure
 from ParticleDetection.reconstruct_3D import calibrate_cameras as cc
+from ParticleDetection.reconstruct_3D import matchND
 from ParticleDetection.reconstruct_3D import visualization as vis
-from ParticleDetection.utils import data_loading as dl
 from ParticleDetection.reconstruct_3D.match2D import match_frame
-from ParticleDetection. reconstruct_3D import matchND
+from ParticleDetection.utils import data_loading as dl
+from PyQt5 import QtCore
+from scipy.spatial.transform import Rotation as R
 
 _logger = logging.getLogger(__name__)
 abort_reconstruction: bool = False
@@ -90,6 +90,7 @@ class Plotter(QtCore.QRunnable):
         ``"position_scaling"``, ``"cam_ids"``, ``"calibration"``, and
         ``"transformation"``
     """
+
     def __init__(self, data: pd.DataFrame, **kwargs):
         self.data = data
         self.signals = PlotterSignals()
@@ -115,7 +116,7 @@ class Plotter(QtCore.QRunnable):
             with warnings.catch_warnings():
                 warnings.simplefilter(action="ignore", category=UserWarning)
                 self.generate_plots(self.data, **self.kwargs)
-        except:                                                 # noqa: E722
+        except:  # noqa: E722
             exctype, value, tb = sys.exc_info()
             self.signals.error.emit((exctype, value, tb))
 
@@ -146,23 +147,27 @@ class Plotter(QtCore.QRunnable):
         cam_ids = kwargs.get("cam_ids")
         try:
             self.plot_displacements_3d(data, colors, start_f, end_f)
-        except:                                                 # noqa: E722
+        except:  # noqa: E722
             exctype, value, tb = sys.exc_info()
             self.signals.error.emit((exctype, value, tb))
         try:
             self.plot_rod_lengths(data, scale)
-        except:                                                 # noqa: E722
+        except:  # noqa: E722
             exctype, value, tb = sys.exc_info()
             self.signals.error.emit((exctype, value, tb))
         try:
             self.plot_reprojection_errors(data, cam_ids, calib, scale, trafo)
-        except:                                                 # noqa: E722
+        except:  # noqa: E722
             exctype, value, tb = sys.exc_info()
             self.signals.error.emit((exctype, value, tb))
 
-    def plot_displacements_3d(self, data: pd.DataFrame, colors: List[str] =
-                              None, start_frame: int = None, end_frame: int =
-                              None):
+    def plot_displacements_3d(
+        self,
+        data: pd.DataFrame,
+        colors: List[str] = None,
+        start_frame: int = None,
+        end_frame: int = None,
+    ):
         """Plot the frame-wise (minimum) displacement per rod and average of
         rods for multiple colors.
 
@@ -216,8 +221,10 @@ class Plotter(QtCore.QRunnable):
         if end_frame is None:
             end_frame = data["frame"].max()
         if start_frame == end_frame:
-            _logger.error("Only received data for one frame. "
-                          "Cannot compute a 3D displacement plot.")
+            _logger.error(
+                "Only received data for one frame. "
+                "Cannot compute a 3D displacement plot."
+            )
             return
         for color in colors:
             c_data = data.loc[data.color == color]
@@ -229,14 +236,15 @@ class Plotter(QtCore.QRunnable):
                 # No plottable data available for this color
                 continue
             fig = vis.displacement_fwise(
-                to_plot, frames=np.arange(start_frame, end_frame),
-                show=False)
+                to_plot, frames=np.arange(start_frame, end_frame), show=False
+            )
             axis = fig.axes[0]
             axis.set_title(color)
             self.signals.result_plot.emit(fig)
 
-    def plot_rod_lengths(self, data: pd.DataFrame, position_scaling: float =
-                         None):
+    def plot_rod_lengths(
+        self, data: pd.DataFrame, position_scaling: float = None
+    ):
         """Plot a histogram of rod lengths.
 
         Plot a histogram of all rod lengths present in the given ``DataFrame``.
@@ -271,16 +279,22 @@ class Plotter(QtCore.QRunnable):
             position_scaling = 1.0
         rod_lens = data["l"].dropna().to_numpy() * position_scaling
         if not len(rod_lens):
-            _logger.error("Did not receive any valid particle length data. "
-                          "Cannot compute histogram of lengths.")
+            _logger.error(
+                "Did not receive any valid particle length data. "
+                "Cannot compute histogram of lengths."
+            )
             return
         len_fig = vis.length_hist(rod_lens.reshape((-1)))
         self.signals.result_plot.emit(len_fig)
 
-    def plot_reprojection_errors(self, data: pd.DataFrame, cam_ids: List[str],
-                                 calibration: dict = None,
-                                 position_scaling: float = 1.0, transformation:
-                                 dict = None):
+    def plot_reprojection_errors(
+        self,
+        data: pd.DataFrame,
+        cam_ids: List[str],
+        calibration: dict = None,
+        position_scaling: float = 1.0,
+        transformation: dict = None,
+    ):
         """Plot a histogram of reprojection errors.
 
         Plot a histogram of reprojection errors from 3D coordinates to 2D
@@ -331,23 +345,28 @@ class Plotter(QtCore.QRunnable):
             - :attr:`PlotterSignals.result_plot`
         """
         if data is None:
-            _logger.error(f"Insufficient position data was provided: "
-                          f"{data}")
+            _logger.error(f"Insufficient position data was provided: {data}")
         if calibration is None:
-            _logger.error(f"Insufficient calibration data was provided:"
-                          f" {calibration}")
+            _logger.error(
+                f"Insufficient calibration data was provided: {calibration}"
+            )
         if position_scaling is None:
             position_scaling = 1.0
-        rep_errs = self.reproject_data(data, cam_ids, calibration,
-                                       position_scaling, transformation)
+        rep_errs = self.reproject_data(
+            data, cam_ids, calibration, position_scaling, transformation
+        )
         if rep_errs is not None:
             err_fig = vis.reprojection_errors_hist(rep_errs.reshape((-1)))
             self.signals.result_plot.emit(err_fig)
 
     @staticmethod
-    def reproject_data(data: pd.DataFrame, cam_ids: List[str],
-                       calibration: dict, position_scaling: float = 1.0,
-                       transformation: dict = None):
+    def reproject_data(
+        data: pd.DataFrame,
+        cam_ids: List[str],
+        calibration: dict,
+        position_scaling: float = 1.0,
+        transformation: dict = None,
+    ):
         """Calculate reprojection errors for each row in a rod position data
         ``DataFrame``.
 
@@ -397,9 +416,11 @@ class Plotter(QtCore.QRunnable):
             return
         id1 = cam_ids[0]
         id2 = cam_ids[1]
+        # fmt: off
         cols = ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'x', 'y', 'z', 'l',
                 f'x1_{id1:s}', f'y1_{id1:s}', f'x2_{id1:s}', f'y2_{id1:s}',
                 f'x1_{id2:s}', f'y1_{id2:s}', f'x2_{id2:s}', f'y2_{id2:s}']
+        # fmt: on
         data = data[cols]
         e1_3d = data.iloc[:, 0:3].to_numpy(dtype=float) * position_scaling
         e2_3d = data.iloc[:, 3:6].to_numpy(dtype=float) * position_scaling
@@ -425,9 +446,11 @@ class Plotter(QtCore.QRunnable):
             return
 
         e1_repr_c1, e1_repr_c2 = cc.reproject_points(
-            e1_3d, calibration, transformation)
+            e1_3d, calibration, transformation
+        )
         e2_repr_c1, e2_repr_c2 = cc.reproject_points(
-            e2_3d, calibration, transformation)
+            e2_3d, calibration, transformation
+        )
         repr_errs.append(np.abs(e1_repr_c1 - e1_2d_c1))
         repr_errs.append(np.abs(e1_repr_c2 - e1_2d_c2))
         repr_errs.append(np.abs(e2_repr_c1 - e2_2d_c1))
@@ -439,6 +462,7 @@ class Plotter(QtCore.QRunnable):
 class TrackerSignals(QtCore.QObject):
     """Helper object to provide :class:`Reconstructor` and class:`Tracker`
     access to ``pyqtSignal``."""
+
     error = QtCore.pyqtSignal(tuple, name="error")
     """pyqtSignal(tuple) : Signal for propagating errors occuring in the
     worker's thread.\n
@@ -544,9 +568,16 @@ class Reconstructor(QtCore.QRunnable):
     --------
     :meth:`~ParticleDetection.reconstruct_3D.match2D.match_frame`
     """
-    def __init__(self, data: pd.DataFrame, frames: List[int],
-                 calibration: dict, transformation: dict, cams: List[str],
-                 color: str):
+
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        frames: List[int],
+        calibration: dict,
+        transformation: dict,
+        cams: List[str],
+        color: str,
+    ):
         super().__init__()
         self.data = data
         self.frames = frames
@@ -580,7 +611,7 @@ class Reconstructor(QtCore.QRunnable):
         try:
             # Derive projection matrices from the calibration
             r1 = np.eye(3)
-            t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+            t1 = np.expand_dims(np.array([0.0, 0.0, 0.0]), 1)
             P1 = np.vstack((r1.T, t1.T)) @ self.calibration["CM1"].T
             P1 = P1.T
 
@@ -603,15 +634,19 @@ class Reconstructor(QtCore.QRunnable):
                     return
                 lock.unlock()
 
-                tmp = match_frame(self.data, self.cams[0], self.cams[1],
-                                  self.frames[i],
-                                  self.color, self.calibration, P1, P2, rot,
-                                  trans, r1, r2, t1, t2, renumber=False)[0]
+                # fmt: off
+                tmp = match_frame(
+                    self.data, self.cams[0], self.cams[1], self.frames[i],
+                    self.color, self.calibration, P1, P2, rot, trans,
+                    r1, r2, t1, t2, renumber=False
+                )[0]
+                # fmt: on
+
                 df_out = pd.concat([df_out, tmp])
                 self.signals.progress.emit(1 / num_frames)
             df_out.reset_index(drop=True, inplace=True)
             self.signals.result.emit(df_out)
-        except:                                                 # noqa: E722
+        except:  # noqa: E722
             exctype, value, tb = sys.exc_info()
             self.signals.error.emit((exctype, value, tb))
 
@@ -716,7 +751,7 @@ class Tracker(Reconstructor):
         try:
             # Derive projection matrices from the calibration
             r1 = np.eye(3)
-            t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+            t1 = np.expand_dims(np.array([0.0, 0.0, 0.0]), 1)
             P1 = np.vstack((r1.T, t1.T)) @ self.calibration["CM1"].T
             P1 = P1.T
 
@@ -741,10 +776,15 @@ class Tracker(Reconstructor):
                     lock.unlock()
                     return
                 lock.unlock()
-                tmp = match_frame(self.data, self.cams[0],
-                                  self.cams[1], self.frames[0],
-                                  self.color, self.calibration, P1, P2, rot,
-                                  trans, r1, r2, t1, t2, renumber=True)[0]
+
+                # fmt: off
+                tmp = match_frame(
+                    self.data, self.cams[0], self.cams[1], self.frames[0],
+                    self.color, self.calibration, P1, P2, rot, trans,
+                    r1, r2, t1, t2, renumber=True
+                )[0]
+                # fmt: on
+
                 df_out = pd.concat([df_out, tmp])
                 self.frames = self.frames[1:]
                 self.signals.progress.emit(1 / num_frames)
@@ -757,20 +797,26 @@ class Tracker(Reconstructor):
                     lock.unlock()
                     return
                 lock.unlock()
+
                 # Track particles
+                # fmt: off
                 tmp = matchND.match_frame(
-                    self.data, self.cams[0], self.cams[1],
-                    self.frames[i], self.color, self.calibration, P1, P2, rot,
-                    trans, r1, r2, t1, t2)[0]
+                    self.data, self.cams[0], self.cams[1], self.frames[i],
+                    self.color, self.calibration, P1, P2, rot,
+                    trans, r1, r2, t1, t2
+                )[0]
                 # Rematch rod endpoints for better position results
-                tmp = match_frame(tmp, self.cams[0], self.cams[1],
-                                  self.frames[i], self.color, self.calibration,
-                                  P1, P2, rot, trans, r1, r2, t1, t2,
-                                  renumber=False)[0]
+                tmp = match_frame(
+                    tmp, self.cams[0], self.cams[1], self.frames[i],
+                    self.color, self.calibration, P1, P2, rot, trans,
+                    r1, r2, t1, t2, renumber=False
+                )[0]
+                # fmt: on
+
                 df_out = pd.concat([df_out, tmp])
                 self.signals.progress.emit(1 / num_frames)
             df_out.reset_index(drop=True, inplace=True)
             self.signals.result.emit(df_out)
-        except:                                                 # noqa: E722
+        except:  # noqa: E722
             exctype, value, tb = sys.exc_info()
             self.signals.error.emit((exctype, value, tb))

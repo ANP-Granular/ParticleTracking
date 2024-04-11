@@ -1,25 +1,27 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
 
 import copy
-from PyQt5 import QtWidgets, QtGui, QtCore
-from RodTracker.backend.settings import Settings
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
 import RodTracker.ui.mainwindow_layout as mw_l
+from RodTracker.backend.settings import Settings
 
 
 def init_settings(ui: mw_l.Ui_MainWindow, settings: Settings):
@@ -41,7 +43,8 @@ def init_settings(ui: mw_l.Ui_MainWindow, settings: Settings):
     ui.thickness.lineEdit().selectionChanged.connect(lambda: clear_select(ui))
     ui.offset.lineEdit().selectionChanged.connect(lambda: clear_select(ui))
     ui.number_size.lineEdit().selectionChanged.connect(
-        lambda: clear_select(ui))
+        lambda: clear_select(ui)
+    )
 
     ui.thickness.valueChanged.connect(
         lambda val: settings.update_field("visual", "rod_thickness", val)
@@ -64,26 +67,30 @@ def init_settings(ui: mw_l.Ui_MainWindow, settings: Settings):
         lambda val: settings.update_field("experiment", "box_depth", val)
     )
     ui.position_scaling.textChanged.connect(
-        lambda _: handle_line_edit_changes(ui.position_scaling, settings,
-                                           "visual", "position_scaling")
+        lambda _: handle_line_edit_changes(
+            ui.position_scaling, settings, "visual", "position_scaling"
+        )
     )
     ui.rod_incr.textChanged.connect(
-        lambda _: handle_line_edit_changes(ui.rod_incr, settings,
-                                           "functional", "rod_increment")
+        lambda _: handle_line_edit_changes(
+            ui.rod_incr, settings, "functional", "rod_increment"
+        )
     )
     ui.rod_color.clicked.connect(
-        lambda: handle_color_pick(ui.rod_color, settings,
-                                  "visual", "rod_color")
+        lambda: handle_color_pick(
+            ui.rod_color, settings, "visual", "rod_color"
+        )
     )
     ui.number_color.clicked.connect(
-        lambda: handle_color_pick(ui.number_color, settings,
-                                  "visual", "number_color")
+        lambda: handle_color_pick(
+            ui.number_color, settings, "visual", "number_color"
+        )
     )
-    ui.cb_recalc_3D.stateChanged.connect(
-        handle_checkbox
+    ui.cb_recalc_3D.stateChanged.connect(handle_checkbox)
+    ui.lbl_recalc_3D.setToolTip(
+        "Recalculate particles' 3D position "
+        "immediately after a change was made in 2D."
     )
-    ui.lbl_recalc_3D.setToolTip("Recalculate particles' 3D position "
-                                "immediately after a change was made in 2D.")
     ui.cb_recalc_3D.setEnabled(False)
     ui.lbl_recalc_3D.setEnabled(False)
 
@@ -95,8 +102,9 @@ def clear_select(ui: mw_l.Ui_MainWindow):
     ui.thickness.lineEdit().deselect()
 
 
-def handle_line_edit_changes(obj: QtWidgets.QLineEdit, settings: Settings,
-                             category: str, field: str):
+def handle_line_edit_changes(
+    obj: QtWidgets.QLineEdit, settings: Settings, category: str, field: str
+):
     """Handler function to extract the users' input from a ``QLineEdit``.
 
     Parameters
@@ -117,8 +125,9 @@ def handle_line_edit_changes(obj: QtWidgets.QLineEdit, settings: Settings,
     settings.update_field(category, field, converted_val)
 
 
-def handle_color_pick(obj: QtWidgets.QToolButton, settings: Settings,
-                      category: str, field: str):
+def handle_color_pick(
+    obj: QtWidgets.QToolButton, settings: Settings, category: str, field: str
+):
     """Handler function to let the user select a color for a setting.
 
     Parameters
@@ -137,8 +146,9 @@ def handle_color_pick(obj: QtWidgets.QToolButton, settings: Settings,
     if color.exec():
         color = color.selectedColor()
         draw_icon(QtGui.QColor(color), obj)
-        settings.update_field(category, field,
-                              [color.red(), color.green(), color.blue()])
+        settings.update_field(
+            category, field, [color.red(), color.green(), color.blue()]
+        )
 
 
 def draw_icon(color: QtGui.QColor, target: QtWidgets.QToolButton):
@@ -151,8 +161,7 @@ def draw_icon(color: QtGui.QColor, target: QtWidgets.QToolButton):
     """
     to_icon = QtGui.QPixmap(35, 25)
     painter = QtGui.QPainter(to_icon)
-    painter.fillRect(QtCore.QRect(0, 0, 35, 25),
-                     QtGui.QColor(color))
+    painter.fillRect(QtCore.QRect(0, 0, 35, 25), QtGui.QColor(color))
     painter.end()
     target.setIcon(QtGui.QIcon(to_icon))
     target.setIconSize(QtCore.QSize(28, 15))
@@ -181,9 +190,9 @@ def set_all_values(se: dict, ui: mw_l.Ui_MainWindow):
     draw_icon(QtGui.QColor(*se["visual"]["rod_color"]), ui.rod_color)
     draw_icon(QtGui.QColor(*se["visual"]["number_color"]), ui.number_color)
     ui.position_scaling.setText(
-        "{:05.2f}".format(se["visual"]["position_scaling"]))
-    ui.rod_incr.setText(
-        "{:05.2f}".format(se["functional"]["rod_increment"]))
+        "{:05.2f}".format(se["visual"]["position_scaling"])
+    )
+    ui.rod_incr.setText("{:05.2f}".format(se["functional"]["rod_increment"]))
 
 
 def restore_defaults(ui: mw_l.Ui_MainWindow, settings: Settings):
@@ -198,10 +207,12 @@ def restore_defaults(ui: mw_l.Ui_MainWindow, settings: Settings):
     """
     if settings._default is None:
         QtWidgets.QMessageBox.critical(
-            ui, "Restore defaults",
+            ui,
+            "Restore defaults",
             "There are no defaults present! To reset the settings "
             "delete the file %temp%/RodTracker/settings.json and "
-            "restart the application.")
+            "restart the application.",
+        )
     else:
         settings._contents = copy.deepcopy(settings._default)
         set_all_values(settings._contents, ui)

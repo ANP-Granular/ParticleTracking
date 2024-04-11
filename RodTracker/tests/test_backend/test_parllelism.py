@@ -1,22 +1,23 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-from pytestqt.qtbot import QtBot
 from PyQt5 import QtCore
+from pytestqt.qtbot import QtBot
+
 import RodTracker.backend.parallelism as pl
 
 
@@ -24,11 +25,10 @@ def runner_func(x=2, y=3):
     return x + y
 
 
-@pytest.mark.parametrize("inputs,outputs",
-                         [({}, [5]),
-                          ({"x": 4}, [7]),
-                          ({"y": 4}, [6]),
-                          ({"x": 4, "y": 4}, [8])])
+@pytest.mark.parametrize(
+    "inputs,outputs",
+    [({}, [5]), ({"x": 4}, [7]), ({"y": 4}, [6]), ({"x": 4, "y": 4}, [8])],
+)
 def test_run_func(inputs, outputs, qtbot: QtBot):
     threads = QtCore.QThreadPool()
     worker = pl.Worker(runner_func, **inputs)

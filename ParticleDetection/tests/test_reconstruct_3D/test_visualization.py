@@ -1,30 +1,32 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 from pathlib import Path
+
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import pandas as pd
 import pytest
+from conftest import EXAMPLES
+from matplotlib.figure import Figure
+from mpl_toolkits.mplot3d import Axes3D
+
 import ParticleDetection.reconstruct_3D.visualization as vis
 import ParticleDetection.utils.data_loading as dl
-from conftest import EXAMPLES
 
 
 @pytest.fixture(scope="session")
@@ -51,8 +53,9 @@ def test_matching_results(plotting_data: pd.DataFrame):
     plt.close("all")
 
 
-def test_matching_results_show(monkeypatch: pytest.MonkeyPatch,
-                               plotting_data: pd.DataFrame):
+def test_matching_results_show(
+    monkeypatch: pytest.MonkeyPatch, plotting_data: pd.DataFrame
+):
     show_called = False
 
     def show(*args, **kwargs):
@@ -95,8 +98,9 @@ def test_length_hist_wide_range(monkeypatch: pytest.MonkeyPatch):
     plt.close("all")
 
 
-def test_length_hist_break(monkeypatch: pytest.MonkeyPatch,
-                           plotting_data: pd.DataFrame):
+def test_length_hist_break(
+    monkeypatch: pytest.MonkeyPatch, plotting_data: pd.DataFrame
+):
     def failing_plot(*args, **kwargs):
         raise ValueError("test")
 
@@ -157,8 +161,9 @@ def test_displacement_fwise(plotting_data: pd.DataFrame):
     plt.close("all")
 
 
-def test_displacement_fwise_show(monkeypatch: pytest.MonkeyPatch,
-                                 plotting_data: pd.DataFrame):
+def test_displacement_fwise_show(
+    monkeypatch: pytest.MonkeyPatch, plotting_data: pd.DataFrame
+):
     data = dl.extract_3d_data(plotting_data)
     show_called = False
 

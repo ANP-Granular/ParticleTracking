@@ -1,36 +1,36 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Collection of miscellaneous helper functions.
 """
-import sys
-import logging
-from typing import Dict, Union
-from collections import Counter
-import multiprocessing as mp
 import json
-import cv2
+import logging
+import multiprocessing as mp
+import sys
+from collections import Counter
+from typing import Dict, Union
 
-import torch
+import cv2
 import numpy as np
+import torch
 from PIL import Image
 from scipy.spatial import ConvexHull
-from sklearn.cluster import DBSCAN
 from skimage.transform import probabilistic_hough_line
+from sklearn.cluster import DBSCAN
 
 import ParticleDetection.utils.data_loading as dl
 import ParticleDetection.utils.datasets as ds
@@ -52,7 +52,7 @@ def configure_logging(level: int = logging.INFO):
     ch.setLevel(level)
     formatter = logging.Formatter(
         "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-        datefmt="%m/%d %H:%M:%S"
+        datefmt="%m/%d %H:%M:%S",
     )
     ch.setFormatter(formatter)
     lg.addHandler(ch)
@@ -67,15 +67,18 @@ def _dot_arccos(lineA, lineB):
     # Get magnitudes, Get cosine value, Get angle in radians and then
     # convert to degrees
     return np.arccos(
-        np.clip(dot_prod / (np.linalg.norm(vA) * np.linalg.norm(vB)), -1,
-                1))
+        np.clip(dot_prod / (np.linalg.norm(vA) * np.linalg.norm(vB)), -1, 1)
+    )
 
 
 def _line_metric_4(l1, l2):
     """Custom metric: (distance + const)*exp"""
-    num_min = np.argmin([np.linalg.norm([(l1[0] - l1[2]), (l1[1] - l1[3])]),
-                         np.linalg.norm(
-                             [(l2[0] - l2[2]), (l2[1] - l2[3])])])
+    num_min = np.argmin(
+        [
+            np.linalg.norm([(l1[0] - l1[2]), (l1[1] - l1[3])]),
+            np.linalg.norm([(l2[0] - l2[2]), (l2[1] - l2[3])]),
+        ]
+    )
     if num_min == 0:
         l_min = l1
         l_max = l2
@@ -86,13 +89,18 @@ def _line_metric_4(l1, l2):
     len_min = np.linalg.norm(l_min)
     len_max = np.linalg.norm(l_max)
 
-    g = np.min([np.linalg.norm([(l1[0] - l2[0]), (l1[1] - l2[1])]),
-                np.linalg.norm([(l1[0] - l2[2]), (l1[1] - l2[3])]),
-                np.linalg.norm([(l1[2] - l2[0]), (l1[3] - l2[1])]),
-                np.linalg.norm([(l1[2] - l2[2]), (l1[3] - l2[3])]), ])
+    g = np.min(
+        [
+            np.linalg.norm([(l1[0] - l2[0]), (l1[1] - l2[1])]),
+            np.linalg.norm([(l1[0] - l2[2]), (l1[1] - l2[3])]),
+            np.linalg.norm([(l1[2] - l2[0]), (l1[3] - l2[1])]),
+            np.linalg.norm([(l1[2] - l2[2]), (l1[3] - l2[3])]),
+        ]
+    )
 
     p1 = np.array(
-        [np.mean([l_min[0], l_min[2]]), np.mean([l_min[1], l_min[3]])])
+        [np.mean([l_min[0], l_min[2]]), np.mean([l_min[1], l_min[3]])]
+    )
     p2 = np.array([l_max[0], l_max[1]])
     p3 = np.array([l_max[2], l_max[3]])
 
@@ -126,7 +134,7 @@ def _minimum_bounding_rectangle(points):
     -------
         An nx2 matrix of coordinates
     """
-    pi2 = np.pi / 2.
+    pi2 = np.pi / 2.0
 
     # get the convex hull for the points
     hull_points = points[ConvexHull(points).vertices]
@@ -143,11 +151,14 @@ def _minimum_bounding_rectangle(points):
 
     # find rotation matrices
     # both work
-    rotations = np.vstack([
-        np.cos(angles),
-        np.cos(angles - pi2),
-        np.cos(angles + pi2),
-        np.cos(angles)]).T
+    rotations = np.vstack(
+        [
+            np.cos(angles),
+            np.cos(angles - pi2),
+            np.cos(angles + pi2),
+            np.cos(angles),
+        ]
+    ).T
     # rotations = np.vstack([
     #     np.cos(angles),
     #     -np.sin(angles),
@@ -184,10 +195,12 @@ def _minimum_bounding_rectangle(points):
     return rval
 
 
-def rod_endpoints(prediction: ds.DetectionResult, classes: Dict[int, str],
-                  method: str = "simple",
-                  expected_particles: Union[int, Dict[int, int], None] = None)\
-        -> Dict[int, np.ndarray]:
+def rod_endpoints(
+    prediction: ds.DetectionResult,
+    classes: Dict[int, str],
+    method: str = "simple",
+    expected_particles: Union[int, Dict[int, int], None] = None,
+) -> Dict[int, np.ndarray]:
     """Calculates the endpoints of rods from the prediction masks.
 
     Parameters
@@ -233,7 +246,7 @@ def rod_endpoints(prediction: ds.DetectionResult, classes: Dict[int, str],
     """
     results = {}
     cpu_count = mp.cpu_count()
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         if "instances" in prediction.keys():
             prediction = prediction["instances"].get_fields()
         for k, v in prediction.items():
@@ -241,8 +254,9 @@ def rod_endpoints(prediction: ds.DetectionResult, classes: Dict[int, str],
         for i_c in classes:
             i_c_list = np.argwhere(prediction["pred_classes"] == i_c).flatten()
             segmentations = [
-                prediction['pred_masks'][i_m, :, :].numpy().squeeze()
-                for i_m in i_c_list]
+                prediction["pred_masks"][i_m, :, :].numpy().squeeze()
+                for i_m in i_c_list
+            ]
             if not len(segmentations):
                 continue
             if expected_particles is not None:
@@ -264,13 +278,17 @@ def rod_endpoints(prediction: ds.DetectionResult, classes: Dict[int, str],
             elif method == "simple":
                 end_points = list(map(line_estimator_simple, segmentations))
             else:
-                raise ValueError("Unknown extraction method. "
-                                 "Please choose between 'simple' and "
-                                 "'advanced'.")
+                raise ValueError(
+                    "Unknown extraction method. "
+                    "Please choose between 'simple' and "
+                    "'advanced'."
+                )
             if expected_particles is not None:
                 # add 'empty' points, if not enough have been detected
-                end_points.extend([np.array(2 * [[-1., -1.]])] *
-                                  (current_expected - len(end_points)))
+                end_points.extend(
+                    [np.array(2 * [[-1.0, -1.0]])]
+                    * (current_expected - len(end_points))
+                )
             results[classes[i_c]] = np.array(end_points)
     return results
 
@@ -287,15 +305,14 @@ def line_estimator(segmentation: np.ndarray) -> np.ndarray:
     np.ndarray
     """
     # Prob hough for line detection
-    lines = probabilistic_hough_line(segmentation, threshold=0,
-                                     line_length=10,
-                                     line_gap=30)
+    lines = probabilistic_hough_line(
+        segmentation, threshold=0, line_length=10, line_gap=30
+    )
     # If too short
     if not lines:
-        lines = probabilistic_hough_line(segmentation,
-                                         threshold=0,
-                                         line_length=4,
-                                         line_gap=30)
+        lines = probabilistic_hough_line(
+            segmentation, threshold=0, line_length=4, line_gap=30
+        )
     # No endpoint estimation possible
     if not lines:
         return np.array([[-1, -1], [-1, -1]])
@@ -304,8 +321,9 @@ def line_estimator(segmentation: np.ndarray) -> np.ndarray:
     Xl = np.array(lines)
     X = np.ravel(Xl).reshape(Xl.shape[0], 4)
     # Clustering with custom metric
-    db = DBSCAN(eps=0.0008, min_samples=4, algorithm='auto',
-                metric=_line_metric_4).fit(X)
+    db = DBSCAN(
+        eps=0.0008, min_samples=4, algorithm="auto", metric=_line_metric_4
+    ).fit(X)
 
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
@@ -313,7 +331,7 @@ def line_estimator(segmentation: np.ndarray) -> np.ndarray:
 
     cl_count = Counter(labels)
     k = cl_count.most_common(1)[0][0]
-    class_member_mask = (labels == k)
+    class_member_mask = labels == k
 
     xy = X[class_member_mask & core_samples_mask]
 
@@ -323,9 +341,15 @@ def line_estimator(segmentation: np.ndarray) -> np.ndarray:
         bord = -1  # Make rods 1 pix shorter
 
         # End coordinates
-        if np.argmin(
-            [np.linalg.norm(bbox[0, :] - bbox[1, :]),
-                np.linalg.norm(bbox[1, :] - bbox[2, :])]) == 0:
+        if (
+            np.argmin(
+                [
+                    np.linalg.norm(bbox[0, :] - bbox[1, :]),
+                    np.linalg.norm(bbox[1, :] - bbox[2, :]),
+                ]
+            )
+            == 0
+        ):
             x1 = np.mean(bbox[0:2, 0])
             y1 = np.mean(bbox[0:2, 1])
             x2 = np.mean(bbox[2:4, 0])
@@ -373,14 +397,20 @@ def line_estimator_simple(segmentation: np.ndarray) -> np.ndarray:
     idxs = np.nonzero(segmentation)
     points = np.asarray((idxs[1], idxs[0])).swapaxes(0, 1)
     if not len(points):
-        return np.array([[-1., -1.], [-1., -1.]])
+        return np.array([[-1.0, -1.0], [-1.0, -1.0]])
     bbox = _minimum_bounding_rectangle(points)
     bord = -5  # Make rods 1 pix shorter
 
     # End coordinates
-    if np.argmin(
-        [np.linalg.norm(bbox[0, :] - bbox[1, :]),
-            np.linalg.norm(bbox[1, :] - bbox[2, :])]) == 0:
+    if (
+        np.argmin(
+            [
+                np.linalg.norm(bbox[0, :] - bbox[1, :]),
+                np.linalg.norm(bbox[1, :] - bbox[2, :]),
+            ]
+        )
+        == 0
+    ):
         x1 = np.mean(bbox[0:2, 0])
         y1 = np.mean(bbox[0:2, 1])
         x2 = np.mean(bbox[2:4, 0])
@@ -407,8 +437,13 @@ def line_estimator_simple(segmentation: np.ndarray) -> np.ndarray:
     return np.array([xy1, xy2])
 
 
-def paste_mask_in_image_old(mask: torch.Tensor, box: torch.Tensor, img_h: int,
-                            img_w: int, threshold: float = 0.5):
+def paste_mask_in_image_old(
+    mask: torch.Tensor,
+    box: torch.Tensor,
+    img_h: int,
+    img_w: int,
+    threshold: float = 0.5,
+):
     """Paste a single mask in an image.
 
     This is a per-box implementation of ``paste_masks_in_image``. This function
@@ -449,8 +484,12 @@ def paste_mask_in_image_old(mask: torch.Tensor, box: torch.Tensor, img_h: int,
     # An example (1D) box with continuous coordinates (x0=0.7, x1=4.3) will
     # map to a discrete coordinates (x0=0, x1=4). Note that box is mapped
     # to 5 = x1 - x0 + 1 pixels (not x1 - x0 pixels).
-    samples_w = box[2] - box[0] + 1  # Number of pixel samples, *not* geometric width       # noqa: E501
-    samples_h = box[3] - box[1] + 1  # Number of pixel samples, *not* geometric height      # noqa: E501
+    samples_w = (
+        box[2] - box[0] + 1
+    )  # Number of pixel samples, *not* geometric width       # noqa: E501
+    samples_h = (
+        box[3] - box[1] + 1
+    )  # Number of pixel samples, *not* geometric height      # noqa: E501
 
     # Resample the mask from it's original grid to the new samples_w x samples_h grid       # noqa: E501
     mask = Image.fromarray(mask.cpu().numpy())
@@ -472,14 +511,18 @@ def paste_mask_in_image_old(mask: torch.Tensor, box: torch.Tensor, img_h: int,
     y_1 = min(box[3] + 1, img_h)
 
     im_mask[y_0:y_1, x_0:x_1] = mask[
-        (y_0 - box[1]):(y_1 - box[1]), (x_0 - box[0]):(x_1 - box[0])
+        (y_0 - box[1]) : (y_1 - box[1]), (x_0 - box[0]) : (x_1 - box[0])
     ]
     return im_mask
 
 
-def find_world_transform(calibration_file: str, edges_cam1_dist: np.ndarray,
-                         edges_cam2_dist: np.ndarray, edges_3D: np.ndarray,
-                         out_json: str):
+def find_world_transform(
+    calibration_file: str,
+    edges_cam1_dist: np.ndarray,
+    edges_cam2_dist: np.ndarray,
+    edges_3D: np.ndarray,
+    out_json: str,
+):
     """Find world transformation from camera 1 coordinate system to the desired
     world coordinate system.
 
@@ -531,7 +574,7 @@ def find_world_transform(calibration_file: str, edges_cam1_dist: np.ndarray,
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
-    t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+    t1 = np.expand_dims(np.array([0.0, 0.0, 0.0]), 1)
     P1 = np.vstack((r1.T, t1.T)) @ calibration["CM1"].T
     P1 = P1.T
 
@@ -542,19 +585,20 @@ def find_world_transform(calibration_file: str, edges_cam1_dist: np.ndarray,
 
     # Undistort points using the camera calibration
     edges_cam1 = cv2.undistortImagePoints(
-        edges_cam1_dist, calibration["CM1"],
-        calibration["dist1"]).reshape(-1, 2)
+        edges_cam1_dist, calibration["CM1"], calibration["dist1"]
+    ).reshape(-1, 2)
 
     # Undistort points using the camera calibration
     edges_cam2 = cv2.undistortImagePoints(
-        edges_cam2_dist, calibration["CM2"],
-        calibration["dist2"]).reshape(-1, 2)
+        edges_cam2_dist, calibration["CM2"], calibration["dist2"]
+    ).reshape(-1, 2)
 
     # Triangulate box corners (result in cam1 coordinate system)
     edges_triang = cv2.triangulatePoints(P1, P2, edges_cam1.T, edges_cam2.T)
 
-    edges_triang = np.asarray([p[0:3] / p[3] for p in
-                               edges_triang.transpose()])
+    edges_triang = np.asarray(
+        [p[0:3] / p[3] for p in edges_triang.transpose()]
+    )
 
     # Estimate affine transform to coordinate system
     transform_result = cv2.estimateAffine3D(edges_triang, edges_3D)
@@ -566,10 +610,10 @@ def find_world_transform(calibration_file: str, edges_cam1_dist: np.ndarray,
 
     transformations = {}
 
-    transformations['rot_comb'] = rot_comb.tolist()
-    transformations['trans_vec'] = trans_vec.tolist()
+    transformations["rot_comb"] = rot_comb.tolist()
+    transformations["trans_vec"] = trans_vec.tolist()
 
-    with open(out_json, 'w') as fp:
+    with open(out_json, "w") as fp:
         json.dump(transformations, fp)
 
     return rot_comb, trans_vec

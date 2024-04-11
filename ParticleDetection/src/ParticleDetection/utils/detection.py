@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Functions to run inference with a trained and exported network and save
@@ -23,28 +23,33 @@ the results for further computations.
 
 """
 import logging
-from typing import List
 from pathlib import Path
-from tqdm import tqdm
-import torch
+from typing import List
+
 import pandas as pd
+import torch
+from tqdm import tqdm
 
 # Don't remove the following imports, see GitHub issue as reference
 # https://github.com/pytorch/pytorch/issues/48932#issuecomment-803957396
-import cv2                                                      # noqa: F401
-import torchvision                                              # noqa: F401
-import ParticleDetection                                        # noqa: F401
+# isort: off
+import cv2  # noqa: F401
+import torchvision  # noqa: F401
+import ParticleDetection  # noqa: F401
 
+# isort: on
+
+import ParticleDetection.utils.data_conversions as d_conv
 import ParticleDetection.utils.data_loading as dl
 import ParticleDetection.utils.datasets as ds
 import ParticleDetection.utils.helper_funcs as hf
-import ParticleDetection.utils.data_conversions as d_conv
 
 _logger = logging.getLogger(__name__)
 
 
-def _run_detection(model: torch.ScriptModule, img: Path,
-                   threshold: float = 0.5) -> ds.DetectionResult:
+def _run_detection(
+    model: torch.ScriptModule, img: Path, threshold: float = 0.5
+) -> ds.DetectionResult:
     """Runs detection on one image.
 
     Runs the detection model with the given image and converts the returned
@@ -98,11 +103,16 @@ def _run_detection(model: torch.ScriptModule, img: Path,
     }
 
 
-def run_detection(model: torch.ScriptModule, dataset_format: str,
-                  classes: dict = None,
-                  output_dir: Path = Path("./"), threshold: float = 0.5,
-                  frames: List[int] = [],
-                  cam1_name: str = "gp1", cam2_name: str = "gp2") -> None:
+def run_detection(
+    model: torch.ScriptModule,
+    dataset_format: str,
+    classes: dict = None,
+    output_dir: Path = Path("./"),
+    threshold: float = 0.5,
+    frames: List[int] = [],
+    cam1_name: str = "gp1",
+    cam2_name: str = "gp2",
+) -> None:
     """Runs inference on a given set of images and saves the output to a
     ``*.csv``.
 
@@ -153,8 +163,9 @@ def run_detection(model: torch.ScriptModule, dataset_format: str,
         output ``*.csv file`` columns.\n
         By default ``"gp2"``.
     """
-    cols = [col.format(id1=cam1_name, id2=cam2_name)
-            for col in ds.DEFAULT_COLUMNS]
+    cols = [
+        col.format(id1=cam1_name, id2=cam2_name) for col in ds.DEFAULT_COLUMNS
+    ]
     data = pd.DataFrame(columns=cols)
     for frame in tqdm(frames):
         for cam in [cam1_name, cam2_name]:

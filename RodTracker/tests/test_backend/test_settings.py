@@ -1,25 +1,27 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-import json
-import random
 import importlib
+import json
 import pathlib
+import random
+
 import pytest
 from pytestqt.qtbot import QtBot
+
 import RodTracker
 import RodTracker.backend.settings as se
 
@@ -186,13 +188,16 @@ class TestSettings:
         config = se.Settings(test_path)
         assert config._contents == test_cfg
 
-    @pytest.mark.parametrize("test_cfg", [
-        {},
-        {"category": {f"key{i}": i for i in range(4)}},
-        {"visual": {"rod_thickness": 10}},
-        {"visual": {f"key{i}": i for i in range(4)}},
-        {"visual": {"rod_thickness": 10, "testkey": "test"}}
-    ])
+    @pytest.mark.parametrize(
+        "test_cfg",
+        [
+            {},
+            {"category": {f"key{i}": i for i in range(4)}},
+            {"visual": {"rod_thickness": 10}},
+            {"visual": {f"key{i}": i for i in range(4)}},
+            {"visual": {"rod_thickness": 10, "testkey": "test"}},
+        ],
+    )
     def test_read_file(self, tmp_path: pathlib.Path, qtbot: QtBot, test_cfg):
         test_file = str(tmp_path.joinpath("settings.json"))
         with open(test_file, "w") as f:
@@ -233,11 +238,14 @@ class TestSettings:
     def test_read_nonexistent(self, tmp_path: pathlib.Path):
         raise NotImplementedError
 
-    @pytest.mark.parametrize("item", [
-        ["visual", "rod_thickness", 10],
-        ["data", "images_root", "./test"],
-        ["functional", "rod_increment", 10.5],
-    ])
+    @pytest.mark.parametrize(
+        "item",
+        [
+            ["visual", "rod_thickness", 10],
+            ["data", "images_root", "./test"],
+            ["functional", "rod_increment", 10.5],
+        ],
+    )
     def test_update_field(self, tmp_path: pathlib.Path, qtbot: QtBot, item):
         importlib.reload(se)
         out_path = str(tmp_path.joinpath("settings.json"))
@@ -259,13 +267,15 @@ class TestSettings:
 
     def test_send_settings(self, qtbot: QtBot):
         config = se.Settings()
-        with qtbot.wait_signals([
-                config.settings_changed, config.settings_changed]) as blockers:
+        with qtbot.wait_signals(
+            [config.settings_changed, config.settings_changed]
+        ) as blockers:
             config.send_settings()
 
         for it in blockers.all_signals_and_args:
-            assert ((it.args[0] == config._contents["visual"]) or
-                    (it.args[0] == config._contents["data"]))
+            assert (it.args[0] == config._contents["visual"]) or (
+                it.args[0] == config._contents["data"]
+            )
 
     def test_save_default(self, tmp_path: pathlib.Path):
         test_cfg = se.Settings()

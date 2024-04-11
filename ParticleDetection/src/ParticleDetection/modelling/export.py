@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Functions to export a Detectron2 model as a pure pytorch model and functions to
@@ -31,18 +31,19 @@ import cv2
 import numpy as np
 import pandas as pd
 import scipy.io as sio
-from skimage.measure import approximate_polygon
 import torch
 from detectron2.config import CfgNode
-from detectron2.engine import DefaultPredictor
-# Don't remove, registers model parts in detectron2
-from detectron2.projects import point_rend                      # noqa: F401
-from detectron2.export import TracingAdapter
 from detectron2.data.detection_utils import read_image
+from detectron2.engine import DefaultPredictor
+from detectron2.export import TracingAdapter
+from skimage.measure import approximate_polygon
+
 import ParticleDetection.utils.data_conversions as d_conv
 import ParticleDetection.utils.datasets as ds
 import ParticleDetection.utils.helper_funcs as hf
 
+# Don't remove, registers model parts in detectron2
+from detectron2.projects import point_rend  # noqa: F401 # isort: skip
 
 _logger = logging.getLogger(__name__)
 EXPORT_OPTIONS = Literal["cpu", "cuda"]
@@ -57,8 +58,12 @@ def get_sample_img(sample: Path) -> torch.Tensor:
     return img
 
 
-def export_model(config_path: Path, weights_path: Path, sample_img: Path,
-                 option: EXPORT_OPTIONS = "cuda") -> None:
+def export_model(
+    config_path: Path,
+    weights_path: Path,
+    sample_img: Path,
+    option: EXPORT_OPTIONS = "cuda",
+) -> None:
     """Exports a Detectron2 model to be usable with just pytorch.
 
     Parameters
@@ -79,6 +84,7 @@ def export_model(config_path: Path, weights_path: Path, sample_img: Path,
     The GPU version then requires the pytorch GPU version to be installed.
     The CPU version can be run with both, pytorch's CPU and GPU version.
     """
+
     def inference_func(model, image):
         inputs = [{"image": image}]
         return model.inference(inputs, do_postprocess=False)[0]
@@ -99,13 +105,15 @@ def export_model(config_path: Path, weights_path: Path, sample_img: Path,
     _logger.info(f"Exported model to '{str(save_path)}'")
 
 
-def annotation_to_json(prediction: ds.DetectionResult,
-                       image: Union[Path, str],
-                       classes: dict = None,
-                       output_dir: Union[Path, str] = Path(),
-                       *,
-                       filename: str = "extracted_meta_data.json",
-                       **_):
+def annotation_to_json(
+    prediction: ds.DetectionResult,
+    image: Union[Path, str],
+    classes: dict = None,
+    output_dir: Union[Path, str] = Path(),
+    *,
+    filename: str = "extracted_meta_data.json",
+    **_,
+):
     """Saves detected object masks in the metadata format used for model
     training.
 
@@ -145,8 +153,10 @@ def annotation_to_json(prediction: ds.DetectionResult,
                 meta_data = json.load(f)
         except json.JSONDecodeError:
             # overwrite the file
-            _logger.warning(f"Metadata file is not readable and will "
-                            f"be overwritten: {output}")
+            _logger.warning(
+                "Metadata file is not readable and will "
+                f"be overwritten: {output}"
+            )
     if isinstance(image, str):
         image = Path(image)
     image = image.resolve()
@@ -166,8 +176,10 @@ def annotation_to_json(prediction: ds.DetectionResult,
         prediction[k] = v.to("cpu")
 
     if classes is None:
-        classes = {cl: "not_defined" for cl in set(
-            prediction["pred_classes"].tolist())}
+        classes = {
+            cl: "not_defined"
+            for cl in set(prediction["pred_classes"].tolist())
+        }
 
     for i in range(len(prediction["pred_masks"])):
         predicted_class = int(prediction["pred_classes"][i])
@@ -175,12 +187,12 @@ def annotation_to_json(prediction: ds.DetectionResult,
             "shape_attributes": {
                 "name": "polygon",
                 "all_points_x": [],
-                "all_points_y": []
+                "all_points_y": [],
             },
             "region_attributes": {
                 "name": classes[predicted_class],
                 "type": str(predicted_class),
-            }
+            },
         }
         idxs = np.nonzero(prediction["pred_masks"][i])
         # [outer_points, 2]
@@ -192,8 +204,9 @@ def annotation_to_json(prediction: ds.DetectionResult,
             hull = approximate_polygon(hull, 1)
             if hull_prev == len(hull):
                 _logger.warning(
-                    f"No simplification could be performed for a segmentation "
-                    f"polygon with {hull_prev} nodes.")
+                    "No simplification could be performed for a segmentation "
+                    f"polygon with {hull_prev} nodes."
+                )
 
         region["shape_attributes"]["all_points_x"] = hull[:, 0].tolist()
         region["shape_attributes"]["all_points_y"] = hull[:, 1].tolist()
@@ -205,11 +218,14 @@ def annotation_to_json(prediction: ds.DetectionResult,
         json.dump(meta_data, f, indent=2)
 
 
-def rods_to_mat(prediction: ds.DetectionResult,
-                image: Union[Path, str],
-                classes: dict = None,
-                output_dir: Union[Path, str] = Path(),
-                *_, **kwargs) -> None:
+def rods_to_mat(
+    prediction: ds.DetectionResult,
+    image: Union[Path, str],
+    classes: dict = None,
+    output_dir: Union[Path, str] = Path(),
+    *_,
+    **kwargs,
+) -> None:
     """Extract rod enpoint positions from detected object masks and save them
     to ``*.mat`` files.
 
@@ -266,23 +282,24 @@ def rods_to_mat(prediction: ds.DetectionResult,
         if not vals.size:
             # skip classes without saved points
             continue
-        dt = np.dtype(
-            [('Point1', float, (2,)), ('Point2', float, (2,))])
+        dt = np.dtype([("Point1", float, (2,)), ("Point2", float, (2,))])
         arr = np.zeros((vals.shape[0],), dtype=dt)
 
-        arr[:]['Point1'] = vals[:, 0, :]
-        arr[:]['Point2'] = vals[:, 1, :]
+        arr[:]["Point1"] = vals[:, 0, :]
+        arr[:]["Point2"] = vals[:, 1, :]
 
-        sio.savemat(file_name_tmp.format(idx), {'rod_data_links': arr})
+        sio.savemat(file_name_tmp.format(idx), {"rod_data_links": arr})
 
 
-def rods_to_csv(prediction: ds.DetectionResult,
-                image: Union[Path, str, np.ndarray],
-                classes: dict = None,
-                output_dir: Union[Path, str] = Path(),
-                *,
-                filename: str = "extracted_rods.csv",
-                **kwargs) -> None:
+def rods_to_csv(
+    prediction: ds.DetectionResult,
+    image: Union[Path, str, np.ndarray],
+    classes: dict = None,
+    output_dir: Union[Path, str] = Path(),
+    *,
+    filename: str = "extracted_rods.csv",
+    **kwargs,
+) -> None:
     """Extract rod enpoint positions from detected object masks and save them
     to ``*.csv`` files.
 
@@ -361,24 +378,27 @@ def rods_to_csv(prediction: ds.DetectionResult,
     this_cam = ""
     if frames is not None:
         for frame in frames:
-
             if cam_1 is not None and (
-                    dataset.format(cam_id=cam_1, frame=frame) == image):
+                dataset.format(cam_id=cam_1, frame=frame) == image
+            ):
                 this_frame = frame
                 this_cam = cam_1
                 break
             if cam_2 is not None and (
-                    dataset.format(cam_id=cam_2, frame=frame) == image):
+                dataset.format(cam_id=cam_2, frame=frame) == image
+            ):
                 this_frame = frame
                 this_cam = cam_2
                 break
     else:
         if cam_1 is not None and (
-                dataset.format(cam_id=cam_1, frame=frame) == image):
+            dataset.format(cam_id=cam_1, frame=frame) == image
+        ):
             this_cam = cam_1
 
         if cam_2 is not None and (
-                dataset.format(cam_id=cam_2, frame=frame) == image):
+            dataset.format(cam_id=cam_2, frame=frame) == image
+        ):
             this_cam = cam_2
 
     points = hf.rod_endpoints(prediction, classes, method, expected_particles)

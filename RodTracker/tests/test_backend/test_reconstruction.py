@@ -1,33 +1,33 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 
 import importlib_resources
 import matplotlib.pyplot as plt
 import pandas as pd
-from ParticleDetection.reconstruct_3D import match2D
 import ParticleDetection.utils.data_loading as dl
 import pytest
-from pytest import MonkeyPatch, LogCaptureFixture
+from conftest import load_rod_data
+from ParticleDetection.reconstruct_3D import match2D
+from pytest import LogCaptureFixture, MonkeyPatch
 from pytestqt.qtbot import QtBot
 
-from conftest import load_rod_data
-from RodTracker.backend.reconstruction import Reconstructor, Tracker, Plotter
 from RodTracker.backend import reconstruction
+from RodTracker.backend.reconstruction import Plotter, Reconstructor, Tracker
 
 _logger = logging.getLogger(__name__)
 calibration_folder = importlib_resources.files(

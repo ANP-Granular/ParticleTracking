@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Functions to prepare datasets for the use by the Detectron2 framework, as well
@@ -23,17 +23,17 @@ classes.
 **Date:**       31.10.2022
 
 """
-import os
 import json
+import os
 import warnings
-from typing import List, Callable, Set
+from typing import Callable, List, Set
 
 import numpy as np
-from PIL import Image
-from shapely.geometry.point import Point
-from shapely.affinity import scale, rotate
-from detectron2.structures import BoxMode
 from detectron2.data import DatasetCatalog, MetadataCatalog
+from detectron2.structures import BoxMode
+from PIL import Image
+from shapely.affinity import rotate, scale
+from shapely.geometry.point import Point
 
 from ParticleDetection.utils.datasets import DataSet
 
@@ -72,7 +72,7 @@ def extract_polygon(annotation: dict):
         ry = annotation["ry"]
         theta = annotation["theta"]
 
-        circ = Point(cx, cy).buffer(1)      # circle with r=1
+        circ = Point(cx, cy).buffer(1)  # circle with r=1
         ellipse = rotate(scale(circ, rx, ry), theta, use_radians=True)
         poly = list(ellipse.exterior.coords)
         bounds = list(ellipse.bounds)
@@ -172,9 +172,11 @@ def load_custom_data(dataset: DataSet) -> List[dict]:
     return custom_data
 
 
-def register_dataset(dataset: DataSet,
-                     generation_function: Callable = load_custom_data,
-                     classes: List[str] = None):
+def register_dataset(
+    dataset: DataSet,
+    generation_function: Callable = load_custom_data,
+    classes: List[str] = None,
+):
     """Register a custom dataset to the Detectron2 framework.
 
     Parameters
@@ -189,13 +191,14 @@ def register_dataset(dataset: DataSet,
         By default ``None``, which results in class names like
         ``0, 1, 2, ...``.
     """
-    DatasetCatalog.register(dataset.name,
-                            lambda: generation_function(dataset))
+    DatasetCatalog.register(dataset.name, lambda: generation_function(dataset))
     if classes is not None:
         MetadataCatalog.get(dataset.name).set(thing_classes=classes)
     else:
-        warnings.warn("No thing_classes specified! This will prohibit the use "
-                      "of the built-in COCOEvaluator.")
+        warnings.warn(
+            "No thing_classes specified! This will prohibit the use "
+            "of the built-in COCOEvaluator."
+        )
 
 
 def get_dataset_size(dataset: DataSet) -> int:
@@ -215,7 +218,9 @@ def get_dataset_classes(dataset: DataSet) -> Set[int]:
     """Retrieve the number and IDs of thing classes in the dataset."""
     with open(dataset.annotation) as metadata:
         annotations = json.load(metadata)
-    classes = {0, }
+    classes = {
+        0,
+    }
     for image in list(annotations.values()):
         regions = image["regions"]
         if regions:

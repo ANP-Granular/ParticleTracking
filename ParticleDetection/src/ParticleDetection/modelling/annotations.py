@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Collection of function to manipulate training dataset metadata in json format.
@@ -23,15 +23,15 @@ into a form for different detection tasks, i.e. keypoint detection.
 **Date:**       31.10.2022
 
 """
-import os
 import json
 import logging
+import os
 
-import torch
 import numpy as np
-from PIL import Image
+import torch
 from detectron2.structures import Instances
 from detectron2.utils.visualizer import GenericMask
+from PIL import Image
 
 import ParticleDetection.utils.datasets as ds
 import ParticleDetection.utils.helper_funcs as hf
@@ -59,12 +59,14 @@ def remove_duplicate_regions(dataset: ds.DataSet) -> None:
                 used.append(item)
         annotations[img]["regions"] = used
         _logger.info(f"origial: {len(regions)}, new: {len(used)}")
-        deleted_duplicates += (len(regions) - len(used))
+        deleted_duplicates += len(regions) - len(used)
 
-    with open(dataset.annotation, 'w') as metadata:
+    with open(dataset.annotation, "w") as metadata:
         json.dump(annotations, metadata, indent=2)
-    _logger.info(f"######################################\n"
-                 f"Deleted duplicates: {deleted_duplicates}")
+    _logger.info(
+        "######################################\n"
+        f"Deleted duplicates: {deleted_duplicates}"
+    )
     return
 
 
@@ -102,8 +104,9 @@ def change_class(file: str) -> None:
 
     for idx_f, val_f in to_change.items():
         for idx_r, reg in enumerate(val_f["regions"]):
-            to_change[idx_f]["regions"][idx_r]["region_attributes"]["rod_col"]\
-                = 0
+            to_change[idx_f]["regions"][idx_r]["region_attributes"][
+                "rod_col"
+            ] = 0
 
     with open(file, "w") as f:
         json.dump(to_change, f, indent=2)
@@ -156,8 +159,11 @@ def create_keypoints(file_name: str, single_class=True, order_x=True) -> None:
         Has currently no effect.
         Default is ``True``.
     """
-    to_change = ds.DataSet("to_change", os.path.dirname(file_name) + "/",
-                           os.path.basename(file_name))
+    to_change = ds.DataSet(
+        "to_change",
+        os.path.dirname(file_name) + "/",
+        os.path.basename(file_name),
+    )
     classes = {cls: str(cls) for cls in ds.get_dataset_classes(to_change)}
 
     with open(to_change.annotation) as metadata:
@@ -184,13 +190,16 @@ def create_keypoints(file_name: str, single_class=True, order_x=True) -> None:
             poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
             poly = [p for x in poly for p in x]
 
-            mask = np.asarray(GenericMask([poly], height, width).mask,
-                              dtype=bool).tolist()
-            inst = {"instances": Instances(
-                (height, width),
-                pred_classes=torch.Tensor([category_id]),
-                pred_masks=torch.Tensor([mask])
-            )}
+            mask = np.asarray(
+                GenericMask([poly], height, width).mask, dtype=bool
+            ).tolist()
+            inst = {
+                "instances": Instances(
+                    (height, width),
+                    pred_classes=torch.Tensor([category_id]),
+                    pred_masks=torch.Tensor([mask]),
+                )
+            }
             try:
                 key_points = hf.rod_endpoints(inst, classes)
                 key_points = key_points[str(category_id)].flatten()
@@ -199,14 +208,15 @@ def create_keypoints(file_name: str, single_class=True, order_x=True) -> None:
             except UnboundLocalError as e:
                 # no endpoints were found
                 to_insert = 6 * [-1]
-                _logger.info(f"No endpoints found. The following error "
-                             f"occurred:\n{e}")
+                _logger.info(
+                    f"No endpoints found. The following error occurred:\n{e}"
+                )
             annotations[key]["regions"][idx_r]["keypoints"] = to_insert
 
         _logger.info(f"Done with: {key}")
 
     old_file, ext = os.path.splitext(file_name)
-    with open(old_file + "_keypoints" + ext, 'w') as metadata:
+    with open(old_file + "_keypoints" + ext, "w") as metadata:
         json.dump(annotations, metadata, indent=2)
 
 
