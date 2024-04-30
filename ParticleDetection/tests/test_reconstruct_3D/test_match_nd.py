@@ -1,28 +1,29 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
+from conftest import EXAMPLES
 from scipy.spatial.transform import Rotation as R
 
 import ParticleDetection.reconstruct_3D.matchND as mnd
 import ParticleDetection.utils.data_loading as dl
-from conftest import EXAMPLES
 
 
 @pytest.fixture(scope="session")
@@ -32,8 +33,10 @@ def example_data() -> pd.DataFrame:
     return data
 
 
-@pytest.mark.parametrize("test_shape", [(2, 3, 4), (2, 3), (4, 3, 7),
-                                        (3, 4, 5, 6), (7, 10, 1, 3, 5)])
+@pytest.mark.parametrize(
+    "test_shape",
+    [(2, 3, 4), (2, 3), (4, 3, 7), (3, 4, 5, 6), (7, 10, 1, 3, 5)],
+)
 def test_npartite_matching(test_shape):
     weights = np.random.random(test_shape)
     result = mnd.npartite_matching(weights)
@@ -44,8 +47,9 @@ def test_npartite_matching(test_shape):
         assert np.max(result[i]) <= dim - 1
 
 
-@pytest.mark.parametrize("dimensions", [(10, 10, 10), (4, 5, 4), (4, 5, 5),
-                                        (3, 4, 5)])
+@pytest.mark.parametrize(
+    "dimensions", [(10, 10, 10), (4, 5, 4), (4, 5, 5), (3, 4, 5)]
+)
 def test_create_weights(dimensions):
     cam1_dim = dimensions[0]
     cam2_dim = dimensions[1]
@@ -62,7 +66,9 @@ def test_create_weights(dimensions):
 
 
 def test_assign(tmp_path: Path):
-    colors = ["black", ]
+    colors = [
+        "black",
+    ]
     frames = list(range(505, 508))
 
     calibration = EXAMPLES / "gp34.json"
@@ -70,8 +76,16 @@ def test_assign(tmp_path: Path):
     data_folder = EXAMPLES
     assert not (tmp_path / "output").exists()
 
-    result = mnd.assign(str(data_folder), str(tmp_path / "output"), colors,
-                        "gp3", "gp4", frames, calibration, transformation)
+    result = mnd.assign(
+        str(data_folder),
+        str(tmp_path / "output"),
+        colors,
+        "gp3",
+        "gp4",
+        frames,
+        calibration,
+        transformation,
+    )
     assert len(result) == 2
     assert (tmp_path / "output").exists()
     assert len(list((tmp_path / "output").iterdir())) == 1
@@ -84,11 +98,12 @@ def test_match_frame_nd(example_data: pd.DataFrame):
     color = "black"
     calibration = dl.load_camera_calibration(EXAMPLES / "gp34.json")
     transformation = dl.load_world_transformation(
-        EXAMPLES / "transformation.json")
+        EXAMPLES / "transformation.json"
+    )
 
     # Derive projection matrices from the calibration
     r1 = np.eye(3)
-    t1 = np.expand_dims(np.array([0., 0., 0.]), 1)
+    t1 = np.expand_dims(np.array([0.0, 0.0, 0.0]), 1)
     P1 = np.vstack((r1.T, t1.T)) @ calibration["CM1"].T
     P1 = P1.T
 
@@ -101,8 +116,22 @@ def test_match_frame_nd(example_data: pd.DataFrame):
     rot = R.from_matrix(transformation["rotation"])
     trans = transformation["translation"]
 
-    result = mnd.match_frame(example_data, "gp3", "gp4", frame, color,
-                             calibration, P1, P2, rot, trans, r1, r2, t1, t2)
+    result = mnd.match_frame(
+        example_data,
+        "gp3",
+        "gp4",
+        frame,
+        color,
+        calibration,
+        P1,
+        P2,
+        rot,
+        trans,
+        r1,
+        r2,
+        t1,
+        t2,
+    )
     assert len(result) == 3
     input_len = len(example_data.loc[example_data.frame == frame])
     assert len(result[0]) == input_len

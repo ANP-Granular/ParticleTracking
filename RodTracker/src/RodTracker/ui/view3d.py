@@ -1,37 +1,38 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
 
 import logging
 from typing import List, Tuple
+
+import matplotlib.colors as mpl_colors
 import numpy as np
 import pandas as pd
-import matplotlib.colors as mpl_colors
-from PyQt5 import Qt3DCore, QtCore, QtWidgets, QtGui
-from PyQt5.Qt3DRender import QDirectionalLight, QCamera
+from PyQt5 import Qt3DCore, QtCore, QtGui, QtWidgets
 from PyQt5.Qt3DExtras import (
-    QPhongMaterial,
-    QCylinderMesh,
-    Qt3DWindow,
-    QOrbitCameraController,
     QCuboidMesh,
+    QCylinderMesh,
     QExtrudedTextMesh,
+    QOrbitCameraController,
     QPhongAlphaMaterial,
+    QPhongMaterial,
+    Qt3DWindow,
 )
+from PyQt5.Qt3DRender import QCamera, QDirectionalLight
 
 BOX_WIDTH = 112.0
 BOX_HEIGHT = 80.0

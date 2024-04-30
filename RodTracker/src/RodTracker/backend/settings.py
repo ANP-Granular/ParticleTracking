@@ -1,29 +1,32 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
 
 import json
 from abc import abstractmethod
-from PyQt5 import QtWidgets, QtCore
-from RodTracker import SETTINGS_FILE, CONFIG_DIR
+
+from PyQt5 import QtCore, QtWidgets
+
+from RodTracker import CONFIG_DIR, SETTINGS_FILE
 
 
 class Configuration(QtCore.QObject):
     """Generic class that shall hold configurations/settings."""
+
     _default: dict = {}
     _contents: dict = {}
     path: str = str(CONFIG_DIR / "configurations.json")
@@ -45,7 +48,7 @@ class Configuration(QtCore.QObject):
         """
         if path is None:
             path = self.path
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             contents = json.load(f)
             if contents is None:
                 raise FileNotFoundError
@@ -56,8 +59,9 @@ class Configuration(QtCore.QObject):
                         continue
                     for inner_key in self._default[key].keys():
                         if inner_key not in contents[key].keys():
-                            contents[key][inner_key] = \
-                                self._default[key][inner_key]
+                            contents[key][inner_key] = self._default[key][
+                                inner_key
+                            ]
                 self._contents = contents
 
     @abstractmethod
@@ -96,7 +100,7 @@ class Configuration(QtCore.QObject):
         if new_path is not None:
             cls.path = new_path
         to_file = json.dumps(cls._contents, indent=2)
-        with open(cls.path, 'w') as out:
+        with open(cls.path, "w") as out:
             out.write(to_file)
 
 
@@ -118,6 +122,7 @@ class Settings(Configuration):
     ----------
     parent : QWidget
     """
+
     path = str(SETTINGS_FILE)
     """str : Location and name where the settings are saved as a ``*.json``
     file.

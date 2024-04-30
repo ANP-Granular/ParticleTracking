@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Collection of (mostly deprecated) functions to load stereo camera calibration
@@ -25,11 +25,12 @@ data and rod position data.
 import json
 import warnings
 from pathlib import Path
-from typing import List, Tuple, Iterable, Union
+from typing import Iterable, List, Tuple, Union
+
 import cv2
-import torch
 import numpy as np
 import pandas as pd
+import torch
 from scipy.spatial.transform import Rotation as R
 
 
@@ -124,8 +125,11 @@ def extract_stereo_params(calibration_params: dict) -> dict:
     https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html for more info.
 
     """
-    warnings.warn("Avoid using this function. Instead convert the calibration"
-                  "to the currently used json-format.", DeprecationWarning)
+    warnings.warn(
+        "Avoid using this function. Instead convert the calibration"
+        "to the currently used json-format.",
+        DeprecationWarning,
+    )
     F = np.asarray(calibration_params["FundamentalMatrix"])
     E = np.asarray(calibration_params["EssentialMatrix"])
     R = np.linalg.inv(np.asarray(calibration_params["RotationOfCamera2"]))
@@ -179,8 +183,11 @@ def extract_cam_params(mat_params: dict) -> dict:
     https://de.mathworks.com/help/vision/ref/cameraintrinsics.html
     https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
     """
-    warnings.warn("Avoid using this function. Instead convert the calibration"
-                  "to the currently used json-format.", DeprecationWarning)
+    warnings.warn(
+        "Avoid using this function. Instead convert the calibration"
+        "to the currently used json-format.",
+        DeprecationWarning,
+    )
     # mat_matrix = camera_parameters["IntrinsicMatrix"]
     fx, fy = mat_params["FocalLength"]
     cx, cy = mat_params["PrincipalPoint"]
@@ -191,9 +198,8 @@ def extract_cam_params(mat_params: dict) -> dict:
     cy = cy - 1
 
     cam_matrix = np.asarray(
-        [[fx, 0, cx],  # mtx/A/K in OpenCV
-         [0, fy, cy],
-         [0, 0, 1]])
+        [[fx, 0, cx], [0, fy, cy], [0, 0, 1]]  # mtx/A/K in OpenCV
+    )
     ks = mat_params["RadialDistortion"]
     ps = mat_params["TangentialDistortion"]
     dist_coeffs = np.asarray([*ks[0:2], *ps, *ks[3:]])
@@ -204,8 +210,9 @@ def extract_cam_params(mat_params: dict) -> dict:
     }
 
 
-def load_calib_from_json(file_name: str) -> \
-        Union[Tuple[dict, dict], Tuple[None, dict], None]:
+def load_calib_from_json(
+    file_name: str,
+) -> Union[Tuple[dict, dict], Tuple[None, dict], None]:
     """Attempts to load camera calibrations or transformations to
     *world*/*experiment* coordinates saved in the MATLAB format.
 
@@ -226,22 +233,29 @@ def load_calib_from_json(file_name: str) -> \
     with open(file_name, "r") as f:
         all_calibs = json.load(f)
     if "stereoParams" in all_calibs.keys():
-        warnings.warn("Don't use this function anymore to load camera "
-                      "calibrations. Use `load_camera_calibration` instead.",
-                      DeprecationWarning)
-        cam1 = extract_cam_params(all_calibs["stereoParams"][
-            "CameraParameters1"])
+        warnings.warn(
+            "Don't use this function anymore to load camera "
+            "calibrations. Use `load_camera_calibration` instead.",
+            DeprecationWarning,
+        )
+        cam1 = extract_cam_params(
+            all_calibs["stereoParams"]["CameraParameters1"]
+        )
         cam2 = extract_cam_params(
-            all_calibs["stereoParams"]["CameraParameters2"])
+            all_calibs["stereoParams"]["CameraParameters2"]
+        )
         stereo_params = extract_stereo_params(all_calibs["stereoParams"])
         stereo_params["img_size"] = all_calibs["stereoParams"][
-            "CameraParameters2"]["ImageSize"]
+            "CameraParameters2"
+        ]["ImageSize"]
         return stereo_params, cam1, cam2
 
     elif "transformations" in all_calibs.keys():
-        warnings.warn("Don't use this function anymore to transformations "
-                      "calibrations. Use `load_world_transformation` instead.",
-                      DeprecationWarning)
+        warnings.warn(
+            "Don't use this function anymore to transformations "
+            "calibrations. Use `load_world_transformation` instead.",
+            DeprecationWarning,
+        )
         return all_calibs["transformations"]
     return
 
@@ -287,23 +301,23 @@ def load_world_transformation(file_name: str) -> dict:
         f_trafo = json.load(f)
     if "transformations" in f_trafo.keys():
         transform = f_trafo["transformations"]
-        rotx = R.from_matrix(
-            np.asarray(transform["M_rotate_x"])[0:3, 0:3])
-        roty = R.from_matrix(
-            np.asarray(transform["M_rotate_y"])[0:3, 0:3])
-        rotz = R.from_matrix(
-            np.asarray(transform["M_rotate_z"])[0:3, 0:3])
+        rotx = R.from_matrix(np.asarray(transform["M_rotate_x"])[0:3, 0:3])
+        roty = R.from_matrix(np.asarray(transform["M_rotate_y"])[0:3, 0:3])
+        rotz = R.from_matrix(np.asarray(transform["M_rotate_z"])[0:3, 0:3])
         tw1 = np.asarray(transform["M_trans"])[0:3, 3]
         tw2 = np.asarray(transform["M_trans2"])[0:3, 3]
         rotation = rotz * roty * rotx
         translation = rotation.apply(tw1) + tw2
         return {"rotation": rotation.as_matrix(), "translation": translation}
     elif set(f_trafo.keys()) == {"rotation", "translation"}:
-        return {"rotation": np.array(f_trafo["rotation"]),
-                "translation": np.array(f_trafo["translation"])}
+        return {
+            "rotation": np.array(f_trafo["rotation"]),
+            "translation": np.array(f_trafo["translation"]),
+        }
     else:
-        raise ValueError(f"Incompatible structure of the given file: "
-                         f"{file_name}")
+        raise ValueError(
+            f"Incompatible structure of the given file: " f"{file_name}"
+        )
 
 
 def load_camera_calibration(file_name: str) -> dict:
@@ -332,25 +346,55 @@ def load_camera_calibration(file_name: str) -> dict:
     return calibration
 
 
-def load_positions_from_txt(base_file_name: str, columns: List[str],
-                            frames: Iterable[int], expected_particles: int =
-                            None) -> pd.DataFrame:
+def load_positions_from_txt(
+    base_file_name: str,
+    columns: List[str],
+    frames: Iterable[int],
+    expected_particles: int = None,
+) -> pd.DataFrame:
     """Loads the rod data from point matching and adds a frame column."""
-    warnings.warn("Don't use the *.txt data format anymore but switch to the"
-                  " new *.csv format", DeprecationWarning)
+    warnings.warn(
+        "Don't use the *.txt data format anymore but switch to the"
+        " new *.csv format",
+        DeprecationWarning,
+    )
     if "particle" not in columns:
         columns.append("particle")
     data = pd.DataFrame(columns=columns)
     for f in frames:
-        data_raw = pd.read_csv(base_file_name.format(f), sep=" ", header=None,
-                               names=columns)
+        data_raw = pd.read_csv(
+            base_file_name.format(f), sep=" ", header=None, names=columns
+        )
         if expected_particles:
             # Fill missing rods with "empty" rows
             missing = expected_particles - len(data_raw)
             empty_rods = pd.DataFrame(
-                missing * [
-                    [4.5, 5, 5, 5.5, 5, 5, 5, 5, 5, 1.0, 0, 0, 0, 0, 0, 0,
-                     0, 0, f, 0]], columns=columns
+                missing
+                * [
+                    [
+                        4.5,
+                        5,
+                        5,
+                        5.5,
+                        5,
+                        5,
+                        5,
+                        5,
+                        5,
+                        1.0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        f,
+                        0,
+                    ]
+                ],
+                columns=columns,
             )
             data_raw = pd.concat([data_raw, empty_rods], ignore_index=True)
         data_raw["particle"] = range(0, len(data_raw))
@@ -370,7 +414,7 @@ def read_image(img_path: Path) -> torch.Tensor:
     -------
     Tensor
     """
-    img = cv2.imread(str(img_path.resolve()))   # loads in 'BGR' mode
+    img = cv2.imread(str(img_path.resolve()))  # loads in 'BGR' mode
     img = torch.from_numpy(np.ascontiguousarray(img.transpose(2, 0, 1)))
     return img
 
@@ -398,8 +442,6 @@ def extract_3d_data(df_data: pd.DataFrame) -> np.ndarray:
     for idx_f, f in enumerate(df_data.frame.unique()):
         frame_data = df_data.loc[df_data.frame == f]
         idx_p = frame_data["particle"].to_numpy()
-        data3d[idx_f, idx_p, :, 0] = frame_data[
-            ["x1", "y1", "z1"]].to_numpy()
-        data3d[idx_f, idx_p, :, 1] = frame_data[
-            ["x2", "y2", "z2"]].to_numpy()
+        data3d[idx_f, idx_p, :, 0] = frame_data[["x1", "y1", "z1"]].to_numpy()
+        data3d[idx_f, idx_p, :, 1] = frame_data[["x2", "y2", "z2"]].to_numpy()
     return data3d

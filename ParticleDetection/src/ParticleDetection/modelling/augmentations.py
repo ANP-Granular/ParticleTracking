@@ -1,18 +1,18 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev
 #
-#  This file is part of ParticleDetection.
-#  ParticleDetection is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of ParticleDetection.
+# ParticleDetection is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  ParticleDetection is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# ParticleDetection is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with ParticleDetection.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with ParticleDetection. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Collection of custom image augmentations extending the Detectron2 augmentation
@@ -27,10 +27,10 @@ import random
 import warnings
 from typing import List
 
-import numpy as np
-from imgaug import augmenters
 import detectron2.data.transforms as T
+import numpy as np
 from detectron2.data.transforms.augmentation import _transform_to_aug
+from imgaug import augmenters
 
 
 class SomeOf(T.AugmentationList):
@@ -48,6 +48,7 @@ class SomeOf(T.AugmentationList):
     upper : int
         Maximum amount of augmentations to choose.
     """
+
     def __init__(self, augments: List[T.Augmentation], lower: int, upper: int):
         self.lower = lower
         self.upper = upper
@@ -75,6 +76,7 @@ class GaussianBlurAugmentation(T.Augmentation):
         Mean and variance of the constructed Gaussian kernel.\n
         Default is ``(0.0, 2.0)``.
     """
+
     def __init__(self, sigmas: tuple = (0.0, 2.0)):
         super().__init__()
         self.sigmas = sigmas
@@ -92,6 +94,7 @@ class GaussianBlur(T.Transform):
         Mean and variance of the constructed Gaussian kernel.\n
         Default is ``(0.0, 2.0)``.
     """
+
     def __init__(self, sigmas: tuple = (0.0, 2.0)):
         super().__init__()
         self.sigmas = sigmas
@@ -121,8 +124,10 @@ class SharpenAugmentation(T.Augmentation):
         sampled from the interval per image.\n
         Default is ``(0.8, 1.2)``.
     """
-    def __init__(self, alpha: tuple = (0.0, 0.2),
-                 lightness: tuple = (0.8, 1.2)):
+
+    def __init__(
+        self, alpha: tuple = (0.0, 0.2), lightness: tuple = (0.8, 1.2)
+    ):
         self.alpha = alpha
         self.lightness = lightness
 
@@ -144,8 +149,10 @@ class Sharpen(T.Transform):
         sampled from the interval per image.\n
         Default is ``(0.8, 1.2)``.
     """
-    def __init__(self, alpha: tuple = (0.0, 0.2),
-                 lightness: tuple = (0.8, 1.2)):
+
+    def __init__(
+        self, alpha: tuple = (0.0, 0.2), lightness: tuple = (0.8, 1.2)
+    ):
         super().__init__()
         self.alpha = alpha
         self.lightness = lightness
@@ -158,8 +165,9 @@ class Sharpen(T.Transform):
         return T.NoOpTransform()
 
     def apply_image(self, img: np.ndarray) -> np.ndarray:
-        return augmenters.Sharpen(alpha=self.alpha,
-                                  lightness=self.lightness).augment_image(img)
+        return augmenters.Sharpen(
+            alpha=self.alpha, lightness=self.lightness
+        ).augment_image(img)
 
 
 class MultiplyAugmentation(T.Augmentation):
@@ -174,6 +182,7 @@ class MultiplyAugmentation(T.Augmentation):
         pixels.\n
         Default is ``(0.8, 1.2)``
     """
+
     def __init__(self, mul: tuple = (0.8, 1.2)):
         super().__init__()
         self.mul = mul
@@ -193,6 +202,7 @@ class Multiply(T.Transform):
         pixels.
         Default is ``(0.8, 1.2)``
     """
+
     def __init__(self, mul: tuple = (0.8, 1.2)):
         super().__init__()
         self.mul = mul

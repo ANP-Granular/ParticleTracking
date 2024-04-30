@@ -1,6 +1,24 @@
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
+#
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
+
 from pathlib import Path
-from RodTracker._version import __version__
+
 import PyInstaller.utils.win32.versioninfo as v_info
+
+from RodTracker._version import __version__
 
 version_tuple = tuple(
     int(num) for num in __version__.split(".") if num.isnumeric()
@@ -48,8 +66,8 @@ new_version_info = v_info.VSVersionInfo(
                         v_info.StringStruct("InternalName", "RodTracker"),
                         v_info.StringStruct(
                             "LegalCopyright",
-                            "Copyright (c) 2023 Adrian Niemann, "
-                            "Dmitry Puzyrev",
+                            "Copyright (c) 2023-24 Adrian Niemann, "
+                            "Dmitry Puzyrev, and others",
                         ),
                         v_info.StringStruct(
                             "OriginalFilename", "RodTrackerApp.exe"

@@ -1,46 +1,46 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
 #
-#  This file is part of RodTracker.
-#  RodTracker is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  RodTracker is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """**TBD**"""
 
-from pathlib import Path
 import platform
-from typing import List, Callable
 from functools import partial
+from pathlib import Path
+from typing import Callable, List
 
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QWheelEvent
 from PyQt5.QtWidgets import (
     QMessageBox,
     QRadioButton,
     QScrollArea,
     QTreeWidgetItem,
 )
-from PyQt5.QtGui import QWheelEvent
 
-import RodTracker.backend.settings as se
-import RodTracker.backend.logger as lg
 import RodTracker.backend.file_locations as fl
 import RodTracker.backend.img_data as img_data
+import RodTracker.backend.logger as lg
 import RodTracker.backend.rod_data as r_data
-import RodTracker.ui.rodnumberwidget as rn
+import RodTracker.backend.settings as se
 import RodTracker.ui.mainwindow_layout as mw_l
+import RodTracker.ui.rodnumberwidget as rn
 from RodTracker.ui import dialogs
-from RodTracker.ui.settings_setup import init_settings
-from RodTracker.ui.reconstruction import init_reconstruction
 from RodTracker.ui.detection import init_detection
+from RodTracker.ui.reconstruction import init_reconstruction
+from RodTracker.ui.settings_setup import init_settings
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):

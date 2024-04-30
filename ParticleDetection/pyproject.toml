@@ -172,7 +172,19 @@ DETECTRON = ["imgaug", "Pillow", "protobuf", "tensorboard"]
 TEST = ["pytest", "importlib_resources", "pytest-cov"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=src --cov-report=html"
+addopts = [
+    "--cov=ParticleDetection",
+    "--cov-report=term",
+    "--cov-fail-under=50"
+]
 testpaths = [
     "tests/",
 ]
+
+[tool.black]
+line-length = 79
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.isort]
+profile = "black"
+line_length = 79
