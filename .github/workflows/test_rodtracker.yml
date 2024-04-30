@@ -2,13 +2,13 @@ name: Test RodTracker
 on:
   push:
     branches: 
-      - master
+      - main
       - develop
     paths:
       - 'RodTracker/**'
   pull_request:
     branches: 
-      - master
+      - main
       - develop
     paths:
       - 'RodTracker/**'
