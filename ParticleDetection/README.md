@@ -3,25 +3,19 @@ This repository customizes the training, inference and visualization code of the
 
 ![Rod Detection Output Image](https://user-images.githubusercontent.com/34780470/214838680-4474e35c-4277-4ac9-8649-3940aa122eeb.jpg)
 
-Use it like any other python package, by installing it in your environment and
-then importing it in your scripts/modules/functions.
-```python
-import ParticleDetection.utils.helper_funcs as hf
-```
-
-Please refer to the [documentation](https://particletracking.readthedocs.io/) for more detailed information.
+Please refer to the [documentation](https://particletracking.readthedocs.io/en/stable/index.html) for more detailed information.
 
 ## Installation
-1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the ParticleDetection package or only download the `ParticleDetection` folder, if you are not interested in the RodTracker application.
-2. Install it using pip
-  ```shell
-  YOUR/REPO/PATH/ParticleDetection$ pip install .
-  ```
-3. Or install a specific option using pip
-  ```shell
-  YOUR/REPO/PATH/ParticleDetection$ pip install .[OPTION]
-  ```
-Or let pip download everything from GitHub:
+Install the default version using pip:
+```shell
+pip install ParticleDetection
+```
+Or use one of the options described in the [documentation](https://particletracking.readthedocs.io/en/stable/installation/particledetection.html). **Some options require manual installation of additional libraries.**
+```shell
+pip install ParticleDetection[OPTION]
+```
+
+It is also possible to install it directly from GitHub:
 ```shell
 pip install 'git+https://github.com/ANP-Granular/ParticleTracking.git#egg=particledetection&subdirectory=ParticleDetection'
 ```
