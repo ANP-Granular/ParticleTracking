@@ -1,9 +1,23 @@
 ## [Unreleased]
+
+## [v0.4.1]
 ### Added
 - support for python3.11
+- support on macOS
+- project metadata
+- automated testing using a GitHub workflow ([#84](https://github.com/ANP-Granular/ParticleTracking/issues/84))
+- installation instructions to the README.md ([#79](https://github.com/ANP-Granular/ParticleTracking/issues/79))
+
+### Changed
+- removed/changed URL dependencies ([#78](https://github.com/ANP-Granular/ParticleTracking/issues/78))
 
 ### Fixed
 - import sorting ([#80](https://github.com/ANP-Granular/ParticleTracking/issues/80))
+- multiple dependency constraints, otherwise breaking functionality
+- issue of Tkinter not finding a usable init.tcl on Windows
+
+### Removed
+- `CPU` & `GPU` extra
 
 ## [v0.4.0]
 ### Added
@@ -34,6 +48,7 @@
 ### Added
 - start versioning
 
-[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.4.0+ParticleTracking...HEAD
+[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.4.1+ParticleTracking...HEAD
+[v0.4.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.4.0+ParticleTracking...v0.4.1+ParticleTracking
 [v0.4.0]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.3.1+ParticleTracking...v0.4.0+ParticleTracking
 [v0.3.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.3.1+ParticleTracking

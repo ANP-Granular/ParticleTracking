@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "ParticleDetection"
-version = "0.4.0"
+version = "0.4.1"
 description = "Tools to track particles with machine learning."
 authors = ["Adrian Niemann <adrian.niemann@gmx.de>"]
 readme = "README.md"
