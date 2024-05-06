@@ -25,6 +25,7 @@ reconstruction from images of a stereocamera system.
 import glob
 import logging
 import os
+import platform
 import sys
 from pathlib import Path
 from typing import Iterable, List, Tuple, Union
@@ -94,7 +95,8 @@ def matching_results(
         [0]: reprojection errors histogram\n
         [1]: rod lengths histogram
     """
-    set_tk_tcl_paths()
+    if platform.system() == "Windows":
+        set_tk_tcl_paths()
     fig1 = reprojection_errors_hist(reprojection_errors)
     fig2 = length_hist(rod_lengths)
 
@@ -104,7 +106,8 @@ def matching_results(
     return
 
 
-set_tk_tcl_paths()
+if platform.system() == "Windows":
+    set_tk_tcl_paths()
 
 
 def length_hist(rod_lengths: np.ndarray) -> Figure:
