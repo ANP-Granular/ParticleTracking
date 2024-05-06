@@ -16,6 +16,8 @@ jobs:
           python_version: ['3.11']
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Python ${{ matrix.python_version }}
         uses: actions/setup-python@v5
         with:
@@ -25,11 +27,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install "poetry>=1.8.2"
           poetry self add "poetry-dynamic-versioning[plugin]"
-      - name: Build package
+      - name: Build & Publish Package
         run: |
           cd ./ParticleDetection
           poetry build
-      - name: Publish package
-        run: |
           poetry config pypi-token.pypi ${{ secrets.PYPI_PARTICLEDETECTION_API_TOKEN }}
           poetry publish
