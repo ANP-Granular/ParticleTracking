@@ -12,6 +12,8 @@ on:
       - develop
     paths:
       - 'RodTracker/**'
+  schedule:
+    - cron: '0 16 * * 5'
   workflow_dispatch:
 
 jobs:
