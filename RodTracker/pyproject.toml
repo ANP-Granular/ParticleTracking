@@ -102,7 +102,13 @@ testpaths = [
 enable = true
 vcs = "git"
 style = "pep440"
+metadata = false
 bump = true
+
+[tool.poetry-dynamic-versioning.substitution]
+files = [
+    "src/RodTracker/_version.py"
+]
 
 [tool.black]
 line-length = 79
