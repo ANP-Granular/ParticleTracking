@@ -28,6 +28,8 @@ jobs:
           pip install "poetry>=1.8.2"
           poetry self add "poetry-dynamic-versioning[plugin]"
       - name: Build & Publish Package
+        env:
+          POETRY_REQUESTS_TIMEOUT: 120
         run: |
           cd ./ParticleDetection
           poetry build
