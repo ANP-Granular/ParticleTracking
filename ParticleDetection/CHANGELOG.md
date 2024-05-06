@@ -7,6 +7,7 @@
 - project metadata
 - automated testing using a GitHub workflow ([#84](https://github.com/ANP-Granular/ParticleTracking/issues/84))
 - installation instructions to the README.md ([#79](https://github.com/ANP-Granular/ParticleTracking/issues/79))
+- dynamic versioning
 
 ### Changed
 - removed/changed URL dependencies ([#78](https://github.com/ANP-Granular/ParticleTracking/issues/78))

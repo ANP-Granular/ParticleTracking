@@ -1,10 +1,10 @@
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.poetry]
 name = "ParticleDetection"
-version = "0.4.1"
+version = "0.0.0"
 description = "Tools to track particles with machine learning."
 authors = ["Adrian Niemann <adrian.niemann@gmx.de>"]
 readme = "README.md"
@@ -83,6 +83,14 @@ addopts = [
 testpaths = [
     "tests/",
 ]
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "pep440"
+metadata = false
+bump = true
+pattern-prefix = "ParticleDetection-"
 
 [tool.black]
 line-length = 79
