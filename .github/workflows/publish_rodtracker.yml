@@ -1,0 +1,37 @@
+name: Publish RodTracker
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'RodTracker/**'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+        matrix:
+          python_version: ['3.11']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python ${{ matrix.python_version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "poetry>=1.8.2"
+          poetry self add "poetry-dynamic-versioning[plugin]"
+      - name: Build & Publish Package
+        env:
+          POETRY_REQUESTS_TIMEOUT: 120
+        run: |
+          cd ./RodTracker
+          poetry build
+          poetry config pypi-token.pypi ${{ secrets.PYPI_RODTRACKER_API_TOKEN }}
+          poetry publish
