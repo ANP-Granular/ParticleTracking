@@ -30,7 +30,7 @@ The `ParticleTracking` software is intended to facilitate semi-automatic detecti
 The software consists of two packages, `RodTracker` and `ParticleDetection`.
 The `ParticleDetection` package provides functionality for training and application of neural networks (e.g. Mask R-CNN) for particle detection in camera images, as well as automatic 3D matching and multi-object tracking of these particles. The `RodTracker` package is a graphical user interface (GUI) for the particle tracking task, encapsulating the functionality of `ParticleDetection` and providing means to manually correct the automatically generated particle coordinates and tracking data.
 
-The main features of this software are given below with a more extensive feature description available in the documentation under https://particletracking.readthedocs.io/en/latest/:
+The main features of this software are given below with a more extensive feature description available in the documentation under [https://particletracking.readthedocs.io/en/latest/](https://particletracking.readthedocs.io/en/latest/):
 
 - training and application of (Detectron2) Mask R-CNN models for detecting particles on images
 - automated particle endpoint localization from segmentation masks
