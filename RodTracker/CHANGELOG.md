@@ -1,7 +1,17 @@
 ## [Unreleased]
+### Added
+- automated testing using a GitHub workflow ([#84](https://github.com/ANP-Granular/ParticleTracking/issues/84))
+
+### Changed
+- removed/changed URL dependencies ([#78](https://github.com/ANP-Granular/ParticleTracking/issues/78))
+- removed metadata from version generation
+
 ### Fixed
 - import sorting ([#80](https://github.com/ANP-Granular/ParticleTracking/issues/80))
 - outdated ParticleDetection dependency ([#74](https://github.com/ANP-Granular/ParticleTracking/issues/74))
+
+### Removed
+- `GPU` installation option
 
 ## [v0.6.1]
 ### Added
