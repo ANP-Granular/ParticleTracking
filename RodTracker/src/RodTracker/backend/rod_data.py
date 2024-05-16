@@ -302,7 +302,7 @@ class RodData(QtCore.QObject):
                 msg = QMessageBox()
                 msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
                 msg.setIcon(QMessageBox.Warning)
-                msg.setWindowTitle("Rod Tracker")
+                msg.setWindowTitle(RodTracker.APPNAME)
                 msg.setText(
                     f"There were no useful files found in: "
                     f"'{chosen_folder}'"
@@ -358,7 +358,7 @@ class RodData(QtCore.QObject):
             msg = QMessageBox()
             msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
             msg.setIcon(QMessageBox.Question)
-            msg.setWindowTitle("Rod Tracker")
+            msg.setWindowTitle(RodTracker.APPNAME)
             msg.setText(
                 "There seems to be corrected data "
                 "already. Do you want to use that "
@@ -475,7 +475,7 @@ class RodData(QtCore.QObject):
                         msg = QMessageBox()
                         msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
                         msg.setIcon(QMessageBox.Warning)
-                        msg.setWindowTitle("Rod Tracker")
+                        msg.setWindowTitle(RodTracker.APPNAME)
                         msg.setText(
                             "There were files found, that might get "
                             "overwritten. Do you want to overwrite "
@@ -511,7 +511,7 @@ class RodData(QtCore.QObject):
                 msg = QMessageBox()
                 msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
                 msg.setIcon(QMessageBox.Warning)
-                msg.setWindowTitle("Rod Tracker")
+                msg.setWindowTitle(RodTracker.APPNAME)
                 msg.setText(
                     "The saving path points to the original data!"
                     "Do you want to overwrite it?"

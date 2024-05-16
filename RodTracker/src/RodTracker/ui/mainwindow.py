@@ -37,6 +37,7 @@ import RodTracker.backend.rod_data as r_data
 import RodTracker.backend.settings as se
 import RodTracker.ui.mainwindow_layout as mw_l
 import RodTracker.ui.rodnumberwidget as rn
+from RodTracker import APPNAME
 from RodTracker.ui import dialogs
 from RodTracker.ui.detection import init_detection
 from RodTracker.ui.reconstruction import init_reconstruction
@@ -128,6 +129,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
 
         # Adaptations of the UI
+        self.setWindowTitle(APPNAME)
         self.setWindowIcon(QtGui.QIcon(fl.icon_path()))
         self.ui.pb_undo.setIcon(QtGui.QIcon(fl.undo_icon_path()))
         self.ui.tv_rods.header().setDefaultSectionSize(150)
@@ -403,7 +405,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             lambda: dialogs.show_about(self)
         )
         self.ui.action_about_qt.triggered.connect(
-            lambda: QMessageBox.aboutQt(self, "RodTracker")
+            lambda: QMessageBox.aboutQt(self, APPNAME)
         )
         self.ui.action_logs.triggered.connect(lg.open_logs)
         self.ui.action_bug_report.triggered.connect(
@@ -772,7 +774,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         msg = QMessageBox()
         msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
         msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("Rod Tracker")
+        msg.setWindowTitle(APPNAME)
         msg.setText("There are unsaved changes!")
         btn_discard = msg.addButton("Discard changes", QMessageBox.ActionRole)
         btn_cancel = msg.addButton("Cancel", QMessageBox.ActionRole)
@@ -1015,7 +1017,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             msg = QMessageBox()
             msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
             msg.setIcon(QMessageBox.Warning)
-            msg.setWindowTitle("Rod Tracker")
+            msg.setWindowTitle(APPNAME)
             msg.setText("There are unsaved changes!")
             btn_save = msg.addButton("Save", QMessageBox.ActionRole)
             msg.addButton("Discard", QMessageBox.ActionRole)
