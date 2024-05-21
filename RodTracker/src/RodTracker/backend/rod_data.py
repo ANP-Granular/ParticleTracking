@@ -42,6 +42,7 @@ import RodTracker.backend.file_locations as fl
 import RodTracker.backend.logger as lg
 import RodTracker.backend.parallelism as pl
 import RodTracker.ui.dialogs as dialogs
+from RodTracker import exception_logger
 
 RE_COLOR_DATA: re.Pattern = re.compile(r"rods_df_\w+\.csv")
 """Pattern : Pattern how the rod position data file names are expected."""
@@ -414,7 +415,7 @@ class RodData(QtCore.QObject):
         worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
         self.is_busy.emit(True)
         worker.signals.result.connect(lambda ret: self.seen_loaded.emit(*ret))
-        worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+        worker.signals.error.connect(lambda ret: exception_logger(*ret))
         self.threads.start(worker)
 
         # Rod position data was selected correctly
@@ -827,7 +828,7 @@ class RodData(QtCore.QObject):
             worker.signals.result.connect(
                 lambda ret: self.seen_loaded.emit(*ret)
             )
-            worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+            worker.signals.error.connect(lambda ret: exception_logger(*ret))
             self.threads.start(worker)
 
             self.data_loaded[list].emit(colors)
@@ -894,7 +895,7 @@ class RodData(QtCore.QObject):
                     lambda ret: self.seen_loaded.emit(*ret)
                 )
                 worker.signals.error.connect(
-                    lambda ret: lg.exception_logger(*ret)
+                    lambda ret: exception_logger(*ret)
                 )
                 self.threads.start(worker)
                 return
@@ -925,7 +926,7 @@ class RodData(QtCore.QObject):
             worker.signals.result.connect(
                 lambda ret: self.batch_update.emit(*ret)
             )
-            worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+            worker.signals.error.connect(lambda ret: exception_logger(*ret))
             self.threads.start(worker)
 
     @QtCore.pyqtSlot(lg.Action)
@@ -957,7 +958,7 @@ class RodData(QtCore.QObject):
         worker.signals.result.connect(
             lambda _: self.provide_data(data_3d=False)
         )
-        worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+        worker.signals.error.connect(lambda ret: exception_logger(*ret))
         self.threads.start(worker)
 
         if isinstance(new_data["frame"], Iterable):
@@ -1026,7 +1027,7 @@ class RodData(QtCore.QObject):
         worker.signals.result.connect(
             lambda _: self.provide_data(data_3d=False)
         )
-        worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+        worker.signals.error.connect(lambda ret: exception_logger(*ret))
         self.threads.start(worker)
         return
 
@@ -1191,7 +1192,7 @@ class RodData(QtCore.QObject):
                         lambda ret: self.seen_loaded.emit(*ret)
                     )
                     worker.signals.error.connect(
-                        lambda ret: lg.exception_logger(*ret)
+                        lambda ret: exception_logger(*ret)
                     )
                     self.threads.start(worker)
 

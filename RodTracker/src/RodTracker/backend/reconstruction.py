@@ -24,13 +24,15 @@ from typing import List
 import numpy as np
 import pandas as pd
 from matplotlib.figure import Figure
+from PyQt5 import QtCore
+from scipy.spatial.transform import Rotation as R
+
 from ParticleDetection.reconstruct_3D import calibrate_cameras as cc
 from ParticleDetection.reconstruct_3D import matchND
 from ParticleDetection.reconstruct_3D import visualization as vis
 from ParticleDetection.reconstruct_3D.match2D import match_frame
 from ParticleDetection.utils import data_loading as dl
-from PyQt5 import QtCore
-from scipy.spatial.transform import Rotation as R
+from RodTracker.backend.parallelism import error_handler
 
 _logger = logging.getLogger(__name__)
 abort_reconstruction: bool = False
@@ -97,6 +99,7 @@ class Plotter(QtCore.QRunnable):
         self.kwargs = kwargs
         super().__init__()
 
+    @error_handler
     def run(self):
         """Run the plotting of 3D reconstruction and tracking plots in this
         :class:`Plotter` object.
@@ -587,6 +590,7 @@ class Reconstructor(QtCore.QRunnable):
         self.color = color
         self.signals = TrackerSignals()
 
+    @error_handler
     def run(self):
         """Run the reconstruction of 3D rod coordinates with the parameters set
         in this :class:`Reconstructor` object.
@@ -727,6 +731,7 @@ class Tracker(Reconstructor):
     :meth:`~ParticleDetection.reconstruct_3D.matchND.match_frame`
     """
 
+    @error_handler
     def run(self):
         """Run the tracking of rods coordinates with the parameters set
         in this :class:`Tracker` object.

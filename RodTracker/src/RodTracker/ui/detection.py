@@ -27,6 +27,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 import RodTracker.backend.logger as lg
 import RodTracker.ui.mainwindow_layout as mw_l
+from RodTracker import exception_logger
 from RodTracker.backend import detection
 from RodTracker.backend.detection import Detector, RodDetection
 from RodTracker.backend.img_data import ImageData
@@ -556,9 +557,7 @@ class DetectorUI(QtWidgets.QWidget):
             )
             detector.signals.progress.connect(self._progress_update)
             detector.signals.finished.connect(self._detection_finished)
-            detector.signals.error.connect(
-                lambda ret: lg.exception_logger(*ret)
-            )
+            detector.signals.error.connect(lambda ret: exception_logger(*ret))
             detector.signals.error.connect(
                 lambda: self._detection_finished(None)
             )

@@ -31,11 +31,6 @@ import RodTracker.ui.rodnumberwidget as rn
 _logger = logging.getLogger(__name__)
 
 
-def exception_logger(e_type, e_value, e_tb):
-    """Handler for logging uncaught exceptions during the program flow."""
-    _logger.exception("Uncaught exception:", exc_info=(e_type, e_value, e_tb))
-
-
 def qt_error_handler(
     mode: QtCore.QtMsgType, context: QtCore.QMessageLogContext, msg: str
 ):

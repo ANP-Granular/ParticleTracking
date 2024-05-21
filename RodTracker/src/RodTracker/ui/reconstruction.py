@@ -24,12 +24,12 @@ from typing import List
 import matplotlib.backends.backend_qtagg as b_qt
 import matplotlib.pyplot as plt
 import pandas as pd
-import ParticleDetection.utils.data_loading as dl
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtWidgets
 
-import RodTracker.backend.logger as lg
+import ParticleDetection.utils.data_loading as dl
 import RodTracker.ui.mainwindow_layout as mw_l
+from RodTracker import exception_logger
 from RodTracker.backend import reconstruction
 from RodTracker.backend.reconstruction import Plotter, Reconstructor, Tracker
 from RodTracker.ui.dialogs import show_warning
@@ -412,9 +412,7 @@ class ReconstructorUI(QtWidgets.QWidget):
             tracker.signals.progress.connect(
                 lambda val: self._progress_update(val / num_colors)
             )
-            tracker.signals.error.connect(
-                lambda ret: lg.exception_logger(*ret)
-            )
+            tracker.signals.error.connect(lambda ret: exception_logger(*ret))
             tracker.signals.error.connect(
                 lambda ret: self._solver_result(None)
             )
@@ -667,7 +665,7 @@ class ReconstructorUI(QtWidgets.QWidget):
             transformation=self._transformation,
         )
         plotter.signals.result_plot.connect(self.add_plot)
-        plotter.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+        plotter.signals.error.connect(lambda ret: exception_logger(*ret))
         self._threads.start(plotter)
         self.pb_plots.setEnabled(False)
 

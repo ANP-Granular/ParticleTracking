@@ -17,8 +17,33 @@
 """**TBD**"""
 
 import sys
+from functools import wraps
 
 from PyQt5 import QtCore
+
+
+def error_handler(func):
+    """Decorator function to provide proper error handling.
+
+    This function is intended as a wrapper for the `QRunnable.run()` function.
+    It assumes that the `QRunnable` object has an attribute
+    `self.signals.error` which is a `pyqtSignal` that expects the exception
+    type, value, and traceback as its values.
+
+    See Also
+    --------
+    :class:`WorkerSignals`, :class:`Worker`
+    """
+
+    @wraps(func)
+    def error_wrapper(self):
+        try:
+            func(self)
+        except:  # noqa: E722
+            exctype, value, tb = sys.exc_info()
+            self.signals.error.emit((exctype, value, tb))
+
+    return error_wrapper
 
 
 class WorkerSignals(QtCore.QObject):
@@ -83,6 +108,7 @@ class Worker(QtCore.QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
+    @error_handler
     def run(self):
         """Run the :attr:`func` with :attr:`args` and attr:`kwargs` as its
         parameters.
