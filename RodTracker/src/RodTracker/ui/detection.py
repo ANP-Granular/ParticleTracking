@@ -21,13 +21,14 @@ import os
 from typing import Dict, List
 
 import pandas as pd
-import ParticleDetection.utils.datasets as ds
 import torch
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+import ParticleDetection.utils.datasets as ds
 import RodTracker.backend.logger as lg
+import RodTracker.backend.parallelism as pl
 import RodTracker.ui.mainwindow_layout as mw_l
-from RodTracker import exception_logger
+from RodTracker import APPNAME, LOG_DIR, exception_logger
 from RodTracker.backend import detection
 from RodTracker.backend.detection import Detector, RodDetection
 from RodTracker.backend.img_data import ImageData
@@ -245,6 +246,49 @@ class DetectorUI(QtWidgets.QWidget):
         )
         self.spb_end_f.valueChanged.connect(self._change_end_frame)
 
+        self.pb_use_example = ui.findChild(
+            QtWidgets.QPushButton, "pb_use_example"
+        )
+        self.pb_use_example.clicked.connect(self._use_example_model)
+
+    def _use_example_model(self):
+        example_model_file = LOG_DIR / "example_model.pt"
+        _logger.info(example_model_file)
+        example_model_url = (
+            "https://zenodo.org/records/10255525/files/model_cpu.pt?download=1"
+        )
+
+        if not example_model_file.exists():
+            _logger.info("Attempting to download the example model.")
+            msg_box = QtWidgets.QMessageBox(
+                icon=QtWidgets.QMessageBox.Information,
+                text=(
+                    "Downloading the example model file ... "
+                    "<br><br><b>Please wait until this window closes.</b>"
+                ),
+                parent=self.ui,
+            )
+            msg_box.setStandardButtons(QtWidgets.QMessageBox.Close)
+            msg_box.button(QtWidgets.QMessageBox.Close).setEnabled(False)
+            msg_box.setWindowTitle(APPNAME)
+
+            worker = pl.Worker(
+                lambda: torch.hub.download_url_to_file(
+                    example_model_url,
+                    str(example_model_file.resolve()),
+                    progress=False,
+                )
+            )
+            worker.signals.result.connect(lambda ret: msg_box.close())
+            worker.signals.result.connect(
+                lambda ret: self._load_model(str(example_model_file.resolve()))
+            )
+
+            self._threads.start(worker)
+            msg_box.exec()
+        else:
+            self._load_model(str(example_model_file.resolve()))
+
     def _expected_changed(self, val: int):
         self._expected_particles = val
         try:
@@ -423,6 +467,11 @@ class DetectorUI(QtWidgets.QWidget):
         self.table_colors.setItem(row, 2, class_item)
         self.table_colors.cellChanged.connect(self._cell_changed)
 
+    def _load_model(self, file: str):
+        self.le_model.setText(file)
+        self.model = torch.jit.load(file)
+        self.pb_detect.setEnabled(True)
+
     def load_model(self):
         """Show a file selection dialog to a user to select a particle
         detection model.
@@ -452,9 +501,7 @@ class DetectorUI(QtWidgets.QWidget):
             # File selection was aborted
             return None
         else:
-            self.le_model.setText(chosen_file)
-            self.model = torch.jit.load(chosen_file)
-            self.pb_detect.setEnabled(True)
+            self._load_model(chosen_file)
             return True
 
     def autoselect_range(self):
