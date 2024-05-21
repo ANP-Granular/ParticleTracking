@@ -15,10 +15,15 @@
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import sys
 from pathlib import Path
+from types import TracebackType
 
 import platformdirs
+from PyQt5 import QtGui, QtWidgets
 
+import RodTracker.backend.file_locations as fl
+import RodTracker.backend.miscellaneous as misc
 from RodTracker._version import __version__  # noqa: F401
 
 APPNAME = "RodTracker"
@@ -48,3 +53,55 @@ SETTINGS_FILE = CONFIG_DIR / "settings.json"
 DATA_DIR = platformdirs.user_data_path(
     APPNAME, APPAUTHOR, roaming=False, ensure_exists=True
 )
+ERROR_LOGGER = logging.getLogger(APPNAME)
+
+
+class ErrorDialog(QtWidgets.QMessageBox):
+    """Dialog to display errors during program execution."""
+
+    def __init__(
+        self,
+        e_type: type = None,
+        e_value: str = None,
+        e_tb: TracebackType = None,
+        parent: QtWidgets.QWidget = None,
+    ):
+        super().__init__(parent=parent)
+        self.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+        self.setModal(False)
+        self.setIcon(QtWidgets.QMessageBox.Warning)
+        self.setWindowTitle(APPNAME)
+        self.setText(
+            "<b>An unexpected error occured:</b><br><br>"
+            f"({e_type.__name__}) {e_value}"
+        )
+        self.btn_close = self.addButton(
+            "Close", QtWidgets.QMessageBox.AcceptRole
+        )
+        self.btn_report = self.addButton(
+            "Report Bug ", QtWidgets.QMessageBox.ActionRole
+        )
+        self.btn_logs = self.addButton(
+            "Show logs", QtWidgets.QMessageBox.ActionRole
+        )
+        self.setDefaultButton(self.btn_close)
+        self.setEscapeButton(self.btn_close)
+
+        self.btn_logs.clicked.connect(misc.open_logs)
+        self.btn_report.clicked.connect(misc.report_issue)
+
+
+def exception_logger(
+    e_type: type, e_value: str, e_tb: TracebackType, use_exec: bool = False
+):
+    """Handler for logging uncaught exceptions during the program flow."""
+    ERROR_LOGGER.exception(
+        "Uncaught exception:", exc_info=(e_type, e_value, e_tb)
+    )
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+    if use_exec:
+        ErrorDialog(e_type, e_value, e_tb, app.desktop()).exec()
+    else:
+        ErrorDialog(e_type, e_value, e_tb, app.desktop()).show()

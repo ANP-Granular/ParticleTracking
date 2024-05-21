@@ -21,6 +21,8 @@ import sys
 import importlib_resources
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+import RodTracker
+
 
 def main():
     currentdir = (
@@ -28,6 +30,11 @@ def main():
     )
     parentdir = currentdir.parent
     sys.path.insert(0, str(parentdir))
+
+    # Setup error handling before main window is running
+    sys.excepthook = lambda t, val, tb: RodTracker.exception_logger(
+        t, val, tb, use_exec=False
+    )
 
     app = QtWidgets.QApplication(sys.argv)
     pixmap = QtGui.QPixmap(
@@ -42,16 +49,14 @@ def main():
     splash = QtWidgets.QSplashScreen(pixmap)
     splash.show()
 
-    splash.showMessage("Updating environment...", align, color)
-    import RodTracker.backend.logger as lg
-
-    sys.excepthook = lg.exception_logger
-
     splash.showMessage("Loading UI...", align, color)
     import RodTracker.ui.mainwindow as mw
 
     main_window = mw.RodTrackWindow()
     splash.finish(main_window)
+
+    # Changing behavior of ErrorDialog
+    sys.excepthook = RodTracker.exception_logger
 
     main_window.show()
     main_window.raise_()
