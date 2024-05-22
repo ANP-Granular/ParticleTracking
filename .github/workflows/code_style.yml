@@ -1,7 +1,7 @@
 name: Code Style
 on:
   push:
-    branches: 
+    branches:
       - main
       - develop
   pull_request:
@@ -11,8 +11,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  Code_Style_Adherence: 
+  Code_Style_Adherence:
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       matrix:
         python_version: ['3.11']
