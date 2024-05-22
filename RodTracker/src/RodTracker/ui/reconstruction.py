@@ -24,10 +24,10 @@ from typing import List
 import matplotlib.backends.backend_qtagg as b_qt
 import matplotlib.pyplot as plt
 import pandas as pd
+import ParticleDetection.utils.data_loading as dl
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtWidgets
 
-import ParticleDetection.utils.data_loading as dl
 import RodTracker.ui.mainwindow_layout as mw_l
 from RodTracker import exception_logger
 from RodTracker.backend import reconstruction

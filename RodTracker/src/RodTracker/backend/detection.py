@@ -22,11 +22,11 @@ from typing import Dict, List
 
 import pandas as pd
 import torch
-from PyQt5 import QtCore
-
 from ParticleDetection.utils import datasets as ds
 from ParticleDetection.utils import detection
 from ParticleDetection.utils import helper_funcs as hf
+from PyQt5 import QtCore
+
 from RodTracker.backend.logger import Action, NotInvertableError
 from RodTracker.backend.parallelism import error_handler
 

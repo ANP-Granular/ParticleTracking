@@ -21,10 +21,10 @@ import os
 from typing import Dict, List
 
 import pandas as pd
+import ParticleDetection.utils.datasets as ds
 import torch
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-import ParticleDetection.utils.datasets as ds
 import RodTracker.backend.logger as lg
 import RodTracker.backend.parallelism as pl
 import RodTracker.ui.mainwindow_layout as mw_l
