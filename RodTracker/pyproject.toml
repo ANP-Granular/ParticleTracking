@@ -109,7 +109,7 @@ files = [
 line-length = 79
 target-version = ['py38', 'py39', 'py310', 'py311']
 extend-exclude = '''
-( 
+(
     .*mainwindow_layout..*
 )
 '''

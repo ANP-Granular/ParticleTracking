@@ -55,8 +55,8 @@ scipy = [
     {version=">=1.9.3,!=1.13.0", python = ">=3.9"},
     {version="<1.11.0", python = "<3.9"}
 ]
-# TODO: observe the progress of 
-#       https://github.com/python-poetry/poetry/issues/6409 to potentially 
+# TODO: observe the progress of
+#       https://github.com/python-poetry/poetry/issues/6409 to potentially
 #       reintroduce the CPU/GPU options with automatic choice of torch versions
 torch = {version = ">=2"}
 torchvision = {version = ">=0.14.0"}

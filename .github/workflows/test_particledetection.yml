@@ -1,13 +1,13 @@
 name: Test ParticleDetection
 on:
   push:
-    branches: 
+    branches:
       - main
       - develop
     paths:
       - 'ParticleDetection/**'
   pull_request:
-    branches: 
+    branches:
       - main
       - develop
     paths:
@@ -18,7 +18,7 @@ on:
 
 jobs:
     tests:
-        continue-on-error: true 
+        continue-on-error: true
         strategy:
           matrix:
             os: [ubuntu-latest, macos-latest, windows-latest]

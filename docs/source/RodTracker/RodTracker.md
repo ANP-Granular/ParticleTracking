@@ -39,12 +39,12 @@ A working folder and file structure for the stereo-camera images is shown below.
 |.
 ├── gp1
 │   ├── 001.jpg
-│   ├── 002.jpg 
+│   ├── 002.jpg
 │   ...
 │   └── 321.jpg
 └── gp2
     ├── 001.jpg
-    ├── 002.jpg 
+    ├── 002.jpg
     ...
     └── 321.jpg
 ```
@@ -92,21 +92,21 @@ There are two options to select a rod for making changes to it:
 
 - `left-click` on the start and then end position of the misplaced rod.
 - `right-click` anywhere to abort rod drawing.
-- `right click` anywhere or `left click` on another rod to deselect the 
+- `right click` anywhere or `left click` on another rod to deselect the
   current rod.
-  
+
 **Alternative method:**
-- Without previously selecting a rod `left-click` on the start and end 
+- Without previously selecting a rod `left-click` on the start and end
   position of a rod.
 - Enter the desired rod number in the dialog.
     - The previous position will be replaced, if an existing rod number was entered.
     - A new rod is created, if the entered number is among in the loaded rods.
     - Only rod numbers from 0 to 99 are supported at the moment.
-  
+
 ### Number correction
 
 - `double-click` on a rod number to edit it
-- Press `Enter`, `Return` or `left-click` outside the number to confirm 
+- Press `Enter`, `Return` or `left-click` outside the number to confirm
   your input.
 - Press `Escape` to abort editing.
 
@@ -190,7 +190,7 @@ Unlike during the detection of particles, the results will only be accessible af
 
 ### Calibration & transformation data format
 
-The stereo camera calibration relates positions in images from both cameras to each other. From this the 3D coordinates of the objects shown in the images can be reconstructed. One can use [OpenCV](https://opencv.org/) to perform the stereo camera calibration (see ParticleDetection's [camera calibration](../ParticleDetection-api/reconstruct_3D/calibrate_cameras.rst)). It is also possible to do this calibration with other software, e.g. [MATLAB Stereo Camera Calibrator App](https://mathworks.com/help/vision/ug/using-the-stereo-camera-calibrator-app.html), as long as the pin-hole camera model is used and the calibration data is transferred into the format shown below. We have found that stereo camera calibration done via MATLAB App is generally more accurate than one done with OpenCV functions.  
+The stereo camera calibration relates positions in images from both cameras to each other. From this the 3D coordinates of the objects shown in the images can be reconstructed. One can use [OpenCV](https://opencv.org/) to perform the stereo camera calibration (see ParticleDetection's [camera calibration](../ParticleDetection-api/reconstruct_3D/calibrate_cameras.rst)). It is also possible to do this calibration with other software, e.g. [MATLAB Stereo Camera Calibrator App](https://mathworks.com/help/vision/ug/using-the-stereo-camera-calibrator-app.html), as long as the pin-hole camera model is used and the calibration data is transferred into the format shown below. We have found that stereo camera calibration done via MATLAB App is generally more accurate than one done with OpenCV functions.
 
 The transformation represents a change of coordinate system, i.e. from the first camera's coordinate system to the world/experiment coordinate system. It must be represented as a rotation followed by a translation as shown below.
 
@@ -216,7 +216,7 @@ See this [OpenCV documentation](https://docs.opencv.org/3.4/d9/d0c/group__calib3
     [-0.003, 0.002, -0.999],
     [-0.004, 0.999, 0.002]
   ],
-  "T": [[5.960], [280.287], [353.281]], 
+  "T": [[5.960], [280.287], [353.281]],
   "E": [
     [0.137, 279.294, 354.067],
     [353.302, -4.362, -1.414],

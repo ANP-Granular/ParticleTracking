@@ -1,9 +1,9 @@
 ## Manual GUI-Testing
 
-Below are test cases described for different functions the GUI shall 
-accomplish. Each section only relates to one function and its ways to be 
-accessed. The `conditions` described are supposed to be run on every of the 
-access options and shall be combined wherever possible/applicable. 
+Below are test cases described for different functions the GUI shall
+accomplish. Each section only relates to one function and its ways to be
+accessed. The `conditions` described are supposed to be run on every of the
+access options and shall be combined wherever possible/applicable.
 
 
 ___
@@ -43,7 +43,7 @@ ___
 >        - line(s) in "conflict" mode
 >        - with "unsaved changes"
 >        - without "unsaved changes"
->    - with NO data files loaded 
+>    - with NO data files loaded
 >    - with "Overlay" activated
 >    - with "Overlay" deactivated
 
@@ -74,7 +74,7 @@ ___
 > #### Conditions:
 >    - no "unsaved changes" present
 >    - eligible "unsaved changes" present
-> 
+>
 
 
 ___
@@ -85,13 +85,13 @@ ___
 >    - no "unsaved changes" present
 >    - "unsaved changes" present
 >    - changes were saved previously
->        - data folder (where the original data was loaded from) has 
-           changed to the previously saved 
->        - data folder (where the original data was loaded from) is the 
+>        - data folder (where the original data was loaded from) has
+           changed to the previously saved
+>        - data folder (where the original data was loaded from) is the
            same to the previously saved
 >    - user has changed save folder
 >        - to be the folder the data was loaded from
->        - a folder that contains saved data (NOT the folder that data was 
+>        - a folder that contains saved data (NOT the folder that data was
            loaded from)
 >        - to a non-existing folder
 >        - to an empty folder
@@ -107,4 +107,3 @@ ___
 ___
 ### (re)open the program
 - TBD
-

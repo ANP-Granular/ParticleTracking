@@ -84,7 +84,7 @@ On Linux/macOS this problem does not seem to occur.
 ```
 
 ### Creating Installers
-After it can be useful to create installers for easy distribution to the end user. The following scripts require the RodTracker to already be bundled as per the [previous section](#bundling-the-app). 
+After it can be useful to create installers for easy distribution to the end user. The following scripts require the RodTracker to already be bundled as per the [previous section](#bundling-the-app).
 
 **On Windows**:
 
