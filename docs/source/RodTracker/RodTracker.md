@@ -55,8 +55,9 @@ The folder name is then used as an ID for the loaded images and respective parti
 
 ## Automated detection of particles
 
-Now the particles in the loaded images can be detected using a saved model. With this app comes a trained RCNN for detecting rods from the example dataset.
+Now the particles in the loaded images can be detected using a saved model.
 1. Load the model in the `Detection` tab and select a frame range that the model shall identify rods on.
+   - The `Use Example Model` button downloads [this model](https://zenodo.org/records/10255525) used for rod detection (specifically the *model_cpu.pt* file). It is intended for detecting rods in the example images.
 2. Deselect any color class that you are not interested in.
 3. Select the *default* expected number of particles, i.e. how many particles per color are expected in each image.
 4. Adjust the number of particles per color, if needed, in the table and check the box to use the customized value during detection.

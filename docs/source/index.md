@@ -26,9 +26,18 @@ The RodTracker package is a GUI encapsulating the most used functionality of the
 installation/installation
 RodTracker/RodTracker
 ParticleDetection/ParticleDetection
-developer_notes
 api-reference
 changelog/changelog
+```
+
+```{toctree}
+:caption: Getting Involved
+:maxdepth: 1
+:hidden:
+
+Source Code <https://github.com/ANP-Granular/ParticleTracking>
+Contributing <contributing>
+developer_notes
 ```
 
 # Indices and tables

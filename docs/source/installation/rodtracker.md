@@ -3,7 +3,7 @@ As the RodTracker is a Python package usually you will be installing it from sou
 
 The following installation instructions are only concerning installing the RodTracker as a python package.
 
-### Installation from PyPI
+## Installation from PyPI
 **Requirements:**
 - Python `>=3.8`
 - pip
@@ -17,7 +17,7 @@ Or use one of the options described in the [documentation](https://particletrack
 pip install RodTracker[OPTION]
 ```
 
-### Installation from source
+## Installation from source
 
 **Requirements:**
 - Python `>=3.8` is installed
@@ -99,3 +99,12 @@ Please install CUDA first, then install the RodTracker, and lastly refer to [Par
 ```{note}
 CUDA is currently not available on macOS and therefore also not supported here.
 ```
+
+## Post-Installation problems on Linux
+When installed on Linux there is a possibility that system libraries are missing and errors like the one shown below occur and the RodTracker crashes.
+```text
+ImportError: libGL.so.1: cannot open shared object file: No such file or directory
+```
+
+When this happens, for example when running Ubuntu in the Windows Subsystem for Linux it is necessary to install missing libraries manually.
+For this refer to the [pytest-qt documentation](https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#github-actions-azure-pipelines-travis-ci-and-gitlab-ci-cd) or the [setup-qt-libs](https://github.com/tlambert03/setup-qt-libs) GitHub action.
