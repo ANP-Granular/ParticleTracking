@@ -1,6 +1,11 @@
 ## [Unreleased]
+
+## [v0.6.2]
 ### Added
 - automated testing using a GitHub workflow ([#84](https://github.com/ANP-Granular/ParticleTracking/issues/84))
+- popup dialog showing unhandled errors to users ([#74](https://github.com/ANP-Granular/ParticleTracking/issues/74))
+- button to download an example detection model ([#75](https://github.com/ANP-Granular/ParticleTracking/issues/75), [#85](https://github.com/ANP-Granular/ParticleTracking/issues/85))
+- link to the source code in the documentation ([#81](https://github.com/ANP-Granular/ParticleTracking/issues/81))
 
 ### Changed
 - removed/changed URL dependencies ([#78](https://github.com/ANP-Granular/ParticleTracking/issues/78))
@@ -161,7 +166,8 @@ This especially improves performance and responsiveness of the `RodTracker` when
 ### Added
 - a versioning system
 
-[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.2...HEAD
+[v0.6.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.1...v0.6.2
 [v0.6.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.0...v0.6.1
 [v0.6.0]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.8...v0.6.0
 [v0.5.8]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.7...v0.5.8
