@@ -1,26 +1,45 @@
 # RodTracker
-This package provides a GUI encapsulating the most used functionality of the [ParticleDetection](../ParticleDetection/) package. It enables users to carry out the aforementioned tasks, except for training a model. Additionally, it provides the means to manually correct placement and assignment mistakes of the automated processes.
+This package provides a GUI encapsulating the most used functionality of the [ParticleDetection package](https://pypi.org/project/ParticleDetection/). It enables users to carry out the aforementioned tasks, except for training a model. Additionally, it provides the means to manually correct placement and assignment mistakes of the automated processes.
 
-Please refer to the [documentation](https://particletracking.readthedocs.io/) for more detailed information.
+Please refer to the [documentation](https://particletracking.readthedocs.io/en/stable/RodTracker/RodTracker.html) for more detailed information.
 
 ## Installation
+
+Refer to the [documentation](https://particletracking.readthedocs.io/en/stable/installation/rodtracker.html) for more details on the installation process.
+
+### Installation as a standalone program
+
+Use the provided executable installer for your operating system provided in the [repository releases](https://github.com/ANP-Granular/ParticleTracking/releases):
+- `RodTracker-Setup.exe` - Windows
+- `RodTracker-Setup.deb` - Linux
+- `RodTracker-Setup.dmg` - macOS
+
+**Note:** There might not always be a version provided for macOS.
+
+### Installation as a python package
 **Requirements:**
 - Python `>=3.8`
 - pip
-- Git
 
-0. Upgrade your version of `pip`.
-   ```shell
-   python -m pip install --upgrade pip
-   ```
-1. Clone the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the RodTracker. Do **NOT** just copy the `RodTracker` folder. This will lead to a missing dependency during the installation.
+Install the default version using pip:
+```shell
+pip install RodTracker
+```
+Or use one of the options described in the [documentation](https://particletracking.readthedocs.io/en/stable/installation/rodtracker.html#installation-options).
+```shell
+pip install RodTracker[OPTION]
+```
+
+Install it from source by:
+1. Cloning the [repository](https://github.com/ANP-Granular/ParticleTracking) containing the RodTracker. Do **NOT** just copy the `RodTracker` folder. This will lead to a missing dependency during the installation.
 2. Install it using `pip`.
    ```shell
    YOUR/REPO/PATH/RodTracker$ pip install .
    ```
-Or let pip download everything from GitHub:
+
+It is also possible to install it directly from GitHub (requires `Git` to be installed):
 ```shell
-pip install -e 'git+https://github.com/ANP-Granular/ParticleTracking.git#egg=rodtracker&subdirectory=RodTracker'
+pip install 'git+https://github.com/ANP-Granular/ParticleTracking.git#egg=rodtracker&subdirectory=RodTracker'
 ```
 ```shell
 pip install 'rodtracker[DOCS] @ git+https://github.com/ANP-Granular/ParticleTracking.git#egg=RodTracker&s
@@ -29,16 +48,17 @@ ubdirectory=RodTracker'
 
 ## Running the RodTracker
 Run the **RodTracker** GUI using one of the possibilities:
-  - Run `RodTracker.py` manually:
+  - *(Standalone Program)* Run the executable installed by the installer.
+  - *(Python Package)* Run `RodTracker.py` manually:
     ```shell
     YOUR/REPO/PATH/RodTracker/src/RodTracker$ python RodTracker.py
     ```
-  - Use the registered command:
+  - *(Python Package)* Use the registered command:
     ```shell
     ARBITRARY/PATH$ RodTracker
     ```
 
-![RodTracker - GUI](../docs/source/images/Startup.png)
+![RodTracker - GUI](https://raw.githubusercontent.com/ANP-Granular/ParticleTracking/main/docs/source/images/Startup.png)
 
 ## Keyboard shortcuts
 | Feature                      |                   Shortcut                   |

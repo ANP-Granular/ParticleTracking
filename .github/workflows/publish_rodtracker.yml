@@ -1,11 +1,11 @@
-name: Publish ParticleDetection
+name: Publish RodTracker
 on:
   push:
     branches:
       - main
       - develop
     paths:
-      - 'ParticleDetection/**'
+      - 'RodTracker/**'
   workflow_dispatch:
 
 jobs:
@@ -31,7 +31,7 @@ jobs:
         env:
           POETRY_REQUESTS_TIMEOUT: 120
         run: |
-          cd ./ParticleDetection
+          cd ./RodTracker
           poetry build
-          poetry config pypi-token.pypi ${{ secrets.PYPI_PARTICLEDETECTION_API_TOKEN }}
+          poetry config pypi-token.pypi ${{ secrets.PYPI_RODTRACKER_API_TOKEN }}
           poetry publish

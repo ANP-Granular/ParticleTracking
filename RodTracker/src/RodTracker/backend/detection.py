@@ -28,6 +28,7 @@ from ParticleDetection.utils import helper_funcs as hf
 from PyQt5 import QtCore
 
 from RodTracker.backend.logger import Action, NotInvertableError
+from RodTracker.backend.parallelism import error_handler
 
 _logger = logging.getLogger(__name__)
 abort_requested: bool = False
@@ -230,6 +231,7 @@ class Detector(QtCore.QRunnable):
             threshold = 0.0
         self.threshold = threshold
 
+    @error_handler
     def run(self):
         """Run the detection of rods with the parameters set in this
         :class:`Detector` object.

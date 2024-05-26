@@ -19,7 +19,7 @@
 import platform
 from functools import partial
 from pathlib import Path
-from typing import Callable, List
+from typing import List
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QWheelEvent
@@ -33,10 +33,12 @@ from PyQt5.QtWidgets import (
 import RodTracker.backend.file_locations as fl
 import RodTracker.backend.img_data as img_data
 import RodTracker.backend.logger as lg
+import RodTracker.backend.miscellaneous as misc
 import RodTracker.backend.rod_data as r_data
 import RodTracker.backend.settings as se
 import RodTracker.ui.mainwindow_layout as mw_l
 import RodTracker.ui.rodnumberwidget as rn
+from RodTracker import APPNAME
 from RodTracker.ui import dialogs
 from RodTracker.ui.detection import init_detection
 from RodTracker.ui.reconstruction import init_reconstruction
@@ -128,6 +130,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
 
         # Adaptations of the UI
+        self.setWindowTitle(APPNAME)
         self.setWindowIcon(QtGui.QIcon(fl.icon_path()))
         self.ui.pb_undo.setIcon(QtGui.QIcon(fl.undo_icon_path()))
         self.ui.tv_rods.header().setDefaultSectionSize(150)
@@ -195,7 +198,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             )
 
         # Tab icons for 'busy' indication
-        default_icon = blank_icon()
+        default_icon = misc.blank_icon()
         self.ui.right_tabs.setIconSize(QtCore.QSize(7, 16))
         for tab in range(self.ui.right_tabs.count()):
             self.ui.right_tabs.setTabIcon(tab, default_icon)
@@ -403,23 +406,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             lambda: dialogs.show_about(self)
         )
         self.ui.action_about_qt.triggered.connect(
-            lambda: QMessageBox.aboutQt(self, "RodTracker")
+            lambda: QMessageBox.aboutQt(self, APPNAME)
         )
-        self.ui.action_logs.triggered.connect(lg.open_logs)
-        self.ui.action_bug_report.triggered.connect(
-            lambda: QtGui.QDesktopServices.openUrl(
-                QtCore.QUrl(
-                    "https://github.com/ANP-Granular/ParticleTracking/issues/new?labels=bug&projects=&template=bug_report.md&title="  # noqa: E501
-                )
-            )
-        )
-        self.ui.action_feature_request.triggered.connect(
-            lambda: QtGui.QDesktopServices.openUrl(
-                QtCore.QUrl(
-                    "https://github.com/ANP-Granular/ParticleTracking/issues/new?labels=enhancement&projects=&template=feature_request.md&title="  # noqa: E501
-                )
-            )
-        )
+        self.ui.action_logs.triggered.connect(misc.open_logs)
+        self.ui.action_bug_report.triggered.connect(misc.report_issue)
+        self.ui.action_feature_request.triggered.connect(misc.request_feature)
 
     @QtCore.pyqtSlot(QTreeWidgetItem, int)
     def tree_selection(self, item: QTreeWidgetItem, col: int):
@@ -772,7 +763,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         msg = QMessageBox()
         msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
         msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("Rod Tracker")
+        msg.setWindowTitle(APPNAME)
         msg.setText("There are unsaved changes!")
         btn_discard = msg.addButton("Discard changes", QMessageBox.ActionRole)
         btn_cancel = msg.addButton("Cancel", QMessageBox.ActionRole)
@@ -836,34 +827,34 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         manager = self.image_managers[new_idx]
         cam = self.cameras[new_idx]
 
-        reconnect(self.rod_data.data_2d, cam.extract_rods)
+        misc.reconnect(self.rod_data.data_2d, cam.extract_rods)
 
-        reconnect(
+        misc.reconnect(
             self.ui.action_shorten_displayed.triggered,
             lambda: cam.adjust_rod_length(-self._rod_incr, False),
         )
-        reconnect(
+        misc.reconnect(
             self.ui.action_lengthen_displayed.triggered,
             lambda: cam.adjust_rod_length(self._rod_incr, False),
         )
-        reconnect(
+        misc.reconnect(
             self.ui.action_shorten_selected.triggered,
             lambda: cam.adjust_rod_length(-self._rod_incr, True),
         )
-        reconnect(
+        misc.reconnect(
             self.ui.action_lengthen_selected.triggered,
             lambda: cam.adjust_rod_length(self._rod_incr, True),
         )
 
-        reconnect(
+        misc.reconnect(
             self.ui.pb_load_images.clicked,
             lambda: manager.select_images(self.ui.le_image_dir.text()),
         )
-        reconnect(
+        misc.reconnect(
             self.ui.action_open.triggered,
             lambda: manager.select_images(self.ui.le_image_dir.text()),
         )
-        reconnect(
+        misc.reconnect(
             self.ui.le_image_dir.returnPressed,
             lambda: manager.select_images(self.ui.le_image_dir.text()),
         )
@@ -939,9 +930,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
     def tab_busy_changed(self, tab_idx: int, is_busy: bool):
         if is_busy:
-            tab_icon = busy_icon()
+            tab_icon = misc.busy_icon()
         else:
-            tab_icon = blank_icon()
+            tab_icon = misc.blank_icon()
         self.ui.right_tabs.setTabIcon(tab_idx, tab_icon)
 
     def eventFilter(
@@ -1015,7 +1006,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             msg = QMessageBox()
             msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
             msg.setIcon(QMessageBox.Warning)
-            msg.setWindowTitle("Rod Tracker")
+            msg.setWindowTitle(APPNAME)
             msg.setText("There are unsaved changes!")
             btn_save = msg.addButton("Save", QMessageBox.ActionRole)
             msg.addButton("Discard", QMessageBox.ActionRole)
@@ -1033,54 +1024,3 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 a0.accept()
         else:
             a0.accept()
-
-
-def reconnect(
-    signal: QtCore.pyqtSignal,
-    newhandler: Callable = None,
-    oldhandler: Callable = None,
-) -> None:
-    """(Re-)connect handler(s) to a signal.
-
-    Connect a new handler function to a signal while either removing all other,
-    previous handlers, or just one specific one.
-
-    Parameters
-    ----------
-    signal : QtCore.pyqtSignal
-    newhandler : Callable, optional
-        By default ``None``.
-    oldhandler : Callable, optional
-        Handler function currently connected to ``signal``. All connected
-        functions will be removed, if this parameters is ``None``.
-        By default ``None``.
-    """
-    try:
-        if oldhandler is not None:
-            while True:
-                signal.disconnect(oldhandler)
-        else:
-            signal.disconnect()
-    except TypeError:
-        pass
-    if newhandler is not None:
-        signal.connect(newhandler)
-
-
-def busy_icon() -> QtGui.QIcon:
-    busy_pix = QtGui.QPixmap(40, 100)
-    busy_pix.fill(QtCore.Qt.transparent)
-    busy_painter = QtGui.QPainter(busy_pix)
-    busy_painter.setBrush(
-        QtGui.QBrush(QtCore.Qt.green, QtCore.Qt.SolidPattern)
-    )
-    busy_painter.setPen(QtCore.Qt.NoPen)
-    busy_painter.drawEllipse(0, 0, 40, 40)
-    busy_painter.end()
-    return QtGui.QIcon(busy_pix)
-
-
-def blank_icon() -> QtGui.QIcon:
-    blank_pix = QtGui.QPixmap(40, 100)
-    blank_pix.fill(QtCore.Qt.transparent)
-    return QtGui.QIcon(blank_pix)

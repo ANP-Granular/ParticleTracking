@@ -49,10 +49,7 @@ pandas= [
     {version = ">=2.1.1", python = ">=3.9"},
     {version = ">=1.2.5,<2.1", python = "<3.9"}
 ]
-ParticleDetection = [
-    {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "110f20d", extras=["cpu"], markers = "extra != 'gpu'"},
-    {git = "https://github.com/ANP-Granular/ParticleTracking.git", subdirectory = "ParticleDetection", rev = "110f20d", extras=["gpu"], markers = "extra == 'gpu'"},
-]
+ParticleDetection = ">=0.4.2.dev21"
 platformdirs = ">=3.2.0"
 PyQt3D = ">=5.15.5"
 PyQt5 = ">=5.15.4"
@@ -82,8 +79,6 @@ build = ["pyinstaller", "Sphinx", "docutils", "sphinx_rtd_theme",
          "myst_parser", "dunamai"]
 test = ["pytest", "pytest-qt", "pytest-cov"]
 docs = ["Sphinx", "docutils", "sphinx_rtd_theme", "myst_parser", "dunamai"]
-# keep this: force installing pytorch with GPU support (default is CPU only)
-gpu = []
 
 [tool.poetry.scripts]
 RodTracker = 'RodTracker.RodTracker:main'
@@ -114,7 +109,7 @@ files = [
 line-length = 79
 target-version = ['py38', 'py39', 'py310', 'py311']
 extend-exclude = '''
-( 
+(
     .*mainwindow_layout..*
 )
 '''

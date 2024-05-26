@@ -49,27 +49,34 @@ def set_tk_tcl_paths() -> None:
     issue:
     https://github.com/python/cpython/issues/111754
     """
-    os.environ["TCL_LIBRARY"] = str(
-        Path(
-            glob.glob(
-                os.path.join(sys.base_prefix, "tcl", "tcl*", "init.tcl")
-            )[0]
-        ).parent
-    )
-    os.environ["TK_LIBRARY"] = str(
-        Path(
-            glob.glob(
-                os.path.join(sys.base_prefix, "tcl", "tk*", "pkgIndex.tcl")
-            )[0]
-        ).parent
-    )
-    os.environ["TIX_LIBRARY"] = str(
-        Path(
-            glob.glob(
-                os.path.join(sys.base_prefix, "tcl", "tix*", "pkgIndex.tcl")
-            )[0]
-        ).parent
-    )
+    try:
+        os.environ["TCL_LIBRARY"] = str(
+            Path(
+                glob.glob(
+                    os.path.join(sys.base_prefix, "tcl", "tcl*", "init.tcl")
+                )[0]
+            ).parent
+        )
+        os.environ["TK_LIBRARY"] = str(
+            Path(
+                glob.glob(
+                    os.path.join(sys.base_prefix, "tcl", "tk*", "pkgIndex.tcl")
+                )[0]
+            ).parent
+        )
+        os.environ["TIX_LIBRARY"] = str(
+            Path(
+                glob.glob(
+                    os.path.join(
+                        sys.base_prefix, "tcl", "tix*", "pkgIndex.tcl"
+                    )
+                )[0]
+            ).parent
+        )
+    except IndexError:
+        # avoid breaking when this function is called during in a program
+        # bundled with pyinstaller
+        pass
 
 
 def matching_results(

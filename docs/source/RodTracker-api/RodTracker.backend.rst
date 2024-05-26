@@ -13,7 +13,8 @@ RodTracker.backend
    backend/file_locations
    backend/img_data
    backend/logger
+   backend/miscellaneous
    backend/parallelism
    backend/reconstruction
-   backend/rod_data 
+   backend/rod_data
    backend/settings

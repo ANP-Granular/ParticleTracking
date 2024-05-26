@@ -1,7 +1,7 @@
-RodTracker.ui.mainwindow\_layout
+RodTracker.backend.miscellaneous
 --------------------------------
 
-.. automodule:: RodTracker.ui.mainwindow_layout
+.. automodule:: RodTracker.backend.miscellaneous
    :members:
    :undoc-members:
    :show-inheritance:

@@ -22,6 +22,7 @@ import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 import RodTracker.backend.file_locations as fl
+from RodTracker import APPNAME
 from RodTracker._version import __date__, __version__
 
 
@@ -139,7 +140,7 @@ def show_warning(text: str):
     msg = QtWidgets.QMessageBox()
     msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
     msg.setIcon(QtWidgets.QMessageBox.Warning)
-    msg.setWindowTitle("Rod Tracker")
+    msg.setWindowTitle(APPNAME)
     msg.setText(text)
     msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
     msg.exec()
@@ -296,7 +297,7 @@ def show_about(parent: QtWidgets.QWidget):
         # Using the logo instead of the icon
         _ = QtWidgets.QWidget()
         _.setWindowIcon(QtGui.QIcon(fl.logo_path()))
-        QtWidgets.QMessageBox.about(_, "About RodTracker", about_txt)
+        QtWidgets.QMessageBox.about(_, f"About {APPNAME}", about_txt)
 
 
 class ConflictDialog(QtWidgets.QMessageBox):
@@ -307,7 +308,7 @@ class ConflictDialog(QtWidgets.QMessageBox):
 
         self.setWindowIcon(QtGui.QIcon(fl.icon_path()))
         self.setIcon(QtWidgets.QMessageBox.Warning)
-        self.setWindowTitle("Rod Tracker")
+        self.setWindowTitle(APPNAME)
         self.setText(
             f"A rod number switching attempt of"
             f"#{last_id} <---> #{new_id} was detected. \nHow shall "
