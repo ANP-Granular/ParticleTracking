@@ -71,6 +71,11 @@ class CreateRod:
         cam_idx = main_window.ui.camera_tabs.currentIndex()
         cam = main_window.cameras[cam_idx]
 
+        # Deactivate rod, if necessary
+        qtbot.mouseClick(
+            cam, QtCore.Qt.MouseButton.RightButton, pos=self.start
+        )
+
         with monkeypatch.context() as mp:
             # Mock number selection
             mp.setattr(
