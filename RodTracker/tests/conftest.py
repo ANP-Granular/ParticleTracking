@@ -58,6 +58,7 @@ def main_window(qtbot: QtBot) -> RodTrackWindow:
     main_window.settings.update_field(
         category="visual", field="position_scaling", value=10.0
     )
+    main_window.change_color("black")
     yield main_window
     main_window.settings.save(new_data=previous_settings)
     r_data.lock.lockForRead()
