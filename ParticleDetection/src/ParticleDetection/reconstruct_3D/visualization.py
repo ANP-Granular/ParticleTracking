@@ -22,7 +22,12 @@ reconstruction from images of a stereocamera system.
 **Date:**       01.11.2022
 
 """
+import glob
 import logging
+import os
+import platform
+import sys
+from pathlib import Path
 from typing import Iterable, List, Tuple, Union
 
 import matplotlib.animation as animation
@@ -34,6 +39,44 @@ from matplotlib.widgets import Slider
 from mpl_toolkits.mplot3d.art3d import Line3D
 
 _logger = logging.getLogger(__name__)
+
+
+def set_tk_tcl_paths() -> None:
+    """Mitigate issue with not found Tkinter.
+
+    Uses the workaround shown in the python issue describing Tkinter being
+    unable to find a usable init.tcl. For further information see the original
+    issue:
+    https://github.com/python/cpython/issues/111754
+    """
+    try:
+        os.environ["TCL_LIBRARY"] = str(
+            Path(
+                glob.glob(
+                    os.path.join(sys.base_prefix, "tcl", "tcl*", "init.tcl")
+                )[0]
+            ).parent
+        )
+        os.environ["TK_LIBRARY"] = str(
+            Path(
+                glob.glob(
+                    os.path.join(sys.base_prefix, "tcl", "tk*", "pkgIndex.tcl")
+                )[0]
+            ).parent
+        )
+        os.environ["TIX_LIBRARY"] = str(
+            Path(
+                glob.glob(
+                    os.path.join(
+                        sys.base_prefix, "tcl", "tix*", "pkgIndex.tcl"
+                    )
+                )[0]
+            ).parent
+        )
+    except IndexError:
+        # avoid breaking when this function is called during in a program
+        # bundled with pyinstaller
+        pass
 
 
 def matching_results(
@@ -59,6 +102,8 @@ def matching_results(
         [0]: reprojection errors histogram\n
         [1]: rod lengths histogram
     """
+    if platform.system() == "Windows":
+        set_tk_tcl_paths()
     fig1 = reprojection_errors_hist(reprojection_errors)
     fig2 = length_hist(rod_lengths)
 
@@ -66,6 +111,10 @@ def matching_results(
         return fig1, fig2
     plt.show()
     return
+
+
+if platform.system() == "Windows":
+    set_tk_tcl_paths()
 
 
 def length_hist(rod_lengths: np.ndarray) -> Figure:

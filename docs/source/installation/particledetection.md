@@ -4,6 +4,16 @@
 - Python `>=3.8` is installed
 - pip `!=22` is installed (see [this issue](https://github.com/pypa/pip/issues/10851) for explanation)
 
+## (Regular) Installation
+Install the default version using pip:
+```shell
+pip install ParticleDetection
+```
+Or use one of the options described [below](#installation-options). **Some options require manual installation of additional libraries.**
+```shell
+pip install ParticleDetection[OPTION]
+```
+
 ## Installation from source
 0. Upgrade your version of `pip`.
    ```shell
@@ -18,28 +28,44 @@
   ```shell
   YOUR/REPO/PATH/ParticleDetection$ pip install .[OPTION]
   ```
-## Installation options
-This package has three functionality options. These are realized as `extras` but are essentially variants, that do not necessarily build upon each other.
 
-- `CPU`:
-  - is the **default**
-  - attempts to install the CPU version of `pytorch`
-  - allows running exported detection models on the CPU only
-  ```{warning}
-  The `ParticleDetection.modelling` module is not usable.
+Or install it directly from GitHub:
+```shell
+pip install 'git+https://github.com/ANP-Granular/ParticleTracking.git#egg=particledetection&subdirectory=ParticleDetection'
+```
+```shell
+pip install 'particledetection[DETECTRON] @ git+https://github.com/ANP-Granular/ParticleTracking.git#egg=
+particledetection&subdirectory=ParticleDetection'
+```
+
+## Installation options
+This package has two functionality options. The default version is only intended to use (and potentially evaluate the performance of) object detection models previously created with for use with PyTorch. This means that the `Particle.modelling` module is not usable.
+
+- `default`:
+  - **Requirement:** /
+  - **Post-Installation-Step(s):** /
+  - allows running exported detection models on the CPU/GPU
+  ```{Note}
+  Depending on the OS only a CPU enabled version of `torch` is installed by default.
+  Please refer to the `DETECTRON` extra for the steps necessary to enable use of the GPU.
   ```
-- `GPU`:
-  - **Requirement:** CUDA is installed
-  - attempts to install the CUDA/GPU version of `pytorch`
-  - allows running exported detection models on the CPU and GPU
-  ```{warning}
-  The `ParticleDetection.modelling` module is not usable.
-  ```
+
 - `DETECTRON`:
   - **Requirement:** CUDA is installed
   - **Post-Installation-Step(s):**
     - install Detectron2 as per their [Installation Guide](https://detectron2.readthedocs.io/en/latest/tutorials/install.html)
-  - attempts to install the CUDA/GPU version of `pytorch`
+    - install [imgaug](https://imgaug.readthedocs.io/en/latest/) in the version shown below:
+    ```shell
+    pip install "https://github.com/aleju/imgaug.git@0101108d4fed06bc5056c4a03e2bcb0216dac326"
+    ```
+    - Verify, that the installed version of `torch`, `torchvision`, and `torchaudio` match your installed version of CUDA. Use the [PyTorch website](https://pytorch.org/get-started/locally/) to find a version that fits your system.
+      ```{Hint}
+      On Windows only the CPU version is installed by default.
+
+      On Linux a GPU enabled version is installed by default, but CUDA version it uses changes occasionally.
+
+      A GPU enabled version is not available on Mac.
+      ```
   - allows training/running/exporting new Detectron2 models (see the `ParticleDetection.modelling` module)
   - allows running exported detection models on the CPU and GPU
   ```{Admonition} Troubleshooting
@@ -55,7 +81,6 @@ This package has three functionality options. These are realized as `extras` but
   ```
 - `TEST`:
   - intended for running (or developing) tests for the package
-  - must be installed in addition to one of the other `extras`
 
 ```{Warning}
 Detection models exported with GPU support enabled will not work with a CPU-only installation.

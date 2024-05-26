@@ -41,7 +41,8 @@ elif platform.system() == "Windows":
 elif platform.system() == "Linux":
     binaries += [
         (site_packages + '/torchaudio/lib/libtorchaudio.so', './torchaudio/lib'),
-        (site_packages + '/torchaudio/lib/libtorchaudio_ffmpeg.so', './torchaudio/lib'),
+        # appears to have been removed in newer versions of torchaudio
+        # (site_packages + '/torchaudio/lib/libtorchaudio_ffmpeg.so', './torchaudio/lib'),
         (site_packages + '/torchaudio/lib/libtorchaudio_sox.so', './torchaudio/lib'),
         (site_packages + '/torchvision/image.so', './torchvision'),
     ]

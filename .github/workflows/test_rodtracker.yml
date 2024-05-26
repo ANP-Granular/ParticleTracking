@@ -1,21 +1,23 @@
 name: Test RodTracker
 on:
   push:
-    branches: 
+    branches:
       - main
       - develop
     paths:
       - 'RodTracker/**'
   pull_request:
-    branches: 
+    branches:
       - main
       - develop
     paths:
       - 'RodTracker/**'
+  schedule:
+    - cron: '0 16 * * 5'
   workflow_dispatch:
 
 jobs:
-    tests: 
+    tests:
         runs-on: ubuntu-latest
         continue-on-error: true
         strategy:

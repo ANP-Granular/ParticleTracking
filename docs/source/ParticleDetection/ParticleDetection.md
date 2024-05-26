@@ -58,7 +58,7 @@ Individual values of this configuration are then adjusted further. Additionally,
 
 The first training step is then performed in `train_heads()`. Here the initialized configuration is modified further, i.e. to freeze certain layers in the model for this training step. Furthermore, the model weights are set, here by inserting those from a pre-trained network. If parts of the new model's layers differ from those of the pre-trained one, only the matching layers will be given the pre-trained weights.
 
-The last shown step performed by `train_all_s1()` is another model training step. Here, the final weights from `train_heads()` are taken and this time the whole network is trained. 
+The last shown step performed by `train_all_s1()` is another model training step. Here, the final weights from `train_heads()` are taken and this time the whole network is trained.
 
 The end result is a `model_final.pth` file containing the trained weights and the `configuration.yaml` file containing the model structure. Together they can be used to obtain particle segmentations in new images.
 
@@ -115,12 +115,12 @@ The script below assumes a working folder that contains the following image file
 ├── your_images
 │    ├── gp1
 │    │   ├── 0001.jpg
-│    │   ├── 0002.jpg 
+│    │   ├── 0002.jpg
 │    │   ...
 │    │   └── 0321.jpg
 │    └── gp2
 │        ├── 0001.jpg
-│        ├── 0002.jpg 
+│        ├── 0002.jpg
 │        ...
 │        └── 0321.jpg
 ├── your_model
@@ -141,7 +141,7 @@ The script below assumes a working folder that contains the following image file
 
   #. The output might contain particles from classes that are not actually present. Select only the classes that are known to be present in the images to avoid problems.
 
-  #. Not all particles might be detected by the network. Make sure, that 'dummy' particles are inserted instead of missing ones, to avoid problems in the tracking step. See :func:`ParticleDetection.utils.helper_funcs.rod_endpoints` on how to define expected amounts of particles per frame. 
+  #. Not all particles might be detected by the network. Make sure, that 'dummy' particles are inserted instead of missing ones, to avoid problems in the tracking step. See :func:`ParticleDetection.utils.helper_funcs.rod_endpoints` on how to define expected amounts of particles per frame.
 ```
 
 This script yields multiple `*.csv` files in the `your_output` directory. Each detected particle class is saved to a `rods_df_{classname}.csv` file, e.g. `rods_df_red.csv` with all particles saved to `rods_df.csv`. From the detected segmentation masks two endpoints were generated, that will represent the rod from now on.

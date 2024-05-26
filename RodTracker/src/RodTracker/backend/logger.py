@@ -17,10 +17,7 @@
 """**TBD**"""
 
 import logging
-import os
 import pathlib
-import subprocess
-import sys
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Iterable, List, Optional, Union
@@ -30,14 +27,8 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QListWidgetItem
 
 import RodTracker.ui.rodnumberwidget as rn
-from RodTracker import LOG_FILE
 
 _logger = logging.getLogger(__name__)
-
-
-def exception_logger(e_type, e_value, e_tb):
-    """Handler for logging uncaught exceptions during the program flow."""
-    _logger.exception("Uncaught exception:", exc_info=(e_type, e_value, e_tb))
 
 
 def qt_error_handler(
@@ -62,15 +53,6 @@ def qt_error_handler(
 
 
 QtCore.qInstallMessageHandler(qt_error_handler)
-
-
-def open_logs():
-    """Opens the log file."""
-    if sys.platform == "win32":
-        os.startfile(LOG_FILE)
-    else:
-        opener = "open" if sys.platform == "darwin" else "xdg-open"
-        subprocess.run([opener, LOG_FILE])
 
 
 class FileActions(Enum):
