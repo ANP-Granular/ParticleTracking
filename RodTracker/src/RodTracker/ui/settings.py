@@ -16,7 +16,8 @@
 
 # TODO: add docs
 from abc import abstractmethod
-from typing import Tuple, Any
+from typing import Any, Tuple
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
@@ -30,8 +31,7 @@ class Setting(QtWidgets.QWidget):
         self.default_val = default_value
 
     @abstractmethod
-    def set_value_silently(self, new_value: Any):
-        ...
+    def set_value_silently(self, new_value: Any): ...  # noqa: E704
 
     def restore_default(self):
         self.set_value_silently(self.default_val)

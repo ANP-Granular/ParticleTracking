@@ -18,6 +18,7 @@
 
 from enum import Enum
 from typing import List
+
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
 

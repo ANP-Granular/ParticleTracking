@@ -1,8 +1,10 @@
 import logging
-from PyQt5 import QtWidgets, QtGui
-from RodTracker.ui.mainwindow import RodTrackWindow
-from RodTracker.ui.settings import IntSetting, ColorSetting, FloatSetting
+
+from PyQt5 import QtGui, QtWidgets
+
 from RodTracker.backend.settings import Settings
+from RodTracker.ui.mainwindow import RodTrackWindow
+from RodTracker.ui.settings import ColorSetting, FloatSetting, IntSetting
 
 _logger = logging.getLogger(__name__)
 
@@ -15,7 +17,7 @@ def setup(
 ):
     try:
         # load all required modules
-        from . import display_tab, data, rod_tree, rods
+        from . import data, display_tab, rod_tree, rods
     except ModuleNotFoundError as e:
         _logger.error(f"Extension is missing a module: {e}")
 

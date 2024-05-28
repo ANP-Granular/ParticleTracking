@@ -29,20 +29,21 @@ lock : QReadWriteLock
 
 import logging
 import math
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple, Union
 
 import pandas as pd
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
-from RodTracker.backend import data
-import RodTracker.backend.logger as lg
-import RodTracker.backend.file_locations as fl
-import RodTracker.backend.parallelism as pl
 import RodTracker
+import RodTracker.backend.file_locations as fl
+import RodTracker.backend.logger as lg
+import RodTracker.backend.parallelism as pl
+from RodTracker.backend import data
+
 from . import actions, dialogs
 
 if sys.version_info < (3, 12):

@@ -17,8 +17,8 @@
 import importlib.util
 import inspect
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import importlib_resources
 from PyQt5 import QtCore, QtGui, QtWidgets

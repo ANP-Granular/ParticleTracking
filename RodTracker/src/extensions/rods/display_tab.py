@@ -14,13 +14,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with RodTracker.  If not, see <http://www.gnu.org/licenses/>.
 """**TBD**"""
-import math
 import logging
+import math
 from typing import Any, List, Union
 
 import numpy as np
 import pandas as pd
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QInputDialog
 
@@ -28,8 +28,8 @@ import RodTracker.backend.logger as lg
 import RodTracker.backend.settings as se
 import RodTracker.ui.dialogs as dlg
 from RodTracker.ui import tabs
-from . import actions, dialogs, rods
 
+from . import actions, dialogs, rods
 
 _logger = logging.getLogger(__name__)
 

@@ -17,13 +17,14 @@
 """**TBD**"""
 
 
-from enum import Enum, auto
 import logging
-from typing import Optional, Iterable, Union, List
+from enum import Enum, auto
+from typing import Iterable, List, Optional, Union
 
 import numpy as np
 
 from RodTracker.backend.logger import Action
+
 from . import rods
 
 _logger = logging.getLogger(__name__)

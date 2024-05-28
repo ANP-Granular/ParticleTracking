@@ -16,9 +16,11 @@
 
 """**TBD**"""
 from typing import Any
-from PyQt5 import QtCore, QtWidgets, QtGui
-from RodTracker.ui import tabs
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
 import RodTracker.backend.logger as lg
+from RodTracker.ui import tabs
 
 
 class RodTree(QtWidgets.QTreeWidget, tabs.UtilityTab):
