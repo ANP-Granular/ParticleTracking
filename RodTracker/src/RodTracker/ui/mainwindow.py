@@ -16,23 +16,22 @@
 
 """**TBD**"""
 import logging
-from pathlib import Path
 import platform
-from typing import Any, Callable, Dict, List
+from pathlib import Path
+from typing import Any, Dict, List
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QWheelEvent
-from PyQt5.QtWidgets import (
-    QMessageBox,
-    QRadioButton,
-    QScrollArea,
-)
-from PyQt5.QtGui import QWheelEvent
-from RodTracker.backend import data
+from PyQt5.QtWidgets import QMessageBox, QRadioButton, QScrollArea
 
 import RodTracker.backend.file_locations as fl
-from RodTracker.ui import dialogs, settings, tabs
+import RodTracker.backend.logger as lg
+import RodTracker.backend.miscellaneous as misc
+import RodTracker.backend.settings as se
 import RodTracker.ui.mainwindow_layout as mw_l
+from RodTracker import APPNAME
+from RodTracker.backend import data
+from RodTracker.ui import dialogs, settings, tabs
 
 _logger = logging.getLogger(__name__)
 
@@ -249,21 +248,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_about_qt.triggered.connect(
             lambda: QMessageBox.aboutQt(self, APPNAME)
         )
-        self.ui.action_logs.triggered.connect(lg.open_logs)
-        self.ui.action_bug_report.triggered.connect(
-            lambda: QtGui.QDesktopServices.openUrl(
-                QtCore.QUrl(
-                    "https://github.com/ANP-Granular/ParticleTracking/issues/new?labels=bug&projects=&template=bug_report.md&title="  # noqa: E501
-                )
-            )
-        )
-        self.ui.action_feature_request.triggered.connect(
-            lambda: QtGui.QDesktopServices.openUrl(
-                QtCore.QUrl(
-                    "https://github.com/ANP-Granular/ParticleTracking/issues/new?labels=enhancement&projects=&template=feature_request.md&title="  # noqa: E501
-                )
-            )
-        )
+        self.ui.action_logs.triggered.connect(misc.open_logs)
+        self.ui.action_bug_report.triggered.connect(misc.report_issue)
+        self.ui.action_feature_request.triggered.connect(misc.request_feature)
 
     @QtCore.pyqtSlot(int)
     def slider_moved(self, pos: int):
@@ -662,17 +649,19 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             data_obj = self._particle_data_conntections[
                 self._image_tabs[new_idx].ID
             ]
-            reconnect(self.ui.pb_save_rods.clicked, data_obj.save)
-            reconnect(self.ui.pb_load_rods.clicked, data_obj.select_data)
-            reconnect(self.ui.le_rod_dir.returnPressed, data_obj.select_data)
-            reconnect(self.class_changed, data_obj.update_2D_data)
+            misc.reconnect(self.ui.pb_save_rods.clicked, data_obj.save)
+            misc.reconnect(self.ui.pb_load_rods.clicked, data_obj.select_data)
+            misc.reconnect(
+                self.ui.le_rod_dir.returnPressed, data_obj.select_data
+            )
+            misc.reconnect(self.class_changed, data_obj.update_2D_data)
 
             # connect the image tab with its data provider functions
-            reconnect(
+            misc.reconnect(
                 data_obj.position_data_2d,
                 self._image_tabs[new_idx].extract_particles,
             )
-            reconnect(
+            misc.reconnect(
                 self._image_tabs[new_idx].image_manager.next_img[int, int],
                 data_obj.set_frame,
             )

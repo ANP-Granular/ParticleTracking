@@ -18,9 +18,6 @@
 
 import json
 import logging
-import os
-import subprocess
-import sys
 from typing import Any
 
 from PyQt5 import QtCore
@@ -28,21 +25,6 @@ from PyQt5 import QtCore
 from RodTracker import SETTINGS_FILE, Singleton
 
 _logger = logging.getLogger(__name__)
-
-
-def open_settings() -> None:
-    """Opens the settings file."""
-    if sys.platform == "win32":
-        os.startfile(SETTINGS_FILE)
-    elif sys.platform == "darwin":
-        subprocess.run(["open", SETTINGS_FILE])
-    elif sys.platform == "linux":
-        subprocess.run(["xdg-open", SETTINGS_FILE])
-    else:
-        _logger.warning(
-            "Attempting to open the settings on an unknown "
-            f"platform ({sys.platform})"
-        )
 
 
 class UnknownSettingError(KeyError):

@@ -18,14 +18,14 @@
 import logging
 from typing import Any, Iterable, Tuple
 
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
-import RodTracker.backend.settings as se
-from RodTracker.ui import settings
-
-import RodTracker.backend.logger as lg
 import RodTracker.backend.file_locations as fl
+import RodTracker.backend.logger as lg
+import RodTracker.backend.miscellaneous as misc
+import RodTracker.backend.settings as se
 from RodTracker.backend.data import ImageData
+from RodTracker.ui import settings
 
 _logger = logging.getLogger(__name__)
 
@@ -553,7 +553,7 @@ class SettingsTab(UtilityTab):
         self.pb_open_settings.setMinimumSize(QtCore.QSize(0, 0))
         self.pb_open_settings.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.pb_open_settings.setText("Open Settings File")
-        self.pb_open_settings.clicked.connect(lambda _: se.open_settings())
+        self.pb_open_settings.clicked.connect(lambda _: misc.open_settings())
 
         outer_layout.addWidget(self.pb_open_settings)
         outer_layout.addWidget(self.sa_settings)

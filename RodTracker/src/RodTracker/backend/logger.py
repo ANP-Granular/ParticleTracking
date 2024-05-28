@@ -16,24 +16,22 @@
 
 """**TBD**"""
 
+import logging
+import pathlib
+import tempfile
 from abc import abstractmethod
 from enum import Enum
-import logging
-import os
-import pathlib
-import sys
-import subprocess
-import tempfile
-from typing import Optional, Iterable, List
+from typing import Iterable, List, Optional
 
-from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5 import QtCore
+from PyQt5.QtWidgets import QListWidgetItem
 
-from RodTracker import LOG_FILE, DATA_DIR, Singleton
+from RodTracker import DATA_DIR, Singleton
 
 _logger = logging.getLogger(__name__)
 
 
+# TODO: move to __init__.py?
 def qt_error_handler(
     mode: QtCore.QtMsgType, context: QtCore.QMessageLogContext, msg: str
 ):
@@ -55,6 +53,7 @@ def qt_error_handler(
         _logger.debug(context_info + f"{msg}")
 
 
+# TODO: move to __init__.py?
 QtCore.qInstallMessageHandler(qt_error_handler)
 
 

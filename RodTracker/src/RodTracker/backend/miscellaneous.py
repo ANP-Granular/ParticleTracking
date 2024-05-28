@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 import sys
@@ -6,6 +7,8 @@ from typing import Callable
 from PyQt5 import QtCore, QtGui
 
 import RodTracker
+
+_logger = logging.getLogger(__name__)
 
 
 def blank_icon() -> QtGui.QIcon:
@@ -34,6 +37,21 @@ def open_logs():
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
         subprocess.run([opener, RodTracker.LOG_FILE])
+
+
+def open_settings() -> None:
+    """Opens the settings file."""
+    if sys.platform == "win32":
+        os.startfile(RodTracker.SETTINGS_FILE)
+    elif sys.platform == "darwin":
+        subprocess.run(["open", RodTracker.SETTINGS_FILE])
+    elif sys.platform == "linux":
+        subprocess.run(["xdg-open", RodTracker.SETTINGS_FILE])
+    else:
+        _logger.warning(
+            "Attempting to open the settings on an unknown "
+            f"platform ({sys.platform})"
+        )
 
 
 def report_issue():

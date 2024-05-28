@@ -18,11 +18,11 @@
 
 import platform
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtGui, QtWidgets
 
 import RodTracker.backend.file_locations as fl
 from RodTracker import APPNAME
-from RodTracker._version import __version__, __date__
+from RodTracker._version import __date__, __version__
 
 
 def show_warning(text: str):
@@ -177,7 +177,7 @@ def show_about(parent: QtWidgets.QWidget):
         <br>
         <br>
         <p>
-            Copyright © 2023 Adrian Niemann, Dmitry Puzyrev
+            Copyright © 2023-2024 Adrian Niemann, Dmitry Puzyrev
         </p>
         """
     )
@@ -188,38 +188,3 @@ def show_about(parent: QtWidgets.QWidget):
         _ = QtWidgets.QWidget()
         _.setWindowIcon(QtGui.QIcon(fl.logo_path()))
         QtWidgets.QMessageBox.about(_, f"About {APPNAME}", about_txt)
-
-
-class ConflictDialog(QtWidgets.QMessageBox):
-    """Dialog for switching rod numbers in various modes."""
-
-    def __init__(self, last_id, new_id, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-        self.setIcon(QtWidgets.QMessageBox.Warning)
-        self.setWindowTitle(APPNAME)
-        self.setText(
-            f"A rod number switching attempt of"
-            f"#{last_id} <---> #{new_id} was detected. \nHow shall "
-            f"this conflict be resolved?"
-        )
-        self.btn_switch_all = self.addButton(
-            "Switch in:\nBoth views, following frames",
-            QtWidgets.QMessageBox.ActionRole,
-        )
-        self.btn_one_cam = self.addButton(
-            "Switch in:\nThis view, following " "frames",
-            QtWidgets.QMessageBox.ActionRole,
-        )
-        self.btn_both_cams = self.addButton(
-            "Switch in:\nBoth views, this frame",
-            QtWidgets.QMessageBox.ActionRole,
-        )
-        self.btn_only_this = self.addButton(
-            "Switch in:\nThis view, this frame",
-            QtWidgets.QMessageBox.ActionRole,
-        )
-        self.btn_cancel = self.addButton(QtWidgets.QMessageBox.Abort)
-        self.setDefaultButton(self.btn_switch_all)
-        self.setEscapeButton(self.btn_cancel)
