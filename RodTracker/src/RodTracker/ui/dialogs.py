@@ -1,4 +1,4 @@
-# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
+# Copyright (c) 2023-24 Adrian Niemann, and others
 #
 # This file is part of RodTracker.
 # RodTracker is free software: you can redistribute it and/or modify
@@ -8,7 +8,7 @@
 #
 # RodTracker is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -177,7 +177,7 @@ def show_about(parent: QtWidgets.QWidget):
         <br>
         <br>
         <p>
-            Copyright © 2023-2024 Adrian Niemann, Dmitry Puzyrev
+            Copyright © 2023-2024 Adrian Niemann, Dmitry Puzyrev, and others
         </p>
         """
     )
