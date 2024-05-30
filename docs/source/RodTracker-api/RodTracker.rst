@@ -11,3 +11,4 @@ RodTracker package
 
    RodTracker.backend
    RodTracker.ui
+   extensions

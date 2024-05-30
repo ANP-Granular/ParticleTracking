@@ -1,7 +1,7 @@
-RodTracker.ui.rod\_tree
+RodTracker.backend.data
 -----------------------
 
-.. automodule:: RodTracker.ui.rod_tree
+.. automodule:: RodTracker.backend.data
    :members:
    :undoc-members:
    :show-inheritance:

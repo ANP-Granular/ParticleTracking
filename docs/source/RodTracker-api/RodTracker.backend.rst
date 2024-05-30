@@ -9,12 +9,9 @@ RodTracker.backend
 .. toctree::
    :maxdepth: 2
 
-   backend/detection
+   backend/data
    backend/file_locations
-   backend/img_data
    backend/logger
    backend/miscellaneous
    backend/parallelism
-   backend/reconstruction
-   backend/rod_data
    backend/settings

@@ -9,14 +9,8 @@ RodTracker.ui
 .. toctree::
    :maxdepth: 2
 
-   ui/detection
    ui/dialogs
-   ui/loggerwidget
    ui/mainwindow_layout
    ui/mainwindow
-   ui/reconstruction
-   ui/rod_tree
-   ui/rodimagewidget
-   ui/rodnumberwidget
-   ui/settings_setup
-   ui/view3d
+   ui/settings
+   ui/tabs
