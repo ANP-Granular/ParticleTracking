@@ -77,6 +77,13 @@ On macOS the generated folder is additionally converted into a `RodTracker.app` 
 - (Linux) `dist/unix/RodTracker/RodTracker`
 - (macOS) `dist/unix/RodTracker.app`
 
+```{hint}
+On Windows 11 builds with `PyInstaller>6.5.0` crash because Microsoft Defender Antivirus flags an intermediate file as a virus.
+To avoid this an exclusion for `./RodTracker/dist` and `./RodTracker/build` must be added in the Virus & threat protection.
+
+See [this post](https://stackoverflow.com/a/77839519) for more information.
+```
+
 ```{warning}
 On Windows make sure that no other process, e.g. Dropbox, attempts to access files necessary for the build during this step. Otherwise an `OSError: [WinError 110]` might occur and break the process.
 

@@ -62,7 +62,10 @@ def main():
     main_window = mw.RodTrackWindow()
 
     # Load extensions
-    for entry in (Path(__file__).parent.parent / "extensions").iterdir():
+    extension_folder = Path(__file__).parent.parent / "extensions"
+    if hasattr(sys, "_MEIPASS"):
+        extension_folder = Path(__file__).parent / "extensions"
+    for entry in extension_folder.iterdir():
         if not entry.is_dir() or entry.stem == "__pycache__":
             continue
         next_extension = entry.stem
