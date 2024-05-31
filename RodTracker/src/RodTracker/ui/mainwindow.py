@@ -665,6 +665,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self._image_tabs[new_idx].image_manager.next_img[int, int],
                 data_obj.set_frame,
             )
+            self._image_tabs[new_idx].image_manager.next_img[int, int].connect(
+                self.update_image_slider
+            )
 
         except KeyError:
             # Image interaction tab is not associated to a position data object
@@ -690,6 +693,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 idx_diff = manager.frames.index(old_frame) - manager.frame_idx
                 self.show_next(idx_diff)
         # =====================================================================
+
+    # TODO: add docs
+    def update_image_slider(self, frame: int, frame_idx: int):
+        self.ui.le_frame_disp.setText(f"Frame: {frame}")
+        self.ui.slider_frames.setSliderPosition(frame_idx)
 
     @QtCore.pyqtSlot(int)
     def utility_changed(self, new_idx: int):
