@@ -46,6 +46,12 @@ f_handle.setFormatter(formatter)
 logger.addHandler(f_handle)
 logging.captureWarnings(True)
 
+
+def _set_log_level(level: int):
+    logger.setLevel(level)
+    f_handle.setLevel(level)
+
+
 CONFIG_DIR = platformdirs.user_config_path(
     APPNAME, APPAUTHOR, roaming=False, ensure_exists=True
 )
