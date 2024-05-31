@@ -73,3 +73,8 @@ class Settings(metaclass=Singleton):
         with open(SETTINGS_FILE, "w") as out:
             out.write(to_file)
         self.setting_signals.setting_changed.emit(key, new_value)
+
+    # TODO: add docs
+    def propagate_all_settings(self):
+        for k, v in self._settings.items():
+            self.setting_signals.setting_changed.emit(k, v)

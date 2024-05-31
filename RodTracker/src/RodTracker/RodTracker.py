@@ -90,6 +90,10 @@ def main():
                 f"Failed to load extension '{next_extension}':",
                 exc_info=sys.exc_info(),
             )
+
+    splash.showMessage("Loading settings ...", align, color)
+    main_window.settings.propagate_all_settings()
+
     splash.showMessage("Starting ...", align, color)
     main_window.ensure_usable()
     splash.finish(main_window)
