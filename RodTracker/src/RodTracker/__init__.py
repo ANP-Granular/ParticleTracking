@@ -20,7 +20,7 @@ from pathlib import Path
 from types import TracebackType
 
 import platformdirs
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 import RodTracker.backend.file_locations as fl
 import RodTracker.backend.miscellaneous as misc
@@ -112,6 +112,30 @@ def exception_logger(
         ErrorDialog(e_type, e_value, e_tb, app.desktop()).exec()
     else:
         ErrorDialog(e_type, e_value, e_tb, app.desktop()).show()
+
+
+def qt_error_handler(
+    mode: QtCore.QtMsgType, context: QtCore.QMessageLogContext, msg: str
+):
+    """Handler for logging uncaught Qt exceptions during the program flow."""
+    context_info = (
+        f"category: {context.category}\n"
+        f"function: {context.function}, line: {context.line}\n"
+        f"file: {context.file}\n"
+    )
+    if mode == QtCore.QtInfoMsg:
+        ERROR_LOGGER.info(context_info + f"{msg}")
+    elif mode == QtCore.QtWarningMsg:
+        ERROR_LOGGER.warning(context_info + f"{msg}")
+    elif mode == QtCore.QtCriticalMsg:
+        ERROR_LOGGER.critical(context_info + f"{msg}")
+    elif mode == QtCore.QtFatalMsg:
+        ERROR_LOGGER.error(context_info + f"{msg}")
+    else:
+        ERROR_LOGGER.debug(context_info + f"{msg}")
+
+
+QtCore.qInstallMessageHandler(qt_error_handler)
 
 
 # TODO: add docs

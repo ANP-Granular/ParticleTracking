@@ -31,32 +31,6 @@ from RodTracker import DATA_DIR, Singleton
 _logger = logging.getLogger(__name__)
 
 
-# TODO: move to __init__.py?
-def qt_error_handler(
-    mode: QtCore.QtMsgType, context: QtCore.QMessageLogContext, msg: str
-):
-    """Handler for logging uncaught Qt exceptions during the program flow."""
-    context_info = (
-        f"category: {context.category}\n"
-        f"function: {context.function}, line: {context.line}\n"
-        f"file: {context.file}\n"
-    )
-    if mode == QtCore.QtInfoMsg:
-        _logger.info(context_info + f"{msg}")
-    elif mode == QtCore.QtWarningMsg:
-        _logger.warning(context_info + f"{msg}")
-    elif mode == QtCore.QtCriticalMsg:
-        _logger.critical(context_info + f"{msg}")
-    elif mode == QtCore.QtFatalMsg:
-        _logger.error(context_info + f"{msg}")
-    else:
-        _logger.debug(context_info + f"{msg}")
-
-
-# TODO: move to __init__.py?
-QtCore.qInstallMessageHandler(qt_error_handler)
-
-
 class FileActions(Enum):
     """Helper class holding all valid kinds of :class:`FileActions`.
 
