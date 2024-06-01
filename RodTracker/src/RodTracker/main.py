@@ -24,7 +24,6 @@ import importlib_resources
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 import RodTracker
-from RodTracker.backend.settings import Settings, UnknownSettingError
 
 _logger = logging.getLogger(RodTracker.APPNAME)
 
@@ -38,6 +37,8 @@ def main():
     sys.excepthook = lambda t, val, tb: RodTracker.exception_logger(
         t, val, tb, use_exec=False
     )
+
+    from RodTracker.backend.settings import Settings, UnknownSettingError
 
     try:
         val = Settings().get_setting("internal.log_level")

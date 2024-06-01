@@ -20,11 +20,10 @@ import sys
 
 
 def test_path_addition():
-    import RodTracker.RodTracker
+    import RodTracker.main
 
     assert (
-        str(pathlib.Path(RodTracker.RodTracker.__file__).parent.parent)
-        in sys.path
+        str(pathlib.Path(RodTracker.main.__file__).parent.parent) in sys.path
     )
 
 

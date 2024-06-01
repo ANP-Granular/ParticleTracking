@@ -60,7 +60,7 @@ elif platform.system() == "Linux":
     ]
 
 a = Analysis(
-    ["../src/RodTracker/RodTracker.py"],
+    ["../src/RodTracker/main.py"],
     pathex=["."],
     binaries=binaries,
     datas=[
