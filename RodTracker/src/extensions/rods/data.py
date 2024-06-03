@@ -413,7 +413,9 @@ class RodData(data.PositionData):
         worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
         self.is_busy.emit(True)
         worker.signals.result.connect(lambda ret: self.seen_loaded.emit(*ret))
-        worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+        worker.signals.error.connect(
+            lambda ret: RodTracker.exception_logger(*ret)
+        )
         self.threads.start(worker)
 
         # Rod position data was selected correctly
@@ -831,7 +833,9 @@ class RodData(data.PositionData):
             worker.signals.result.connect(
                 lambda ret: self.seen_loaded.emit(*ret)
             )
-            worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+            worker.signals.error.connect(
+                lambda ret: RodTracker.exception_logger(*ret)
+            )
             self.threads.start(worker)
 
             self.data_loaded[list].emit(colors)
@@ -898,7 +902,7 @@ class RodData(data.PositionData):
                     lambda ret: self.seen_loaded.emit(*ret)
                 )
                 worker.signals.error.connect(
-                    lambda ret: lg.exception_logger(*ret)
+                    lambda ret: RodTracker.exception_logger(*ret)
                 )
                 self.threads.start(worker)
                 return
@@ -929,7 +933,9 @@ class RodData(data.PositionData):
             worker.signals.result.connect(
                 lambda ret: self.batch_update.emit(*ret)
             )
-            worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+            worker.signals.error.connect(
+                lambda ret: RodTracker.exception_logger(*ret)
+            )
             self.threads.start(worker)
 
     @QtCore.pyqtSlot(lg.Action)
@@ -961,7 +967,9 @@ class RodData(data.PositionData):
         worker.signals.result.connect(
             lambda _: self.provide_data(data_3d=False)
         )
-        worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+        worker.signals.error.connect(
+            lambda ret: RodTracker.exception_logger(*ret)
+        )
         self.threads.start(worker)
 
         if isinstance(new_data["frame"], Iterable):
@@ -1030,7 +1038,9 @@ class RodData(data.PositionData):
         worker.signals.result.connect(
             lambda _: self.provide_data(data_3d=False)
         )
-        worker.signals.error.connect(lambda ret: lg.exception_logger(*ret))
+        worker.signals.error.connect(
+            lambda ret: RodTracker.exception_logger(*ret)
+        )
         self.threads.start(worker)
         return
 
@@ -1195,7 +1205,7 @@ class RodData(data.PositionData):
                         lambda ret: self.seen_loaded.emit(*ret)
                     )
                     worker.signals.error.connect(
-                        lambda ret: lg.exception_logger(*ret)
+                        lambda ret: RodTracker.exception_logger(*ret)
                     )
                     self.threads.start(worker)
 
@@ -1303,6 +1313,7 @@ def change_data(new_data: dict) -> None:
         ``"frame"``, ``"cam_id"``, ``"color"``, ``"position"``, ``"rod_id"``.
     """
     global rod_data
+    _logger.debug(f"Attempting to change rod_data with new_data: {new_data}")
     lock.lockForWrite()
     frame = new_data["frame"]
     cam_id = new_data["cam_id"]
