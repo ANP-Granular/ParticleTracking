@@ -1,0 +1,4 @@
+opencv-python-headless
+pandas
+torch
+torchvision
