@@ -62,6 +62,9 @@ class ImageInteractionTab(QtWidgets.QLabel):
 
         self.logger = lg.MainLogger().get_new_logger(self._id)
         self.image_manager = ImageData()
+        self.image_manager.data_loaded.connect(
+            lambda num, id, folder: self._set_id(id)
+        )
         self.image_manager.next_img[QtGui.QImage].connect(self.image)
 
         # Widget behaviour changes
@@ -79,6 +82,9 @@ class ImageInteractionTab(QtWidgets.QLabel):
         self.setPixmap(QtGui.QPixmap(fl.logo_path()))
         self.setScaledContents(False)
         self.setAlignment(QtCore.Qt.AlignCenter)
+
+    def _set_id(self, new_id: str):
+        self.ID = new_id
 
     def __str__(self) -> str:
         return (

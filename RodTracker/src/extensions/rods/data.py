@@ -1372,6 +1372,8 @@ def change_data(new_data: dict) -> None:
             ],
         ] = [*points, float(seen)]
     rod_data = rod_data.astype({"frame": "int", "particle": "int"})
+    # BUG: rod_data dataframe does NOT KEEP the changes after returning from
+    #      this thread but setting rod_data to None/int/... IS persistent
     lock.unlock()
     return
 

@@ -50,6 +50,16 @@ def setup(
     rod_data = data.RodData()
     main_window.register_position_data(rod_data, [front_view, top_view])
 
+    # Connect position data to views
+    front_view.logger.data_changed.connect(rod_data.data_changed)
+    front_view.image_manager.next_img[int, int].connect(
+        lambda num, idx: front_view.frame(num)
+    )
+    top_view.logger.data_changed.connect(rod_data.data_changed)
+    top_view.image_manager.next_img[int, int].connect(
+        lambda num, idx: top_view.frame(num)
+    )
+
     # Insert utility tabs
     tree_display = rod_tree.RodTree("Rods")
     rod_data.data_update.connect(tree_display.update_tree)

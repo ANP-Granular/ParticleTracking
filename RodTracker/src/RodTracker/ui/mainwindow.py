@@ -72,7 +72,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         - :meth:`tab_has_changes`
         - :meth:`tree_selection`
         - :meth:`update_settings`
-        - :meth:`view_changed`
+        - :meth:`tab_changed`
 
     Attributes
     ----------
@@ -215,8 +215,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             lambda: self.show_next(direction=-1)
         )
         self.ui.pb_next.clicked.connect(lambda: self.show_next(direction=1))
-        self.switch_right.activated.connect(lambda: self.change_view(1))
-        self.ui.camera_tabs.currentChanged.connect(self.view_changed)
+        self.switch_right.activated.connect(lambda: self.change_tab(1))
+        self.ui.camera_tabs.currentChanged.connect(self.tab_changed)
         self.ui.right_tabs.currentChanged.connect(self.utility_changed)
         self.ui.slider_frames.sliderMoved.connect(self.slider_moved)
 
@@ -604,7 +604,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 # Activate the last color
                 rb.toggle()
 
-    def change_view(self, direction: int) -> None:
+    def change_tab(self, direction: int) -> None:
         """Helper method for programmatic changes of the camera tabs."""
         old_idx = self.ui.camera_tabs.currentIndex()
         new_idx = old_idx + direction
@@ -615,7 +615,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.camera_tabs.setCurrentIndex(new_idx)
 
     @QtCore.pyqtSlot(int)
-    def view_changed(self, new_idx: int):
+    def tab_changed(self, new_idx: int):
         """Handles switches between the camera tabs.
 
         Handles the switches between the camera tabs and depending on the
@@ -888,6 +888,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         scroll_area.verticalScrollBar().installEventFilter(self)
         tab.image_manager.data_loaded.connect(self.images_loaded)
         tab.image_manager.next_img[int, int].connect(self.next_image)
+        tab.image_manager.next_img[int, int].connect(
+            lambda num, idx: tab.logger.set_frame(num)
+        )
 
         tab.logger.notify_unsaved.connect(self.tab_has_changes)
 
@@ -981,4 +984,4 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # 'reactivate' the current view, if a data object was added to it
             tab_idx = self.ui.camera_tabs.currentIndex()
             if tab_idx >= 0 and self._image_tabs[tab_idx] == view:
-                self.view_changed(tab_idx)
+                self.tab_changed(tab_idx)

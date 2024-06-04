@@ -319,6 +319,9 @@ class ActionLogger(QtCore.QObject):
             f"with currently {len(self.unsaved_changes)} changes."
         )
 
+    def set_frame(self, new_frame: int) -> None:
+        self.frame = new_frame
+
     def add_action(self, last_action: Action) -> None:
         """Registers the actions performed by its parent and propagates them
         for visual display in the GUI.
@@ -337,7 +340,8 @@ class ActionLogger(QtCore.QObject):
             - :attr:`notify_unsaved`
 
         """
-        last_action.parent_id = self.parent_id
+        if last_action.parent_id is None:
+            last_action.parent_id = self.parent_id
         if last_action.frame is None:
             last_action.frame = self.frame
         self.logged_actions.append(last_action)

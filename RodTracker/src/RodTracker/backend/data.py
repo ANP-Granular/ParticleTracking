@@ -421,6 +421,7 @@ class PositionData(QtCore.QObject):
         se.Settings().setting_signals.setting_changed.connect(
             self.update_settings
         )
+        self.logger.data_changed.connect(self.data_changed)
 
     # FIXME: rename for generalization (previously `select_rods`)
     def select_data(self, pre_selection: str = "") -> None:
