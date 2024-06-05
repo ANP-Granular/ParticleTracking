@@ -33,7 +33,7 @@ repos:
       - id: black
         name: black (RodTracker)
         files: ^RodTracker
-        exclude: '.*/mainwindow_layout.py|.*detection_ui.py'
+        exclude: '.*/mainwindow_layout.py|.*detection_ui.py|.*reconstruction_ui.py'
         args:
           - "--config"
           - "./RodTracker/pyproject.toml"
