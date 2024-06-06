@@ -23,6 +23,9 @@ from RodTracker.ui.mainwindow import RodTrackWindow
 from RodTracker.ui.settings import BoolSetting
 
 _logger = logging.getLogger(__name__)
+REQUIRED_EXTENSIONS = [
+    "rods",
+]
 
 
 def setup(

@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
+import enum
 import logging
 import sys
 from pathlib import Path
@@ -190,3 +191,14 @@ if sys.version_info < (3, 12):
 
         assert any(hasattr(cls, method.__name__) for cls in base_classes)
         return method
+
+
+class ExtensionState(enum.Enum):
+    ACTIVE = enum.auto()
+    DEACTIVATED = enum.auto()
+    BROKEN = enum.auto()
+    MISSING_DEPENDENCY = enum.auto()
+    DELAYED_LOADING = enum.auto()
+    UNAVAILABLE = enum.auto()
+    CIRCULAR_DEPENDENCY = enum.auto()
+    UNDEFINED = enum.auto()

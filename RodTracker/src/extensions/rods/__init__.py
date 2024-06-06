@@ -23,6 +23,7 @@ from RodTracker.ui.mainwindow import RodTrackWindow
 from RodTracker.ui.settings import ColorSetting, FloatSetting, IntSetting
 
 _logger = logging.getLogger(__name__)
+REQUIRED_EXTENSIONS = []
 
 
 def setup(

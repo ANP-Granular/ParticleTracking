@@ -23,6 +23,7 @@ from RodTracker.ui import tabs, settings
 from RodTracker.ui.mainwindow import RodTrackWindow
 
 _logger = logging.getLogger(__name__)
+REQUIRED_EXTENSIONS = []
 
 
 class CustomSetting(settings.Setting):

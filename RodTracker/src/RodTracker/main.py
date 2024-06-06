@@ -19,11 +19,13 @@ import inspect
 import logging
 import sys
 from pathlib import Path
+from typing import Dict, List
 
 import importlib_resources
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 import RodTracker
+from RodTracker import ExtensionState
 
 _logger = logging.getLogger(RodTracker.APPNAME)
 
@@ -71,34 +73,157 @@ def main():
     main_window = mw.RodTrackWindow()
 
     # Load extensions
+    discovered_exts: Dict[str, List[RodTracker.ExtensionState, dict, Path]] = (
+        {}
+    )
     extension_folder = Path(__file__).parent.parent / "extensions"
     if hasattr(sys, "_MEIPASS"):
         extension_folder = Path(__file__).parent / "extensions"
+
+    # Discover available extensions
     for entry in extension_folder.iterdir():
         if not entry.is_dir() or entry.stem == "__pycache__":
             continue
-        next_extension = entry.stem
+        ext = entry.stem
+        discovered_exts[ext] = [
+            ExtensionState.UNDEFINED,
+            {},
+            entry,
+        ]
         if list(entry.glob("DEACTIVATED")):
             # Skip loading if a file named 'DEACTIVATED' is present
-            _logger.info(f"Extension '{next_extension}' is deactived.")
+            _logger.info(f"Extension '{ext}' is deactived.")
+            discovered_exts[ext][0] = ExtensionState.DEACTIVATED
             continue
-        splash.showMessage(
-            f"Loading Extension: {next_extension}", align, color
-        )
+
+    def _try_loading(
+        ext: str, discovered_exts, circ_prevention_list: List[str]
+    ) -> ExtensionState:
+        nonlocal splash, align, color, main_window
+        if discovered_exts[ext][0] not in [
+            ExtensionState.UNDEFINED,
+            ExtensionState.DELAYED_LOADING,
+        ]:
+            return discovered_exts[ext][0]
         try:
             spec = importlib.util.spec_from_file_location(
-                next_extension, entry / "__init__.py"
+                ext, discovered_exts[ext][2] / "__init__.py"
             )
             module = importlib.util.module_from_spec(spec)
-            sys.modules[next_extension] = module
+            sys.modules[ext] = module
             spec.loader.exec_module(module)
+
+            # check extension dependencies
+            break_loading = False
+            for dep in module.REQUIRED_EXTENSIONS:
+                if dep not in discovered_exts.keys():
+                    break_loading = True
+                    discovered_exts[ext][1][dep] = ExtensionState.UNAVAILABLE
+                    discovered_exts[ext][0] = ExtensionState.MISSING_DEPENDENCY
+                    _logger.warning(
+                        f"Extension {ext} cannot be loaded due to missing "
+                        f"dependency {dep}."
+                    )
+                    continue
+
+                dep_state = discovered_exts[dep][0]
+                discovered_exts[ext][1][dep] = dep_state
+                if dep_state is ExtensionState.ACTIVE:
+                    # Dependency is fulfilled
+                    pass
+                elif dep_state is ExtensionState.DELAYED_LOADING:
+                    # WARNING: potential for circular dependency
+                    discovered_exts[ext][0] = ExtensionState.DELAYED_LOADING
+                    # TODO: check for circular dependency
+                    result = _try_loading(
+                        dep, discovered_exts, [*circ_prevention_list, ext]
+                    )
+                    if result is not ExtensionState.ACTIVE:
+                        break_loading = True
+                        discovered_exts[ext][
+                            0
+                        ] = ExtensionState.MISSING_DEPENDENCY
+                        _logger.warning(
+                            f"Extension {ext} cannot be loaded due to a "
+                            f"problem with dependency {dep}."
+                        )
+                elif dep_state is ExtensionState.CIRCULAR_DEPENDENCY:
+                    break_loading = True
+                    discovered_exts[ext][0] = ExtensionState.MISSING_DEPENDENCY
+                    _logger.warning(
+                        f"Extension {ext} cannot be loaded due to dependency "
+                        f"{dep} having a circular dependency."
+                    )
+                elif dep_state is ExtensionState.BROKEN:
+                    break_loading = True
+                    discovered_exts[ext][0] = ExtensionState.MISSING_DEPENDENCY
+                    _logger.warning(
+                        f"Extension {ext} cannot be loaded due to broken "
+                        f"dependency {dep}."
+                    )
+                elif dep_state is ExtensionState.DEACTIVATED:
+                    break_loading = True
+                    discovered_exts[ext][0] = ExtensionState.MISSING_DEPENDENCY
+                    _logger.warning(
+                        f"Extension {ext} cannot be loaded due to deactivated "
+                        f"dependency {dep}."
+                    )
+                elif dep_state is ExtensionState.MISSING_DEPENDENCY:
+                    break_loading = True
+                    discovered_exts[ext][0] = ExtensionState.MISSING_DEPENDENCY
+                    _logger.warning(
+                        f"Extension {ext} cannot be loaded due to dependency "
+                        f"{dep} missing a dependency."
+                    )
+                elif dep_state is ExtensionState.UNDEFINED:
+                    # TODO: check for circular dependency
+                    discovered_exts[ext][0] = ExtensionState.DELAYED_LOADING
+                    # recursively load the dependency
+                    result = _try_loading(
+                        dep, discovered_exts, [*circ_prevention_list, ext]
+                    )
+                    if result is not ExtensionState.ACTIVE:
+                        break_loading = True
+                        discovered_exts[ext][
+                            0
+                        ] = ExtensionState.MISSING_DEPENDENCY
+                        _logger.warning(
+                            f"Extension {ext} cannot be loaded due to a "
+                            f"problem with dependency {dep}."
+                        )
+                else:
+                    # WARNING: this should never occur!
+                    raise ValueError(
+                        "Unknown state discovered during extension loading: "
+                        f"{result}."
+                    )
+            if break_loading:
+                return discovered_exts[ext][0]
+
+            # attempt loading the extension
+            splash.showMessage(f"Loading extension: {ext}", align, color)
             module.setup(splash, main_window=main_window)
-            _logger.info(f"Successfully loaded extension: {next_extension}")
+            _logger.info(f"Successfully loaded extension: {ext}")
+            discovered_exts[ext][0] = ExtensionState.ACTIVE
+            return ExtensionState.ACTIVE
+
         except Exception:
             _logger.error(
-                f"Failed to load extension '{next_extension}':",
+                f"Failed to load extension '{ext}':",
                 exc_info=sys.exc_info(),
             )
+            discovered_exts[ext][0] = ExtensionState.BROKEN
+            return ExtensionState.BROKEN
+
+    for ext in discovered_exts.keys():
+        loading_result = _try_loading(ext, discovered_exts, [ext])
+        if loading_result in [
+            ExtensionState.BROKEN,
+            ExtensionState.CIRCULAR_DEPENDENCY,
+            ExtensionState.MISSING_DEPENDENCY,
+        ]:
+            # TODO: add popup for extensions failing to load
+            pass
 
     splash.showMessage("Loading settings ...", align, color)
     main_window.settings.propagate_all_settings()
