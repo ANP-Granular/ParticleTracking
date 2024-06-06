@@ -134,9 +134,14 @@ def main():
                 elif dep_state is ExtensionState.DELAYED_LOADING:
                     # WARNING: potential for circular dependency
                     discovered_exts[ext][0] = ExtensionState.DELAYED_LOADING
-                    # TODO: check for circular dependency
+                    if dep in circ_prevention_list:
+                        discovered_exts[ext][
+                            0
+                        ] = ExtensionState.CIRCULAR_DEPENDENCY
+                        break_loading = True
+                        continue
                     result = _try_loading(
-                        dep, discovered_exts, [*circ_prevention_list, ext]
+                        dep, discovered_exts, [*circ_prevention_list, dep]
                     )
                     if result is not ExtensionState.ACTIVE:
                         break_loading = True
@@ -176,11 +181,17 @@ def main():
                         f"{dep} missing a dependency."
                     )
                 elif dep_state is ExtensionState.UNDEFINED:
-                    # TODO: check for circular dependency
+                    # WARNING: potential for circular dependency
+                    if dep in circ_prevention_list:
+                        discovered_exts[ext][
+                            0
+                        ] = ExtensionState.CIRCULAR_DEPENDENCY
+                        break_loading = True
+                        continue
                     discovered_exts[ext][0] = ExtensionState.DELAYED_LOADING
                     # recursively load the dependency
                     result = _try_loading(
-                        dep, discovered_exts, [*circ_prevention_list, ext]
+                        dep, discovered_exts, [*circ_prevention_list, dep]
                     )
                     if result is not ExtensionState.ACTIVE:
                         break_loading = True
