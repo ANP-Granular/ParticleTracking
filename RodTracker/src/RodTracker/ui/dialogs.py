@@ -21,7 +21,8 @@ import platform
 from PyQt5 import QtGui, QtWidgets
 
 import RodTracker.backend.file_locations as fl
-from RodTracker import APPNAME
+import RodTracker.backend.miscellaneous as misc
+from RodTracker import APPNAME, ExtensionState
 from RodTracker._version import __date__, __version__
 
 
@@ -177,7 +178,7 @@ def show_about(parent: QtWidgets.QWidget):
         <br>
         <br>
         <p>
-            Copyright © 2023-2024 Adrian Niemann, Dmitry Puzyrev, and others
+            Copyright © 2023-24 Adrian Niemann, and others
         </p>
         """
     )
@@ -188,3 +189,58 @@ def show_about(parent: QtWidgets.QWidget):
         _ = QtWidgets.QWidget()
         _.setWindowIcon(QtGui.QIcon(fl.logo_path()))
         QtWidgets.QMessageBox.about(_, f"About {APPNAME}", about_txt)
+
+
+class ExtensionFailedDialog(QtWidgets.QMessageBox):
+    """Dialog to inform about problems during loading of extensions."""
+
+    def __init__(
+        self,
+        loading_results: dict,
+        parent: QtWidgets.QWidget = None,
+    ):
+        super().__init__(parent=parent)
+        self.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+        self.setModal(False)
+        self.setIcon(QtWidgets.QMessageBox.Warning)
+        self.setWindowTitle(APPNAME)
+        msg_txt = """
+        Failed to load extensions the following extension(s):<br><br>
+        <table border="0" cellpadding="0" cellspacing="5" width="400"
+        align="left" style="margin-top:0px;">
+            <tr>
+                <td width="150"> <b>Extension:</b> </td>
+                <td width="200"> <b>State/Problem:</b> </td>
+            </tr>
+        """
+        for ext in loading_results.keys():
+            state = loading_results[ext][0]
+            if state in [
+                ExtensionState.BROKEN,
+                ExtensionState.CIRCULAR_DEPENDENCY,
+                ExtensionState.MISSING_DEPENDENCY,
+            ]:
+                msg_txt += """
+                <tr>
+                    <td width="150"><b>{}</b></td>
+                    <td width="200"><p>{}</p></td>
+                </tr>
+                """.format(
+                    ext, state
+                )
+        msg_txt += "</table>"
+        self.setText(msg_txt)
+        self.btn_close = self.addButton(
+            "Close", QtWidgets.QMessageBox.AcceptRole
+        )
+        self.btn_report = self.addButton(
+            "Report Bug ", QtWidgets.QMessageBox.ActionRole
+        )
+        self.btn_logs = self.addButton(
+            "Show logs", QtWidgets.QMessageBox.ActionRole
+        )
+        self.setDefaultButton(self.btn_close)
+        self.setEscapeButton(self.btn_close)
+
+        self.btn_logs.clicked.connect(misc.open_logs)
+        self.btn_report.clicked.connect(misc.report_issue)

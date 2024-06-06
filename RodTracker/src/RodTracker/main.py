@@ -226,6 +226,7 @@ def main():
             discovered_exts[ext][0] = ExtensionState.BROKEN
             return ExtensionState.BROKEN
 
+    ext_failed = False
     for ext in discovered_exts.keys():
         loading_result = _try_loading(ext, discovered_exts, [ext])
         if loading_result in [
@@ -233,8 +234,11 @@ def main():
             ExtensionState.CIRCULAR_DEPENDENCY,
             ExtensionState.MISSING_DEPENDENCY,
         ]:
-            # TODO: add popup for extensions failing to load
-            pass
+            ext_failed = True
+    if ext_failed:
+        from RodTracker.ui.dialogs import ExtensionFailedDialog
+
+        ExtensionFailedDialog(discovered_exts, main_window).show()
 
     splash.showMessage("Loading settings ...", align, color)
     main_window.settings.propagate_all_settings()
