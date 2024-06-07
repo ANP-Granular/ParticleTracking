@@ -25,8 +25,10 @@ import torch
 from ParticleDetection.utils import datasets as ds
 from ParticleDetection.utils import detection
 from ParticleDetection.utils import helper_funcs as hf
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 
+import RodTracker.backend.parallelism as pl
+from RodTracker import APPNAME, CONFIG_DIR
 from RodTracker.backend.logger import Action, NotInvertableError
 from RodTracker.ui.tabs import UtilityTab
 
@@ -281,3 +283,50 @@ class DetectorUI(UtilityTab):
         self.ui = Ui_detector_ui()
         self.ui.setupUi(self)
         self.ui.progress_detection.setValue(100)
+        self.ui.pb_use_example.clicked.connect(self._use_example_model)
+
+        self._threads = QtCore.QThreadPool.globalInstance()
+        self.model: torch.ScriptModule = None
+
+    def _use_example_model(self):
+        example_model_file = CONFIG_DIR / "example_model.pt"
+        _logger.info(example_model_file)
+        example_model_url = (
+            "https://zenodo.org/records/10255525/files/model_cpu.pt?download=1"
+        )
+
+        if not example_model_file.exists():
+            _logger.info("Attempting to download the example model.")
+            msg_box = QtWidgets.QMessageBox(
+                icon=QtWidgets.QMessageBox.Information,
+                text=(
+                    "Downloading the example model file ... "
+                    "<br><br><b>Please wait until this window closes.</b>"
+                ),
+                parent=self,
+            )
+            msg_box.setStandardButtons(QtWidgets.QMessageBox.Close)
+            msg_box.button(QtWidgets.QMessageBox.Close).setEnabled(False)
+            msg_box.setWindowTitle(APPNAME)
+
+            worker = pl.Worker(
+                lambda: torch.hub.download_url_to_file(
+                    example_model_url,
+                    str(example_model_file.resolve()),
+                    progress=False,
+                )
+            )
+            worker.signals.result.connect(lambda ret: msg_box.close())
+            worker.signals.result.connect(
+                lambda ret: self._load_model(str(example_model_file.resolve()))
+            )
+
+            self._threads.start(worker)
+            msg_box.exec()
+        else:
+            self._load_model(str(example_model_file.resolve()))
+
+    def _load_model(self, file: str):
+        self.ui.le_model.setText(file)
+        self.model = torch.jit.load(file)
+        self.ui.pb_detect.setEnabled(True)

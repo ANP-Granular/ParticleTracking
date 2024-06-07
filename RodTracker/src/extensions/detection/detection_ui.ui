@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_13" stretch="0,0,0">
+    <layout class="QHBoxLayout" name="horizontalLayout_13" stretch="0,0,0,0">
      <item>
       <widget class="QLabel" name="lbl_model">
        <property name="text">
@@ -30,6 +30,19 @@
       <widget class="QToolButton" name="tb_model">
        <property name="text">
         <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pb_use_example">
+       <property name="font">
+        <font>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Use Example Model</string>
        </property>
       </widget>
      </item>
@@ -255,16 +268,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QProgressBar" name="progress_detection">
-     <property name="value">
-      <number>24</number>
-     </property>
-     <property name="invertedAppearance">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
     <spacer name="verticalSpacer_4">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -276,6 +279,16 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item>
+    <widget class="QProgressBar" name="progress_detection">
+     <property name="value">
+      <number>24</number>
+     </property>
+     <property name="invertedAppearance">
+      <bool>false</bool>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
