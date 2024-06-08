@@ -34,11 +34,8 @@ def setup(
     *args,
     **kwargs,
 ):
-    try:
-        # load all required modules
-        from . import reconstruction
-    except ModuleNotFoundError as e:
-        _logger.error(f"Extension is missing a module: {e}")
+    # load all required modules
+    from . import reconstruction
 
     # Insert menus/menu items
     pass

@@ -15,7 +15,6 @@
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from pathlib import Path
 
 from PyQt5 import QtWidgets
 
@@ -33,13 +32,8 @@ def setup(
     *args,
     **kwargs,
 ):
-    try:
-        # load all modules
-        from . import detection
-
-    except ModuleNotFoundError as e:
-        _logger.error(f"Extension is missing a module: {e}")
-        # install()
+    # load all modules
+    from . import detection
 
     # Insert menus/menu items
     pass
@@ -53,14 +47,3 @@ def setup(
     pass
 
     _logger.debug("Initalization is not fully implemented.")
-
-
-def install():
-    # Try installing requirements from file
-    import subprocess
-    import sys
-
-    req_path = Path(__file__).parent / "requirements.txt"
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "-r", str(req_path)]
-    )

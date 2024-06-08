@@ -32,11 +32,8 @@ def setup(
     *args,
     **kwargs,
 ):
-    try:
-        # load all required modules
-        from . import data, display_tab, rod_tree, rods
-    except ModuleNotFoundError as e:
-        _logger.error(f"Extension is missing a module: {e}")
+    # load all required modules
+    from . import data, display_tab, rod_tree, rods
 
     # Insert image interaction tabs
     front_view = display_tab.RodImageTab()

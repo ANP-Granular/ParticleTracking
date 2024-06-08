@@ -57,6 +57,9 @@ CONFIG_DIR = platformdirs.user_config_path(
     APPNAME, APPAUTHOR, roaming=False, ensure_exists=True
 )
 SETTINGS_FILE = CONFIG_DIR / "settings.json"
+INSTALLED_EXTS_FILE = CONFIG_DIR / "installed_exts.txt"
+if not INSTALLED_EXTS_FILE.exists():
+    open(INSTALLED_EXTS_FILE, "a").close()
 
 DATA_DIR = platformdirs.user_data_path(
     APPNAME, APPAUTHOR, roaming=False, ensure_exists=True

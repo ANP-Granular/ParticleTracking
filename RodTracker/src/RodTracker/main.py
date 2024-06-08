@@ -17,6 +17,7 @@
 import importlib.util
 import inspect
 import logging
+import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List
@@ -28,6 +29,22 @@ import RodTracker
 from RodTracker import ExtensionState
 
 _logger = logging.getLogger(RodTracker.APPNAME)
+
+
+def install(ext_folder: Path):
+    # Try installing requirements from file
+    req_path = ext_folder / "requirements.txt"
+    if not req_path.exists():
+        _logger.info(
+            "Extension does not appear to have a requirements.txt: "
+            f"{ext_folder}"
+        )
+        return True
+
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "-r", str(req_path)]
+    )
+    return True
 
 
 def main():
@@ -73,6 +90,8 @@ def main():
     main_window = mw.RodTrackWindow()
 
     # Load extensions
+    with open(RodTracker.INSTALLED_EXTS_FILE, "r") as f:
+        installed_exts: List[str] = [line.strip() for line in f.readlines()]
     discovered_exts: Dict[str, List[RodTracker.ExtensionState, dict, Path]] = (
         {}
     )
@@ -95,6 +114,30 @@ def main():
             _logger.info(f"Extension '{ext}' is deactived.")
             discovered_exts[ext][0] = ExtensionState.DEACTIVATED
             continue
+
+        # FIXME: In the bundled version of the app a new instance of the
+        #        RodTracker is launched when attempting to call pip.
+        if ext not in installed_exts:
+            # Skip installation of extensions, if the app has been bundled.
+            if hasattr(sys, "_MEIPASS"):
+                _logger.warning(
+                    f"The extensions '{ext}' cannot be installed in the "
+                    "bundled version of the RodTracker app at the moment."
+                )
+                discovered_exts[ext][0] = ExtensionState.DEACTIVATED
+                continue
+            splash.showMessage(f"Installing extension: {ext}", align, color)
+            if install(entry):
+                installed_exts.append(ext)
+                _logger.info(
+                    "Successfully installed dependencies for "
+                    f"extension '{ext}'."
+                )
+
+    with open(RodTracker.INSTALLED_EXTS_FILE, "w") as f:
+        for inst_ext in installed_exts:
+            f.write(inst_ext)
+            f.write("\n")
 
     def _try_loading(
         ext: str, discovered_exts, circ_prevention_list: List[str]
@@ -121,8 +164,8 @@ def main():
                     discovered_exts[ext][1][dep] = ExtensionState.UNAVAILABLE
                     discovered_exts[ext][0] = ExtensionState.MISSING_DEPENDENCY
                     _logger.warning(
-                        f"Extension {ext} cannot be loaded due to missing "
-                        f"dependency {dep}."
+                        f"Extension '{ext}' cannot be loaded due to missing "
+                        f"dependency '{dep}'."
                     )
                     continue
 
@@ -149,36 +192,36 @@ def main():
                             0
                         ] = ExtensionState.MISSING_DEPENDENCY
                         _logger.warning(
-                            f"Extension {ext} cannot be loaded due to a "
-                            f"problem with dependency {dep}."
+                            f"Extension '{ext}' cannot be loaded due to a "
+                            f"problem with dependency '{dep}'."
                         )
                 elif dep_state is ExtensionState.CIRCULAR_DEPENDENCY:
                     break_loading = True
                     discovered_exts[ext][0] = ExtensionState.MISSING_DEPENDENCY
                     _logger.warning(
-                        f"Extension {ext} cannot be loaded due to dependency "
-                        f"{dep} having a circular dependency."
+                        f"Extension '{ext}' cannot be loaded due to "
+                        f"dependency '{dep}' having a circular dependency."
                     )
                 elif dep_state is ExtensionState.BROKEN:
                     break_loading = True
                     discovered_exts[ext][0] = ExtensionState.MISSING_DEPENDENCY
                     _logger.warning(
-                        f"Extension {ext} cannot be loaded due to broken "
-                        f"dependency {dep}."
+                        f"Extension '{ext}' cannot be loaded due to broken "
+                        f"dependency '{dep}'."
                     )
                 elif dep_state is ExtensionState.DEACTIVATED:
                     break_loading = True
                     discovered_exts[ext][0] = ExtensionState.MISSING_DEPENDENCY
                     _logger.warning(
-                        f"Extension {ext} cannot be loaded due to deactivated "
-                        f"dependency {dep}."
+                        f"Extension '{ext}' cannot be loaded due to "
+                        f"deactivated dependency '{dep}'."
                     )
                 elif dep_state is ExtensionState.MISSING_DEPENDENCY:
                     break_loading = True
                     discovered_exts[ext][0] = ExtensionState.MISSING_DEPENDENCY
                     _logger.warning(
-                        f"Extension {ext} cannot be loaded due to dependency "
-                        f"{dep} missing a dependency."
+                        f"Extension '{ext}' cannot be loaded due to "
+                        f"dependency '{dep}' missing a dependency."
                     )
                 elif dep_state is ExtensionState.UNDEFINED:
                     # WARNING: potential for circular dependency
@@ -199,8 +242,8 @@ def main():
                             0
                         ] = ExtensionState.MISSING_DEPENDENCY
                         _logger.warning(
-                            f"Extension {ext} cannot be loaded due to a "
-                            f"problem with dependency {dep}."
+                            f"Extension '{ext}' cannot be loaded due to a "
+                            f"problem with dependency '{dep}'."
                         )
                 else:
                     # WARNING: this should never occur!
@@ -214,7 +257,7 @@ def main():
             # attempt loading the extension
             splash.showMessage(f"Loading extension: {ext}", align, color)
             module.setup(splash, main_window=main_window)
-            _logger.info(f"Successfully loaded extension: {ext}")
+            _logger.info(f"Successfully loaded extension: '{ext}'")
             discovered_exts[ext][0] = ExtensionState.ACTIVE
             return ExtensionState.ACTIVE
 

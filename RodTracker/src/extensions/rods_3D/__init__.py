@@ -33,11 +33,8 @@ def setup(
     *args,
     **kwargs,
 ):
-    try:
-        # load all required modules
-        from . import view3d
-    except ModuleNotFoundError as e:
-        _logger.error(f"Extension is missing a module: {e}")
+    # load all required modules
+    from . import view3d
 
     # Insert utility tabs
     main_window.add_utility_tab(view3d.View3DTab("3D-View"), "3D-View")

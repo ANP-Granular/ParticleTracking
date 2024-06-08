@@ -15,7 +15,6 @@
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from pathlib import Path
 from typing import Any
 from PyQt5 import QtWidgets
 from RodTracker.backend import data
@@ -51,14 +50,9 @@ def setup(
     *args,
     **kwargs,
 ):
-    _logger.info("This is an example extension.")
-    try:
-        # Load all custom modules
-        pass
-    except ModuleNotFoundError as e:
-        _logger.error(f"Extension is missing a module: {e}")
-        raise e
-        # install()
+    _logger.warning("This is an example extension.")
+    # Load all custom modules
+    pass
 
     # Insert menus/menu items
     main_bar = main_window.menuBar()
@@ -95,16 +89,3 @@ def setup(
     # Connect data to display
     test_data = data.PositionData()
     main_window.register_position_data(test_data, [image_0, image_1])
-
-
-def install():
-    # Try installing requirements from file
-    import subprocess
-    import sys
-
-    req_path = Path(__file__).parent / "requirements.txt"
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "-r", str(req_path)]
-    )
-    # TODO: copy files from `./example_data/*` to
-    #       `../../example_data/__name__/*`
