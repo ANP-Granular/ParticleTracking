@@ -1,90 +1,71 @@
-# -*- mode: python ; coding: utf-8 -*-
-# TODO: make exe( ... name='RodTrackerApp',...) dependent on the platform
-#       i.e. RodTracker (Win, Darwin) & RodTrackerApp (linux)
-# TODO: remove additional data/binary/module collections that should be handled
-#       by extensions that require those files to function
+# Copyright (c) 2023-24 Adrian Niemann, and others
+#
+# This file is part of RodTracker.
+# RodTracker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# RodTracker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
+# -*- mode: python ; coding: utf-8 -*-
 import platform
-import site
+from pathlib import Path
 from typing import List
 
-from RodTracker import INSTALLED_EXTS_FILE
+from PyInstaller.building.api import EXE, PYZ, COLLECT
+from PyInstaller.building.build_main import Analysis
+from PyInstaller.building.datastruct import Tree
+from PyInstaller.building.osx import BUNDLE
+
+from RodTracker import APPNAME, INSTALLED_EXTS_FILE
 from RodTracker._version import __version__
 
 block_cipher = None
-binaries = []
 icon_file = None
 version_info = None
-site_packages = None
-
-for dir in site.getsitepackages():
-    if dir.endswith("site-packages"):
-        site_packages = dir
-        break
 
 if platform.system() == "Darwin":
-    from PyInstaller.utils.hooks import collect_dynamic_libs
-
-    binaries += collect_dynamic_libs("torch")
-    binaries += [
-        (
-            site_packages + "/torchaudio/lib/libtorchaudio.so",
-            "./torchaudio/lib",
-        ),
-        (
-            site_packages + "/torchaudio/lib/libtorchaudio_sox.so",
-            "./torchaudio/lib",
-        ),
-        # FIXME: Causes the application to crash because of a version mismatch:
-        # ImportError: dlopen(/Users/.../ParticleTracking/RodTracker/dist/unix/RodTracker.app/Contents/Resources/cv2/cv2.abi3.so, 2): Library not loaded: @rpath/libpng16.16.dylib
-        #   Referenced from: /Users/.../ParticleTracking/RodTracker/dist/unix/RodTracker.app/Contents/Frameworks/PIL/__dot__dylibs/libfreetype.6.dylib
-        #   Reason: Incompatible library version: libfreetype.6.dylib requires version 57.0.0 or later, but libpng16.16.dylib provides version 56.0.0
-        # (site_packages + '/torchvision/image.so', './torchvision'),
-    ]
     icon_file = "../src/RodTracker/resources/icon_macOS.icns"
 elif platform.system() == "Windows":
     icon_file = "../src/RodTracker/resources/icon_windows.ico"
     version_info = "version_info.txt"
-    binaries += [
-        (site_packages + "/torchvision/image.pyd", "./torchvision"),
-    ]
-elif platform.system() == "Linux":
-    binaries += [
-        (
-            site_packages + "/torchaudio/lib/libtorchaudio.so",
-            "./torchaudio/lib",
-        ),
-        # appears to have been removed in newer versions of torchaudio
-        # (site_packages + '/torchaudio/lib/libtorchaudio_ffmpeg.so', './torchaudio/lib'),
-        (
-            site_packages + "/torchaudio/lib/libtorchaudio_sox.so",
-            "./torchaudio/lib",
-        ),
-        (site_packages + "/torchvision/image.so", "./torchvision"),
-    ]
 
 # read which extensions are installed and for adding as hidden imports
 with open(INSTALLED_EXTS_FILE, "r") as f:
-    ext_imports: List[str] = [
-        "extensions." + line.strip() for line in f.readlines()
-    ]
+    ext_imports: List[str] = []
+    ext_hooks: List[str] = []
+    ext_path = Path("./src/extensions")
+    for line in f.readlines():
+        ext_name = line.strip()
+        ext_imports.append("extensions." + ext_name)
+        hook_path = (ext_path / (ext_name + "/__pyinstaller")).resolve()
+        if hook_path.exists():
+            ext_hooks.append(str(hook_path))
 
 a = Analysis(
     ["../src/RodTracker/main.py"],
     pathex=["."],
-    binaries=binaries,
+    binaries=[],
     datas=[
         ("../src/RodTracker/resources/example_data", "./example_data"),
-        (site_packages + "/pulp", "./pulp"),
     ],
     hiddenimports=[
         *ext_imports,
+        # TODO: is this still needed? Couldn't find occurences in RodTracker or
+        #       ParticleDetection code
         "skimage.transform.hough_transform",
     ],
-    hookspath=[],
+    hookspath=[*ext_hooks],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=["sphinx"],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -101,7 +82,6 @@ extensions_toc = Tree(
     "./src/extensions", prefix="extensions", excludes=["__pycache__", "*.pyc"]
 )
 a.datas += rodtracker_toc
-a.datas += extensions_toc
 a.datas += docs_toc
 
 
@@ -112,7 +92,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="RodTrackerApp",
+    name=APPNAME,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -134,12 +114,12 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name="RodTracker",
+    name=APPNAME,
 )
 
 app = BUNDLE(
     coll,
-    name="RodTracker.app",
+    name=APPNAME + ".app",
     icon=icon_file,
     bundle_identifier=None,
     version=__version__,
