@@ -1,4 +1,4 @@
-# Copyright (c) 2023-24 Adrian Niemann, Dmitry Puzyrev, and others
+# Copyright (c) 2023-24 Adrian Niemann, and others
 #
 # This file is part of RodTracker.
 # RodTracker is free software: you can redistribute it and/or modify
@@ -66,8 +66,7 @@ new_version_info = v_info.VSVersionInfo(
                         v_info.StringStruct("InternalName", "RodTracker"),
                         v_info.StringStruct(
                             "LegalCopyright",
-                            "Copyright (c) 2023-24 Adrian Niemann, "
-                            "Dmitry Puzyrev, and others",
+                            "Copyright (c) 2023-24 Adrian Niemann, and others",
                         ),
                         v_info.StringStruct(
                             "OriginalFilename", "RodTrackerApp.exe"

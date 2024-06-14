@@ -1,10 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
 # TODO: make exe( ... name='RodTrackerApp',...) dependent on the platform
 #       i.e. RodTracker (Win, Darwin) & RodTrackerApp (linux)
+# TODO: remove additional data/binary/module collections that should be handled
+#       by extensions that require those files to function
 
 import platform
 import site
+from typing import List
 
+from RodTracker import INSTALLED_EXTS_FILE
 from RodTracker._version import __version__
 
 block_cipher = None
@@ -32,8 +36,8 @@ if platform.system() == "Darwin":
             "./torchaudio/lib",
         ),
         # FIXME: Causes the application to crash because of a version mismatch:
-        # ImportError: dlopen(/Users/Dmitry/DropBox_Adrian/Dropbox/ParticleTracking/REPO/RodTracker/dist/unix/RodTracker.app/Contents/Resources/cv2/cv2.abi3.so, 2): Library not loaded: @rpath/libpng16.16.dylib
-        #   Referenced from: /Users/Dmitry/DropBox_Adrian/Dropbox/ParticleTracking/REPO/RodTracker/dist/unix/RodTracker.app/Contents/Frameworks/PIL/__dot__dylibs/libfreetype.6.dylib
+        # ImportError: dlopen(/Users/.../ParticleTracking/RodTracker/dist/unix/RodTracker.app/Contents/Resources/cv2/cv2.abi3.so, 2): Library not loaded: @rpath/libpng16.16.dylib
+        #   Referenced from: /Users/.../ParticleTracking/RodTracker/dist/unix/RodTracker.app/Contents/Frameworks/PIL/__dot__dylibs/libfreetype.6.dylib
         #   Reason: Incompatible library version: libfreetype.6.dylib requires version 57.0.0 or later, but libpng16.16.dylib provides version 56.0.0
         # (site_packages + '/torchvision/image.so', './torchvision'),
     ]
@@ -59,6 +63,12 @@ elif platform.system() == "Linux":
         (site_packages + "/torchvision/image.so", "./torchvision"),
     ]
 
+# read which extensions are installed and for adding as hidden imports
+with open(INSTALLED_EXTS_FILE, "r") as f:
+    ext_imports: List[str] = [
+        "extensions." + line.strip() for line in f.readlines()
+    ]
+
 a = Analysis(
     ["../src/RodTracker/main.py"],
     pathex=["."],
@@ -68,6 +78,7 @@ a = Analysis(
         (site_packages + "/pulp", "./pulp"),
     ],
     hiddenimports=[
+        *ext_imports,
         "skimage.transform.hough_transform",
     ],
     hookspath=[],

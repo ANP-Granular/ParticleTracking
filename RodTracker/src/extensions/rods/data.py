@@ -29,7 +29,6 @@ lock : QReadWriteLock
 import logging
 import math
 import re
-import sys
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple, Union
 
@@ -44,12 +43,6 @@ import RodTracker.backend.parallelism as pl
 from RodTracker.backend import data
 
 from . import actions, dialogs
-
-if sys.version_info < (3, 12):
-    from RodTracker import override
-else:
-    from typing import override
-
 
 RE_COLOR_DATA: re.Pattern = re.compile(r"rods_df_\w+\.csv")
 """Pattern : Pattern how the rod position data file names are expected."""
@@ -143,7 +136,6 @@ class RodData(data.PositionData):
     to display, defined by :attr:`frame`, :attr:`color_3D`, and :attr:`rod_3D`.
     """
 
-    # @override
     data_loaded = QtCore.pyqtSignal(
         [Path, Path, list],
         [list],
@@ -202,7 +194,6 @@ class RodData(data.PositionData):
     """pyqtSignal(bool) : Notifies when a background task is started/finished.
     """
 
-    # @override
     logger_id: str = "RodData"
     _show_particles: bool = True
 
@@ -222,7 +213,6 @@ class RodData(data.PositionData):
         self.cols_3D: List[str] = []
         self.cols_2D: List[str] = []
 
-    # @override
     @property
     def show_particles(self) -> bool:
         """Flag, whether to send updates of 2D rod data.
@@ -262,7 +252,6 @@ class RodData(data.PositionData):
         """
         self.output = Path(new_folder).resolve()
 
-    # @override
     @QtCore.pyqtSlot()
     @QtCore.pyqtSlot(str)
     def select_data(self, pre_selection: str = ""):
@@ -428,7 +417,6 @@ class RodData(data.PositionData):
             self.logger.add_action(action)
         return True
 
-    # @override
     @QtCore.pyqtSlot()
     @QtCore.pyqtSlot(bool)
     def save(self, temp_only: bool = False):
@@ -1247,7 +1235,6 @@ class RodData(data.PositionData):
         lock.unlock()
         return unused
 
-    @override
     def update_2D_data(self, class_ID: str = None, particle_ID: int = None):
         self.rod_2D = particle_ID
         self.color_2D = class_ID

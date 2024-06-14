@@ -29,5 +29,5 @@ cd %basedir%
 cd ..
 python build-files\build_version_info.py
 
-pyinstaller --distpath .\dist\windows --workpath .\build\windows ^
+pyinstaller --noconfirm --distpath .\dist\windows --workpath .\build\windows ^
     .\build-files\build_onedir.spec

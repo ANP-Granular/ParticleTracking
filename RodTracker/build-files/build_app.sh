@@ -23,5 +23,6 @@ fi
 # Bundle the application
 cd $BASEDIR
 cd ..
-pyinstaller --distpath ./dist/unix --workpath ./build/unix \
+
+pyinstaller --noconfirm --distpath ./dist/unix --workpath ./build/unix \
   ./build-files/build_onedir.spec
