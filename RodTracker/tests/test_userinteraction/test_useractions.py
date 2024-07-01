@@ -17,6 +17,7 @@
 """Tests to verify the basic functionality of user actions before further
 tests.
 """
+import os
 import pathlib
 from typing import List
 
@@ -29,6 +30,14 @@ from pytestqt.qtbot import QtBot
 
 import RodTracker.backend.logger as lg
 from RodTracker.ui.mainwindow import RodTrackWindow
+
+if os.getenv("GITHUB_ACTIONS"):
+    pytestmark = pytest.mark.skip(
+        "Tests requiring interaction with GUI elements cannot be run properly "
+        "with GitHub Actions at the moment. Have a look this issue for "
+        "more information: "
+        "https://github.com/ANP-Granular/ParticleTracking/issues/87"
+    )
 
 
 def teardown_replacements(mp: MonkeyPatch):
