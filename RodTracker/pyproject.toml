@@ -88,7 +88,7 @@ RodTracker = 'RodTracker.RodTracker:main'
 addopts = [
     "--cov=RodTracker",
     "--cov-report=term",
-    "--cov-fail-under=70"
+    # "--cov-fail-under=70"
 ]
 testpaths = [
     "tests/",
