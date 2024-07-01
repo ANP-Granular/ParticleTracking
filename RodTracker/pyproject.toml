@@ -43,7 +43,7 @@ matplotlib = [
     {version = ">=3.6.2,<3.8", python ="<3.9"}
 ]
 numpy = [
-    {version = ">=1.21", python = ">=3.9"},
+    {version = ">=1.21,<2", python = ">=3.9"},
     {version = ">=1.21,<=1.25", python = "<3.9"}
 ]
 pandas= [
