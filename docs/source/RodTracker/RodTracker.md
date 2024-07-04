@@ -5,9 +5,9 @@ If you were given a bundled version, i.e. an executable, you can start right awa
 
 ## Starting the RodTracker
 Run the **RodTracker** GUI using one of the possibilities:
-  - Run `RodTracker.py` manually:
+  - Run `main.py` manually:
     ```shell
-    YOUR/REPO/PATH/RodTracker/src/RodTracker$ python RodTracker.py
+    YOUR/REPO/PATH/RodTracker/src/RodTracker$ python main.py
     ```
   - Use the registered command:
     ```shell

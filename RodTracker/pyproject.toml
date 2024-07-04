@@ -82,7 +82,7 @@ test = ["pytest", "pytest-qt", "pytest-cov"]
 docs = ["Sphinx", "docutils", "sphinx_rtd_theme", "myst_parser", "dunamai"]
 
 [tool.poetry.scripts]
-RodTracker = 'RodTracker.RodTracker:main'
+RodTracker = 'RodTracker.main:main'
 
 [tool.pytest.ini_options]
 addopts = [

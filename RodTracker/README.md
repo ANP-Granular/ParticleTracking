@@ -49,9 +49,9 @@ ubdirectory=RodTracker'
 ## Running the RodTracker
 Run the **RodTracker** GUI using one of the possibilities:
   - *(Standalone Program)* Run the executable installed by the installer.
-  - *(Python Package)* Run `RodTracker.py` manually:
+  - *(Python Package)* Run `main.py` manually:
     ```shell
-    YOUR/REPO/PATH/RodTracker/src/RodTracker$ python RodTracker.py
+    YOUR/REPO/PATH/RodTracker/src/RodTracker$ python main.py
     ```
   - *(Python Package)* Use the registered command:
     ```shell
