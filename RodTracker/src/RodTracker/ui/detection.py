@@ -18,6 +18,7 @@
 
 import logging
 import os
+import urllib.request
 from typing import Dict, List
 
 import pandas as pd
@@ -28,7 +29,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import RodTracker.backend.logger as lg
 import RodTracker.backend.parallelism as pl
 import RodTracker.ui.mainwindow_layout as mw_l
-from RodTracker import APPNAME, LOG_DIR, exception_logger
+from RodTracker import APPNAME, CONFIG_DIR, exception_logger
 from RodTracker.backend import detection
 from RodTracker.backend.detection import Detector, RodDetection
 from RodTracker.backend.img_data import ImageData
@@ -252,13 +253,42 @@ class DetectorUI(QtWidgets.QWidget):
         self.pb_use_example.clicked.connect(self._use_example_model)
 
     def _use_example_model(self):
-        example_model_file = LOG_DIR / "example_model.pt"
+        example_model_file = CONFIG_DIR / "example_model.pt"
         _logger.info(example_model_file)
         example_model_url = (
             "https://zenodo.org/records/10255525/files/model_cpu.pt?download=1"
         )
-
         if not example_model_file.exists():
+            file_MB = int(
+                urllib.request.urlopen(example_model_url)
+                .info()
+                .get("Content-Length")
+            ) / (1024**2)
+
+            msg_confirm_download = QtWidgets.QMessageBox(self.ui)
+            msg_confirm_download.setWindowTitle(APPNAME)
+            msg_confirm_download.setIcon(QtWidgets.QMessageBox.Information)
+            msg_confirm_download.setText(
+                f"""
+                <p>Attempting to download a trained Mask-RCNN model file
+                for detection of rods in the example data.
+                The model is called <b>model_cpu.pt</b> and it will be
+                downloaded from here:<br>
+                <a href="https://zenodo.org/records/10255525">
+                https://zenodo.org/records/10255525</a> </p>
+
+                <p>The file will be downloaded to <br>
+                <b>{example_model_file}</b><br>
+                and will occupy <b>≈{file_MB:.01f} MB</b>.</p>
+                """
+            )
+            msg_confirm_download.setStandardButtons(
+                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+            )
+            decision = msg_confirm_download.exec()
+            if decision == QtWidgets.QMessageBox.Cancel:
+                return
+
             _logger.info("Attempting to download the example model.")
             msg_box = QtWidgets.QMessageBox(
                 icon=QtWidgets.QMessageBox.Information,
