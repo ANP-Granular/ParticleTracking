@@ -68,7 +68,7 @@ class ErrorDialog(QtWidgets.QMessageBox):
     ):
         super().__init__(parent=parent)
         self.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-        self.setModal(False)
+        self.setModal(True)
         self.setIcon(QtWidgets.QMessageBox.Warning)
         self.setWindowTitle(APPNAME)
         self.setText(
