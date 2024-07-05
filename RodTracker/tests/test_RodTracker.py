@@ -16,6 +16,7 @@
 
 import importlib
 import pathlib
+import shutil
 import sys
 
 
@@ -27,13 +28,18 @@ def test_path_addition():
     )
 
 
-def test_tmp_dir_create():
+def test_tmp_dir_create(tmp_path: pathlib.Path):
     # Clean temporary files from potential previous RodTracker runs/imports
     import RodTracker
 
     for handler in RodTracker.logger.handlers:
         RodTracker.logger.removeHandler(handler)
         handler.close()
+
+    # copy files from LOG_DIR to restore them after the test
+    log_dir_storage = tmp_path / "log_dir_copy"
+    shutil.copytree(RodTracker.LOG_DIR, log_dir_storage)
+
     for file in RodTracker.LOG_DIR.iterdir():
         if file.is_file():
             file.unlink()
@@ -43,6 +49,12 @@ def test_tmp_dir_create():
             file.rmdir()
     RodTracker.LOG_DIR.rmdir()
 
-    importlib.reload(RodTracker)
-    assert RodTracker.LOG_DIR.exists()
-    assert RodTracker.LOG_FILE.exists()
+    try:
+        importlib.reload(RodTracker)
+        assert RodTracker.LOG_DIR.exists()
+        assert RodTracker.LOG_FILE.exists()
+    finally:
+        # restore files to LOG_DIR
+        shutil.copytree(
+            log_dir_storage, RodTracker.LOG_DIR, dirs_exist_ok=True
+        )
