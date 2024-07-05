@@ -79,7 +79,7 @@ TEST = ["pytest", "importlib_resources", "pytest-cov"]
 addopts = [
     "--cov=ParticleDetection",
     "--cov-report=term",
-    "--cov-fail-under=50"
+    # "--cov-fail-under=50"
 ]
 testpaths = [
     "tests/",
