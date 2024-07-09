@@ -18,11 +18,13 @@
 
 import logging
 import os
+import platform
 from pathlib import Path
 from typing import List, Tuple
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+import RodTracker.backend.file_locations as fl
 import RodTracker.backend.logger as lg
 
 _logger = logging.getLogger(__name__)
@@ -102,9 +104,8 @@ class ImageData(QtCore.QObject):
     def select_images(self, pre_selection: str = ""):
         """Lets the user select an image folder to show images from.
 
-        Lets the user select an image from folder out of which all images
-        are marked for later display. The selected image is opened
-        immediately.
+        Lets the user select a folder out of which all images are loaded for
+        later display. The first image in this folder is opened immediately.
 
         Parameters
         ----------
@@ -117,22 +118,30 @@ class ImageData(QtCore.QObject):
         -------
         None
         """
-        kwargs = {}
-        # handle file path issue when running on linux as a snap
-        if "SNAP" in os.environ:
-            kwargs["options"] = QtWidgets.QFileDialog.DontUseNativeDialog
-        chosen_file, _ = QtWidgets.QFileDialog.getOpenFileName(
+        picker_dialog = QtWidgets.QFileDialog(
             None,
-            "Open an image",
+            "Open a folder of images",
             pre_selection,
-            "Images (*.png *.jpeg *.jpg)",
-            **kwargs,
+            "Directory with Images (*.gif *.jpeg *.jpg *.png *.tiff)",
         )
-        if chosen_file == "":
+        picker_dialog.setFileMode(QtWidgets.QFileDialog.Directory)
+        picker_dialog.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+        # handle file path issue when running on linux as a snap
+        if "SNAP" in os.environ or platform.system() == "Windows":
+            picker_dialog.setOption(
+                QtWidgets.QFileDialog.DontUseNativeDialog, True
+            )
+        ret_val = picker_dialog.exec()
+        if not ret_val:
             # File selection was aborted
             return
-        chosen_file = Path(chosen_file).resolve()
-        self.open_image_folder(chosen_file)
+        chosen_folder = Path(picker_dialog.directory().path()).resolve()
+        # Find and hand over the first file in the chosen directory
+        for file in chosen_folder.iterdir():
+            if file.is_dir():
+                continue
+            self.open_image_folder(file)
+            return
 
     def open_image_folder(self, chosen_file: Path):
         """Tries to open an image folder to show the given image.

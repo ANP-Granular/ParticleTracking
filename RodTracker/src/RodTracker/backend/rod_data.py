@@ -29,6 +29,8 @@ lock : QReadWriteLock
 
 import logging
 import math
+import os
+import platform
 import re
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
@@ -290,12 +292,23 @@ class RodData(QtCore.QObject):
         """
         try_again = True
         while try_again:
-            chosen_folder = QtWidgets.QFileDialog.getExistingDirectory(
-                None, "Choose folder with position data", pre_selection
+            picker_dialog = QtWidgets.QFileDialog(
+                None,
+                "Choose folder with position data",
+                pre_selection,
+                "Directory with position data (*.csv)",
             )
-            if chosen_folder == "":
+            picker_dialog.setFileMode(QtWidgets.QFileDialog.Directory)
+            picker_dialog.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+            # handle file path issue when running on linux as a snap
+            if "SNAP" in os.environ or platform.system() == "Windows":
+                picker_dialog.setOption(
+                    QtWidgets.QFileDialog.DontUseNativeDialog, True
+                )
+            if not picker_dialog.exec():
                 return
-            chosen_folder = Path(chosen_folder).resolve()
+            chosen_folder = Path(picker_dialog.directory().path()).resolve()
+
             # Check for eligible files
             eligible_files = self.folder_has_data(chosen_folder)
             if not eligible_files:
