@@ -16,7 +16,10 @@
 
 """**TBD**"""
 
+import os
 import platform
+from pathlib import Path
+from typing import Union
 
 import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -133,6 +136,43 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
             self.confirmed_delete[item.row()] = True
         else:
             self.confirmed_delete[item.row()] = False
+
+
+def select_data_folder(
+    title: str, start_folder: str, file_type_filter: str
+) -> Union[None, Path]:
+    """Let users select a folder that shall contain a certain type of data.
+
+    Parameters
+    ----------
+    title : str
+    start_folder : str
+        Initially displayed folder.
+    file_type_filter : str
+        Filter for file types to display.
+
+    Returns
+    -------
+    Union[None, Path]
+        `None` if selection was aborted. Otherwise, the selected folder is
+        returned as a `Path`.
+    """
+    picker_dialog = QtWidgets.QFileDialog(
+        None,
+        title,
+        start_folder,
+        file_type_filter,
+    )
+    picker_dialog.setFileMode(QtWidgets.QFileDialog.Directory)
+    picker_dialog.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+    # handle file path issue when running on linux as a snap
+    if "SNAP" in os.environ or platform.system() == "Windows":
+        picker_dialog.setOption(
+            QtWidgets.QFileDialog.DontUseNativeDialog, True
+        )
+    if not picker_dialog.exec():
+        return None
+    return Path(picker_dialog.selectedFiles()[0]).resolve()
 
 
 def show_warning(text: str):

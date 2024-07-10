@@ -17,15 +17,13 @@
 """**TBD**"""
 
 import logging
-import os
-import platform
 from pathlib import Path
 from typing import List, Tuple
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-import RodTracker.backend.file_locations as fl
 import RodTracker.backend.logger as lg
+import RodTracker.ui.dialogs as dialogs
 
 _logger = logging.getLogger(__name__)
 
@@ -118,24 +116,14 @@ class ImageData(QtCore.QObject):
         -------
         None
         """
-        picker_dialog = QtWidgets.QFileDialog(
-            None,
+        chosen_folder = dialogs.select_data_folder(
             "Open a folder of images",
             pre_selection,
             "Directory with Images (*.gif *.jpeg *.jpg *.png *.tiff)",
         )
-        picker_dialog.setFileMode(QtWidgets.QFileDialog.Directory)
-        picker_dialog.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-        # handle file path issue when running on linux as a snap
-        if "SNAP" in os.environ or platform.system() == "Windows":
-            picker_dialog.setOption(
-                QtWidgets.QFileDialog.DontUseNativeDialog, True
-            )
-        ret_val = picker_dialog.exec()
-        if not ret_val:
+        if chosen_folder is None:
             # File selection was aborted
             return
-        chosen_folder = Path(picker_dialog.selectedFiles()[0]).resolve()
         # Find and hand over the first file in the chosen directory
         for file in chosen_folder.iterdir():
             if file.is_dir():
