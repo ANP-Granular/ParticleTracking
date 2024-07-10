@@ -307,7 +307,7 @@ class RodData(QtCore.QObject):
                 )
             if not picker_dialog.exec():
                 return
-            chosen_folder = Path(picker_dialog.directory().path()).resolve()
+            chosen_folder = Path(picker_dialog.selectedFiles()[0]).resolve()
 
             # Check for eligible files
             eligible_files = self.folder_has_data(chosen_folder)

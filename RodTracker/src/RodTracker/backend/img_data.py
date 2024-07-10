@@ -135,7 +135,7 @@ class ImageData(QtCore.QObject):
         if not ret_val:
             # File selection was aborted
             return
-        chosen_folder = Path(picker_dialog.directory().path()).resolve()
+        chosen_folder = Path(picker_dialog.selectedFiles()[0]).resolve()
         # Find and hand over the first file in the chosen directory
         for file in chosen_folder.iterdir():
             if file.is_dir():
