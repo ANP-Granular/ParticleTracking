@@ -56,7 +56,7 @@ def main_window(qtbot: QtBot) -> RodTrackWindow:
     qtbot.waitUntil(wait_maximized)
     previous_settings = main_window.settings._contents.copy()
     main_window.settings.update_field(
-        category="visual", field="position_scaling", value=10.0
+        category="visual", field="position_scaling", value=1.0
     )
     main_window.change_color("black")
     yield main_window
