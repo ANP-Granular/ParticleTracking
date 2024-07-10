@@ -585,9 +585,13 @@ class OpenImage:
         # TODO: wait for loading complete
         with monkeypatch.context() as mp:
             mp.setattr(
-                QtWidgets.QFileDialog,
-                "getOpenFileName",
-                lambda *args, **kwargs: (str(self.img_path), None),
+                dialogs,
+                "select_data_folder",
+                lambda *args, **kwargs: (
+                    self.img_path.resolve()
+                    if self.img_path is not None
+                    else None
+                ),
             )
             qtbot.mouseClick(
                 main_window.ui.pb_load_images, QtCore.Qt.MouseButton.LeftButton
@@ -617,9 +621,13 @@ class OpenData:
         # TODO: wait for loading complete
         with monkeypatch.context() as mp:
             mp.setattr(
-                QtWidgets.QFileDialog,
-                "getExistingDirectory",
-                lambda *args, **kwargs: str(self.data_path),
+                dialogs,
+                "select_data_folder",
+                lambda *args, **kwargs: (
+                    self.data_path.resolve()
+                    if self.data_path is not None
+                    else None
+                ),
             )
             # avoid blocking
             mp.setattr(dialogs, "show_warning", lambda *args, **kwargs: None)

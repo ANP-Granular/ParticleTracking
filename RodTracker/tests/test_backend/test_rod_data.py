@@ -27,6 +27,7 @@ from PyQt5 import QtWidgets
 from pytest import MonkeyPatch
 from pytestqt.qtbot import QtBot
 
+import RodTracker.ui.dialogs as dialogs
 from RodTracker.backend import logger as lg
 from RodTracker.backend import rod_data
 from RodTracker.backend.rod_data import RodData
@@ -123,9 +124,11 @@ class TestRodData:
         for folder in folders:
             with monkeypatch.context() as mp:
                 mp.setattr(
-                    QtWidgets.QFileDialog,
-                    "getExistingDirectory",
-                    lambda *args, **kwargs: str(folder),
+                    dialogs,
+                    "select_data_folder",
+                    lambda *args, **kwargs: (
+                        Path(folder).resolve() if folder != "" else None
+                    ),
                 )
                 mp.setattr(QtWidgets.QMessageBox, "exec", mb_exec_replacement)
                 mp.setattr(rod_manager, "open_rod_folder", assertions)

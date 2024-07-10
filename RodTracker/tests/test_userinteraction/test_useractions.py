@@ -64,8 +64,8 @@ data_opening = [
         [
             ga.OpenImage(
                 importlib_resources.files(
-                    "RodTracker.resources.example_data.images.gp3"
-                ).joinpath("0500.jpg")
+                    "RodTracker.resources.example_data.images"
+                ).joinpath("gp3")
             ),
         ],
         id="open-image",
