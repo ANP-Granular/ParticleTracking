@@ -1302,10 +1302,20 @@ class RodImageWidget(QLabel):
             ident.setObjectName(f"rn_{no}_{rod_color}")
             ident.seen = seen
             if len(colors_present) > 1:
-                color_idx = np.where(colors_present == rod_color)[0][0]
-                ident._rod_color = QtGui.QColor.fromRgbF(
-                    *_colors[color_idx]
-                ).getRgb()[:-1]
+                try:
+                    rgb_color = QtGui.QColor.fromRgbF(
+                        *mpl.colors.to_rgba(rod_color, alpha=1.0)
+                    ).getRgb()[:-1]
+                except ValueError as e:
+                    _logger.warning(
+                        f"Unknown color for 2D display!\n{e.args}\n"
+                        f"Using a different color instead."
+                    )
+                    color_idx = np.where(colors_present == rod_color)[0][0]
+                    rgb_color = QtGui.QColor.fromRgbF(
+                        *_colors[color_idx]
+                    ).getRgb()[:-1]
+                ident._rod_color = rgb_color
                 # Rods should not be interactable if all are displayed
                 ident.setDisabled(True)
             new_rods.append(ident)
