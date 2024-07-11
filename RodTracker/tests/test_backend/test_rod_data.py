@@ -173,7 +173,7 @@ class TestRodData:
         assert bl_inner.args[0] == chosen_folder
         assert bl_inner.args[1] == Path(str(chosen_folder) + "_corrected")
 
-        assert len(manager.cols_2D) == 12
+        assert len(manager.cols_2D) == 13
         assert len(manager.cols_3D) == 9
 
     @pytest.mark.parametrize(
@@ -360,7 +360,7 @@ class TestRodData:
             rod = None
         with qtbot.assert_not_emitted(rod_manager.data_3d):
             with qtbot.wait_signal(rod_manager.data_2d):
-                rod_manager.update_rod_2D(rod)
+                rod_manager.update_rod_2D(rod_manager.color_2D, rod)
         assert rod_manager.rod_2D == rod
 
     def test_update_rod_2D_defaults(self, qtbot: QtBot, rod_manager: RodData):
