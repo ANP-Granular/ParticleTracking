@@ -400,7 +400,7 @@ class RodData(QtCore.QObject):
         cols_pos_2d = [col for col in columns if re.fullmatch(RE_2D_POS, col)]
         cols_seen = [col for col in columns if re.fullmatch(RE_SEEN, col)]
         cols_pos_3d = [col for col in columns if re.fullmatch(RE_3D_POS, col)]
-        self.cols_2D = [*cols_pos_2d, *cols_seen, "particle", "frame"]
+        self.cols_2D = [*cols_pos_2d, *cols_seen, "particle", "frame", "color"]
         self.cols_3D = [*cols_pos_3d, "particle", "frame", "color"]
 
         self.data_loaded[Path, Path, list].emit(
@@ -573,17 +573,22 @@ class RodData(QtCore.QObject):
         self.provide_data(data_3d=False)
 
     @QtCore.pyqtSlot(int)
-    def update_rod_2D(self, rod: int = None):
+    def update_rod_2D(self, class_ID: str = None, rod_ID: int = None):
         """Update the rod for 2D data sending and trigger sending of 2D data.
 
         Parameters
         ----------
-        rod : int | None
+        class_ID: str | None
+            Class (rod color) to display in 2D. If no class is given all
+            classes are selected.
+            Default is ``None``.
+        rod_ID : int | None
             Rod number to display in 2D. If no number is given all rods are
             selected.
             Default is ``None``.
         """
-        self.rod_2D = rod
+        self.rod_2D = rod_ID
+        self.color_2D = class_ID
         self.provide_data(data_3d=False)
 
     @QtCore.pyqtSlot(int, bool)

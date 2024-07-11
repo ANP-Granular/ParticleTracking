@@ -20,6 +20,7 @@ import logging
 import math
 from typing import List, Union
 
+import matplotlib as mpl
 import numpy as np
 import pandas as pd
 from PyQt5 import QtCore, QtGui
@@ -31,6 +32,7 @@ import RodTracker.ui.rodnumberwidget as rn
 from RodTracker.ui import dialogs
 
 _logger = logging.getLogger(__name__)
+_colors = mpl.colormaps["tab10"].colors
 
 
 class RodImageWidget(QLabel):
@@ -407,7 +409,7 @@ class RodImageWidget(QLabel):
         -------
         None
         """
-        if self._rods is not None:
+        if self._rods is not None and self._current_color != "":
             if self.startPos is None:
                 # Check rod states for number editing mode
                 for rod in self._rods:
@@ -1118,10 +1120,13 @@ class RodImageWidget(QLabel):
         -------
         None
         """
-        rod.activated.connect(self.rod_activated)
-        rod.id_changed.connect(self.check_rod_conflicts)
-        rod.request_delete.connect(self.delete_rod)
-        rod.installEventFilter(self)
+        if self._current_color != "":
+            # Rods should not be interactable if all are displayed,
+            # indicated by _current_color == ""
+            rod.activated.connect(self.rod_activated)
+            rod.id_changed.connect(self.check_rod_conflicts)
+            rod.request_delete.connect(self.delete_rod)
+            rod.installEventFilter(self)
         rod.show()
 
     def eventFilter(
@@ -1262,6 +1267,7 @@ class RodImageWidget(QLabel):
             f"y1_{self.cam_id}",
             f"y2_{self.cam_id}",
             f"seen_{self.cam_id}",
+            "color",
         ]
         try:
             data = data[col_list]
@@ -1271,10 +1277,13 @@ class RodImageWidget(QLabel):
             )
             del self.rods
             return
-
         self._current_color = color
         new_rods = []
         cleaned = data.fillna(-1)
+
+        # TODO: handle when more rod colors present than in colormap
+        colors_present = cleaned["color"].unique()
+
         for _, rod in cleaned.iterrows():
             x1 = rod[f"x1_{self.cam_id}"]
             x2 = rod[f"x2_{self.cam_id}"]
@@ -1282,15 +1291,23 @@ class RodImageWidget(QLabel):
             y2 = rod[f"y2_{self.cam_id}"]
             seen = bool(rod[f"seen_{self.cam_id}"])
             no = int(rod["particle"])
+            rod_color = rod["color"]
 
             # Add rods
             ident = rn.RodNumberWidget(
-                color, self, str(no), QtCore.QPoint(0, 0)
+                rod_color, self, str(no), QtCore.QPoint(0, 0)
             )
             ident.rod_id = no
             ident.rod_points = [x1, y1, x2, y2]
-            ident.setObjectName(f"rn_{no}")
+            ident.setObjectName(f"rn_{no}_{rod_color}")
             ident.seen = seen
+            if len(colors_present) > 1:
+                color_idx = np.where(colors_present == rod_color)[0][0]
+                ident._rod_color = QtGui.QColor.fromRgbF(
+                    *_colors[color_idx]
+                ).getRgb()[:-1]
+                # Rods should not be interactable if all are displayed
+                ident.setDisabled(True)
             new_rods.append(ident)
         self.rods = new_rods
         if active_rod is not None:

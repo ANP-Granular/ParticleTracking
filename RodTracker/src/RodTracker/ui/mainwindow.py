@@ -16,6 +16,7 @@
 
 """**TBD**"""
 
+import logging
 import platform
 from functools import partial
 from pathlib import Path
@@ -43,6 +44,8 @@ from RodTracker.ui import dialogs
 from RodTracker.ui.detection import init_detection
 from RodTracker.ui.reconstruction import init_reconstruction
 from RodTracker.ui.settings_setup import init_settings
+
+_logger = logging.getLogger(__name__)
 
 
 class RodTrackWindow(QtWidgets.QMainWindow):
@@ -147,9 +150,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         max_width = pb_rod_size if pb_rod_size > pb_load_size else pb_load_size
         self.ui.pb_load_images.setMaximumWidth(int(2 * max_width))
         self.ui.pb_load_rods.setMaximumWidth(int(2 * max_width))
-        cb_ov_txt = self.ui.cb_overlay.text()
-        cb_ov_size = self.ui.cb_overlay.fontMetrics().width(cb_ov_txt)
-        self.ui.cb_overlay.setMaximumWidth(int(2 * cb_ov_size))
         # Set possible inputs for rod selection field
         self.ui.le_disp_one.setInputMask("99")
         self.ui.le_disp_one.setText("00")
@@ -164,7 +164,6 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.rod_data = r_data.RodData()
         id = self.rod_data._logger_id
         self.rod_data._logger = self.ui.lv_actions_list.get_new_logger(id)
-        self.rod_data.show_2D = self.ui.cb_overlay.isChecked()
         self.rod_data.show_3D = self.ui.cb_show_3D.isChecked()
 
         self.image_managers = [img_data.ImageData(0), img_data.ImageData(1)]
@@ -254,9 +253,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.pb_top.clicked.connect(self.ui.view_3d.show_top)
 
         # Displayed data
-        self.ui.cb_overlay.stateChanged.connect(self.show_2D_changed)
+        self.ui.le_disp_one.textChanged.connect(
+            lambda _: self.method_2D_changed()
+        )
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
-            rb.toggled.connect(self.color_change)
+            rb.toggled.connect(self.method_2D_changed)
         self.ui.pb_previous.clicked.connect(
             lambda: self.show_next(direction=-1)
         )
@@ -328,8 +329,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.ui.le_image_dir.returnPressed.connect(
                     partial(manager.select_images, self.ui.le_image_dir.text())
                 )
-            if self.ui.cb_overlay.isChecked():
-                manager.next_img[int, int].connect(self.rod_data.update_frame)
+            manager.next_img[int, int].connect(self.rod_data.update_frame)
 
             cam.request_color_change.connect(self.change_color)
             cam.request_frame_change.connect(manager.image_at)
@@ -586,12 +586,55 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.color_change(True)
 
     @QtCore.pyqtSlot(bool)
-    def method_2D_changed(self, _: bool) -> None:
+    def method_2D_changed(self, activated: bool = None) -> None:
         """Handles changes of 2D display method selection."""
+        if activated is False:
+            # avoid triggering this multiple times when deactivating one
+            #   radio button and activating the next one
+            return
+        if activated is None and not self.ui.rb_disp_one.isChecked():
+            # 'activated' is only None when the selected particle changes.
+            # Therefore, avoid re-triggering the display of when a display
+            # method is selected that does not depend on the selected particle.
+            return
+
+        selected_class = self.get_selected_color()
+
         if self.ui.rb_disp_all.isChecked():
+            self.rod_data.show_2D = True
             self.rod_data.update_rod_2D()
+            _logger.debug(
+                "RodTrackWindow.method_2D_changed() selected all "
+                "particles from all classes."
+            )
+        elif self.ui.rb_disp_class.isChecked():
+            self.rod_data.show_2D = True
+            self.rod_data.update_rod_2D(selected_class)
+            _logger.debug(
+                "RodTrackWindow.method_2D_changed() "
+                f"selected class: {selected_class}"
+            )
         elif self.ui.rb_disp_one.isChecked():
-            self.rod_data.update_rod_2D(int(self.ui.le_disp_one.text()))
+            self.rod_data.show_2D = True
+            try:
+                selected_particle = int(self.ui.le_disp_one.text())
+            except ValueError:
+                # No valid integer entered. Most likely because everything was
+                # deleted from the entry field.
+                self.cameras[self.ui.camera_tabs.currentIndex()].clear_screen()
+                return
+            self.rod_data.update_rod_2D(selected_class, selected_particle)
+            _logger.debug(
+                "RodTrackWindow.method_2D_changed() selected particle: "
+                f"{selected_particle} of class: {selected_class}"
+            )
+        elif self.ui.rb_disp_none.isChecked():
+            self.rod_data.show_2D = False
+            self.cameras[self.ui.camera_tabs.currentIndex()].clear_screen()
+            _logger.debug(
+                "RodTrackWindow.method_2D_changed() selected not to "
+                "display any particles"
+            )
 
     @QtCore.pyqtSlot(bool)
     def method_3D_changed(self, _: bool) -> None:
@@ -610,29 +653,18 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(str)
     def display_rod_changed(self, number: str):
         """Handles a change of rod numbers in the user's input field."""
-        rod = int(number)
+        try:
+            rod = int(number)
+        except ValueError:
+            # No valid integer entered. Most likely because everything was
+            # deleted from the entry field.
+            return
         if self.ui.rb_disp_one.isChecked():
-            self.rod_data.update_rod_2D(rod)
+            self.rod_data.update_rod_2D(
+                class_ID=self.get_selected_color(), rod_ID=rod
+            )
         if self.ui.rb_one_3d.isChecked():
             self.rod_data.update_rod_3D(rod)
-
-    @QtCore.pyqtSlot(int)
-    def show_2D_changed(self, state: int):
-        """Catches a ``QCheckBox`` state change to display or clear rods in 2D.
-
-        Parameters
-        ----------
-        state : int
-            The new state of the QCheckbox {0, 2}
-
-        Returns
-        -------
-        None
-        """
-        if state == 0:
-            # Deactivated
-            self.cameras[self.ui.camera_tabs.currentIndex()].clear_screen()
-        self.rod_data.show_2D = bool(state)
 
     @QtCore.pyqtSlot(int)
     def show_3D_changed(self, state: int):
@@ -737,6 +769,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(bool)
     def color_change(self, state: bool) -> None:
         """Handles changes of the ``QRadioButtons`` for color selection."""
+        if self.ui.rb_disp_all.isChecked() or self.ui.rb_disp_none.isChecked():
+            # Don't update the selected color because it is not relevant to the
+            # current display mode.
+            return
         if state:
             color = self.get_selected_color()
             self.rod_data.update_color_2D(color)

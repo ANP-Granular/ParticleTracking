@@ -50,8 +50,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1190</width>
-         <height>586</height>
+         <width>1173</width>
+         <height>631</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -283,69 +283,6 @@
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
-             <widget class="QLineEdit" name="le_rod_disp">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">background-color: transparent; font-weight: bold;</string>
-              </property>
-              <property name="text">
-               <string>Loaded Particles: 0</string>
-              </property>
-              <property name="frame">
-               <bool>false</bool>
-              </property>
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-              <property name="placeholderText">
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="cb_overlay">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>100</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Overlay Rods</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeType">
-               <enum>QSizePolicy::Fixed</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>6</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
              <widget class="QGroupBox" name="group_disp_method">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
@@ -382,6 +319,16 @@
                  </property>
                  <property name="text">
                   <string>All Particles</string>
+                 </property>
+                 <property name="checked">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="rb_disp_class">
+                 <property name="text">
+                  <string>Selected Class</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -426,6 +373,13 @@
                   </widget>
                  </item>
                 </layout>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="rb_disp_none">
+                 <property name="text">
+                  <string>None</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </widget>
@@ -486,6 +440,34 @@
               </property>
               <property name="text">
                <string>Frame: ???</string>
+              </property>
+              <property name="frame">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+              <property name="placeholderText">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="le_rod_disp">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">background-color: transparent; font-weight: bold;</string>
+              </property>
+              <property name="text">
+               <string>Loaded Particles: 0</string>
               </property>
               <property name="frame">
                <bool>false</bool>
@@ -760,8 +742,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>679</width>
-                     <height>442</height>
+                     <width>607</width>
+                     <height>481</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -850,8 +832,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>100</width>
-                     <height>30</height>
+                     <width>607</width>
+                     <height>481</height>
                     </rect>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -1094,8 +1076,8 @@
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>234</width>
-                        <height>463</height>
+                        <width>474</width>
+                        <height>514</height>
                        </rect>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_9">
