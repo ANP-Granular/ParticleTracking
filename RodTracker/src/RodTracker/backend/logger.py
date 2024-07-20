@@ -19,10 +19,12 @@
 import logging
 import pathlib
 from abc import abstractmethod
+from copy import deepcopy
 from enum import Enum, auto
 from typing import Iterable, List, Optional, Union
 
 import numpy as np
+from pandas import DataFrame
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QListWidgetItem
 
@@ -258,6 +260,52 @@ class FileAction(Action):
         else:
             # This action cannot be undone
             return
+
+
+class DeleteData(Action):
+    def __init__(
+        self, data: DataFrame, parent_id: str = None, *args, **kwargs
+    ):
+        self.action = "Deleted data"
+        self.del_data = data
+        self._parent_id = parent_id
+        self.colors = self.del_data.color.unique()
+
+        super().__init__(str(self), *args, **kwargs)
+
+        frames = self.del_data.frame.unique()
+        if len(frames) == 1:
+            self.frame = frames[0]
+
+    def __str__(self):
+        to_str = ""
+        if self._parent_id is not None:
+            to_str += f"({self._parent_id}) "
+        to_str += f"{self.action}: {len(self.del_data)} particles"
+
+        if len(self.colors) == 1:
+            to_str += f" of class '{self.colors[0]}'"
+
+        if self.frame:
+            to_str += f" on frame {self.frame}"
+        else:
+            to_str += f" on {len(self.del_data.frame.unique())} frames"
+        return to_str
+
+    def undo(self, rods: Optional[Iterable[rn.RodNumberWidget]] = None):
+        """Do NOT use for this type of Action."""
+        return []
+
+    def to_save(self):
+        # TODO
+        super().to_save(self)
+
+    def invert(self):
+        # TODO: verify this works as expected! (eg. inverted_action is not
+        #       deleted prematurely)
+        inverted_action = deepcopy(self)
+        inverted_action.revert = not self.revert
+        return inverted_action
 
 
 class ChangedRodNumberAction(Action):

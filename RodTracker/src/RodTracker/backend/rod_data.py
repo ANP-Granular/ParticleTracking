@@ -59,7 +59,7 @@ RE_3D_POS: re.Pattern = re.compile(r"[xyz][12]")
 POSITION_SCALING: float = 1.0
 """float : Scale factor for loaded position data."""
 
-rod_data: pd.DataFrame = None
+rod_data: Union[pd.DataFrame, None] = None
 lock = QtCore.QReadWriteLock(QtCore.QReadWriteLock.Recursive)
 _logger = logging.getLogger(__name__)
 
@@ -225,6 +225,17 @@ class RodData(QtCore.QObject):
         self.rod_2D: int = None
         self.cols_3D: List[str] = []
         self.cols_2D: List[str] = []
+
+    @property
+    def logger(self) -> lg.ActionLogger:
+        return self._logger
+
+    @logger.setter
+    def logger(self, new_logger: lg.ActionLogger) -> None:
+        if self._logger is not None:
+            self._logger.undo_action.disconnect()
+        self._logger = new_logger
+        self._logger.undo_action.connect(self.undo_action)
 
     @property
     def show_2D(self) -> bool:
@@ -1156,6 +1167,77 @@ class RodData(QtCore.QObject):
         lock.unlock()
         return seen_data, [cam.split("_")[-1] for cam in to_include]
 
+    def delete_data(
+        self,
+        frame: Union[int, None] = None,
+        particle_class: Union[str, None] = None,
+        particle: Union[int, None] = None,
+        all: bool = False,
+    ):
+        """Delete parts of the currently loaded position data.
+
+        Parameters
+        ----------
+        frame : Union[int, None], optional
+            Frame on which to delete data. The currently displayed frame is
+            chosen, if none is given.
+            By default ``None``.
+        particle_class : Union[str, None], optional
+            Class of particles to delete on the given frame. All available
+            classes are deleted if ``None`` is given.
+            By default ``None``.
+        particle : Union[int, None], optional
+            TBD
+            By default ``None``.
+        all : bool, optional
+            Flag whether to delete all currently loaded data.
+            By default ``False``.
+        """
+        global rod_data
+        if all is True:
+            # delete all data contained in the current dataset
+            lock.lockForWrite()
+            action = lg.DeleteData(rod_data.copy(deep=True))
+            rod_data = rod_data.head(0)
+            lock.unlock()
+            self._logger.add_action(action)
+            return
+        if frame is None:
+            frame = self.frame
+
+        if particle_class is None:
+            # delete all colors in frame
+            lock.lockForWrite()
+            to_del = rod_data.loc[rod_data.frame == frame]
+            action = lg.DeleteData(to_del.copy(deep=True))
+            rod_data.drop(to_del.index, inplace=True)
+            lock.unlock()
+            self._logger.add_action(action)
+            return
+        else:
+            # delete given color in frame
+            lock.lockForWrite()
+            to_del = rod_data.loc[
+                (rod_data.frame == frame) & (rod_data.color == particle_class)
+            ]
+            action = lg.DeleteData(to_del.copy(deep=True))
+            rod_data.drop(to_del.index, inplace=True)
+            lock.unlock()
+            self._logger.add_action(action)
+            return
+
+    def undo_action(self, action: lg.Action) -> None:
+        """Reverts an :class:`.Action` performed on the loaded data.
+
+        Parameters
+        ----------
+        action : Action
+            An :class:`.Action` that was logged previously. It will only be
+            reverted, if it associated with this object.
+        """
+        # TODO
+        _logger.warning("RodData.undo_action() not implemented.")
+
     def clean_data(self):
         """Deletes unused rods from the loaded dataset.
 
@@ -1212,6 +1294,17 @@ class RodData(QtCore.QObject):
         else:
             # No unused rods found for deletion
             return
+
+    def update_tree_data(self) -> None:
+        """Update the ``seen`` values of the currently loaded data for display
+        as a tree."""
+        worker = pl.Worker(self.extract_seen_information)
+        worker.signals.result.connect(lambda ret: self.is_busy.emit(False))
+        worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
+        self.is_busy.emit(True)
+        worker.signals.result.connect(lambda ret: self.seen_loaded.emit(*ret))
+        worker.signals.error.connect(lambda ret: exception_logger(*ret))
+        self.threads.start(worker)
 
     @staticmethod
     def find_unused_rods() -> pd.DataFrame:

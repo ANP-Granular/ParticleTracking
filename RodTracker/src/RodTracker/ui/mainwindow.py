@@ -163,7 +163,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Initialize
         self.rod_data = r_data.RodData()
         id = self.rod_data._logger_id
-        self.rod_data._logger = self.ui.lv_actions_list.get_new_logger(id)
+        self.rod_data.logger = self.ui.lv_actions_list.get_new_logger(id)
         self.rod_data.show_3D = self.ui.cb_show_3D.isChecked()
 
         self.image_managers = [img_data.ImageData(0), img_data.ImageData(1)]
@@ -180,6 +180,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.logger = self.ui.lv_actions_list.get_new_logger(self.logger_id)
         self.ui.sa_camera_0.verticalScrollBar().installEventFilter(self)
         self.ui.sa_camera_1.verticalScrollBar().installEventFilter(self)
+        self.ui.tv_rods.installEventFilter(self)
         self.switch_right = QtWidgets.QShortcut(
             QtGui.QKeySequence("Ctrl+tab"), self
         )
@@ -974,7 +975,36 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     def eventFilter(
         self, source: QtCore.QObject, event: QtCore.QEvent
     ) -> bool:
-        """Intercepts events, here modified scroll events for zooming.
+        """Intercepts events to run custom code.
+
+        Parameters
+        ----------
+        source : QObject
+        event : QEvent
+
+        Returns
+        -------
+        bool
+            ``True``, if the event shall not be propagated further.
+            ``False``, if the event shall be passed to the next object to be
+            handled.
+        """
+        # Add new filters to this list
+        custom_filters = [
+            self.zoom_event_filter,
+            self.tree_event_filter,
+        ]
+        for filter in custom_filters:
+            if filter(source, event):
+                # Event has been handled
+                return True
+        # Event has not been handled
+        return False
+
+    def zoom_event_filter(
+        self, source: QtCore.QObject, event: QtCore.QEvent
+    ) -> bool:
+        """Intercepts ``QWheelEvents`` for scaling displayed images.
 
         Parameters
         ----------
@@ -1006,6 +1036,49 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             factor = 1.25
         self.scale_image(factor)
         return True
+
+    def tree_event_filter(
+        self, source: QtCore.QObject, event: QtCore.QEvent
+    ) -> bool:
+        """Intercepts ``QKeyEvents`` for deleting elements using the tree view.
+
+        Parameters
+        ----------
+        source : QObject
+        event : QEvent
+
+        Returns
+        -------
+        bool
+            ``True``, if the event shall not be propagated further.
+            ``False``, if the event shall be passed to the next object to be
+            handled.
+        """
+        if not (source is self.ui.tv_rods):
+            return False
+        if event.type() != QtCore.QEvent.KeyPress:
+            return False
+        event = QtGui.QKeyEvent(event)
+        if event.key() == QtCore.Qt.Key.Key_Delete:
+            # Delete the currently selected rod/all rods in the selected frame
+            try:
+                to_del = self.ui.tv_rods.selectedItems()[0]
+            except IndexError:
+                # No item in the tree view selected. Propagate event further to
+                # potentially handle this case elsewhere.
+                return False
+            txt = to_del.text(0)
+            if "Frame" in txt:
+                frame = int(txt.split(" ")[-1])
+                self.rod_data.delete_data(frame=frame)
+            else:
+                color = txt
+                frame = int(to_del.parent().text(0).split(" ")[-1])
+                self.rod_data.delete_data(particle_class=color, frame=frame)
+            # Regenerate tree
+            self.rod_data.update_tree_data()
+            return True
+        return False
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         """Reimplements QMainWindow.resizeEvent(a0).
