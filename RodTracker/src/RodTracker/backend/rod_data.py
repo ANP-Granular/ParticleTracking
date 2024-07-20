@@ -1002,8 +1002,8 @@ class RodData(QtCore.QObject):
         old_id: int,
         new_id: int,
         cam_id: str,
-        color: str = None,
-        frame: int = None,
+        color: Union[str, None] = None,
+        frame: Union[int, None] = None,
     ):
         """Change of rod numbers for more than one frame or camera.
 
@@ -1122,7 +1122,7 @@ class RodData(QtCore.QObject):
 
     @staticmethod
     def extract_seen_information(
-        data: pd.DataFrame = None,
+        data: Union[pd.DataFrame, None] = None,
     ) -> Tuple[Dict[int, Dict[str, Dict[int, list]]], list]:
         """Extracts the seen/unseen parameter for all rods in :data:`rod_data`.
 
@@ -1235,8 +1235,13 @@ class RodData(QtCore.QObject):
             An :class:`.Action` that was logged previously. It will only be
             reverted, if it associated with this object.
         """
-        # TODO
-        _logger.warning("RodData.undo_action() not implemented.")
+        global rod_data
+        lock.lockForWrite()
+        if isinstance(action, lg.DeleteData):
+            rod_data = pd.concat([rod_data, action.del_data])
+            rod_data.sort_values(["color", "frame", "particle"], inplace=True)
+            self.update_tree_data()
+        lock.unlock()
 
     def clean_data(self):
         """Deletes unused rods from the loaded dataset.

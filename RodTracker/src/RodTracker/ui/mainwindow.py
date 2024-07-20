@@ -354,6 +354,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self.ui.action_autoselect_rods.toggled.connect(cam.set_autoselect)
 
         # Data manipulation
+        self.request_undo.connect(self.rod_data.logger.undo_last)
+        self.request_redo.connect(self.rod_data.logger.redo_last)
         self.ui.action_cleanup.triggered.connect(self.rod_data.clean_data)
         self.ui.action_shorten_displayed.triggered.connect(
             lambda: self.cameras[tab_idx].adjust_rod_length(
@@ -918,8 +920,19 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
                 - :attr:`request_undo`
         """
+        _logger.debug("Attempting to undo latest action.")
         cam = self.cameras[self.ui.camera_tabs.currentIndex()]
-        self.request_undo.emit(cam.cam_id)
+        latest = self.ui.lv_actions_list.count() - 1
+        while latest > 0:
+            to_revert: lg.Action = self.ui.lv_actions_list.item(latest)
+            if to_revert.parent_id == cam.cam_id:
+                self.request_undo.emit(cam.cam_id)
+                return
+            elif to_revert.parent_id == self.rod_data.logger.parent_id:
+                self.request_undo.emit(self.rod_data.logger.parent_id)
+                return
+            else:
+                latest -= 1
 
     def requesting_redo(self) -> None:
         """Helper method to emit a request for repeating the last action.

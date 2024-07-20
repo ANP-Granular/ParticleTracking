@@ -19,7 +19,6 @@
 import logging
 import pathlib
 from abc import abstractmethod
-from copy import deepcopy
 from enum import Enum, auto
 from typing import Iterable, List, Optional, Union
 
@@ -303,7 +302,7 @@ class DeleteData(Action):
     def invert(self):
         # TODO: verify this works as expected! (eg. inverted_action is not
         #       deleted prematurely)
-        inverted_action = deepcopy(self)
+        inverted_action = DeleteData(self.del_data, self.parent_id)
         inverted_action.revert = not self.revert
         return inverted_action
 
