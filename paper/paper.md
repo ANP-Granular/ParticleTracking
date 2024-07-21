@@ -11,15 +11,21 @@ authors:
     affiliation: 1
   - name: Dmitry Puzyrev
     orcid: 0000-0002-9269-3224
-    affiliation: "1, 2"
+    affiliation: "1, 3, 4"
   - name: Ralf Stannarius
     orcid: 0000-0002-6836-3663
-    affiliation: 2
+    affiliation: "2, 3, 4, 5"
 affiliations:
-  - name: Department of Nonlinear Phenomena, Institute of Physics, Otto-von-Guericke-University Magdeburg
+  - name: Department of Nonlinear Phenomena, Institute of Physics, Otto von Guericke University Magdeburg, Germany
     index: 1
-  - name: Institute of Physics and MARS, Otto-von-Guericke-University Magdeburg
+  - name: Institute of Physics, Otto von Guericke University Magdeburg, Germany
     index: 2
+  - name: Department of Microgravity and Translational Regenerative Medicine, Medical Faculty, Otto von Guericke University Magdeburg, Germany
+    index: 3
+  - name: Research Group ‘Magdeburger Arbeitsgemeinschaft für Forschungunter Raumfahrt-und Schwerelosigkeitsbedingungen’ (MARS), Otto von Guericke University Magdeburg, Germany
+    index: 4
+  - name: Department of Engineering, Brandenburg University of Applied Sciences, Germany
+    index: 5
 date: 30 March 2023
 bibliography: paper.bib
 ---
@@ -41,7 +47,7 @@ The main features of this software are given below with a more extensive feature
 
 The main focus of this software is currently on elongated (rod-shaped) particles, but it is extensible with new particle geometries.
 The software can also be modified for inclusion of additional camera views for more accurate 3D tracking, or for 1-view 2D particle tracking.
-The `RodTracker` software is currently employed for data extraction in the German Aerospace Center (DLR) projects EVA (50WM2048), VICKI (50WM2252), and CORDYGA (50WM2242). Several publications that use this library for data extraction are currently in preparation.
+The `RodTracker` software is currently employed for data extraction in the German Aerospace Center (DLR) projects EVA II (50WK2348), VICKI (50WM2252), and CORDYGA (50WM2242). Recently, it was used in research article on cooling of granular gas mixture in microgravity [@Puzyrev2024]. Other publications that use this library for data extraction are currently in preparation.
 The prototype software for particle detection and tracking was described in [@Puzyrev2020].
 
 ![Typical workflow with the `RodTracker` for data extraction.\label{fig:workflow}](./workflow.png){ width=100% }
