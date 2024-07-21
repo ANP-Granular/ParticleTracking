@@ -76,6 +76,6 @@ Among others, the software depends on the following open source libraries: For t
 We want to acknowledge the valuable feedback and bug reports given by the users of our software, specifically Mahdieh Mohammadi and Kirsten Harth.
 We also want to acknowledge the work of Meera Subramanian and Adithya Viswanathan that provided a first prototype of the `RodTracker` GUI.
 
-The development of this software has been financially supported by the German Aerospace Center (DLR) within grants 50WM2048 (Project EVA) and 50WM2252 (Project VICKI).
+The development of this software has been financially supported by the German Aerospace Center (DLR) within grants 50WM2048/50WK2348 (Projects EVA/EVA-II) and 50WM2252 (Project VICKI).
 
 # References
