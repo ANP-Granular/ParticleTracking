@@ -835,7 +835,13 @@ class RodData(QtCore.QObject):
             cols_pos_3d = [
                 col for col in columns if re.fullmatch(RE_3D_POS, col)
             ]
-            self.cols_2D = [*cols_pos_2d, *cols_seen, "particle", "frame"]
+            self.cols_2D = [
+                *cols_pos_2d,
+                *cols_seen,
+                "particle",
+                "frame",
+                "color",
+            ]
             self.cols_3D = [*cols_pos_3d, "particle", "frame", "color"]
 
             # Display as a tree

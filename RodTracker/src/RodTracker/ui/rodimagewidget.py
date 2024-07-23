@@ -1273,7 +1273,8 @@ class RodImageWidget(QLabel):
             data = data[col_list]
         except KeyError:
             _logger.info(
-                f"Couldn't extract rods. Didn't find columns: " f"{col_list}"
+                f"Couldn't extract rods. Didn't find all necessary columns: "
+                f"{col_list}"
             )
             del self.rods
             return

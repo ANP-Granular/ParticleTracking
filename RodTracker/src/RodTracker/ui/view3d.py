@@ -152,7 +152,7 @@ class View3D(QtWidgets.QWidget):
                     *mpl_colors.to_rgba(color, alpha=1.0)
                 )
             except ValueError as e:
-                _logger.error(
+                _logger.warning(
                     f"Unknown color for 3D display!\n{e.args}\n"
                     f"Using 'pink' instead."
                 )
