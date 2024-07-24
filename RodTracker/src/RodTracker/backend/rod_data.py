@@ -59,7 +59,7 @@ RE_3D_POS: re.Pattern = re.compile(r"[xyz][12]")
 POSITION_SCALING: float = 1.0
 """float : Scale factor for loaded position data."""
 
-rod_data: pd.DataFrame = None
+rod_data: Union[pd.DataFrame, None] = None
 lock = QtCore.QReadWriteLock(QtCore.QReadWriteLock.Recursive)
 _logger = logging.getLogger(__name__)
 
@@ -227,6 +227,17 @@ class RodData(QtCore.QObject):
         self.cols_2D: List[str] = []
 
     @property
+    def logger(self) -> lg.ActionLogger:
+        return self._logger
+
+    @logger.setter
+    def logger(self, new_logger: lg.ActionLogger) -> None:
+        if self._logger is not None:
+            self._logger.undo_action.disconnect()
+        self._logger = new_logger
+        self._logger.undo_action.connect(self.undo_action)
+
+    @property
     def show_2D(self) -> bool:
         """Flag, whether to send updates of 2D rod data.
 
@@ -290,12 +301,14 @@ class RodData(QtCore.QObject):
         """
         try_again = True
         while try_again:
-            chosen_folder = QtWidgets.QFileDialog.getExistingDirectory(
-                None, "Choose folder with position data", pre_selection
+            chosen_folder = dialogs.select_data_folder(
+                "Choose folder with position data",
+                pre_selection,
+                "Directory with position data (*.csv)",
             )
-            if chosen_folder == "":
+            if chosen_folder is None:
                 return
-            chosen_folder = Path(chosen_folder).resolve()
+
             # Check for eligible files
             eligible_files = self.folder_has_data(chosen_folder)
             if not eligible_files:
@@ -398,7 +411,7 @@ class RodData(QtCore.QObject):
         cols_pos_2d = [col for col in columns if re.fullmatch(RE_2D_POS, col)]
         cols_seen = [col for col in columns if re.fullmatch(RE_SEEN, col)]
         cols_pos_3d = [col for col in columns if re.fullmatch(RE_3D_POS, col)]
-        self.cols_2D = [*cols_pos_2d, *cols_seen, "particle", "frame"]
+        self.cols_2D = [*cols_pos_2d, *cols_seen, "particle", "frame", "color"]
         self.cols_3D = [*cols_pos_3d, "particle", "frame", "color"]
 
         self.data_loaded[Path, Path, list].emit(
@@ -571,17 +584,22 @@ class RodData(QtCore.QObject):
         self.provide_data(data_3d=False)
 
     @QtCore.pyqtSlot(int)
-    def update_rod_2D(self, rod: int = None):
+    def update_rod_2D(self, class_ID: str = None, rod_ID: int = None):
         """Update the rod for 2D data sending and trigger sending of 2D data.
 
         Parameters
         ----------
-        rod : int | None
+        class_ID: str | None
+            Class (rod color) to display in 2D. If no class is given all
+            classes are selected.
+            Default is ``None``.
+        rod_ID : int | None
             Rod number to display in 2D. If no number is given all rods are
             selected.
             Default is ``None``.
         """
-        self.rod_2D = rod
+        self.rod_2D = rod_ID
+        self.color_2D = class_ID
         self.provide_data(data_3d=False)
 
     @QtCore.pyqtSlot(int, bool)
@@ -817,7 +835,13 @@ class RodData(QtCore.QObject):
             cols_pos_3d = [
                 col for col in columns if re.fullmatch(RE_3D_POS, col)
             ]
-            self.cols_2D = [*cols_pos_2d, *cols_seen, "particle", "frame"]
+            self.cols_2D = [
+                *cols_pos_2d,
+                *cols_seen,
+                "particle",
+                "frame",
+                "color",
+            ]
             self.cols_3D = [*cols_pos_3d, "particle", "frame", "color"]
 
             # Display as a tree
@@ -984,8 +1008,8 @@ class RodData(QtCore.QObject):
         old_id: int,
         new_id: int,
         cam_id: str,
-        color: str = None,
-        frame: int = None,
+        color: Union[str, None] = None,
+        frame: Union[int, None] = None,
     ):
         """Change of rod numbers for more than one frame or camera.
 
@@ -1104,7 +1128,7 @@ class RodData(QtCore.QObject):
 
     @staticmethod
     def extract_seen_information(
-        data: pd.DataFrame = None,
+        data: Union[pd.DataFrame, None] = None,
     ) -> Tuple[Dict[int, Dict[str, Dict[int, list]]], list]:
         """Extracts the seen/unseen parameter for all rods in :data:`rod_data`.
 
@@ -1148,6 +1172,82 @@ class RodData(QtCore.QObject):
                 }
         lock.unlock()
         return seen_data, [cam.split("_")[-1] for cam in to_include]
+
+    def delete_data(
+        self,
+        frame: Union[int, None] = None,
+        particle_class: Union[str, None] = None,
+        particle: Union[int, None] = None,
+        all: bool = False,
+    ):
+        """Delete parts of the currently loaded position data.
+
+        Parameters
+        ----------
+        frame : Union[int, None], optional
+            Frame on which to delete data. The currently displayed frame is
+            chosen, if none is given.
+            By default ``None``.
+        particle_class : Union[str, None], optional
+            Class of particles to delete on the given frame. All available
+            classes are deleted if ``None`` is given.
+            By default ``None``.
+        particle : Union[int, None], optional
+            TBD
+            By default ``None``.
+        all : bool, optional
+            Flag whether to delete all currently loaded data.
+            By default ``False``.
+        """
+        global rod_data
+        if all is True:
+            # delete all data contained in the current dataset
+            lock.lockForWrite()
+            action = lg.DeleteData(rod_data.copy(deep=True))
+            rod_data = rod_data.head(0)
+            lock.unlock()
+            self._logger.add_action(action)
+            return
+        if frame is None:
+            frame = self.frame
+
+        if particle_class is None:
+            # delete all colors in frame
+            lock.lockForWrite()
+            to_del = rod_data.loc[rod_data.frame == frame]
+            action = lg.DeleteData(to_del.copy(deep=True))
+            rod_data.drop(to_del.index, inplace=True)
+            lock.unlock()
+            self._logger.add_action(action)
+            return
+        else:
+            # delete given color in frame
+            lock.lockForWrite()
+            to_del = rod_data.loc[
+                (rod_data.frame == frame) & (rod_data.color == particle_class)
+            ]
+            action = lg.DeleteData(to_del.copy(deep=True))
+            rod_data.drop(to_del.index, inplace=True)
+            lock.unlock()
+            self._logger.add_action(action)
+            return
+
+    def undo_action(self, action: lg.Action) -> None:
+        """Reverts an :class:`.Action` performed on the loaded data.
+
+        Parameters
+        ----------
+        action : Action
+            An :class:`.Action` that was logged previously. It will only be
+            reverted, if it associated with this object.
+        """
+        global rod_data
+        lock.lockForWrite()
+        if isinstance(action, lg.DeleteData):
+            rod_data = pd.concat([rod_data, action.del_data])
+            rod_data.sort_values(["color", "frame", "particle"], inplace=True)
+            self.update_tree_data()
+        lock.unlock()
 
     def clean_data(self):
         """Deletes unused rods from the loaded dataset.
@@ -1205,6 +1305,17 @@ class RodData(QtCore.QObject):
         else:
             # No unused rods found for deletion
             return
+
+    def update_tree_data(self) -> None:
+        """Update the ``seen`` values of the currently loaded data for display
+        as a tree."""
+        worker = pl.Worker(self.extract_seen_information)
+        worker.signals.result.connect(lambda ret: self.is_busy.emit(False))
+        worker.signals.error.connect(lambda ret: self.is_busy.emit(False))
+        self.is_busy.emit(True)
+        worker.signals.result.connect(lambda ret: self.seen_loaded.emit(*ret))
+        worker.signals.error.connect(lambda ret: exception_logger(*ret))
+        self.threads.start(worker)
 
     @staticmethod
     def find_unused_rods() -> pd.DataFrame:

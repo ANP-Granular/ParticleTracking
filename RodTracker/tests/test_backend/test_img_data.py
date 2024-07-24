@@ -47,6 +47,7 @@ class TestImageData:
             assert file_path.exists()
             assert file_path.is_file()
 
+        # FIXME: getOpenFileName is not used anymore
         with monkeypatch.context() as mp:
             mp.setattr(
                 QtWidgets.QFileDialog, "getOpenFileName", lambda *args: folder

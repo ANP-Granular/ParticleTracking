@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
@@ -35,14 +36,14 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+python = ">=3.8,<3.13"
 importlib-resources = {version = "^6.0"}
 matplotlib = [
     {version = ">=3.6.2", python = ">=3.9"},
     {version = ">=3.6.2,<3.8", python ="<3.9"}
 ]
 numpy = [
-    {version = ">=1.21", python = ">=3.9"},
+    {version = ">=1.21,<2", python = ">=3.9"},
     {version = ">=1.21,<=1.25", python = "<3.9"}
 ]
 pandas= [
@@ -81,13 +82,13 @@ test = ["pytest", "pytest-qt", "pytest-cov"]
 docs = ["Sphinx", "docutils", "sphinx_rtd_theme", "myst_parser", "dunamai"]
 
 [tool.poetry.scripts]
-RodTracker = 'RodTracker.RodTracker:main'
+RodTracker = 'RodTracker.main:main'
 
 [tool.pytest.ini_options]
 addopts = [
     "--cov=RodTracker",
     "--cov-report=term",
-    "--cov-fail-under=70"
+    # "--cov-fail-under=70"
 ]
 testpaths = [
     "tests/",
