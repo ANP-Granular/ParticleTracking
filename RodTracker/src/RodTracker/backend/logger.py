@@ -168,7 +168,7 @@ class Action(QListWidgetItem):
     def invert(self):
         """Generates an inverted version of the :class:`Action` (for redoing),
         None if the :class:`Action` is not invertible."""
-        return None
+        raise NotInvertableError
 
 
 class FileAction(Action):
@@ -1147,9 +1147,9 @@ class ActionLogger(QtCore.QObject):
     def __init__(self, parent_id, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.parent_id = parent_id
-        self.logged_actions = []
+        self.logged_actions: List[Action] = []
         self.unsaved_changes = []
-        self.repeatable_changes = []
+        self.repeatable_changes: List[Action] = []
 
     def add_action(self, last_action: Action) -> None:
         """Registers the actions performed by its parent and propagates them
@@ -1210,7 +1210,12 @@ class ActionLogger(QtCore.QObject):
             # Nothing logged yet
             return
         undo_item = self.logged_actions.pop()
-        inv_undo_item = undo_item.invert()
+        try:
+            inv_undo_item = undo_item.invert()
+        except NotInvertableError:
+            # Action cannot be reversed
+            self.logged_actions.append(undo_item)
+            return
         self.repeatable_changes.append(inv_undo_item)
         if undo_item not in self.unsaved_changes:
             if not self.unsaved_changes:

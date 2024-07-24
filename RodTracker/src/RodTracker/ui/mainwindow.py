@@ -929,6 +929,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 self.request_undo.emit(cam.cam_id)
                 return
             elif to_revert.parent_id == self.rod_data.logger.parent_id:
+                if to_revert.action is lg.FileActions.SAVE:
+                    latest -= 1
+                    continue
                 self.request_undo.emit(self.rod_data.logger.parent_id)
                 return
             else:
@@ -944,6 +947,8 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
                 - :attr:`request_redo`
         """
+        # TODO: change this, such that the RodData actions can be re-applied
+        _logger.debug("Attempting to re-apply latest action.")
         cam = self.cameras[self.ui.camera_tabs.currentIndex()]
         self.request_redo.emit(cam.cam_id)
 
