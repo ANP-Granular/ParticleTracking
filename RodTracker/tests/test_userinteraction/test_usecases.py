@@ -15,11 +15,13 @@
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """Tests for typical usecases and cases where problems occurred in the past."""
+import os
 import pathlib
 from typing import List
 
 import conftest
 import gui_actions as ga
+import importlib_resources
 import pytest
 from PyQt5 import QtCore, QtWidgets
 from pytest import MonkeyPatch
@@ -28,7 +30,13 @@ from pytestqt.qtbot import QtBot
 import RodTracker.backend.logger as lg
 from RodTracker.ui.mainwindow import RodTrackWindow
 
-# pytestmark = pytest.mark.skip("Implementation changes needed.")
+if os.getenv("GITHUB_ACTIONS"):
+    pytestmark = pytest.mark.skip(
+        "Tests requiring interaction with GUI elements cannot be run properly "
+        "with GitHub Actions at the moment. Have a look this issue for "
+        "more information: "
+        "https://github.com/ANP-Granular/ParticleTracking/issues/87"
+    )
 
 
 def teardown_replacements(mp: MonkeyPatch):
@@ -55,9 +63,17 @@ def test_typical(
     try:
         scenario = [
             ga.OpenData(conftest.csv_data),
-            ga.OpenImage(conftest.cam1_img1),
+            ga.OpenImage(
+                importlib_resources.files(
+                    "RodTracker.resources.example_data.images"
+                ).joinpath("gp3")
+            ),
             ga.SwitchCamera(),
-            ga.OpenImage(conftest.cam2_img1),
+            ga.OpenImage(
+                importlib_resources.files(
+                    "RodTracker.resources.example_data.images"
+                ).joinpath("gp4")
+            ),
             ga.SwitchRodNumber(12, 7, lg.NumberChangeActions.ALL_ONE_CAM),
             ga.SwitchCamera(),
             ga.SwitchRodNumber(7, 12, lg.NumberChangeActions.CURRENT),

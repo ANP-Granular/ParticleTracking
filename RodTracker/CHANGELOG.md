@@ -1,5 +1,23 @@
 ## [Unreleased]
 
+## [v0.6.3]
+### Added
+- support for Python 3.12
+- viewing mode displaying all particles in a frame ([#94](https://github.com/ANP-Granular/ParticleTracking/issues/94))
+- deleting particles from the `Particles` tab ([#93](https://github.com/ANP-Granular/ParticleTracking/issues/93))
+- informative dialog before downloading the example model for rod detection ([#89](https://github.com/ANP-Granular/ParticleTracking/issues/89))
+
+### Changed
+- removed scaling of example data ([#95](https://github.com/ANP-Granular/ParticleTracking/issues/95))
+- made error dialogues modal ([#92](https://github.com/ANP-Granular/ParticleTracking/issues/92))
+- folders must be selected during image loading ([#88](https://github.com/ANP-Granular/ParticleTracking/issues/88))
+
+### Fixed
+- `numpy` & `torchvision` version conflict ([#90](https://github.com/ANP-Granular/ParticleTracking/issues/90))
+- loss of dimension when detecting only 1 particle per frame ([#91](https://github.com/ANP-Granular/ParticleTracking/issues/91))
+- multiple errors in tests
+
+
 ## [v0.6.2]
 ### Added
 - automated testing using a GitHub workflow ([#84](https://github.com/ANP-Granular/ParticleTracking/issues/84))
@@ -166,7 +184,8 @@ This especially improves performance and responsiveness of the `RodTracker` when
 ### Added
 - a versioning system
 
-[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.3...HEAD
+[v0.6.3]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.2...v0.6.3
 [v0.6.2]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.1...v0.6.2
 [v0.6.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.6.0...v0.6.1
 [v0.6.0]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.5.8...v0.6.0

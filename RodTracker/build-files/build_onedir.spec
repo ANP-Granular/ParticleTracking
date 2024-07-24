@@ -20,49 +20,61 @@ for dir in site.getsitepackages():
 
 if platform.system() == "Darwin":
     from PyInstaller.utils.hooks import collect_dynamic_libs
-    binaries += collect_dynamic_libs('torch')
-    binaries += [
-        (site_packages + '/torchaudio/lib/libtorchaudio.so', './torchaudio/lib'),
-        (site_packages + '/torchaudio/lib/libtorchaudio_sox.so', './torchaudio/lib'),
 
+    binaries += collect_dynamic_libs("torch")
+    binaries += [
+        (
+            site_packages + "/torchaudio/lib/libtorchaudio.so",
+            "./torchaudio/lib",
+        ),
+        (
+            site_packages + "/torchaudio/lib/libtorchaudio_sox.so",
+            "./torchaudio/lib",
+        ),
         # FIXME: Causes the application to crash because of a version mismatch:
         # ImportError: dlopen(/Users/Dmitry/DropBox_Adrian/Dropbox/ParticleTracking/REPO/RodTracker/dist/unix/RodTracker.app/Contents/Resources/cv2/cv2.abi3.so, 2): Library not loaded: @rpath/libpng16.16.dylib
         #   Referenced from: /Users/Dmitry/DropBox_Adrian/Dropbox/ParticleTracking/REPO/RodTracker/dist/unix/RodTracker.app/Contents/Frameworks/PIL/__dot__dylibs/libfreetype.6.dylib
         #   Reason: Incompatible library version: libfreetype.6.dylib requires version 57.0.0 or later, but libpng16.16.dylib provides version 56.0.0
         # (site_packages + '/torchvision/image.so', './torchvision'),
     ]
-    icon_file = '../src/RodTracker/resources/icon_macOS.icns'
+    icon_file = "../src/RodTracker/resources/icon_macOS.icns"
 elif platform.system() == "Windows":
-    icon_file = '../src/RodTracker/resources/icon_windows.ico'
-    version_info = 'version_info.txt'
+    icon_file = "../src/RodTracker/resources/icon_windows.ico"
+    version_info = "version_info.txt"
     binaries += [
-        (site_packages + '/torchvision/image.pyd', './torchvision'),
+        (site_packages + "/torchvision/image.pyd", "./torchvision"),
     ]
 elif platform.system() == "Linux":
     binaries += [
-        (site_packages + '/torchaudio/lib/libtorchaudio.so', './torchaudio/lib'),
+        (
+            site_packages + "/torchaudio/lib/libtorchaudio.so",
+            "./torchaudio/lib",
+        ),
         # appears to have been removed in newer versions of torchaudio
         # (site_packages + '/torchaudio/lib/libtorchaudio_ffmpeg.so', './torchaudio/lib'),
-        (site_packages + '/torchaudio/lib/libtorchaudio_sox.so', './torchaudio/lib'),
-        (site_packages + '/torchvision/image.so', './torchvision'),
+        (
+            site_packages + "/torchaudio/lib/libtorchaudio_sox.so",
+            "./torchaudio/lib",
+        ),
+        (site_packages + "/torchvision/image.so", "./torchvision"),
     ]
 
 a = Analysis(
-    ['../src/RodTracker/RodTracker.py'],
-    pathex=['.'],
+    ["../src/RodTracker/main.py"],
+    pathex=["."],
     binaries=binaries,
     datas=[
-        ('../src/RodTracker/ui/*', './RodTracker/ui'),
-        ('../src/RodTracker/backend/*', './RodTracker/backend'),
-        ('../src/RodTracker/resources/*', './RodTracker/resources'),
-        ('../../docs/build/html/', './docs/'),
-        ('../../docs/build/html/_modules', './docs/_modules'),
-        ('../../docs/build/html/_sources', './docs/_sources'),
-        ('../../docs/build/html/_static', './docs/_static'),
-        (site_packages + '/pulp', './pulp'),
+        ("../src/RodTracker/ui/*", "./RodTracker/ui"),
+        ("../src/RodTracker/backend/*", "./RodTracker/backend"),
+        ("../src/RodTracker/resources/*", "./RodTracker/resources"),
+        ("../../docs/build/html/", "./docs/"),
+        ("../../docs/build/html/_modules", "./docs/_modules"),
+        ("../../docs/build/html/_sources", "./docs/_sources"),
+        ("../../docs/build/html/_static", "./docs/_static"),
+        (site_packages + "/pulp", "./pulp"),
     ],
     hiddenimports=[
-        'skimage.transform.hough_transform',
+        "skimage.transform.hough_transform",
     ],
     hookspath=[],
     hooksconfig={},
@@ -71,21 +83,17 @@ a = Analysis(
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
-    noarchive=False
+    noarchive=False,
 )
 
-pyz = PYZ(
-    a.pure,
-    a.zipped_data,
-    cipher=block_cipher
-)
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,
     a.scripts,
     [],
     exclude_binaries=True,
-    name='RodTrackerApp',
+    name="RodTrackerApp",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -94,7 +102,7 @@ exe = EXE(
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,
-    entitlements_file=None ,
+    entitlements_file=None,
     icon=icon_file,
     version=version_info,
 )
@@ -107,7 +115,7 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='RodTracker'
+    name="RodTracker",
 )
 
 app = BUNDLE(

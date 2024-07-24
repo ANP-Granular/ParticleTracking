@@ -23,6 +23,7 @@ from enum import Enum, auto
 from typing import Iterable, List, Optional, Union
 
 import numpy as np
+from pandas import DataFrame
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QListWidgetItem
 
@@ -167,7 +168,7 @@ class Action(QListWidgetItem):
     def invert(self):
         """Generates an inverted version of the :class:`Action` (for redoing),
         None if the :class:`Action` is not invertible."""
-        return None
+        raise NotInvertableError
 
 
 class FileAction(Action):
@@ -258,6 +259,52 @@ class FileAction(Action):
         else:
             # This action cannot be undone
             return
+
+
+class DeleteData(Action):
+    def __init__(
+        self, data: DataFrame, parent_id: str = None, *args, **kwargs
+    ):
+        self.action = "Deleted data"
+        self.del_data = data
+        self._parent_id = parent_id
+        self.colors = self.del_data.color.unique()
+
+        super().__init__(str(self), *args, **kwargs)
+
+        frames = self.del_data.frame.unique()
+        if len(frames) == 1:
+            self.frame = frames[0]
+
+    def __str__(self):
+        to_str = ""
+        if self._parent_id is not None:
+            to_str += f"({self._parent_id}) "
+        to_str += f"{self.action}: {len(self.del_data)} particles"
+
+        if len(self.colors) == 1:
+            to_str += f" of class '{self.colors[0]}'"
+
+        if self.frame:
+            to_str += f" on frame {self.frame}"
+        else:
+            to_str += f" on {len(self.del_data.frame.unique())} frames"
+        return to_str
+
+    def undo(self, rods: Optional[Iterable[rn.RodNumberWidget]] = None):
+        """Do NOT use for this type of Action."""
+        return []
+
+    def to_save(self):
+        # TODO
+        super().to_save(self)
+
+    def invert(self):
+        # TODO: verify this works as expected! (eg. inverted_action is not
+        #       deleted prematurely)
+        inverted_action = DeleteData(self.del_data, self.parent_id)
+        inverted_action.revert = not self.revert
+        return inverted_action
 
 
 class ChangedRodNumberAction(Action):
@@ -1100,9 +1147,9 @@ class ActionLogger(QtCore.QObject):
     def __init__(self, parent_id, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.parent_id = parent_id
-        self.logged_actions = []
+        self.logged_actions: List[Action] = []
         self.unsaved_changes = []
-        self.repeatable_changes = []
+        self.repeatable_changes: List[Action] = []
 
     def add_action(self, last_action: Action) -> None:
         """Registers the actions performed by its parent and propagates them
@@ -1163,7 +1210,12 @@ class ActionLogger(QtCore.QObject):
             # Nothing logged yet
             return
         undo_item = self.logged_actions.pop()
-        inv_undo_item = undo_item.invert()
+        try:
+            inv_undo_item = undo_item.invert()
+        except NotInvertableError:
+            # Action cannot be reversed
+            self.logged_actions.append(undo_item)
+            return
         self.repeatable_changes.append(inv_undo_item)
         if undo_item not in self.unsaved_changes:
             if not self.unsaved_changes:

@@ -152,7 +152,7 @@ class View3D(QtWidgets.QWidget):
                     *mpl_colors.to_rgba(color, alpha=1.0)
                 )
             except ValueError as e:
-                _logger.error(
+                _logger.warning(
                     f"Unknown color for 3D display!\n{e.args}\n"
                     f"Using 'pink' instead."
                 )
@@ -162,9 +162,9 @@ class View3D(QtWidgets.QWidget):
             xs = c_data[["x1", "x2"]].to_numpy()
             ys = c_data[["y1", "y2"]].to_numpy()
             zs = c_data[["z1", "z2"]].to_numpy()
-            dxs = np.diff(xs, axis=1).squeeze()
-            dys = np.diff(ys, axis=1).squeeze()
-            dzs = np.diff(zs, axis=1).squeeze()
+            dxs = np.diff(xs, axis=1).squeeze(axis=1)
+            dys = np.diff(ys, axis=1).squeeze(axis=1)
+            dzs = np.diff(zs, axis=1).squeeze(axis=1)
             k = 0
             for idx in range(len(c_data)):
                 if i + k < available_rods:

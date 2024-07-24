@@ -71,6 +71,11 @@ class CreateRod:
         cam_idx = main_window.ui.camera_tabs.currentIndex()
         cam = main_window.cameras[cam_idx]
 
+        # Deactivate rod, if necessary
+        qtbot.mouseClick(
+            cam, QtCore.Qt.MouseButton.RightButton, pos=self.start
+        )
+
         with monkeypatch.context() as mp:
             # Mock number selection
             mp.setattr(
@@ -96,6 +101,7 @@ class CreateRod:
                     cam, QtCore.Qt.MouseButton.LeftButton, pos=self.end
                 )
         if self.assertions:
+            qtbot.wait(1500)
             aa.post_create(main_window, self.new_id, self.start, self.end)
         return main_window
 
@@ -134,6 +140,7 @@ class DeleteRod:
                 qtbot.keyClick(rod, QtCore.Qt.Key_Enter)
                 qtbot.wait_until(increase_count, timeout=2000)
                 if self.assertions:
+                    qtbot.wait(500)
                     aa.post_delete(main_window, self.rod_id)
                 return main_window
         warn(f"The rod #{self.rod_id} was not found. No rod has been deleted.")
@@ -186,6 +193,7 @@ class ChangeRodPosition:
                 qtbot.keyClick(rod, QtCore.Qt.Key_Enter)
                 qtbot.wait_until(increased_count, timeout=2000)
                 if self.assertions:
+                    qtbot.wait(500)
                     aa.post_pos_change(
                         main_window, self.rod_id, self.start, self.end
                     )
@@ -260,7 +268,7 @@ class SwitchRodNumber:
                     if self.mode is not None:
                         qtbot.wait_until(increased_count, timeout=2000)
                     if self.assertions:
-                        qtbot.wait(150)
+                        qtbot.wait(500)
                         aa.post_number_switch(
                             main_window,
                             self.rod_id,
@@ -309,6 +317,7 @@ class SaveChanges:
             )
         qtbot.wait_until(contents_written, timeout=2000)
         if self.assertions:
+            qtbot.wait(500)
             aa.post_save(main_window, tmp_path, state)
         return main_window
 
@@ -346,6 +355,7 @@ class Undo:
         qtbot.wait_until(decrease_count, timeout=2000)
         qtbot.wait(250)
         if self.assertions:
+            qtbot.wait(500)
             aa.post_undo(main_window, state)
         return main_window
 
@@ -386,6 +396,7 @@ class Redo:
         qtbot.wait(250)
 
         if self.assertions:
+            qtbot.wait(500)
             aa.post_undo(main_window, state)
         return main_window
 
@@ -416,6 +427,7 @@ class SwitchFrame:
             qtbot.keyClick(main_window, direction_key)
             qtbot.wait(150)
         if self.assertions:
+            qtbot.wait(500)
             aa.post_switch_frame(main_window, self.direction, state)
         return main_window
 
@@ -453,6 +465,7 @@ class SwitchColor:
         qtbot.mouseClick(to_press, QtCore.Qt.MouseButton.LeftButton)
         qtbot.wait(150)
         if self.assertions:
+            qtbot.wait(500)
             aa.post_switch_color(main_window, self.color, state)
         return main_window
 
@@ -482,6 +495,7 @@ class SwitchCamera:
             )
 
         if self.assertions:
+            qtbot.wait(500)
             aa.post_switch_cam(main_window, state)
 
         return main_window
@@ -527,6 +541,7 @@ class LengthAdjustment:
 
         qtbot.keyClick(main_window, self.method)
         if self.assertions:
+            qtbot.wait(500)
             aa.post_length_adjustment(main_window, state)
         return main_window
 
@@ -570,15 +585,19 @@ class OpenImage:
         # TODO: wait for loading complete
         with monkeypatch.context() as mp:
             mp.setattr(
-                QtWidgets.QFileDialog,
-                "getOpenFileName",
-                lambda *args, **kwargs: (str(self.img_path), None),
+                dialogs,
+                "select_data_folder",
+                lambda *args, **kwargs: (
+                    self.img_path.resolve()
+                    if self.img_path is not None
+                    else None
+                ),
             )
             qtbot.mouseClick(
                 main_window.ui.pb_load_images, QtCore.Qt.MouseButton.LeftButton
             )
         main_window.original_size()
-        qtbot.wait(50)
+        qtbot.wait(100)
         return main_window
 
 
@@ -602,9 +621,13 @@ class OpenData:
         # TODO: wait for loading complete
         with monkeypatch.context() as mp:
             mp.setattr(
-                QtWidgets.QFileDialog,
-                "getExistingDirectory",
-                lambda *args, **kwargs: str(self.data_path),
+                dialogs,
+                "select_data_folder",
+                lambda *args, **kwargs: (
+                    self.data_path.resolve()
+                    if self.data_path is not None
+                    else None
+                ),
             )
             # avoid blocking
             mp.setattr(dialogs, "show_warning", lambda *args, **kwargs: None)
