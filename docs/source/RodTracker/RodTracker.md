@@ -25,6 +25,10 @@ In all these cases the window shown below should be opened after the splash scre
 Open images from disk using the `File` dropdown menu, the `Load Images` button or the `Crtl + O` keyboard shortcut.
 Refer to [](#dataset-format--folder-structure) for the correct dataset structure. You can also use the example dataset located in `./RodTracker/src/RodTracker/resources/example_data`.
 
+```{hint}
+You are supposed to select a folder containing images, **NOT** the images themselves.
+```
+
 You can now switch between images in the folder using the `left`/`right` keys, the `Previous`/`Next` buttons or the `Slider` below.
 
 ![LoadedImages](../images/ImagesLoaded.png)
@@ -136,6 +140,8 @@ A rod number can only be deleted completely, if it only has dummy coordinates in
 ![Final Deletion Dialog](../images/FinalDeleteDialog.png)
 ```
 
+Additionally, multiple particles can be deleted via the `Particles` tab. This is achieved by selecting a frame or a color within a frame and deleting all contained particles and pressing the `Del` key. With this method the particles are completely removed from the dataset instead of replacing them with dummy coordinates.
+
 ## Saving
 
 The dataset can be saved as `*.csv` files. Each class(/color) is saved to an individual file as shown below. Users must manually trigger saving, but if any unsaved changes are present while attempting to close the app a dialog to resolve this will be automatically shown.
@@ -159,14 +165,12 @@ The dataset can be saved as `*.csv` files. Each class(/color) is saved to an ind
 
 To load a position dataset in the form shown in [](#saving), click on the `Load Rods` button and select the folder with the desired `*.csv` files.
 
-If no rods are shown after selecting a folder check, that the `Overlay Rods` box is checked, the correct image dataset is loaded (folder must match the ID appended to the 2D data column names), and that a frame is currently displayed, that has data associated with it.
-
 ```{hint}
-You might need to adjust the `Position Scaling` value to `10.0` in the settings tab, if you are loading the example data.
+You are supposed to select a folder containing position data files, **NOT** the data files themselves.
 ```
 
 ```{note}
-The selection dialog on Windows will not show any files in the selected directory. Therefore, make sure which directory to select in advance.
+If no rods are shown after selecting a folder check, that the correct image dataset is loaded (folder must match the ID appended to the 2D data column names), and that a frame is currently displayed, that has data associated with it.
 ```
 
 ## Rod tracking and 3D coordinate reconstruction
