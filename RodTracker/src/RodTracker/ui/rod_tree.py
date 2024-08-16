@@ -35,9 +35,14 @@ class RodTree(QtWidgets.QTreeWidget):
         ``'seen'`` or ``'unseen'``.\n
         Dimensions: ``(frame, color, particle, camera)``
 
+
+    .. admonition:: Signals
+
+        - :attr:`data_loaded`
     """
 
     data_loaded = QtCore.pyqtSignal(name="data_loaded")
+    """Indicates the successful generation of the tree."""
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
