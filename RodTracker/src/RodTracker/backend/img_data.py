@@ -20,7 +20,7 @@ import logging
 from pathlib import Path
 from typing import List, Tuple
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui
 
 import RodTracker.backend.logger as lg
 import RodTracker.ui.dialogs as dialogs
@@ -124,25 +124,20 @@ class ImageData(QtCore.QObject):
         if chosen_folder is None:
             # File selection was aborted
             return
-        # Find and hand over the first file in the chosen directory
-        for file in chosen_folder.iterdir():
-            if file.is_dir():
-                continue
-            self.open_image_folder(file)
-            return
+        self.open_image_folder(chosen_folder)
 
-    def open_image_folder(self, chosen_file: Path):
-        """Tries to open an image folder to show the given image.
+    def open_image_folder(self, chosen_folder: Path):
+        """Attempts to open an image folder and show the first image.
 
         All images of the folder from the chosen file's folder are marked for
-        later display. The selected image is opened immediately. It tries to
-        extract a camera id from the selected folder and logs the
-        opening action.
+        later display. The first image is opened immediately. It tries to
+        extract a camera id from the selected folder and logs the opening
+        action.
 
         Parameters
         ----------
-        chosen_file: Path
-            Path to image file chosen for immediate display.
+        chosen_folder: Path
+            Path to chosen folder.
 
         Returns
         -------
@@ -157,27 +152,34 @@ class ImageData(QtCore.QObject):
             - :attr:`next_img` [int, int]
             - :attr:`data_loaded`
         """
-        if not chosen_file:
+        if not chosen_folder:
             return
-        chosen_file = chosen_file.resolve()
-        frame = int(chosen_file.stem.split("_")[-1])
-        # Open file
-        loaded_image = QtGui.QImage(str(chosen_file))
-        if loaded_image.isNull():
-            QtWidgets.QMessageBox.information(
-                None, "Image Viewer", f"Cannot load {chosen_file}"
+        chosen_folder = chosen_folder.resolve()
+        files, frames = get_images(chosen_folder)
+        if len(files) == 0:
+            _logger.warning(
+                "No valid frames found in the selected folder: "
+                f"{chosen_folder}"
+            )
+            dialogs.show_warning(
+                "No valid frames found in the selected folder:\n"
+                f"{chosen_folder}"
             )
             return
-        # Directory
-        self.folder = chosen_file.parent
-        self.files, self.frames = get_images(self.folder)
-        self.frame_idx = self.frames.index(frame)
-
         # Sort according to name / ascending order
-        desired_file = self.files[self.frame_idx]
-        self.files.sort()
-        self.frame_idx = self.files.index(desired_file)
-        self.frames.sort()
+        files.sort()
+        frames.sort()
+
+        # Open file
+        loaded_image = QtGui.QImage(str(files[0]))
+        if loaded_image.isNull():
+            dialogs.show_warning(f"Cannot load {files[0]}")
+            return
+
+        self.folder = chosen_folder
+        self.files = files
+        self.frames = frames
+        self.frame_idx = 0
 
         # Get camera id for data display
         self.data_id = self.folder.name
@@ -303,9 +305,14 @@ def get_images(read_dir: Path) -> Tuple[List[Path], List[int]]:
     file_ids = []
     for f in read_dir.iterdir():
         if f.is_file() and f.suffix in [".png", ".jpg", ".jpeg"]:
-            # Add all image files to a list
+            try:
+                # Split any non-frame describing part of the filename and
+                # convert to integer (frame number)
+                tmp_id = int(f.stem.split("_")[-1])
+            except ValueError:
+                _logger.debug(f"Invalid file naming: {f}")
+                continue
+            # Add all image files and frame IDs to a output
+            file_ids.append(tmp_id)
             files.append(f)
-            # Split any non-frame describing part of the filename
-            tmp_id = f.stem.split("_")[-1]
-            file_ids.append(int(tmp_id))
     return files, file_ids
