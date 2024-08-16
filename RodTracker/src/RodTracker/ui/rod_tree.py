@@ -37,6 +37,8 @@ class RodTree(QtWidgets.QTreeWidget):
 
     """
 
+    data_loaded = QtCore.pyqtSignal(name="data_loaded")
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.rod_info = None
@@ -63,6 +65,7 @@ class RodTree(QtWidgets.QTreeWidget):
         headers = [self.headerItem().text(0), *columns]
         self.setHeaderLabels(headers)
         self.generate_tree()
+        self.data_loaded.emit()
 
     def generate_tree(self):
         """(Re)generates the tree for display of loaded rod data."""
@@ -118,6 +121,7 @@ class RodTree(QtWidgets.QTreeWidget):
         for i in range(f_it.childCount()):
             color = f_it.child(i)
             if new_data["color"] in color.text(0):
+                particle_updated = False
                 for k in range(color.childCount()):
                     rod = color.child(k)
                     if f"Rod{new_data['rod_id']:3d}:" in rod.text(0):
@@ -125,7 +129,20 @@ class RodTree(QtWidgets.QTreeWidget):
                             insert_idx + 1,
                             ("seen" if new_data["seen"] else "unseen"),
                         )
+                        particle_updated = True
                         break
+                if not particle_updated:
+                    # Add new particle as row
+                    new_particle = QtWidgets.QTreeWidgetItem(color)
+                    new_particle.setText(0, f"Rod{new_data['rod_id']:3d}: ")
+                    for idx, gp in enumerate(
+                        self.rod_info[new_data["frame"]][new_data["color"]][
+                            new_data["rod_id"]
+                        ]
+                    ):
+                        new_particle.setText(idx + 1, gp)
+                    color.sortChildren(0, QtCore.Qt.AscendingOrder)
+                    new_particle.setSelected(True)
                 break
 
     def batch_update_tree(self, new_data: dict, cam_ids: list):
