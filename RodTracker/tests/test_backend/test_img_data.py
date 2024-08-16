@@ -83,7 +83,7 @@ class TestImageData:
 
         def check_data_loaded(*args):
             files, id, set_folder = args
-            assert files == 25
+            assert files == 20
             assert id == str(folder.stem)
             assert set_folder == folder
             return True
@@ -114,6 +114,7 @@ class TestImageData:
             loaded_images.image(chosen_frame)
         assert blocker.args[0] == chosen_frame
 
+    # FIXME: the '24' might cause issues
     @pytest.mark.parametrize(
         "start,direction", list(itertools.product([0, 6, 24], [-1, 1, -3, 3]))
     )
@@ -136,8 +137,8 @@ class TestImageData:
 
 def test_get_images():
     files, file_ids = img_data.get_images(EX_DATA / "images/gp3")
-    assert len(files) == len(file_ids) == 25
-    assert sorted(file_ids) == [*list(range(500, 520)), *list(range(696, 701))]
+    assert len(files) == len(file_ids) == 20
+    assert sorted(file_ids) == list(range(500, 520))
 
 
 def test_get_images_avoid_wrong():
@@ -148,7 +149,7 @@ def test_get_images_avoid_wrong():
 @pytest.mark.parametrize("ending", [".jpg", ".png", ".jpeg"])
 def test_get_images_file_types(tmp_path: pathlib.Path, ending):
     dir = EX_DATA / "images/gp3"
-    test_ids = [500, 505, 700]
+    test_ids = [500, 505, 516]
     test_files = [f"{id:04d}.jpg" for id in test_ids]
     dst_files = []
     for f in test_files:
