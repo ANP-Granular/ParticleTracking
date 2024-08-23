@@ -16,7 +16,6 @@
 
 """**TBD**"""
 
-import os
 import platform
 from pathlib import Path
 from typing import Union
@@ -165,11 +164,7 @@ def select_data_folder(
     )
     picker_dialog.setFileMode(QtWidgets.QFileDialog.Directory)
     picker_dialog.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-    # handle file path issue when running on linux as a snap
-    if "SNAP" in os.environ or platform.system() == "Windows":
-        picker_dialog.setOption(
-            QtWidgets.QFileDialog.DontUseNativeDialog, True
-        )
+    picker_dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
     if not picker_dialog.exec():
         return None
     return Path(picker_dialog.selectedFiles()[0]).resolve()
