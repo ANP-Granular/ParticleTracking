@@ -159,6 +159,7 @@ class ReconstructorUI(QtWidgets.QWidget):
     _calibration = QtCore.pyqtSignal([dict])
     _progress_val: float = 0.0
     _colors_to_solve: int = 0
+    _pre_solve_data_requested: bool = False
 
     def __init__(self, ui: QtWidgets.QWidget, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -336,6 +337,10 @@ class ReconstructorUI(QtWidgets.QWidget):
         else:
             self.pb_plots.setEnabled(True)
 
+        # data had been requested by solve(), so re-run it
+        if self._pre_solve_data_requested:
+            self.solve()
+
     def select_data(self):
         """Request data defined by the selections in the UI.
 
@@ -371,6 +376,13 @@ class ReconstructorUI(QtWidgets.QWidget):
         -------
         None
         """
+        # request potentially updated position data before solving
+        if not self._pre_solve_data_requested:
+            self._pre_solve_data_requested = True
+            self.select_data()
+            return
+        self._pre_solve_data_requested = False
+
         track = self.ui.findChild(
             QtWidgets.QCheckBox, "cb_tracking"
         ).isChecked()
