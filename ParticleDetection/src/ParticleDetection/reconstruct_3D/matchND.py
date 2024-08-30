@@ -342,6 +342,7 @@ def assign(
                 # Matching with a previous frame (+data) available
                 tmp_df, tmp_costs, tmp_lengths = match_frame(
                     data,
+                    tmp_df,
                     cam1_name,
                     cam2_name,
                     frame,
@@ -370,6 +371,7 @@ def assign(
 
 def match_frame(
     data: pd.DataFrame,
+    data_last_frame: pd.DataFrame,
     cam1_name: str,
     cam2_name: str,
     frame: int,
@@ -391,6 +393,8 @@ def match_frame(
     ----------
     data : DataFrame
         Dataset of rod positions.
+    data_last_frame : DataFrame
+        Dataset with updated rods data for the last frame.
     cam1_name : str
         First camera's identifier in the given dataset, e.g. ``"gp1"``.
     cam2_name : str
@@ -548,8 +552,8 @@ def match_frame(
 
     # TODO: check for NaN, so that an error is thrown, if NaNs encountered in
     # 3D coordinates
-    last_points = data.loc[
-        data.frame == frame - 1, ["x1", "y1", "z1", "x2", "y2", "z2"]
+    last_points = data_last_frame.loc[
+        data_last_frame.frame == frame - 1, ["x1", "y1", "z1", "x2", "y2", "z2"]
     ]
     last_points = last_points.to_numpy()
     last_points = last_points.reshape((-1, 2, 3))
