@@ -795,7 +795,7 @@ class Tracker(Reconstructor):
                 self.signals.progress.emit(1 / num_frames)
             else:
                 # Set initial 3D data to previous frame
-                tmp=self.data[self.data.frame == self.frames[0] - 1]
+                tmp = self.data[self.data.frame == self.frames[0] - 1]
 
             for i in range(len(self.frames)):
                 lock.lockForRead()

@@ -553,7 +553,8 @@ def match_frame(
     # TODO: check for NaN, so that an error is thrown, if NaNs encountered in
     # 3D coordinates
     last_points = data_last_frame.loc[
-        data_last_frame.frame == frame - 1, ["x1", "y1", "z1", "x2", "y2", "z2"]
+        data_last_frame.frame == frame - 1,
+        ["x1", "y1", "z1", "x2", "y2", "z2"]
     ]
     last_points = last_points.to_numpy()
     last_points = last_points.reshape((-1, 2, 3))
