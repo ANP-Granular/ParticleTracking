@@ -118,6 +118,7 @@ def test_match_frame_nd(example_data: pd.DataFrame):
 
     result = mnd.match_frame(
         example_data,
+        example_data,
         "gp3",
         "gp4",
         frame,
