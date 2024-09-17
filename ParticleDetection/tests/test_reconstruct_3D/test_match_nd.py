@@ -94,7 +94,7 @@ def test_assign(tmp_path: Path):
 
 
 def test_match_frame_nd(example_data: pd.DataFrame):
-    frame = 508
+    frame = 507
     color = "black"
     calibration = dl.load_camera_calibration(EXAMPLES / "gp34.json")
     transformation = dl.load_world_transformation(

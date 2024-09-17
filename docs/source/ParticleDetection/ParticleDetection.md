@@ -9,7 +9,7 @@ This repository customizes the training, inference and visualization code of the
 
 ## Model training
 
-For automatic detection of particles as model must be trained. Here we focus on training a R-CNN network that will yield segmentation masks and class predictions.
+For automatic detection of particles a model must be trained. Here we focus on training a R-CNN network that will yield segmentation masks and class predictions.
 
 
 ### Training dataset
