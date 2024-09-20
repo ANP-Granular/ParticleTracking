@@ -530,7 +530,7 @@ class ReconstructorUI(QtWidgets.QWidget):
             idx_new = idx_max
         self.stacked_plots.setCurrentIndex(idx_new)
         self.lbl_current_plot.setText(
-            f"({self.stacked_plots.currentIndex()+1}"
+            f"({self.stacked_plots.currentIndex() + 1}"
             f"/{self.stacked_plots.count()})"
         )
 
@@ -707,7 +707,7 @@ class ReconstructorUI(QtWidgets.QWidget):
         self.stacked_plots.insertWidget(self.stacked_plots.count(), widget)
         fig.tight_layout()
         self.lbl_current_plot.setText(
-            f"({self.stacked_plots.currentIndex()+1}"
+            f"({self.stacked_plots.currentIndex() + 1}"
             f"/{self.stacked_plots.count()})"
         )
         if self._threads.activeThreadCount() == 0:
