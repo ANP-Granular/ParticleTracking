@@ -1,6 +1,9 @@
 # Optional list of dependencies required by the package
 dependencies = ["torch", "os"]
 
+import torch
+import os
+
 example_model_url = "https://zenodo.org/records/10255525/files/model_cpu.pt?download=1"
 model_file_name = "model_file.pt"
 
