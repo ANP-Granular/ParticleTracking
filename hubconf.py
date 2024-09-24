@@ -2,6 +2,7 @@
 dependencies = ["torch", "os"]
 
 import torch
+import torchvision
 import os
 
 example_model_url = "https://zenodo.org/records/10255525/files/model_cpu.pt?download=1"
