@@ -319,6 +319,73 @@ class DetectorUI(QtWidgets.QWidget):
         else:
             self._load_model(str(example_model_file.resolve()))
 
+    def _use_example_model_from_zenodo(self):
+        example_model_file = CONFIG_DIR / "example_model.pt"
+        _logger.info(example_model_file)
+        example_model_url = (
+            "https://zenodo.org/records/10255525/files/model_cpu.pt?download=1"
+        )
+        if not example_model_file.exists():
+            file_MB = int(
+                urllib.request.urlopen(example_model_url)
+                .info()
+                .get("Content-Length")
+            ) / (1024**2)
+
+            msg_confirm_download = QtWidgets.QMessageBox(self.ui)
+            msg_confirm_download.setWindowTitle(APPNAME)
+            msg_confirm_download.setIcon(QtWidgets.QMessageBox.Information)
+            msg_confirm_download.setText(
+                f"""
+                <p>Attempting to download a trained Mask-RCNN model file
+                for detection of rods in the example data.
+                The model is called <b>model_cpu.pt</b> and it will be
+                downloaded from here:<br>
+                <a href="https://zenodo.org/records/10255525">
+                https://zenodo.org/records/10255525</a> </p>
+
+                <p>The file will be downloaded to <br>
+                <b>{example_model_file}</b><br>
+                and will occupy <b>≈{file_MB:.01f} MB</b>.</p>
+                """
+            )
+            msg_confirm_download.setStandardButtons(
+                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+            )
+            decision = msg_confirm_download.exec()
+            if decision == QtWidgets.QMessageBox.Cancel:
+                return
+
+            _logger.info("Attempting to download the example model.")
+            msg_box = QtWidgets.QMessageBox(
+                icon=QtWidgets.QMessageBox.Information,
+                text=(
+                    "Downloading the example model file ... "
+                    "<br><br><b>Please wait until this window closes.</b>"
+                ),
+                parent=self.ui,
+            )
+            msg_box.setStandardButtons(QtWidgets.QMessageBox.Close)
+            msg_box.button(QtWidgets.QMessageBox.Close).setEnabled(False)
+            msg_box.setWindowTitle(APPNAME)
+
+            worker = pl.Worker(
+                lambda: torch.hub.download_url_to_file(
+                    example_model_url,
+                    str(example_model_file.resolve()),
+                    progress=False,
+                )
+            )
+            worker.signals.result.connect(lambda ret: msg_box.close())
+            worker.signals.result.connect(
+                lambda ret: self._load_model(str(example_model_file.resolve()))
+            )
+
+            self._threads.start(worker)
+            msg_box.exec()
+        else:
+            self._load_model(str(example_model_file.resolve()))
+
     def _expected_changed(self, val: int):
         self._expected_particles = val
         try:
