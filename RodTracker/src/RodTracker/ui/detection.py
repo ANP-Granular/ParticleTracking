@@ -18,6 +18,7 @@
 
 import logging
 import os
+import pathlib
 import urllib.request
 from typing import Dict, List
 
@@ -253,18 +254,19 @@ class DetectorUI(QtWidgets.QWidget):
         self.pb_use_example.clicked.connect(self._use_example_model)
 
     def _use_example_model(self):
-        example_model_file = CONFIG_DIR / "example_model.pt"
+        model_file_name = "model_cpu.pt"
+        hub_dir = torch.hub.get_dir()
+        model_dir = os.path.join(hub_dir, "checkpoints")
+        example_model_file = pathlib.Path(
+            os.path.join(model_dir, model_file_name)
+        )
         _logger.info(example_model_file)
+
         example_model_url = (
             "https://zenodo.org/records/10255525/files/model_cpu.pt?download=1"
         )
-        if not example_model_file.exists():
-            file_MB = int(
-                urllib.request.urlopen(example_model_url)
-                .info()
-                .get("Content-Length")
-            ) / (1024**2)
 
+        if not example_model_file.exists():
             msg_confirm_download = QtWidgets.QMessageBox(self.ui)
             msg_confirm_download.setWindowTitle(APPNAME)
             msg_confirm_download.setIcon(QtWidgets.QMessageBox.Information)
@@ -273,13 +275,10 @@ class DetectorUI(QtWidgets.QWidget):
                 <p>Attempting to download a trained Mask-RCNN model file
                 for detection of rods in the example data.
                 The model is called <b>model_cpu.pt</b> and it will be
-                downloaded from here:<br>
-                <a href="https://zenodo.org/records/10255525">
-                https://zenodo.org/records/10255525</a> </p>
+                downloaded from torch.hub </p>
 
                 <p>The file will be downloaded to <br>
-                <b>{example_model_file}</b><br>
-                and will occupy <b>≈{file_MB:.01f} MB</b>.</p>
+                <b>{example_model_file}</b> </p>
                 """
             )
             msg_confirm_download.setStandardButtons(
@@ -303,10 +302,10 @@ class DetectorUI(QtWidgets.QWidget):
             msg_box.setWindowTitle(APPNAME)
 
             worker = pl.Worker(
-                lambda: torch.hub.download_url_to_file(
-                    example_model_url,
-                    str(example_model_file.resolve()),
-                    progress=False,
+                lambda: torch.hub.load(
+                    "ANP-Granular/ParticleTracking:develop",
+                    "rods_example_model",
+                    pretrained=True,
                 )
             )
             worker.signals.result.connect(lambda ret: msg_box.close())
@@ -317,7 +316,34 @@ class DetectorUI(QtWidgets.QWidget):
             self._threads.start(worker)
             msg_box.exec()
         else:
-            self._load_model(str(example_model_file.resolve()))
+            _logger.info("Attempting to load the example model from cache.")
+            msg_box = QtWidgets.QMessageBox(
+                icon=QtWidgets.QMessageBox.Information,
+                text=(
+                    "Loading the example model file from cache: <br>"
+                    "<b>{example_model_file}</b>"
+                    "<br><br><b>Please wait until this window closes.</b>"
+                ),
+                parent=self.ui,
+            )
+            msg_box.setStandardButtons(QtWidgets.QMessageBox.Close)
+            msg_box.button(QtWidgets.QMessageBox.Close).setEnabled(False)
+            msg_box.setWindowTitle(APPNAME)
+
+            worker = pl.Worker(
+                lambda: torch.hub.load(
+                    "ANP-Granular/ParticleTracking:develop",
+                    "rods_example_model",
+                    pretrained=True,
+                )
+            )
+            worker.signals.result.connect(lambda ret: msg_box.close())
+            worker.signals.result.connect(
+                lambda ret: self._load_model(str(example_model_file.resolve()))
+            )
+
+            self._threads.start(worker)
+            msg_box.exec()
 
     def _use_example_model_from_zenodo(self):
         example_model_file = CONFIG_DIR / "example_model.pt"
@@ -567,6 +593,15 @@ class DetectorUI(QtWidgets.QWidget):
     def _load_model(self, file: str):
         self.le_model.setText(file)
         self.model = torch.jit.load(file)
+        self.pb_detect.setEnabled(True)
+
+    def _load_example_model_from_hub(self, file: str):
+        self.le_model.setText(file)
+        self.model = torch.hub.load(
+            "ANP-Granular/ParticleTracking:develop",
+            "rods_example_model",
+            pretrained=True,
+        )
         self.pb_detect.setEnabled(True)
 
     def load_model(self):
