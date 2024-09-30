@@ -102,6 +102,7 @@ The installation of the `CPU` version might not work out-of-the-box and will mos
 
 On Windows the `CPU` version of this package will be installed by default. This is due to the default behavior of PyTorch and the more complex installation process of CUDA on Windows.
 If GPU support is necessary on a Windows machine the requirements of the `GPU` version must be manually installed.
+
 0. Install CUDA on the machine.
 1. Install the default version of ParticleDetection.
 2. Uninstall any CPU-only version(s) of torch, torchaudio and torchvision

@@ -201,8 +201,8 @@ class DetectorUI(QtWidgets.QWidget):
         self.spb_expected = ui.findChild(
             QtWidgets.QSpinBox, "expected_particles_default"
         )
-        self.spb_expected.setValue(1)
-        self._expected_particles = 1
+        self.spb_expected.setValue(25)
+        self._expected_particles = 25
         self.spb_expected.setMinimum(1)
         self.spb_expected.valueChanged.connect(self._expected_changed)
 
@@ -262,10 +262,6 @@ class DetectorUI(QtWidgets.QWidget):
         )
         _logger.info(example_model_file)
 
-        example_model_url = (
-            "https://zenodo.org/records/10255525/files/model_cpu.pt?download=1"
-        )
-
         if not example_model_file.exists():
             msg_confirm_download = QtWidgets.QMessageBox(self.ui)
             msg_confirm_download.setWindowTitle(APPNAME)
@@ -275,7 +271,7 @@ class DetectorUI(QtWidgets.QWidget):
                 <p>Attempting to download a trained Mask-RCNN model file
                 for detection of rods in the example data.
                 The model is called <b>model_cpu.pt</b> and it will be
-                downloaded from torch.hub </p>
+                downloaded from <b>torch.hub</b>. </p>
 
                 <p>The file will be downloaded to <br>
                 <b>{example_model_file}</b> </p>
@@ -316,34 +312,29 @@ class DetectorUI(QtWidgets.QWidget):
             self._threads.start(worker)
             msg_box.exec()
         else:
+            msg_confirm_download = QtWidgets.QMessageBox(self.ui)
+            msg_confirm_download.setWindowTitle(APPNAME)
+            msg_confirm_download.setIcon(QtWidgets.QMessageBox.Information)
+            msg_confirm_download.setText(
+                f"""
+                <p>Attempting to load a trained Mask-RCNN model file
+                for detection of rods in the example data.
+                The model is called <b>model_cpu.pt</b> and it will be
+                loaded from cache. </p>
+
+                <p>The file was already downloaded to <br>
+                <b>{example_model_file}</b> </p>
+                """
+            )
+            msg_confirm_download.setStandardButtons(
+                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+            )
+            decision = msg_confirm_download.exec()
+            if decision == QtWidgets.QMessageBox.Cancel:
+                return
+
             _logger.info("Attempting to load the example model from cache.")
-            msg_box = QtWidgets.QMessageBox(
-                icon=QtWidgets.QMessageBox.Information,
-                text=(
-                    "Loading the example model file from cache: <br>"
-                    "<b>{example_model_file}</b>"
-                    "<br><br><b>Please wait until this window closes.</b>"
-                ),
-                parent=self.ui,
-            )
-            msg_box.setStandardButtons(QtWidgets.QMessageBox.Close)
-            msg_box.button(QtWidgets.QMessageBox.Close).setEnabled(False)
-            msg_box.setWindowTitle(APPNAME)
-
-            worker = pl.Worker(
-                lambda: torch.hub.load(
-                    "ANP-Granular/ParticleTracking:develop",
-                    "rods_example_model",
-                    pretrained=True,
-                )
-            )
-            worker.signals.result.connect(lambda ret: msg_box.close())
-            worker.signals.result.connect(
-                lambda ret: self._load_model(str(example_model_file.resolve()))
-            )
-
-            self._threads.start(worker)
-            msg_box.exec()
+            self._load_model(str(example_model_file.resolve()))
 
     def _use_example_model_from_zenodo(self):
         example_model_file = CONFIG_DIR / "example_model.pt"

@@ -610,10 +610,10 @@ def find_world_transform(
 
     transformations = {}
 
-    transformations["rot_comb"] = rot_comb.tolist()
-    transformations["trans_vec"] = trans_vec.tolist()
+    transformations["rotation"] = rot_comb.tolist()
+    transformations["translation"] = trans_vec.tolist()
 
     with open(out_json, "w") as fp:
-        json.dump(transformations, fp)
+        json.dump(transformations, fp, indent=2)
 
     return rot_comb, trans_vec

@@ -195,9 +195,11 @@ Unlike during the detection of particles, the results will only be accessible af
 
 ### Calibration & transformation data format
 
-The stereo camera calibration relates positions in images from both cameras to each other. From this the 3D coordinates of the objects shown in the images can be reconstructed. One can use [OpenCV](https://opencv.org/) to perform the stereo camera calibration (see ParticleDetection's [camera calibration](../ParticleDetection-api/reconstruct_3D/calibrate_cameras.rst)). It is also possible to do this calibration with other software, e.g. [MATLAB Stereo Camera Calibrator App](https://mathworks.com/help/vision/ug/using-the-stereo-camera-calibrator-app.html), as long as the pin-hole camera model is used and the calibration data is transferred into the format shown below. We have found that stereo camera calibration done via MATLAB App is generally more accurate than one done with OpenCV functions.
+The stereo camera calibration relates positions in images from both cameras to each other. From this the 3D coordinates of the objects shown in the images can be reconstructed. One can use [OpenCV](https://opencv.org/) to perform the stereo camera calibration. It is also possible to do this calibration with other software, e.g. [MATLAB Stereo Camera Calibrator App](https://mathworks.com/help/vision/ug/using-the-stereo-camera-calibrator-app.html), as long as the pin-hole camera model is used and the calibration data is transferred into the format shown below. We have found that stereo camera calibration done via MATLAB App is generally more accurate than one done with OpenCV functions.
 
-The transformation represents a change of coordinate system, i.e. from the first camera's coordinate system to the world/experiment coordinate system. It must be represented as a rotation followed by a translation as shown below.
+The transformation represents a change of coordinate system, i.e. from the first camera's coordinate system to the world/experiment coordinate system. It must be represented as a rotation followed by a translation as shown below. For details, see [ this section in ParticleDetection's documentation](https://particletracking.readthedocs.io/en/latest/ParticleDetection/ParticleDetection.html#world-vs-camera-coordinates).
+
+The calibration and transformation data should be provided as JSON files. Find below the example data formats. For details, see ParticleDetection's [camera calibration](../ParticleDetection-api/reconstruct_3D/calibrate_cameras.rst) and [this section in ParticleDetection's documentation](https://particletracking.readthedocs.io/en/latest/ParticleDetection/ParticleDetection.html#camera-calibration).
 
 **Calibration data example:**
 
