@@ -114,7 +114,7 @@ def both_cams(qtbot: QtBot, main_window: RodTrackWindow) -> RodTrackWindow:
 
 def load_rod_data(colors: List[str]):
     data = pd.DataFrame()
-    folder = importlib_resources.files("RodTracker.resources.example_data.csv")
+    folder = csv_data
     for color in colors:
         tmp_data_file = folder.joinpath(f"rods_df_{color}.csv")
         tmp_data = pd.read_csv(tmp_data_file, index_col=0)

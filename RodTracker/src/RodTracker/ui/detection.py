@@ -254,87 +254,183 @@ class DetectorUI(QtWidgets.QWidget):
         self.pb_use_example.clicked.connect(self._use_example_model)
 
     def _use_example_model(self):
-        model_file_name = "model_cpu.pt"
-        hub_dir = torch.hub.get_dir()
-        model_dir = os.path.join(hub_dir, "checkpoints")
-        example_model_file = pathlib.Path(
-            os.path.join(model_dir, model_file_name)
-        )
-        _logger.info(example_model_file)
-
-        if not example_model_file.exists():
-            msg_confirm_download = QtWidgets.QMessageBox(self.ui)
-            msg_confirm_download.setWindowTitle(APPNAME)
-            msg_confirm_download.setIcon(QtWidgets.QMessageBox.Information)
-            msg_confirm_download.setText(
-                f"""
-                <p>Attempting to download a trained Mask-RCNN model file
-                for detection of rods in the example data.
-                The model is called <b>model_cpu.pt</b> and it will be
-                downloaded from <b>torch.hub</b>. </p>
-
-                <p>The file will be downloaded to <br>
-                <b>{example_model_file}</b> </p>
-                """
+        if torch.cuda.is_available():
+            model_file_name = "model_cuda.pt"
+            hub_dir = torch.hub.get_dir()
+            model_dir = os.path.join(hub_dir, "checkpoints")
+            example_model_file = pathlib.Path(
+                os.path.join(model_dir, model_file_name)
             )
-            msg_confirm_download.setStandardButtons(
-                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
-            )
-            decision = msg_confirm_download.exec()
-            if decision == QtWidgets.QMessageBox.Cancel:
-                return
+            _logger.info(example_model_file)
 
-            _logger.info("Attempting to download the example model.")
-            msg_box = QtWidgets.QMessageBox(
-                icon=QtWidgets.QMessageBox.Information,
-                text=(
-                    "Downloading the example model file ... "
-                    "<br><br><b>Please wait until this window closes.</b>"
-                ),
-                parent=self.ui,
-            )
-            msg_box.setStandardButtons(QtWidgets.QMessageBox.Close)
-            msg_box.button(QtWidgets.QMessageBox.Close).setEnabled(False)
-            msg_box.setWindowTitle(APPNAME)
+            if not example_model_file.exists():
+                msg_confirm_download = QtWidgets.QMessageBox(self.ui)
+                msg_confirm_download.setWindowTitle(APPNAME)
+                msg_confirm_download.setIcon(QtWidgets.QMessageBox.Information)
+                msg_confirm_download.setText(
+                    f"""
+                    <p> CUDA version of PyTorch is detected.
+                    Attempting to download a trained Mask-RCNN CUDA model file
+                    for detection of rods in the example data.
+                    The model is called <b>model_cuda.pt</b> and will be
+                    downloaded from <b>torch.hub</b>. </p>
 
-            worker = pl.Worker(
-                lambda: torch.hub.load(
-                    "ANP-Granular/ParticleTracking:develop",
-                    "rods_example_model",
-                    pretrained=True,
+                    <p>The file will be downloaded to <br>
+                    <b>{example_model_file}</b> </p>
+                    """
                 )
-            )
-            worker.signals.result.connect(lambda ret: msg_box.close())
-            worker.signals.result.connect(
-                lambda ret: self._load_model(str(example_model_file.resolve()))
-            )
+                msg_confirm_download.setStandardButtons(
+                    QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+                )
+                decision = msg_confirm_download.exec()
+                if decision == QtWidgets.QMessageBox.Cancel:
+                    return
 
-            self._threads.start(worker)
-            msg_box.exec()
+                _logger.info("Attempting to download the example CUDA model.")
+                msg_box = QtWidgets.QMessageBox(
+                    icon=QtWidgets.QMessageBox.Information,
+                    text=(
+                        "Downloading the example CUDA model file ... "
+                        "<br><br><b>Please wait until this window closes.</b>"
+                    ),
+                    parent=self.ui,
+                )
+                msg_box.setStandardButtons(QtWidgets.QMessageBox.Close)
+                msg_box.button(QtWidgets.QMessageBox.Close).setEnabled(False)
+                msg_box.setWindowTitle(APPNAME)
+
+                worker = pl.Worker(
+                    lambda: torch.hub.load(
+                        "ANP-Granular/ParticleTracking:develop",
+                        "rods_example_model_cuda",
+                        pretrained=True,
+                    )
+                )
+                worker.signals.result.connect(lambda ret: msg_box.close())
+                worker.signals.result.connect(
+                    lambda ret: self._load_model(
+                        str(example_model_file.resolve())
+                    )
+                )
+
+                self._threads.start(worker)
+                msg_box.exec()
+            else:
+                msg_confirm_download = QtWidgets.QMessageBox(self.ui)
+                msg_confirm_download.setWindowTitle(APPNAME)
+                msg_confirm_download.setIcon(QtWidgets.QMessageBox.Information)
+                msg_confirm_download.setText(
+                    f"""
+                    <p>CUDA version of PyTorch is detected.
+                    Attempting to load a trained Mask-RCNN CUDA model file
+                    for detection of rods in the example data.
+                    The model is called <b>model_cuda.pt</b> and will be
+                    loaded from cache. </p>
+
+                    <p>The file was already downloaded to <br>
+                    <b>{example_model_file}</b> </p>
+                    """
+                )
+                msg_confirm_download.setStandardButtons(
+                    QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+                )
+                decision = msg_confirm_download.exec()
+                if decision == QtWidgets.QMessageBox.Cancel:
+                    return
+
+                _logger.info(
+                    "Attempting to load the example CUDA model from cache."
+                )
+                self._load_model(str(example_model_file.resolve()))
+
         else:
-            msg_confirm_download = QtWidgets.QMessageBox(self.ui)
-            msg_confirm_download.setWindowTitle(APPNAME)
-            msg_confirm_download.setIcon(QtWidgets.QMessageBox.Information)
-            msg_confirm_download.setText(
-                f"""
-                <p>Attempting to load a trained Mask-RCNN model file
-                for detection of rods in the example data.
-                The model is called <b>model_cpu.pt</b> and it will be
-                loaded from cache. </p>
-
-                <p>The file was already downloaded to <br>
-                <b>{example_model_file}</b> </p>
-                """
+            model_file_name = "model_cpu.pt"
+            hub_dir = torch.hub.get_dir()
+            model_dir = os.path.join(hub_dir, "checkpoints")
+            example_model_file = pathlib.Path(
+                os.path.join(model_dir, model_file_name)
             )
-            msg_confirm_download.setStandardButtons(
-                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
-            )
-            decision = msg_confirm_download.exec()
-            if decision == QtWidgets.QMessageBox.Cancel:
-                return
+            _logger.info(example_model_file)
 
-            _logger.info("Attempting to load the example model from cache.")
-            self._load_model(str(example_model_file.resolve()))
+            if not example_model_file.exists():
+                msg_confirm_download = QtWidgets.QMessageBox(self.ui)
+                msg_confirm_download.setWindowTitle(APPNAME)
+                msg_confirm_download.setIcon(QtWidgets.QMessageBox.Information)
+                msg_confirm_download.setText(
+                    f"""
+                    <p>CPU version of PyTorch is detected.
+                    Attempting to download a trained Mask-RCNN CPU model file
+                    for detection of rods in the example data.
+                    The model is called <b>model_cpu.pt</b> and it will be
+                    downloaded from <b>torch.hub</b>. </p>
+
+                    <p>The file will be downloaded to <br>
+                    <b>{example_model_file}</b> </p>
+                    """
+                )
+                msg_confirm_download.setStandardButtons(
+                    QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+                )
+                decision = msg_confirm_download.exec()
+                if decision == QtWidgets.QMessageBox.Cancel:
+                    return
+
+                _logger.info("Attempting to download the example model.")
+                msg_box = QtWidgets.QMessageBox(
+                    icon=QtWidgets.QMessageBox.Information,
+                    text=(
+                        "Downloading the example model file ... "
+                        "<br><br><b>Please wait until this window closes.</b>"
+                    ),
+                    parent=self.ui,
+                )
+                msg_box.setStandardButtons(QtWidgets.QMessageBox.Close)
+                msg_box.button(QtWidgets.QMessageBox.Close).setEnabled(False)
+                msg_box.setWindowTitle(APPNAME)
+
+                worker = pl.Worker(
+                    lambda: torch.hub.load(
+                        "ANP-Granular/ParticleTracking:develop",
+                        "rods_example_model_cpu",
+                        pretrained=True,
+                    )
+                )
+                worker.signals.result.connect(lambda ret: msg_box.close())
+                worker.signals.result.connect(
+                    lambda ret: self._load_model(
+                        str(example_model_file.resolve())
+                    )
+                )
+
+                self._threads.start(worker)
+                msg_box.exec()
+            else:
+                msg_confirm_download = QtWidgets.QMessageBox(self.ui)
+                msg_confirm_download.setWindowTitle(APPNAME)
+                msg_confirm_download.setIcon(QtWidgets.QMessageBox.Information)
+                msg_confirm_download.setText(
+                    f"""
+                    <p>CPU version of PyTorch is detected.
+                    Attempting to load a trained Mask-RCNN CPU model file
+                    for detection of rods in the example data.
+                    The model is called <b>model_cpu.pt</b> and it will be
+                    loaded from cache. </p>
+
+                    <p>The file was already downloaded to <br>
+                    <b>{example_model_file}</b> </p>
+                    """
+                )
+                msg_confirm_download.setStandardButtons(
+                    QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+                )
+                decision = msg_confirm_download.exec()
+                if decision == QtWidgets.QMessageBox.Cancel:
+                    return
+
+                _logger.info(
+                    "Attempting to load the example CPU model from cache."
+                )
+                self._load_model(str(example_model_file.resolve()))
 
     def _use_example_model_from_zenodo(self):
         example_model_file = CONFIG_DIR / "example_model.pt"
