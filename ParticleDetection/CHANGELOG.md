@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [v0.4.3]
+### Fixed
+- tracking now works as intended ([#96](https://github.com/ANP-Granular/ParticleTracking/issues/96))
+- tracking/matching tests were updated according to the fixed tracking issue 
+
 ## [v0.4.2]
 ### Added
 - support for Python 3.12
