@@ -15,7 +15,8 @@
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """
-Includes classes which define widgets used for detection of particles in images in RodTracker GUI.
+Includes classes which define widgets used for detection of particles on images
+in RodTracker GUI.
 
 **Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
 **Date:**       2022-2024
