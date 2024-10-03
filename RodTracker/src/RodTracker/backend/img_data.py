@@ -15,7 +15,8 @@
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """
-Class and methods called in RodTracked GUI application for loading and selection of images.
+Class and methods called in RodTracked GUI application for loading and
+selection of images.
 
 **Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
 **Date:**       2022-2024

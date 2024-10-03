@@ -16,7 +16,8 @@
 
 """
 Classes used in RodTracked GUI for parallel thread work
-(some lengthy computations/data loading is performed outside of the main thread).
+(some lengthy computations/data loading is performed outside
+of the main thread).
 
 **Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
 **Date:**       2022-2024

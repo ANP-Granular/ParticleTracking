@@ -15,7 +15,8 @@
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """
-Auxillary methods for getting paths to application icon/logo and opening documentation.
+Auxillary methods for getting paths to application icon/logo and opening
+documentation.
 
 **Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
 **Date:**       2022-2024

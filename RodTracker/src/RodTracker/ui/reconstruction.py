@@ -23,7 +23,8 @@ tracking of particles in RodTracker GUI.
 """
 
 import logging
-import os
+
+# import os
 from functools import partial
 from typing import List
 

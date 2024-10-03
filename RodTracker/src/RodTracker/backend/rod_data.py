@@ -15,7 +15,8 @@
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """
-Main classes and methods used in RodTracked for manipulation with particles coordinate data.
+Main classes and methods used in RodTracked for manipulation with
+particles coordinate data.
 
 **Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
 **Date:**       2022-2024
@@ -1197,7 +1198,8 @@ class RodData(QtCore.QObject):
             classes are deleted if ``None`` is given.
             By default ``None``.
         particle : Union[int, None], optional
-            TBD (meant for deletion of particular particles - not used at the moment)
+            TBD (meant for deletion of particular particles
+            - not used at the moment)
             By default ``None``.
         all : bool, optional
             Flag whether to delete all currently loaded data.

@@ -15,7 +15,8 @@
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
 """
-Includes methods which allow to initialize/change user settings in RodTracker GUI.
+Includes methods which allow to initialize/change user settings in
+RodTracker GUI.
 
 **Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
 **Date:**       2022-2024
