@@ -14,7 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Classes and methods called in RodTracked GUI for performing 3D reconstruction
+and tracking of particles, as well as plotting of the resulting metrics
+(reprojection errors, frame-to-frame distance, etc).
+
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
 
 import logging
 import sys

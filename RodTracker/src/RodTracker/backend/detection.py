@@ -14,7 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Includes objects and methods used for detection of particles by RodTracker.
+
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
 
 import logging
 from pathlib import Path

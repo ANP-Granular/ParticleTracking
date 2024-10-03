@@ -14,7 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Includes classes which define widgets used for detection of particles in images in RodTracker GUI.
+
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
 
 import logging
 import os
@@ -711,8 +716,8 @@ class DetectorUI(QtWidgets.QWidget):
         # opens directory to select image
         kwargs = {}
         # handle file path issue when running on linux as a snap
-        if "SNAP" in os.environ:
-            kwargs["options"] = QtWidgets.QFileDialog.DontUseNativeDialog
+        # if "SNAP" in os.environ:
+        kwargs["options"] = QtWidgets.QFileDialog.DontUseNativeDialog
         chosen_file, _ = QtWidgets.QFileDialog.getOpenFileName(
             self.le_model, "Open a detection model", ui_dir, "*.pt", **kwargs
         )

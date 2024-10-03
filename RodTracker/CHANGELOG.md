@@ -1,14 +1,17 @@
 ## [Unreleased]
 
 ### Added
-- missing sections in documentation were added (i.e. world coordinate transformation) 
+- missing sections in documentation were added (i.e. world coordinate transformation)
+- placeholders (TBDs) were replaced for API documentation 
 
 ### Changed
 - default rod detection models (CPU and CUDA) are now published and downloaded via PyTorch Hub ([#102](https://github.com/ANP-Granular/ParticleTracking/issues/102))
 - default number of detected particles changed to 25 for each color (corresponding to default sample data)
+- ParticleDetection dependency updated (ParticleDetection v0.4.3 now required)
+- reverted to original dialogue window for stereo calibration/world transformation (for consistency with image loading)
 
 ### Fixed
-- tracking now works as intended, before it required to press the "solve" button frame by frame ([#96](https://github.com/ANP-Granular/ParticleTracking/issues/96))
+- tracking now works as intended, previously it required to press the "solve" button frame by frame ([#96](https://github.com/ANP-Granular/ParticleTracking/issues/96))
 - solved issue when changes in data were not saved and reverted after pressing "solve" button 
 - tracking/matching tests were updated according to the fixed tracking issue 
 

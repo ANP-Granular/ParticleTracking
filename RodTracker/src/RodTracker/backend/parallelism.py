@@ -14,7 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Classes used in RodTracked GUI for parallel thread work
+(some lengthy computations/data loading is performed outside of the main thread).
+
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
 
 import sys
 from functools import wraps

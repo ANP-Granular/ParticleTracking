@@ -14,7 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Includes class which defines widgets used for display of all loaded data as a
+tree (frame-particle) in RodTracker GUI.
+
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
 from PyQt5 import QtCore, QtWidgets
 
 

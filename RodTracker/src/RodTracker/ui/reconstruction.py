@@ -14,7 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Includes classes which define widgets used for 3D reconstruction and
+tracking of particles in RodTracker GUI.
+
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
 
 import logging
 import os
@@ -764,8 +770,8 @@ def choose_calibration(
     # opens directory to select image
     kwargs = {}
     # handle file path issue when running on linux as a snap
-    if "SNAP" in os.environ:
-        kwargs["options"] = QtWidgets.QFileDialog.DontUseNativeDialog
+    # if "SNAP" in os.environ:
+    kwargs["options"] = QtWidgets.QFileDialog.DontUseNativeDialog
     chosen_file, _ = QtWidgets.QFileDialog.getOpenFileName(
         line_edit, "Open a calibration", ui_dir, "*.json", **kwargs
     )
