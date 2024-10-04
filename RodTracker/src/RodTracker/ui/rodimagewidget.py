@@ -14,7 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Includes class which defines main widget used to add/manipulate particle
+coordinates overlay on images in RodTracker GUI.
+
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
 
 import logging
 import math

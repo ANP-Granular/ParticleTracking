@@ -35,7 +35,7 @@ EX_DATA = importlib_resources.files("RodTracker.resources").joinpath(
 @pytest.fixture(scope="function")
 def loaded_images() -> img_data.ImageData:
     img_manager = img_data.ImageData(3)
-    img_manager.open_image_folder(EX_DATA / "images/gp3/0500.jpg")
+    img_manager.open_image_folder(EX_DATA / "images/gp3")
     yield img_manager
 
 
@@ -55,10 +55,10 @@ class TestImageData:
             mp.setattr(img_data.ImageData, "open_image_folder", assertions)
 
     @pytest.mark.parametrize(
-        "file, frame",
+        "folder,",
         [
-            (EX_DATA / "images/gp3/0001.jpg", 1),
-            (EX_DATA / "images/gp3/0506.jpg", 506),
+            (EX_DATA / "images/gp3"),
+            (EX_DATA / "images/gp4"),
         ],
     )
     def test_open_image_folder(
@@ -66,10 +66,9 @@ class TestImageData:
         monkeypatch: MonkeyPatch,
         qtbot: QtBot,
         loaded_images: img_data.ImageData,
-        file: pathlib.Path,
-        frame: int,
+        folder: pathlib.Path,
     ):
-        if not file.exists():
+        if not folder.exists():
             activated_info = False
 
             def mb_info(*args):
@@ -78,27 +77,26 @@ class TestImageData:
 
             with monkeypatch.context() as mp:
                 mp.setattr(QtWidgets.QMessageBox, "information", mb_info)
-                loaded_images.open_image_folder(file)
+                loaded_images.open_image_folder(folder)
             assert activated_info is True
             return
 
         def check_data_loaded(*args):
-            files, id, folder = args
-            assert files == 25
-            assert id == str(file.parent.stem)
-            assert folder == file.parent
+            files, id, set_folder = args
+            assert files == 20
+            assert id == str(folder.stem)
+            assert set_folder == folder
             return True
 
         def check_next_img_ids(*args):
             loaded_frame, idx = args
-            assert loaded_frame == loaded_images.frames[idx] == frame
-            assert f"{loaded_frame:04d}" in str(file)
+            assert loaded_frame == loaded_images.frames[idx] == 500
             return True
 
         signals = [loaded_images.data_loaded, loaded_images.next_img[int, int]]
         callbacks = [check_data_loaded, check_next_img_ids]
         with qtbot.wait_signals(signals=signals, check_params_cbs=callbacks):
-            loaded_images.open_image_folder(file)
+            loaded_images.open_image_folder(folder)
         assert sorted(loaded_images.files) == loaded_images.files
         assert sorted(loaded_images.frames) == loaded_images.frames
 
@@ -116,6 +114,7 @@ class TestImageData:
             loaded_images.image(chosen_frame)
         assert blocker.args[0] == chosen_frame
 
+    # FIXME: the '24' might cause issues
     @pytest.mark.parametrize(
         "start,direction", list(itertools.product([0, 6, 24], [-1, 1, -3, 3]))
     )
@@ -138,8 +137,8 @@ class TestImageData:
 
 def test_get_images():
     files, file_ids = img_data.get_images(EX_DATA / "images/gp3")
-    assert len(files) == len(file_ids) == 25
-    assert sorted(file_ids) == [*list(range(500, 520)), *list(range(696, 701))]
+    assert len(files) == len(file_ids) == 20
+    assert sorted(file_ids) == list(range(500, 520))
 
 
 def test_get_images_avoid_wrong():
@@ -150,7 +149,7 @@ def test_get_images_avoid_wrong():
 @pytest.mark.parametrize("ending", [".jpg", ".png", ".jpeg"])
 def test_get_images_file_types(tmp_path: pathlib.Path, ending):
     dir = EX_DATA / "images/gp3"
-    test_ids = [500, 505, 700]
+    test_ids = [500, 505, 516]
     test_files = [f"{id:04d}.jpg" for id in test_ids]
     dst_files = []
     for f in test_files:

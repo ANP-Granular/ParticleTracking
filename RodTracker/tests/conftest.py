@@ -30,12 +30,12 @@ from RodTracker.ui.mainwindow import RodTrackWindow
 
 random.seed(1)
 
-cam1_img1 = importlib_resources.files(
-    "RodTracker.resources.example_data.images.gp3"
-).joinpath("0500.jpg")
-cam2_img1 = importlib_resources.files(
-    "RodTracker.resources.example_data.images.gp4"
-).joinpath("0500.jpg")
+cam1_folder = importlib_resources.files(
+    "RodTracker.resources.example_data.images"
+).joinpath("gp3")
+cam2_folder = importlib_resources.files(
+    "RodTracker.resources.example_data.images"
+).joinpath("gp4")
 csv_data = importlib_resources.files(
     "RodTracker.resources.example_data"
 ).joinpath("csv")
@@ -72,7 +72,7 @@ def one_cam(qtbot: QtBot, main_window: RodTrackWindow) -> RodTrackWindow:
     The first camera view is active.
     """
     # Open images in the first camera
-    main_window.image_managers[0].open_image_folder(cam1_img1)
+    main_window.image_managers[0].open_image_folder(cam1_folder)
     main_window.original_size()
 
     # Open rod position data
@@ -90,13 +90,13 @@ def both_cams(qtbot: QtBot, main_window: RodTrackWindow) -> RodTrackWindow:
     The first camera view is active.
     """
     # Open images in the first camera
-    main_window.image_managers[0].open_image_folder(cam1_img1)
+    main_window.image_managers[0].open_image_folder(cam1_folder)
     main_window.original_size()
     qtbot.wait(50)
     # Open images in the second camera
     main_window = ga.SwitchCamera().run(main_window, qtbot)
     qtbot.wait(50)
-    main_window.image_managers[1].open_image_folder(cam2_img1)
+    main_window.image_managers[1].open_image_folder(cam2_folder)
     main_window.original_size()
     qtbot.wait(50)
     main_window = ga.SwitchCamera().run(main_window, qtbot)
@@ -114,7 +114,7 @@ def both_cams(qtbot: QtBot, main_window: RodTrackWindow) -> RodTrackWindow:
 
 def load_rod_data(colors: List[str]):
     data = pd.DataFrame()
-    folder = importlib_resources.files("RodTracker.resources.example_data.csv")
+    folder = csv_data
     for color in colors:
         tmp_data_file = folder.joinpath(f"rods_df_{color}.csv")
         tmp_data = pd.read_csv(tmp_data_file, index_col=0)
