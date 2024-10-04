@@ -9,7 +9,7 @@ This repository customizes the training, inference and visualization code of the
 
 ## Model training
 
-For automatic detection of particles as model must be trained. Here we focus on training a R-CNN network that will yield segmentation masks and class predictions.
+For automatic detection of particles a model must be trained. Here we focus on training a R-CNN network that will yield segmentation masks and class predictions.
 
 
 ### Training dataset
@@ -162,7 +162,7 @@ The reconstruction of 3D coordinates works by associating particles detected in 
 
 ### Camera Calibration
 
-For the reconstruction of 3D points a correspondence between points in the first and second camera's images must be known. Please refer to the [OpenCV documentation](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html) for more information.
+For the reconstruction of 3D points a correspondence between points in the first and second camera's images must be known. Please refer to the [OpenCV documentation](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html) for more information. See below the example stereo calibration script.
 
 ```{literalinclude} calibration_example.py
 :caption: Camera calibration example
@@ -170,7 +170,11 @@ For the reconstruction of 3D points a correspondence between points in the first
 
 ### World vs. Camera coordinates
 
-<mark>This section needs extension/correction!</mark>
+After 3D reconstruction, it is usually useful to transform the positions of particles from the first camera's coordinate system to the world/experiment coordinate system. Usually, it is the coordinate systems with its axes parallel to container walls and its origin corresponding to the geometrical center of experimental box. The transformation must be represented as a rotation followed by a translation. See below the example stereo calibration script.
+
+```{literalinclude} world_transformation_example.py
+:caption: World coordinate transformation example
+```
 
 ### Tracking
 

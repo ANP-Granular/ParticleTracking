@@ -236,7 +236,7 @@ def csv_split_by_frames(input_file: str, cut_frames: List[int]) -> List[str]:
         if len(next_slice) == 0:
             continue
         next_slice.reset_index(drop=True, inplace=True)
-        new_path = base_path + f"_{next_min}_{next_max-1}.csv"
+        new_path = base_path + f"_{next_min}_{next_max - 1}.csv"
         next_slice.to_csv(new_path, sep=",")
         written.append(new_path)
     return written

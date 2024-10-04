@@ -14,7 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Includes main window widget class in RodTracker GUI.
+
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
 
 import logging
 import platform
@@ -229,6 +234,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.rod_data.is_busy.connect(
             lambda busy: self.tab_busy_changed(0, busy)
         )
+        self.ui.tv_rods.data_loaded.connect(self._trigger_tree_folding)
 
         # Saving
         self.ui.pb_save_rods.clicked.connect(self.rod_data.save_changes)
@@ -259,6 +265,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         )
         for rb in self.ui.group_rod_color.findChildren(QRadioButton):
             rb.toggled.connect(self.method_2D_changed)
+            rb.toggled.connect(self.color_change)
         self.ui.pb_previous.clicked.connect(
             lambda: self.show_next(direction=-1)
         )
@@ -989,6 +996,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         else:
             tab_icon = misc.blank_icon()
         self.ui.right_tabs.setTabIcon(tab_idx, tab_icon)
+
+    def _trigger_tree_folding(self):
+        self.ui.tv_rods.update_tree_folding(
+            self.logger.frame, self.get_selected_color()
+        )
 
     def eventFilter(
         self, source: QtCore.QObject, event: QtCore.QEvent

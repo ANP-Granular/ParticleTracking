@@ -40,6 +40,19 @@ pyuic5 -o path/to/mainwindow_layout.py path/to/mainwindow_layout.ui
 
 Do **not** change the [Python file](../../RodTracker/src/RodTracker/ui/mainwindow_layout.py) containing the GUI-Layout manually as all changes will be lost when generating it automatically again.
 
+### Debugging Threads
+When debugging the RodTracker it is sometimes useful to be able to put breakpoints in functions run in threads other than the main-thread. In Visual Studio Code this does not work out of the box. There it is necessary to use the following piece of code:
+```python
+import debugpy
+...
+def function_supposed_to_be_debugged():
+   debugpy.debug_this_thread()
+   ...
+```
+`debugpy.debug_this_thread()`must be added inside the function(s) running outside the main-thread that shall be debugged.
+
+See the Visual Studio Code docs [here](https://code.visualstudio.com/docs/python/debugging#_troubleshooting) for more information.
+
 ### Running tests
 
 Please make sure that the dependencies from `TEST` or `DEV` extra are installed.

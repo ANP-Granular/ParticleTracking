@@ -1,6 +1,18 @@
 ## [Unreleased]
+
+## [v0.4.3]
+### Fixed
+- tracking now works as intended ([#96](https://github.com/ANP-Granular/ParticleTracking/issues/96))
+- tracking/matching tests were updated according to the fixed tracking issue 
+
+## [v0.4.2]
 ### Added
 - support for Python 3.12
+
+### Fixed
+- error mitigation for failed projection error binning
+- numpy version mismatch ([#90](https://github.com/ANP-Granular/ParticleTracking/issues/90))
+- minimum test coverage
 
 ## [v0.4.1]
 ### Added
@@ -51,7 +63,8 @@
 ### Added
 - start versioning
 
-[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.4.1+ParticleTracking...HEAD
+[Unreleased]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.4.2+ParticleTracking...HEAD
+[v0.4.2]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.4.1+ParticleTracking...v0.4.2+ParticleTracking
 [v0.4.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.4.0+ParticleTracking...v0.4.1+ParticleTracking
 [v0.4.0]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.3.1+ParticleTracking...v0.4.0+ParticleTracking
 [v0.3.1]: https://github.com/ANP-Granular/ParticleTracking/compare/v0.3.1+ParticleTracking

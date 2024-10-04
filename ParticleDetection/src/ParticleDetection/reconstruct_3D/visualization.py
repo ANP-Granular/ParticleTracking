@@ -169,8 +169,10 @@ def reprojection_errors_hist(reprojection_errors: np.ndarray) -> Figure:
             alpha=0.8,
             bins=np.arange(0, reprojection_errors.max(), 0.25),
         )
-    except ValueError as e:
-        if "Maximum allowed size exceeded" in str(e):
+    except Exception as e:
+        if ("Maximum allowed size exceeded" in str(e)) or (
+            "Unable to allocate" in str(e)
+        ):
             _logger.warning(f"{e}\nUsing a different binning strategy.")
             plt.hist(
                 reprojection_errors,

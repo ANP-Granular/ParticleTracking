@@ -14,7 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Classes and methods called in RodTracked GUI for performing 3D reconstruction
+and tracking of particles, as well as plotting of the resulting metrics
+(reprojection errors, frame-to-frame distance, etc).
+
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
 
 import logging
 import sys
@@ -793,6 +800,9 @@ class Tracker(Reconstructor):
                 df_out = pd.concat([df_out, tmp])
                 self.frames = self.frames[1:]
                 self.signals.progress.emit(1 / num_frames)
+            else:
+                # Set initial 3D data to previous frame
+                tmp = self.data[self.data.frame == self.frames[0] - 1]
 
             for i in range(len(self.frames)):
                 lock.lockForRead()
@@ -806,7 +816,7 @@ class Tracker(Reconstructor):
                 # Track particles
                 # fmt: off
                 tmp = matchND.match_frame(
-                    self.data, self.cams[0], self.cams[1], self.frames[i],
+                    self.data, tmp, self.cams[0], self.cams[1], self.frames[i],
                     self.color, self.calibration, P1, P2, rot,
                     trans, r1, r2, t1, t2
                 )[0]

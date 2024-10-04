@@ -14,9 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Includes classes which define various dialog widgets in RodTracker GUI.
 
-import os
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
+
 import platform
 from pathlib import Path
 from typing import Union
@@ -165,11 +169,7 @@ def select_data_folder(
     )
     picker_dialog.setFileMode(QtWidgets.QFileDialog.Directory)
     picker_dialog.setWindowIcon(QtGui.QIcon(fl.icon_path()))
-    # handle file path issue when running on linux as a snap
-    if "SNAP" in os.environ or platform.system() == "Windows":
-        picker_dialog.setOption(
-            QtWidgets.QFileDialog.DontUseNativeDialog, True
-        )
+    picker_dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
     if not picker_dialog.exec():
         return None
     return Path(picker_dialog.selectedFiles()[0]).resolve()

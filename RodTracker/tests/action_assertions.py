@@ -93,11 +93,10 @@ def post_create(
     ]
     assert (len(selected_id) == 1) and (selected_id[0] == new_id)
 
-    # rod was inserted in the tree view
-    items_tree = main_window.ui.tv_rods.findItems(
-        str(new_id), QtCore.Qt.MatchContains
-    )
-    assert len(items_tree) == 1
+    # rod was inserted in the tree view and is selected
+    selected_items = main_window.ui.tv_rods.selectedItems()
+    assert len(selected_items) == 1
+    assert str(new_id) in selected_items[0].text(0)
 
     # rod is correctly positioned
     new_pos = get_rod_position(main_window, new_id)

@@ -162,12 +162,12 @@ class TestRodData:
         ret_sl = bl_outer.all_signals_and_args[1].args
 
         assert ret_dl[0] == 500
-        assert ret_dl[1] == 550
+        assert ret_dl[1] == 519
         assert ret_dl[2] == [
             "black",
         ]
 
-        assert list(ret_sl[0].keys()) == list(range(500, 551))
+        assert list(ret_sl[0].keys()) == list(range(500, 520))
         assert ret_sl[1] == ["gp3", "gp4"]
 
         assert bl_inner.args[0] == chosen_folder
@@ -612,7 +612,7 @@ class TestRodData:
 
     def test_catch_data_multi(self, qtbot: QtBot, rod_manager: RodData):
         test_data = {
-            "frame": [500, 502, 530],
+            "frame": [500, 502, 518],
             "cam_id": ["gp3", "gp4", "gp3"],
             "color": ["black", "black", "green"],
             "position": [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
@@ -880,7 +880,7 @@ def test_change_data(qtbot: QtBot, rod_manager: RodData):
 
 def test_change_data_multiple(qtbot: QtBot, rod_manager: RodData):
     test_data = {
-        "frame": [500, 502, 530],
+        "frame": [500, 502, 518],
         "cam_id": ["gp3", "gp4", "gp3"],
         "color": ["black", "black", "green"],
         "position": [[random.random() for _ in range(4)] for _ in range(3)],
@@ -1000,7 +1000,7 @@ def test_rod_number_swap(
     new_id = 2
     color = "black"
     cam = "gp3"
-    frame = 545
+    frame = 518
     prev_data = rod_data.rod_data.copy()
     rod_data.rod_number_swap(mode, old_id, new_id, color, frame, cam)
     prev_unchanged = prev_data.loc[prev_data.frame < frame]

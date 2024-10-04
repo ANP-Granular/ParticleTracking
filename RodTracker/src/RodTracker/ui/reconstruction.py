@@ -14,10 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with RodTracker. If not, see <http://www.gnu.org/licenses/>.
 
-"""**TBD**"""
+"""
+Includes classes which define widgets used for 3D reconstruction and
+tracking of particles in RodTracker GUI.
+
+**Author:**     Adrian Niemann (adrian.niemann@ovgu.de)\n
+**Date:**       2022-2024
+"""
 
 import logging
-import os
+
+# import os
 from functools import partial
 from typing import List
 
@@ -159,6 +166,7 @@ class ReconstructorUI(QtWidgets.QWidget):
     _calibration = QtCore.pyqtSignal([dict])
     _progress_val: float = 0.0
     _colors_to_solve: int = 0
+    _pre_solve_data_requested: bool = False
 
     def __init__(self, ui: QtWidgets.QWidget, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -336,6 +344,10 @@ class ReconstructorUI(QtWidgets.QWidget):
         else:
             self.pb_plots.setEnabled(True)
 
+        # data had been requested by solve(), so re-run it
+        if self._pre_solve_data_requested:
+            self.solve()
+
     def select_data(self):
         """Request data defined by the selections in the UI.
 
@@ -371,6 +383,13 @@ class ReconstructorUI(QtWidgets.QWidget):
         -------
         None
         """
+        # request potentially updated position data before solving
+        if not self._pre_solve_data_requested:
+            self._pre_solve_data_requested = True
+            self.select_data()
+            return
+        self._pre_solve_data_requested = False
+
         track = self.ui.findChild(
             QtWidgets.QCheckBox, "cb_tracking"
         ).isChecked()
@@ -518,7 +537,7 @@ class ReconstructorUI(QtWidgets.QWidget):
             idx_new = idx_max
         self.stacked_plots.setCurrentIndex(idx_new)
         self.lbl_current_plot.setText(
-            f"({self.stacked_plots.currentIndex()+1}"
+            f"({self.stacked_plots.currentIndex() + 1}"
             f"/{self.stacked_plots.count()})"
         )
 
@@ -695,7 +714,7 @@ class ReconstructorUI(QtWidgets.QWidget):
         self.stacked_plots.insertWidget(self.stacked_plots.count(), widget)
         fig.tight_layout()
         self.lbl_current_plot.setText(
-            f"({self.stacked_plots.currentIndex()+1}"
+            f"({self.stacked_plots.currentIndex() + 1}"
             f"/{self.stacked_plots.count()})"
         )
         if self._threads.activeThreadCount() == 0:
@@ -752,8 +771,8 @@ def choose_calibration(
     # opens directory to select image
     kwargs = {}
     # handle file path issue when running on linux as a snap
-    if "SNAP" in os.environ:
-        kwargs["options"] = QtWidgets.QFileDialog.DontUseNativeDialog
+    # if "SNAP" in os.environ:
+    kwargs["options"] = QtWidgets.QFileDialog.DontUseNativeDialog
     chosen_file, _ = QtWidgets.QFileDialog.getOpenFileName(
         line_edit, "Open a calibration", ui_dir, "*.json", **kwargs
     )
