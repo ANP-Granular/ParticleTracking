@@ -53,7 +53,7 @@ Run the **RodTracker** GUI using one of the possibilities:
     ```shell
     YOUR/REPO/PATH/RodTracker/src/RodTracker$ python main.py
     ```
-  - *(Python Package)* Use the registered command:
+  - *(Python Package)* Run the GUI script entry point:
     ```shell
     ARBITRARY/PATH$ RodTracker
     ```

@@ -413,6 +413,31 @@ class RodData(QtCore.QObject):
         cams = [
             col.split("_")[-1] for col in columns if re.fullmatch(RE_SEEN, col)
         ]
+
+        if len(cams) == 1:
+            msg = QMessageBox()
+            msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
+            msg.setIcon(QMessageBox.Question)
+            msg.setWindowTitle(RodTracker.APPNAME)
+            msg.setText(
+                "Warning: you are loading data with coordinates "
+                "for only one camera view."
+            )
+            btn_OK = msg.addButton("OK", QMessageBox.ActionRole)
+            btn_Reload = msg.addButton(
+                "Load another folder", QMessageBox.ActionRole
+            )
+            msg.exec()
+            user_decision = msg.clickedButton()
+            if user_decision == btn_OK:
+                # Load data for one camera only
+                pass
+            elif user_decision == btn_Reload:
+                # Abort loading and restart the folder selection process
+                return False
+        while len(cams) < 2:
+            cams.append("")
+
         cols_pos_2d = [col for col in columns if re.fullmatch(RE_2D_POS, col)]
         cols_seen = [col for col in columns if re.fullmatch(RE_SEEN, col)]
         cols_pos_3d = [col for col in columns if re.fullmatch(RE_3D_POS, col)]

@@ -9,7 +9,7 @@ Run the **RodTracker** GUI using one of the possibilities:
     ```shell
     YOUR/REPO/PATH/RodTracker/src/RodTracker$ python main.py
     ```
-  - Use the registered command:
+  - Run the GUI script entry point:
     ```shell
     ARBITRARY/PATH$ RodTracker
     ```
@@ -35,25 +35,27 @@ You can now switch between images in the folder using the `left`/`right` keys, t
 
 ### Dataset format & folder structure
 
-For the RodTracker to work properly certain folder structures, naming conventions, and file structures must be followed, which is shown below.
-All of these can also be viewed in the `RodTracker/src/RodTracker/resources/example_data` directory and that is available at `resources/example_data` that in the bundled RodTracker app folder.
+For the RodTracker to work properly certain folder structures, naming conventions, and file structures must be followed.
 
 A working folder and file structure for the stereo-camera images is shown below.
 ```
 |.
-├── gp1
+├── [FIRST CAMERA NAME]
 │   ├── 001.jpg
 │   ├── 002.jpg
 │   ...
 │   └── 321.jpg
-└── gp2
+└── [SECOND CAMERA NAME]
     ├── 001.jpg
     ├── 002.jpg
     ...
     └── 321.jpg
 ```
 
-When loading images the RodTracker will look for `*.png`, `*.jpeg`, and `*.jpg` files in the directory the file is in the user just chose.
+The example data based on a short image sequence from one of granular gas experiments are provided in the `RodTracker/src/RodTracker/resources/example_data` directory or at `resources/example_data` in bundled RodTracker app folder.
+Note that in the example dataset, [FIRST CAMERA NAME] is `gp3` and [SECOND CAMERA NAME] is `gp4` and frame numbers count from 500 to 519.
+
+When loading images the RodTracker will look for `*.png`, `*.jpeg`, and `*.jpg` files in the chosen directory.
 It will attempt to convert the filename to an integer, therefore keep a naming convention that allows instant conversion to integers. Leading 0s are usually not a problem for this.
 The folder name is then used as an ID for the loaded images and respective particle position data associated with them.
 
@@ -61,7 +63,7 @@ The folder name is then used as an ID for the loaded images and respective parti
 
 Now the particles in the loaded images can be detected using a saved model.
 1. Load the model in the `Detection` tab and select a frame range that the model shall identify rods on.
-   - The `Use Example Model` button downloads [this model](https://zenodo.org/records/10255525) used for rod detection (specifically the *model_cpu.pt* file). It is intended for detecting rods in the example images.
+   - The `Use Example Model` button downloads [this model](https://zenodo.org/records/10255525) used for rod detection (specifically the *model_cpu.pt* or *model_cuda.pt* file, corresponding to CPU or GPU installations of **RodTracker**). It is intended for detecting rods in the example images.
 2. Deselect any color class that you are not interested in.
 3. Select the *default* expected number of particles, i.e. how many particles per color are expected in each image.
 4. Adjust the number of particles per color, if needed, in the table and check the box to use the customized value during detection.
@@ -149,7 +151,7 @@ The dataset can be saved as `*.csv` files. Each class(/color) is saved to an ind
 **Example output structure:**
 ```
 |.
-└── output
+└── [SAVE FOLDER NAME]
     ├── rods_df_black.csv
     ├── rods_df_blue.csv
     ...
@@ -164,6 +166,7 @@ The dataset can be saved as `*.csv` files. Each class(/color) is saved to an ind
 ## Loading rod position data
 
 To load a position dataset in the form shown in [](#saving), click on the `Load Rods` button and select the folder with the desired `*.csv` files.
+For the [example dataset](#dataset-format--folder-structure), pre-corrected rod position data is provided in `resources/example_data/csv` folder.
 
 ```{hint}
 You are supposed to select a folder containing position data files, **NOT** the data files themselves.
@@ -175,19 +178,22 @@ If no rods are shown after selecting a folder check, that the correct image data
 
 ## Rod tracking and 3D coordinate reconstruction
 
-Eventually the 2D position data of the rods shall be used to reconstruct their 3D coordinates throughout the experiment. This can be achieved in the `3D-Reconstruct` tab. Prerequisites for this are to have the stereo-camera calibration data (and transformation from the first camera's coordinate system to the experiment's coordinate system).
+Eventually the 2D position data of the rods shall be used to reconstruct their 3D coordinates throughout the experiment. This can be achieved in the `3D-Reconstruct` tab. Prerequisites for this are: 
+- corresponding images loaded for both cameras
+- rod position data for both cameras, detected or loaded from file. For optimal results, data should be corrected.
+- stereo-camera calibration data (and transformation from the first camera's coordinate system to the experiment's coordinate system)
 
-After successful reconstruction of 3D coordinates, the `3D-View` tab will display the 3D data for the current frame and the `Reconstruction performance` plots are available (after updating them).
+Prepare the reconstruction:
+1. Select a frame range.
+2. (De-)select particle colors.
+3. Toggle whether to track particles or just reconstruct their 3D coordinates on each frame (`Tracking` checkbox, see [](#tracking-vs-reconstruction-only)).
+4. Select a stereo camera calibration (see [](#calibration--transformation-data-format)). For the [example dataset](#dataset-format--folder-structure), use the stereo calibration file: `resources/example_data/calibrations/gp34.json`.
+5. Select a transformation to experiment coordinates file *(this is not strictly necessary but will benefit the visualization in the `3D-View` tab)* (see [](#calibration--transformation-data-format)). For the [example dataset](#dataset-format--folder-structure), use the coordinate transformation file: `resources/example_data/calibrations/transformation.json`.
+Start the reconstruction by pressing the `Solve` button after making all required settings.
 
 ![TrackingStart](../images/TrackingStart.png)
 
-Prepare the reconstruction:
-- select a frame range
-- (de-)select colors
-- toggle whether to track particles or just reconstruct their 3D coordinates
-- select a camera calibration (see [](#calibration--transformation-data-format))
-- select a transformation to experiment coordinates file *(this is not strictly necessary but will benefit the visualization in the `3D-View` tab)* (see [](#calibration--transformation-data-format))
-Start the reconstruction by pressing the `Solve` button after making all required settings.
+After successful reconstruction of 3D coordinates, the `3D-View` tab will display the 3D data for the current frame and the `Reconstruction performance` plots are available (after updating them).
 
 ```{note}
 Unlike during the detection of particles, the results will only be accessible after completion of the process or aborting. When the process is aborted all intermediate results will be integrated in the dataset and accessible in the GUI.

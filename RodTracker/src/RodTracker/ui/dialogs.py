@@ -327,7 +327,7 @@ def show_about(parent: QtWidgets.QWidget):
         <br>
         <br>
         <p>
-            Copyright © 2023 Adrian Niemann, Dmitry Puzyrev
+            Copyright © 2023-2024 Adrian Niemann, Dmitry Puzyrev
         </p>
         """
     )

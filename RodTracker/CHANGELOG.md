@@ -1,3 +1,14 @@
+## [Unreleased]
+
+### Added
+- shows warning message when loading coordinate data for only one camera (instead of producing an error)
+
+### Fixed
+- updated documentation of RodTracker with better explanation of workflow and usage of example data
+- other small updates to documentation
+
+
+
 ## [v0.6.4]
 
 ### Added
