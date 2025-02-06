@@ -26,10 +26,15 @@ Open images from disk using the `File` dropdown menu, the `Load Images` button o
 Refer to [](#dataset-format--folder-structure) for the correct dataset structure. You can also use the example dataset located in `./RodTracker/src/RodTracker/resources/example_data`.
 
 ```{hint}
-You are supposed to select a folder containing images, **NOT** the images themselves.
+One is supposed to select a folder which contains the images, **NOT** the images themselves.
+You can start with opening the example folder `./RodTracker/src/RodTracker/resources/example_data/gp3` with images from one of the cameras.
+```
+```{note}
+RodTracker is intended for work with stereo image data (two camera views). You can import the images, perform detection and correct the 2D coordinate data for one view at a time, but it might produce warning messages.
+To combine the data which was corrected separately, one should understand the dataset structure and know how to properly concatenate the coordinate data, see [](#saving).
 ```
 
-You can now switch between images in the folder using the `left`/`right` keys, the `Previous`/`Next` buttons or the `Slider` below.
+After loading the folder with the images, you can now switch between them using the `left`/`right` keys, the `Previous`/`Next` buttons or the `Slider` below.
 
 ![LoadedImages](../images/ImagesLoaded.png)
 
