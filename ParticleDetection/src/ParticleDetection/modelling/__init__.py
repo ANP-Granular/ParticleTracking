@@ -1,4 +1,4 @@
-#  Copyright (c) 2023 Adrian Niemann Dmitry Puzyrev
+#  Copyright (c) 2023-2024 Adrian Niemann Dmitry Puzyrev
 #
 #  This file is part of ParticleDetection.
 #  ParticleDetection is free software: you can redistribute it and/or modify
