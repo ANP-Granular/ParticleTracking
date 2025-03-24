@@ -68,6 +68,10 @@ This approach still suffered from long manual data processing times, due to the 
 
 The `ParticleTracking` software is an evolution of the AI-assisted framework for the analysis of dilute granular ensembles, improved by the transition to the Detectron2 platform, inclusion of a GUI, and a documented and extensible codebase.
 
+As an alternative to the full `ParticleTracking` software workflow, one can replace 2D detection and tracking by the use of common image processing tools, including Fiji [@Schindelin2012] with TrackMate plugin [@Ershov2022] or ilastik [@berg2019]. Experimentation with intelligent segmentation and tracking solutions such as SAM 2/ SAMURAI [@ravi2024sam2; @yang2024samurai] might provide useful results as well.
+Data correction and labeling can be performed in various image annotation tools, see, for example, the list here: [https://github.com/HumanSignal/awesome-data-labeling](https://github.com/HumanSignal/awesome-data-labeling). Note that for further processing in `RodTracker`, one should account for the necessity of labeling both endpoints in case of elongated particles and export the data in correct format as explained in `ParticleTracking` documentation.
+The 3D tracking task can be performed by implementing custom user scripts using MATLAB (one can start with [@Himpel2011] and following articles) or OpenCV functions (as in `ParticleDetection` package). 
+
 # Dependencies
 
 Among others, the software depends on the following open source libraries: For the particle detection the Detectron2 [@wu2019detectron2] framework is used. For tracking the software relies heavily on functions provided by numpy [@harris2020array], scipy [@2020SciPy-NMeth] and PuLP. The GUI was constructed with PyQt5 and is using pandas [@the_pandas_development_team_2022_7344967] for its data management.
