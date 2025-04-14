@@ -2,6 +2,7 @@
 
 ### Added
 - a couple of warnings added which were missing in the last release
+- new flake8 version warnings (F824) suppressed (will be addressed in the new releases)
 
 ### Fixed
 - updated paths in documentation

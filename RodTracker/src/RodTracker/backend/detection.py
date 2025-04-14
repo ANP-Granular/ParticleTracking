@@ -251,7 +251,7 @@ class Detector(QtCore.QRunnable):
             - :attr:`DetectorSignals.progress`
             - :attr:`DetectorSignals.finished`
         """
-        global abort_requested
+        global abort_requested  # noqa: F824
         cols = [
             col.format(id1=self.cam_id, id2=self.cam_id)
             for col in ds.DEFAULT_COLUMNS

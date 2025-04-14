@@ -402,7 +402,7 @@ class RodData(QtCore.QObject):
                 return False
 
         # Load data
-        global rod_data
+        global rod_data  # noqa: F824
         lock.lockForWrite()
         rod_data, found_colors = self.get_color_data(self.folder)
         frame_min = rod_data.frame.min()
@@ -497,7 +497,7 @@ class RodData(QtCore.QObject):
             - :attr:`saved`
         """
         # TODO: move saving to different Thread(, if it still takes too long)
-        global rod_data
+        global rod_data  # noqa: F824
         if rod_data is None:
             return
         # Clean up data from unused rods before permanent saving
@@ -693,7 +693,7 @@ class RodData(QtCore.QObject):
             - :attr:`data_2d`
             - :attr:`data_3d`
         """
-        global rod_data
+        global rod_data  # noqa: F824
         if self.frame is None or rod_data is None:
             return
 
@@ -764,7 +764,7 @@ class RodData(QtCore.QObject):
             - :attr:`requested_data`
         """
         # Provide data as requested, will return the requested data
-        global rod_data
+        global rod_data  # noqa: F824
         lock.lockForRead()
         out_data = rod_data
         lock.unlock()
@@ -797,7 +797,7 @@ class RodData(QtCore.QObject):
         data : DataFrame
             Updated/New rod position data
         """
-        global rod_data
+        global rod_data  # noqa: F824
         with QtCore.QWriteLocker(lock):
             rod_data.set_index(["color", "frame", "particle"], inplace=True)
             try:
@@ -842,7 +842,7 @@ class RodData(QtCore.QObject):
         --------
         :meth:`catch_data`, :meth:`catch_number_switch`
         """
-        global rod_data
+        global rod_data  # noqa: F824
         if rod_data is None:
             with QtCore.QWriteLocker(lock):
                 rod_data = data.copy()
@@ -1170,7 +1170,7 @@ class RodData(QtCore.QObject):
             ``out_list = ["gp1_seen", "gp2_seen"]``
         """
         if data is None:
-            global rod_data
+            global rod_data  # noqa: F824
         else:
             rod_data = data
         lock.lockForRead()
@@ -1230,7 +1230,7 @@ class RodData(QtCore.QObject):
             Flag whether to delete all currently loaded data.
             By default ``False``.
         """
-        global rod_data
+        global rod_data  # noqa: F824
         if all is True:
             # delete all data contained in the current dataset
             lock.lockForWrite()
@@ -1272,7 +1272,7 @@ class RodData(QtCore.QObject):
             An :class:`.Action` that was logged previously. It will only be
             reverted, if it associated with this object.
         """
-        global rod_data
+        global rod_data  # noqa: F824
         lock.lockForWrite()
         if isinstance(action, lg.DeleteData):
             rod_data = pd.concat([rod_data, action.del_data])
@@ -1295,7 +1295,7 @@ class RodData(QtCore.QObject):
         -------
         None
         """
-        global rod_data
+        global rod_data  # noqa: F824
         if rod_data is None:
             # No position data loaded
             return
@@ -1361,7 +1361,7 @@ class RodData(QtCore.QObject):
             The rows from the given dataset that were identified as not being
             used.
         """
-        global rod_data
+        global rod_data  # noqa: F824
         lock.lockForRead()
         to_include = []
         for col in rod_data.columns:
@@ -1392,7 +1392,7 @@ class RodData(QtCore.QObject):
         -------
         None
         """
-        global POSITION_SCALING
+        global POSITION_SCALING  # noqa: F824
         settings_changed = False
         if (
             "position_scaling" in settings
@@ -1431,7 +1431,7 @@ def change_data(new_data: dict) -> None:
         Dictionary describing the new/changed rod data. Must contain the fields
         ``"frame"``, ``"cam_id"``, ``"color"``, ``"position"``, ``"rod_id"``.
     """
-    global rod_data
+    global rod_data  # noqa: F824
     lock.lockForWrite()
     frame = new_data["frame"]
     cam_id = new_data["cam_id"]
@@ -1521,7 +1521,7 @@ def rod_number_swap(
     cam_id : str, optional
         Default is ``None``.
     """
-    global rod_data
+    global rod_data  # noqa: F824
     lock.lockForWrite()
     tmp_set = rod_data.copy()
     if mode == lg.NumberChangeActions.ALL:

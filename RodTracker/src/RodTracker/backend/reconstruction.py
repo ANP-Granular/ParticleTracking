@@ -618,7 +618,7 @@ class Reconstructor(QtCore.QRunnable):
             - :attr:`TrackerSignals.progress`
             - :attr:`TrackerSignals.result`
         """
-        global abort_reconstruction, lock
+        global abort_reconstruction, lock  # noqa: F824
         try:
             # Derive projection matrices from the calibration
             r1 = np.eye(3)
@@ -759,7 +759,7 @@ class Tracker(Reconstructor):
             - :attr:`TrackerSignals.progress`
             - :attr:`TrackerSignals.result`
         """
-        global abort_reconstruction, lock
+        global abort_reconstruction, lock  # noqa: F824
         try:
             # Derive projection matrices from the calibration
             r1 = np.eye(3)
