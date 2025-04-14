@@ -1,3 +1,14 @@
+## [v0.6.6]
+
+### Added
+- a couple of warnings added which were missing in the last release
+
+### Fixed
+- updated paths in documentation
+
+### Note
+- intended reference version for JOSS publication
+
 ## [v0.6.5]
 
 ### Added
