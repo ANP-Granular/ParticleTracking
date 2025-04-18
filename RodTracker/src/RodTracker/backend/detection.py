@@ -22,6 +22,7 @@ Includes objects and methods used for detection of particles by RodTracker.
 """
 
 import logging
+import warnings
 from pathlib import Path
 from typing import Dict, List
 
@@ -274,6 +275,15 @@ class Detector(QtCore.QRunnable):
                     outputs, self.classes, expected_particles=self.expected
                 )
                 tmp_data = ds.add_points(points, data, self.cam_id, frame)
+            else:
+                warnings.warn(
+                    f"No particles detected on frame number {i}.",
+                    UserWarning,
+                )
+                _logger.warning(
+                    f"No particles detected on frame number {i}."
+                )
+                continue
             self.signals.progress.emit(1 / num_frames, tmp_data, self.cam_id)
         data.reset_index(drop=True, inplace=True)
         self.signals.finished.emit(self.cam_id)
