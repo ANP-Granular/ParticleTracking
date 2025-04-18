@@ -280,9 +280,7 @@ class Detector(QtCore.QRunnable):
                     f"No particles detected on frame number {i}.",
                     UserWarning,
                 )
-                _logger.warning(
-                    f"No particles detected on frame number {i}."
-                )
+                _logger.warning(f"No particles detected on frame number {i}.")
                 continue
             self.signals.progress.emit(1 / num_frames, tmp_data, self.cam_id)
         data.reset_index(drop=True, inplace=True)
