@@ -1,3 +1,22 @@
+## [v0.6.7]
+
+### Added
+- a couple of warnings (data is loaded only from one camera) added which were missing in the last release
+- added a warning when no particles are detected in a given frame 
+- new flake8 version warnings (F824) suppressed (will be addressed in the new releases)
+
+### Fixed
+- updated paths in documentation
+
+### Note
+- intended reference version for JOSS publication
+
+
+## [v0.6.6]
+
+### Skipped release due to a versioning conflict (version tag was assigned twice)
+
+
 ## [v0.6.5]
 
 ### Added

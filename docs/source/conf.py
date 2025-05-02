@@ -17,7 +17,7 @@ __version__ = dunamai.Version.from_git().serialize(
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "ParticleTracking"
-copyright = "2023, Adrian Niemann, Dmitry Puzyrev"
+copyright = "2023-2024, Adrian Niemann, Dmitry Puzyrev"
 author = "Adrian Niemann, Dmitry Puzyrev"
 release = __version__
 version = __version__
