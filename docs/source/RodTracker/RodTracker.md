@@ -27,7 +27,7 @@ Refer to [](#dataset-format--folder-structure) for the correct dataset structure
 
 ```{hint}
 One is supposed to select a folder which contains the images, **NOT** the images themselves.
-You can start with opening the example folder `./RodTracker/src/RodTracker/resources/example_data/gp3` with images from one of the cameras.
+You can start with opening the example folder `./RodTracker/src/RodTracker/resources/example_data/images/gp3` with images from one of the cameras.
 ```
 ```{note}
 RodTracker is intended for work with stereo image data (two camera views). You can import the images, perform detection and correct the 2D coordinate data for one view at a time, but it might produce warning messages.

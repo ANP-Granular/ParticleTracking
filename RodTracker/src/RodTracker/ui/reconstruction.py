@@ -399,7 +399,10 @@ class ReconstructorUI(QtWidgets.QWidget):
             or any([cam == "" for cam in self.cam_ids])
         ):
             # insufficient data for 3D reconstruction given
-            _logger.info("Insufficient data for 3D reconstruction given.")
+            show_warning(
+                "Warning: 3D reconstruction requires "
+                "the coordinate data from 2 cameras."
+            )
             return
         frames = list(range(self.start_frame, self.end_frame + 1))
         self._progress_val = 0.0
@@ -666,6 +669,12 @@ class ReconstructorUI(QtWidgets.QWidget):
             self.stacked_plots.removeWidget(self.stacked_plots.currentWidget())
         plt.close("all")
         if self.data is None or len(self.data) == 0:
+            show_warning("No data are provided for plotting.")
+            return
+        elif any([cam == "" for cam in self.cam_ids]):
+            show_warning(
+                "Plotting requires the coordinate data from 2 cameras."
+            )
             return
         data_plt = self.data.loc[
             (self.data["frame"] >= self.start_frame)
