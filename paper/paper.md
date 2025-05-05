@@ -11,22 +11,25 @@ authors:
     affiliation: 1
   - name: Dmitry Puzyrev
     orcid: 0000-0002-9269-3224
-    affiliation: "1, 3, 4"
+    affiliation: "2, 3, 4, 1"
   - name: Ralf Stannarius
     orcid: 0000-0002-6836-3663
-    affiliation: "2, 3, 4, 5"
+    affiliation: "5, 2, 3, 6"
 affiliations:
   - name: Department of Nonlinear Phenomena, Institute of Physics, Otto von Guericke University Magdeburg, Germany
     index: 1
-  - name: Institute of Physics, Otto von Guericke University Magdeburg, Germany
-    index: 2
   - name: Department of Microgravity and Translational Regenerative Medicine, Medical Faculty, Otto von Guericke University Magdeburg, Germany
-    index: 3
+    index: 2
   - name: Research Group ‘Magdeburger Arbeitsgemeinschaft für Forschungunter Raumfahrt-und Schwerelosigkeitsbedingungen’ (MARS), Otto von Guericke University Magdeburg, Germany
+    index: 3
+  - name: Autonomous Multisensor Systems Group, Institute for Intelligent Cooperating Systems, Otto von Guericke University Magdeburg, Germany
     index: 4
   - name: Department of Engineering, Brandenburg University of Applied Sciences, Germany
     index: 5
-date: 30 March 2023
+  - name: Institute of Physics, Otto von Guericke University Magdeburg, Germany
+    index: 6
+
+date: 5 May 2025
 bibliography: paper.bib
 ---
 
