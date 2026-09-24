@@ -42,6 +42,7 @@ def test_thread_cleaned(qtbot: QtBot):
     worker = pl.Worker(runner_func)
     with qtbot.waitSignal(worker.signals.finished, timeout=1000):
         threads.start(worker)
+    qtbot.wait_until(lambda: threads.activeThreadCount() == 0, timeout=1000)
     assert threads.activeThreadCount() == 0
 
 
