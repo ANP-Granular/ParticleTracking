@@ -181,6 +181,10 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             cam.logger = self.ui.lv_actions_list.get_new_logger(cam.cam_id)
             cam.setPixmap(QtGui.QPixmap(fl.logo_path()))
             cam.autoselect = self.ui.action_autoselect_rods.isChecked()
+            cam.rod_data = self.rod_data
+            cam.show_previous_position = (
+                self.ui.action_show_previous_position.isChecked()
+            )
 
         self.logger = self.ui.lv_actions_list.get_new_logger(self.logger_id)
         self.ui.sa_camera_0.verticalScrollBar().installEventFilter(self)
@@ -359,6 +363,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 lambda n: self.ui.le_rod_disp.setText(f"Loaded Particles: {n}")
             )
             self.ui.action_autoselect_rods.toggled.connect(cam.set_autoselect)
+            self.ui.action_show_previous_position.toggled.connect(
+                cam.set_show_previous_position
+            )
 
         # Data manipulation
         self.request_undo.connect(self.rod_data.logger.undo_last)
@@ -383,6 +390,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             lambda: self.cameras[tab_idx].adjust_rod_length(
                 self._rod_incr, True
             )
+        )
+        self.ui.action_previous_position.triggered.connect(
+            lambda: self.cameras[
+                self.ui.camera_tabs.currentIndex()
+            ].set_selected_position_from_previous_frame(self.rod_data)
         )
 
         # Settings

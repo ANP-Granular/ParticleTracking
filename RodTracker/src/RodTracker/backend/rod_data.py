@@ -785,6 +785,34 @@ class RodData(QtCore.QObject):
         elif data_2d:
             self.requested_data.emit(out_data[self.cols_2D].copy())
 
+    def previous_position(
+        self, cam_id: str, color: str, rod_id: int, frame: int
+    ) -> Union[List[float], None]:
+        """Return a rod's position from the nearest earlier data frame."""
+        global rod_data  # noqa: F824
+        if frame is None or rod_data is None:
+            return None
+
+        position_columns = [
+            f"x1_{cam_id}",
+            f"y1_{cam_id}",
+            f"x2_{cam_id}",
+            f"y2_{cam_id}",
+        ]
+        with QtCore.QReadLocker(lock):
+            candidates = rod_data.loc[
+                (rod_data.color == color)
+                & (rod_data.particle == rod_id)
+                & (rod_data.frame < frame),
+                ["frame", *position_columns],
+            ]
+            if candidates.empty:
+                return None
+            previous = candidates.loc[candidates.frame.idxmax()]
+            if pd.isna(previous[position_columns].to_numpy()).any():
+                return None
+            return [float(value) for value in previous[position_columns]]
+
     @QtCore.pyqtSlot(pd.DataFrame)
     def receive_updated_data(self, data: pd.DataFrame):
         """Receives an updated part of the rod position data.

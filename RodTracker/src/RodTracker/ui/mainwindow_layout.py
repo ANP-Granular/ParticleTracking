@@ -1315,6 +1315,11 @@ class Ui_MainWindow(object):
             QtCore.Qt.WidgetShortcut
         )
         self.action_lengthen_selected.setObjectName("action_lengthen_selected")
+        self.action_previous_position = QtWidgets.QAction(MainWindow)
+        self.action_previous_position.setShortcutContext(
+            QtCore.Qt.WindowShortcut
+        )
+        self.action_previous_position.setObjectName("action_previous_position")
         self.action_shorten_displayed = QtWidgets.QAction(MainWindow)
         self.action_shorten_displayed.setObjectName("action_shorten_displayed")
         self.action_lengthen_displayed = QtWidgets.QAction(MainWindow)
@@ -1327,6 +1332,11 @@ class Ui_MainWindow(object):
         self.action_autoselect_rods.setCheckable(True)
         self.action_autoselect_rods.setChecked(True)
         self.action_autoselect_rods.setObjectName("action_autoselect_rods")
+        self.action_show_previous_position = QtWidgets.QAction(MainWindow)
+        self.action_show_previous_position.setCheckable(True)
+        self.action_show_previous_position.setObjectName(
+            "action_show_previous_position"
+        )
         self.action_bug_report = QtWidgets.QAction(MainWindow)
         self.action_bug_report.setObjectName("action_bug_report")
         self.action_feature_request = QtWidgets.QAction(MainWindow)
@@ -1344,6 +1354,7 @@ class Ui_MainWindow(object):
         self.menuEdit.addSeparator()
         self.menuEdit.addAction(self.action_shorten_selected)
         self.menuEdit.addAction(self.action_lengthen_selected)
+        self.menuEdit.addAction(self.action_previous_position)
         self.menuEdit.addAction(self.action_shorten_displayed)
         self.menuEdit.addAction(self.action_lengthen_displayed)
         self.menuView.addAction(self.action_persistent_view)
@@ -1352,6 +1363,7 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.action_original_size)
         self.menuView.addAction(self.action_fit_to_window)
         self.menuView.addAction(self.action_autoselect_rods)
+        self.menuView.addAction(self.action_show_previous_position)
         self.menu_docs.addAction(self.action_docs_local)
         self.menu_docs.addAction(self.action_docs_online)
         self.menuHelp.addAction(self.action_logs)
@@ -1591,6 +1603,12 @@ class Ui_MainWindow(object):
         self.action_lengthen_selected.setShortcut(
             _translate("MainWindow", "A")
         )
+        self.action_previous_position.setText(
+            _translate("MainWindow", "Set Position From Previous Frame")
+        )
+        self.action_previous_position.setShortcut(
+            _translate("MainWindow", "C")
+        )
         self.action_shorten_displayed.setText(
             _translate("MainWindow", "Shorten Displayed Rods")
         )
@@ -1608,6 +1626,12 @@ class Ui_MainWindow(object):
             _translate("MainWindow", "Autoselect rods")
         )
         self.action_autoselect_rods.setShortcut(_translate("MainWindow", "G"))
+        self.action_show_previous_position.setText(
+            _translate("MainWindow", "Show Previous Rod Position")
+        )
+        self.action_show_previous_position.setShortcut(
+            _translate("MainWindow", "J")
+        )
         self.action_bug_report.setText(
             _translate("MainWindow", "Report a BUG")
         )

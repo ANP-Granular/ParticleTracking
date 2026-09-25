@@ -132,6 +132,7 @@ class RodImageWidget(QLabel):
     """
 
     autoselect: bool = True
+    show_previous_position: bool = False
 
     rods: List[rn.RodNumberWidget]
     _logger: lg.ActionLogger = None
@@ -156,6 +157,8 @@ class RodImageWidget(QLabel):
         self._scale_factor = 1.0
         self._offset = [0, 0]
         self._cam_id = "unknown"
+        # Provides access to the loaded rod position data for previews
+        self.rod_data = None
 
     # Access to properties ====================================================
     @property
@@ -306,6 +309,17 @@ class RodImageWidget(QLabel):
         """
         self.autoselect = state
 
+    def set_show_previous_position(self, state: bool):
+        """En-/Disable display of the selected rod's previous position.
+
+        Parameters
+        ----------
+        state : bool
+            New state of the preview display.
+        """
+        self.show_previous_position = state
+        self.draw_rods()
+
     # Display manipulation ====================================================
     def _scale_image(self) -> None:
         if self._image is None:
@@ -358,9 +372,39 @@ class RodImageWidget(QLabel):
             painter.setPen(pen)
             painter.drawLine(*rod_pos)
 
+        if self.show_previous_position and self.rod_data is not None:
+            self._draw_previous_position(painter)
+
         painter.end()
         self.setPixmap(rod_pixmap)
         return rod_pixmap
+
+    def _draw_previous_position(self, painter: QtGui.QPainter) -> None:
+        """Draws the selected rod's position on the previous frame."""
+        selected_rod = None
+        for rod in self._rods:
+            if rod.rod_state == rn.RodState.SELECTED:
+                selected_rod = rod
+                break
+        if selected_rod is None or self._logger is None:
+            return
+
+        previous_pos = self.rod_data.previous_position(
+            self.cam_id,
+            selected_rod.color,
+            selected_rod.rod_id,
+            self._logger.frame,
+        )
+        if previous_pos is None:
+            return
+
+        scaled_pos = [
+            int(self._position_scaling * self._scale_factor * coord)
+            for coord in previous_pos
+        ]
+        preview_pen = QtGui.QPen(QtCore.Qt.white, 1, QtCore.Qt.DotLine)
+        painter.setPen(preview_pen)
+        painter.drawLine(*scaled_pos)
 
     def clear_screen(self) -> None:
         """Removes the displayed rods and deletes them.
@@ -1015,6 +1059,32 @@ class RodImageWidget(QLabel):
         self.draw_rods()
         self.rod_activated(previously_selected)
         return
+
+    def set_selected_position_from_previous_frame(self, rod_data) -> None:
+        """Set the selected rod's endpoints to its previous position."""
+        selected_rod = None
+        for rod in self._rods or []:
+            if rod.rod_state == rn.RodState.SELECTED:
+                selected_rod = rod
+                break
+        if selected_rod is None:
+            return
+
+        previous_position = rod_data.previous_position(
+            self.cam_id,
+            selected_rod.color,
+            selected_rod.rod_id,
+            self._logger.frame,
+        )
+        if previous_position is None:
+            return
+
+        action = lg.ChangeRodPositionAction(
+            selected_rod.copy(), previous_position
+        )
+        self._logger.add_action(action)
+        selected_rod.rod_points = previous_position
+        self.draw_rods()
 
     @staticmethod
     def subtract_offset(

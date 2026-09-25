@@ -2118,6 +2118,7 @@
     <addaction name="separator"/>
     <addaction name="action_shorten_selected"/>
     <addaction name="action_lengthen_selected"/>
+    <addaction name="action_previous_position"/>
     <addaction name="action_shorten_displayed"/>
     <addaction name="action_lengthen_displayed"/>
    </widget>
@@ -2131,6 +2132,7 @@
     <addaction name="action_original_size"/>
     <addaction name="action_fit_to_window"/>
     <addaction name="action_autoselect_rods"/>
+    <addaction name="action_show_previous_position"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -2284,6 +2286,17 @@
     <enum>Qt::WidgetShortcut</enum>
    </property>
   </action>
+  <action name="action_previous_position">
+   <property name="text">
+    <string>Set Position From Previous Frame</string>
+   </property>
+   <property name="shortcut">
+    <string>C</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::WindowShortcut</enum>
+   </property>
+  </action>
   <action name="action_shorten_displayed">
    <property name="text">
     <string>Shorten Displayed Rods</string>
@@ -2317,6 +2330,17 @@
    </property>
    <property name="shortcut">
     <string>G</string>
+   </property>
+  </action>
+  <action name="action_show_previous_position">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Previous Rod Position</string>
+   </property>
+   <property name="shortcut">
+    <string>J</string>
    </property>
   </action>
   <action name="action_bug_report">
