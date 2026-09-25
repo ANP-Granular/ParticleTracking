@@ -985,6 +985,29 @@ def test_change_data_new(qtbot: QtBot, rod_manager: RodData):
     ).all(None)
 
 
+def test_change_data_new_with_string_column(
+    qtbot: QtBot, rod_manager: RodData
+):
+    rod_data.rod_data["color"] = rod_data.rod_data["color"].astype("string")
+    test_data = {
+        "frame": 500,
+        "cam_id": "gp3",
+        "color": "black",
+        "position": [random.random() for _ in range(4)],
+        "rod_id": 30,
+        "seen": True,
+    }
+
+    rod_data.change_data(test_data)
+
+    added = rod_data.rod_data.loc[
+        (rod_data.rod_data.frame == test_data["frame"])
+        & (rod_data.rod_data.particle == test_data["rod_id"])
+        & (rod_data.rod_data.color == test_data["color"])
+    ]
+    assert len(added) == 1
+
+
 @pytest.mark.parametrize(
     "mode",
     [
