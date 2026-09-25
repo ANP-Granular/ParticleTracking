@@ -33,7 +33,6 @@ lock : QReadWriteLock
 """
 
 import logging
-import math
 import re
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
@@ -1490,7 +1489,7 @@ def change_data(new_data: dict) -> None:
     ].empty
     if data_unavailable:
         new_idx = rod_data.index.max() + 1
-        rod_data.loc[new_idx] = len(rod_data.columns) * [math.nan]
+        rod_data.loc[new_idx] = len(rod_data.columns) * [pd.NA]
         rod_data.loc[
             new_idx,
             [
