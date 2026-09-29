@@ -1277,6 +1277,14 @@ class Ui_MainWindow(object):
         self.action_save = QtWidgets.QAction(MainWindow)
         self.action_save.setEnabled(True)
         self.action_save.setObjectName("action_save")
+        self.action_open_session = QtWidgets.QAction(MainWindow)
+        self.action_open_session.setObjectName("action_open_session")
+        self.action_open_last_session = QtWidgets.QAction(MainWindow)
+        self.action_open_last_session.setObjectName(
+            "action_open_last_session"
+        )
+        self.action_save_session = QtWidgets.QAction(MainWindow)
+        self.action_save_session.setObjectName("action_save_session")
         self.action_zoom_in = QtWidgets.QAction(MainWindow)
         self.action_zoom_in.setObjectName("action_zoom_in")
         self.action_zoom_out = QtWidgets.QAction(MainWindow)
@@ -1347,7 +1355,11 @@ class Ui_MainWindow(object):
         self.action_docs_online.setObjectName("action_docs_online")
         self.menuFile.addAction(self.action_open)
         self.menuFile.addAction(self.action_open_rods)
+        self.menuFile.addAction(self.action_open_session)
+        self.menuFile.addAction(self.action_open_last_session)
+        self.menuFile.addSeparator()
         self.menuFile.addAction(self.action_save)
+        self.menuFile.addAction(self.action_save_session)
         self.menuEdit.addAction(self.action_revert)
         self.menuEdit.addAction(self.action_redo)
         self.menuEdit.addAction(self.action_cleanup)
@@ -1564,6 +1576,15 @@ class Ui_MainWindow(object):
         self.action_open.setShortcut(_translate("MainWindow", "Ctrl+O"))
         self.action_save.setText(_translate("MainWindow", "Save"))
         self.action_save.setShortcut(_translate("MainWindow", "Ctrl+S"))
+        self.action_open_session.setText(
+            _translate("MainWindow", "Open Session")
+        )
+        self.action_open_last_session.setText(
+            _translate("MainWindow", "Open Last Session")
+        )
+        self.action_save_session.setText(
+            _translate("MainWindow", "Save Session")
+        )
         self.action_zoom_in.setText(_translate("MainWindow", "Zoom in"))
         self.action_zoom_in.setShortcut(_translate("MainWindow", "+"))
         self.action_zoom_out.setText(_translate("MainWindow", "Zoom out"))

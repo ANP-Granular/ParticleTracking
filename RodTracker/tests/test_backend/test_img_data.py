@@ -55,10 +55,10 @@ class TestImageData:
             mp.setattr(img_data.ImageData, "open_image_folder", assertions)
 
     @pytest.mark.parametrize(
-        "folder,",
+        "folder",
         [
-            (EX_DATA / "images/gp3"),
-            (EX_DATA / "images/gp4"),
+            EX_DATA / "images/gp3",
+            EX_DATA / "images/gp4",
         ],
     )
     def test_open_image_folder(

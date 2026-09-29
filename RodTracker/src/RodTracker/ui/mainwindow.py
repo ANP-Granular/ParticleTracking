@@ -21,6 +21,7 @@ Includes main window widget class in RodTracker GUI.
 **Date:**       2022-2024
 """
 
+import json
 import logging
 import platform
 from functools import partial
@@ -44,7 +45,7 @@ import RodTracker.backend.rod_data as r_data
 import RodTracker.backend.settings as se
 import RodTracker.ui.mainwindow_layout as mw_l
 import RodTracker.ui.rodnumberwidget as rn
-from RodTracker import APPNAME
+from RodTracker import APPNAME, CONFIG_DIR
 from RodTracker.ui import dialogs
 from RodTracker.ui.detection import init_detection
 from RodTracker.ui.reconstruction import init_reconstruction
@@ -130,7 +131,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
     """
 
     _rod_incr: float = 1.0
-    _fit_next_img: bool = False
+    _fit_next_img: set = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -172,6 +173,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.rod_data.show_3D = self.ui.cb_show_3D.isChecked()
 
         self.image_managers = [img_data.ImageData(0), img_data.ImageData(1)]
+        self._fit_next_img = set()
         for manager in self.image_managers:
             id = manager._logger_id
             manager._logger = self.ui.lv_actions_list.get_new_logger(id)
@@ -243,6 +245,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         # Saving
         self.ui.pb_save_rods.clicked.connect(self.rod_data.save_changes)
         self.ui.action_save.triggered.connect(self.rod_data.save_changes)
+        self.ui.action_open_session.triggered.connect(self.select_session)
+        self.ui.action_open_last_session.triggered.connect(
+            self.open_last_session
+        )
+        self.ui.action_save_session.triggered.connect(self.save_session_dialog)
         self.rod_data.saved.connect(self.logger.actions_saved)
         self.ui.le_save_dir.textChanged.connect(self.rod_data.set_out_folder)
 
@@ -324,11 +331,25 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.cb_show_3D.stateChanged.connect(self.show_3D_changed)
 
         # 2D display and data provider widgets
-        for cam, manager in zip(self.cameras, self.image_managers):
-            manager.data_loaded.connect(self.images_loaded)
-            manager.next_img[int, int].connect(self.next_image)
+        for index, (cam, manager) in enumerate(
+            zip(self.cameras, self.image_managers)
+        ):
+            manager.data_loaded.connect(
+                lambda frames, cam_id, folder, camera_index=index: (
+                    self.images_loaded(
+                        frames, cam_id, folder, camera_index
+                    )
+                )
+            )
             manager.next_img[int, int].connect(
-                lambda frame, idx: cam.frame(frame)
+                lambda frame, frame_idx, camera_index=index: self.next_image(
+                    frame, frame_idx, camera_index
+                )
+            )
+            manager.next_img[int, int].connect(
+                lambda frame, _, camera_index=index: self.cameras[
+                    camera_index
+                ].frame(frame)
             )
             manager.next_img[QtGui.QImage].connect(cam.image)
             if str(tab_idx) in manager._logger_id:
@@ -434,6 +455,100 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_bug_report.triggered.connect(misc.report_issue)
         self.ui.action_feature_request.triggered.connect(misc.request_feature)
 
+    @property
+    def _last_session_path(self) -> Path:
+        return CONFIG_DIR / "last_session.json"
+
+    def _session_data(self) -> dict:
+        """Return the currently loaded file locations as a session manifest."""
+        reconstruction = self.reconstructor
+        calibration = self.ui.le_calibration.text()
+        transformation = self.ui.le_transformation.text()
+        return {
+            "image_folders": [
+                str(manager.folder) if manager.folder is not None else None
+                for manager in self.image_managers
+            ],
+            "rod_data_folder": (
+                str(self.rod_data.folder)
+                if self.rod_data.folder is not None
+                else None
+            ),
+            "calibration": calibration if reconstruction is not None else None,
+            "transformation": (
+                transformation if reconstruction is not None else None
+            ),
+        }
+
+    def save_session(self, path: Path) -> None:
+        """Save the current file locations to a session manifest."""
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        contents = self._session_data()
+        with path.open("w") as session_file:
+            json.dump(contents, session_file, indent=2)
+        if path != self._last_session_path:
+            with self._last_session_path.open("w") as session_file:
+                json.dump(contents, session_file, indent=2)
+
+    def save_session_dialog(self) -> None:
+        """Ask for a session-manifest path and save the current session."""
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Save Session",
+            str(self._last_session_path),
+            "RodTracker Session (*.json)",
+        )
+        if path:
+            self.save_session(Path(path))
+
+    def select_session(self) -> None:
+        """Ask for a session manifest and restore it."""
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Open Session",
+            str(CONFIG_DIR),
+            "RodTracker Session (*.json)",
+        )
+        if path:
+            self.open_session(Path(path))
+
+    def open_last_session(self) -> None:
+        """Restore the most recently saved session, if available."""
+        if not self._last_session_path.exists():
+            dialogs.show_warning("No saved session is available.")
+            return
+        self.open_session(self._last_session_path)
+
+    def open_session(self, path: Path) -> bool:
+        """Restore data sources described by a session manifest."""
+        try:
+            with Path(path).open() as session_file:
+                contents = json.load(session_file)
+        except (OSError, json.JSONDecodeError) as error:
+            dialogs.show_warning(f"Unable to open session:\n{error}")
+            return False
+
+        image_folders = contents.get("image_folders", [])
+        for manager, folder in zip(self.image_managers, image_folders):
+            if folder and Path(folder).is_dir():
+                manager.open_image_folder(Path(folder))
+
+        rod_data_folder = contents.get("rod_data_folder")
+        if rod_data_folder and Path(rod_data_folder).is_dir():
+            self.rod_data.open_rod_folder(Path(rod_data_folder))
+
+        if self.reconstructor is not None:
+            calibration = contents.get("calibration")
+            if calibration and Path(calibration).is_file():
+                self.reconstructor.set_calibration(calibration)
+                self.ui.le_calibration.setText(calibration)
+            transformation = contents.get("transformation")
+            if transformation and Path(transformation).is_file():
+                self.reconstructor.set_transformation(transformation)
+                self.ui.le_transformation.setText(transformation)
+        return True
+
     @QtCore.pyqtSlot(QTreeWidgetItem, int)
     def tree_selection(self, item: QTreeWidgetItem, col: int):
         """Handle the selection of a rod & frame in the :class:`.RodTree`
@@ -495,7 +610,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self._rod_incr = settings["rod_increment"]
 
     @QtCore.pyqtSlot(int, int)
-    def next_image(self, frame: int, frame_idx: int):
+    def next_image(
+        self, frame: int, frame_idx: int, camera_index: int = None
+    ):
         """Handles updates of the currently displayed image.
 
         Updates the GUI controls to match the currently displayed image.
@@ -507,23 +624,38 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         frame_idx : int
             Index of the newly displayed image in the whole image dataset.
         """
-        self.ui.le_frame_disp.setText(f"Frame: {frame}")
-        self.ui.slider_frames.setSliderPosition(frame_idx)
+        if camera_index is None:
+            camera_index = self.ui.camera_tabs.currentIndex()
         self.logger.frame = frame
-        self.cameras[self.ui.camera_tabs.currentIndex()].logger.frame = frame
-        # Fit the first image of a newly loaded dataset to the screen
-        if self._fit_next_img:
-            self.fit_to_window()
-            self._fit_next_img = False
+        self.cameras[camera_index].logger.frame = frame
+        is_active_camera = (
+            camera_index == self.ui.camera_tabs.currentIndex()
+        )
+        if is_active_camera:
+            self.ui.le_frame_disp.setText(f"Frame: {frame}")
+            self.ui.slider_frames.setSliderPosition(frame_idx)
 
-        self.ui.tv_rods.update_tree_folding(frame, self.get_selected_color())
+        if camera_index in self._fit_next_img:
+            self.fit_to_window(camera_index)
+            self._fit_next_img.discard(camera_index)
 
-        if not self.ui.action_persistent_view.isChecked():
-            self.fit_to_window()
-            del self.cameras[self.ui.camera_tabs.currentIndex()].rods
+        if is_active_camera:
+            self.ui.tv_rods.update_tree_folding(
+                frame, self.get_selected_color()
+            )
+
+        if is_active_camera and not self.ui.action_persistent_view.isChecked():
+            self.fit_to_window(camera_index)
+            del self.cameras[camera_index].rods
 
     @QtCore.pyqtSlot(int, str, Path)
-    def images_loaded(self, frames: int, cam_id: str, folder: Path):
+    def images_loaded(
+        self,
+        frames: int,
+        cam_id: str,
+        folder: Path,
+        camera_index: int = None,
+    ):
         """Handles updates of loaded image datasets.
 
         Updates GUI elements to match the newly loaded image dataset.
@@ -537,23 +669,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         folder : Path
             Folder from which the images were loaded.
         """
-        self._fit_next_img = True
+        if camera_index is None:
+            camera_index = self.ui.camera_tabs.currentIndex()
+        self._fit_next_img.add(camera_index)
         # Set new camera ID
-        tab_idx = self.ui.camera_tabs.currentIndex()
-        tab_text = self.ui.camera_tabs.tabText(tab_idx)
+        tab_text = self.ui.camera_tabs.tabText(camera_index)
         front_text = tab_text.split("(")[0]
         end_text = tab_text.split(")")[-1]
         new_text = front_text + "(" + cam_id + ")" + end_text
-        self.ui.camera_tabs.setTabText(tab_idx, new_text)
-        self.cameras[tab_idx].cam_id = cam_id
+        self.ui.camera_tabs.setTabText(camera_index, new_text)
+        self.cameras[camera_index].cam_id = cam_id
 
-        # Update slider
-        self.ui.slider_frames.setMaximum(frames - 1)
-        self.ui.slider_frames.setSliderPosition(0)
-        self.ui.le_frame_disp.setText("Frame: ???")
-
-        # Update folder display
-        self.ui.le_image_dir.setText(str(folder))
+        if camera_index == self.ui.camera_tabs.currentIndex():
+            self.ui.slider_frames.setMaximum(frames - 1)
+            self.ui.slider_frames.setSliderPosition(0)
+            self.ui.le_frame_disp.setText("Frame: ???")
+            self.ui.le_image_dir.setText(str(folder))
 
     @QtCore.pyqtSlot(Path, Path, list)
     def rods_loaded(self, input: Path, output: Path, new_colors: List[str]):
@@ -735,7 +866,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.ui.action_zoom_in.setEnabled(True)
         self.ui.action_zoom_out.setEnabled(True)
 
-    def fit_to_window(self):
+    def fit_to_window(self, camera_index: int = None):
         """Fits the image to the space available in the GUI.
 
         Fits the image to the space available for the image in the GUI and
@@ -745,13 +876,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         -------
         None
         """
+        if camera_index is None:
+            camera_index = self.ui.camera_tabs.currentIndex()
+        viewport_index = self.ui.camera_tabs.currentIndex()
         current_sa = self.findChild(
-            QScrollArea, f"sa_camera_" f"{self.ui.camera_tabs.currentIndex()}"
+            QScrollArea, f"sa_camera_{viewport_index}"
         )
         to_size = current_sa.size()
         to_size = QtCore.QSize(to_size.width() - 20, to_size.height() - 20)
-        tab_idx = self.ui.camera_tabs.currentIndex()
-        self.cameras[tab_idx].scale_to_size(to_size)
+        self.cameras[camera_index].scale_to_size(to_size)
 
     def scale_image(self, factor: float):
         """Sets a new relative scaling for the current image.
