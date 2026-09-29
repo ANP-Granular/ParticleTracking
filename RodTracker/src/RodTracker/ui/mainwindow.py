@@ -336,9 +336,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         ):
             manager.data_loaded.connect(
                 lambda frames, cam_id, folder, camera_index=index: (
-                    self.images_loaded(
-                        frames, cam_id, folder, camera_index
-                    )
+                    self.images_loaded(frames, cam_id, folder, camera_index)
                 )
             )
             manager.next_img[int, int].connect(
@@ -610,9 +608,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             self._rod_incr = settings["rod_increment"]
 
     @QtCore.pyqtSlot(int, int)
-    def next_image(
-        self, frame: int, frame_idx: int, camera_index: int = None
-    ):
+    def next_image(self, frame: int, frame_idx: int, camera_index: int = None):
         """Handles updates of the currently displayed image.
 
         Updates the GUI controls to match the currently displayed image.
@@ -628,9 +624,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             camera_index = self.ui.camera_tabs.currentIndex()
         self.logger.frame = frame
         self.cameras[camera_index].logger.frame = frame
-        is_active_camera = (
-            camera_index == self.ui.camera_tabs.currentIndex()
-        )
+        is_active_camera = camera_index == self.ui.camera_tabs.currentIndex()
         if is_active_camera:
             self.ui.le_frame_disp.setText(f"Frame: {frame}")
             self.ui.slider_frames.setSliderPosition(frame_idx)
@@ -879,9 +873,7 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         if camera_index is None:
             camera_index = self.ui.camera_tabs.currentIndex()
         viewport_index = self.ui.camera_tabs.currentIndex()
-        current_sa = self.findChild(
-            QScrollArea, f"sa_camera_{viewport_index}"
-        )
+        current_sa = self.findChild(QScrollArea, f"sa_camera_{viewport_index}")
         to_size = current_sa.size()
         to_size = QtCore.QSize(to_size.width() - 20, to_size.height() - 20)
         self.cameras[camera_index].scale_to_size(to_size)

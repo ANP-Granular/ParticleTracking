@@ -1280,9 +1280,7 @@ class Ui_MainWindow(object):
         self.action_open_session = QtWidgets.QAction(MainWindow)
         self.action_open_session.setObjectName("action_open_session")
         self.action_open_last_session = QtWidgets.QAction(MainWindow)
-        self.action_open_last_session.setObjectName(
-            "action_open_last_session"
-        )
+        self.action_open_last_session.setObjectName("action_open_last_session")
         self.action_save_session = QtWidgets.QAction(MainWindow)
         self.action_save_session.setObjectName("action_save_session")
         self.action_zoom_in = QtWidgets.QAction(MainWindow)
