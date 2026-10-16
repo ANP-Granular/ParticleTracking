@@ -20,6 +20,7 @@ from pathlib import Path
 from types import TracebackType
 
 import platformdirs
+import torch  # noqa: F401
 from PyQt5 import QtGui, QtWidgets
 
 import RodTracker.backend.file_locations as fl

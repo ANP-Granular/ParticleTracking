@@ -1427,11 +1427,11 @@ class Ui_MainWindow(object):
         self.pb_save_rods.setText(_translate("MainWindow", "Save"))
         self.camera_tabs.setTabText(
             self.camera_tabs.indexOf(self.tab_0),
-            _translate("MainWindow", "Front View (FV)"),
+            _translate("MainWindow", "Top View (TV)"),
         )
         self.camera_tabs.setTabText(
             self.camera_tabs.indexOf(self.tab_1),
-            _translate("MainWindow", "Top View (TV)"),
+            _translate("MainWindow", "Front View (FV)"),
         )
         self.tv_rods.headerItem().setText(
             0, _translate("MainWindow", "Loaded Particles:")

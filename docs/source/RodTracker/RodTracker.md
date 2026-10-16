@@ -196,6 +196,8 @@ Prepare the reconstruction:
 5. Select a transformation to experiment coordinates file *(this is not strictly necessary but will benefit the visualization in the `3D-View` tab)* (see [](#calibration--transformation-data-format)). For the [example dataset](#dataset-format--folder-structure), use the coordinate transformation file: `resources/example_data/calibrations/transformation.json`.
 Start the reconstruction by pressing the `Solve` button after making all required settings.
 
+The optional post-processing workflow for reducing frame-to-frame noise in reconstructed endpoints is described in [Endpoint Smoothing](endpoint_smoothing.md).
+
 ![TrackingStart](../images/TrackingStart.png)
 
 After successful reconstruction of 3D coordinates, the `3D-View` tab will display the 3D data for the current frame and the `Reconstruction performance` plots are available (after updating them).
@@ -321,6 +323,7 @@ The display of 3D rods can also be switched off using the `Show 3D` checkbox in 
 | Lengthen/Shorten all rods in current view    |    `R`/`T`                   |
 | Delete a selected rod | `Del` |
 | Toggle automatic rod selection mode | `G` |
+| Toggle smoothed endpoint overlay | `K` |
 
 
 ## Problem handling

@@ -25,6 +25,7 @@ The RodTracker package is a GUI encapsulating the most used functionality of the
 :maxdepth: 1
 installation/installation
 RodTracker/RodTracker
+RodTracker/endpoint_smoothing
 ParticleDetection/ParticleDetection
 api-reference
 changelog/changelog

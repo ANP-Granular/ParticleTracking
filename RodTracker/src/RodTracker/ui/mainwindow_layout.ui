@@ -711,7 +711,7 @@
               </property>
               <widget class="QWidget" name="tab_0">
                <attribute name="title">
-                <string>Front View (FV)</string>
+                <string>Top View (TV)</string>
                </attribute>
                <layout class="QVBoxLayout" name="verticalLayout_15">
                 <property name="spacing">
@@ -801,7 +801,7 @@
               </widget>
               <widget class="QWidget" name="tab_1">
                <attribute name="title">
-                <string>Top View (TV)</string>
+                <string>Front View (FV)</string>
                </attribute>
                <layout class="QVBoxLayout" name="verticalLayout_17">
                 <property name="spacing">

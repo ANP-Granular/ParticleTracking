@@ -222,6 +222,40 @@ class TestRodData:
             assert rod_manager._allow_overwrite is False
         assert result == expected_return
 
+    def test_open_folder_restores_saved_corrections(
+        self,
+        monkeypatch: MonkeyPatch,
+        tmp_path: Path,
+    ):
+        source_folder = tmp_path / "test"
+        corrected_folder = tmp_path / "test_corrected"
+        source_folder.mkdir()
+        corrected_folder.mkdir()
+        ex_folder = importlib_resources.files(
+            "RodTracker.resources.example_data.csv"
+        )
+        ex_file = "rods_df_black.csv"
+        for folder in (source_folder, corrected_folder):
+            shutil.copy2(ex_folder.joinpath(ex_file), folder / ex_file)
+
+        monkeypatch.setattr(
+            QtWidgets.QMessageBox,
+            "exec",
+            lambda *args, **kwargs: pytest.fail(
+                "Restoring saved corrections should not prompt."
+            ),
+        )
+        manager = RodData()
+
+        assert manager.open_rod_folder(
+            source_folder,
+            output_folder=corrected_folder,
+            load_saved_output=True,
+        )
+        assert manager.folder == corrected_folder
+        assert manager.out_folder == corrected_folder
+        assert manager._allow_overwrite is True
+
     @pytest.mark.parametrize("subfolder", ["", "missing"])
     def test_save_changes(
         self,

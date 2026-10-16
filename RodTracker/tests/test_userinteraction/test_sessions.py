@@ -6,6 +6,11 @@ from pytest import MonkeyPatch
 from RodTracker.ui.mainwindow import RodTrackWindow
 
 
+def test_camera_view_tab_names(main_window: RodTrackWindow):
+    assert main_window.ui.camera_tabs.tabText(0) == "Top View (TV)"
+    assert main_window.ui.camera_tabs.tabText(1) == "Front View (FV)"
+
+
 def test_fit_inactive_camera_uses_visible_viewport(
     main_window: RodTrackWindow,
     monkeypatch: MonkeyPatch,
@@ -34,6 +39,8 @@ def test_session_round_trip(
         folder.mkdir()
     rod_data_folder = tmp_path / "rod_data"
     rod_data_folder.mkdir()
+    rod_data_output_folder = tmp_path / "rod_data_corrected"
+    rod_data_output_folder.mkdir()
     calibration = tmp_path / "calibration.json"
     calibration.write_text("{}")
     transformation = tmp_path / "transformation.json"
@@ -49,6 +56,7 @@ def test_session_round_trip(
     for manager, folder in zip(main_window.image_managers, image_folders):
         manager.folder = folder
     main_window.rod_data.folder = rod_data_folder
+    main_window.rod_data.out_folder = rod_data_output_folder
     main_window.ui.le_calibration.setText(str(calibration))
     main_window.ui.le_transformation.setText(str(transformation))
     main_window.save_session(session_path)
@@ -60,6 +68,7 @@ def test_session_round_trip(
         str(folder) for folder in image_folders
     ]
     assert manifest["rod_data_folder"] == str(rod_data_folder)
+    assert manifest["rod_data_output_folder"] == str(rod_data_output_folder)
 
     loaded_images = []
     loaded_data = []
@@ -88,10 +97,12 @@ def test_session_round_trip(
         "open_image_folder",
         lambda folder: image_folder_opened(1, folder),
     )
+
+    def open_rod_folder(folder, output_folder=None, load_saved_output=False):
+        loaded_data.append((folder, output_folder, load_saved_output))
+
     monkeypatch.setattr(
-        main_window.rod_data,
-        "open_rod_folder",
-        lambda folder: loaded_data.append(folder),
+        main_window.rod_data, "open_rod_folder", open_rod_folder
     )
     if main_window.reconstructor is not None:
         monkeypatch.setattr(
@@ -113,11 +124,16 @@ def test_session_round_trip(
     ]
     assert [cam.logger.frame for cam in main_window.cameras] == [500, 500]
     assert fitted_cameras == [0, 1]
-    assert loaded_data == [rod_data_folder]
+    expected_rod_data = (
+        rod_data_folder,
+        rod_data_output_folder,
+        True,
+    )
+    assert loaded_data == [expected_rod_data]
     assert loaded_calibration == [str(calibration)]
     assert loaded_transformation == [str(transformation)]
 
     main_window.open_last_session()
     assert loaded_images == list(enumerate(image_folders)) * 2
     assert fitted_cameras == [0, 1, 0, 1]
-    assert loaded_data == [rod_data_folder] * 2
+    assert loaded_data == [expected_rod_data] * 2

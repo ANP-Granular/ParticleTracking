@@ -291,6 +291,36 @@ class RodTrackWindow(QtWidgets.QMainWindow):
         self.rod_data.batch_update.connect(self.ui.tv_rods.batch_update_tree)
 
         if self.reconstructor is not None:
+            self.rod_data.data_update.connect(
+                self.reconstructor.invalidate_smoothed_data
+            )
+            self.rod_data.data_loaded[Path, Path, list].connect(
+                self.reconstructor.invalidate_smoothed_data
+            )
+            self.reconstructor.smoothed_data_ready.connect(
+                self.update_smoothed_data
+            )
+            self.reconstructor.original_projection_data_ready.connect(
+                self.update_original_projection_data
+            )
+            self.reconstructor.smoothing_overlay_changed.connect(
+                self.set_smoothing_overlay_visible
+            )
+            self.reconstructor.original_projection_changed.connect(
+                self.set_original_projection_visible
+            )
+            self.smoothing_shortcut = QtWidgets.QShortcut(
+                QtGui.QKeySequence("K"), self
+            )
+            self.smoothing_shortcut.activated.connect(
+                self.reconstructor.toggle_smoothing_overlay
+            )
+            self.original_projection_shortcut = QtWidgets.QShortcut(
+                QtGui.QKeySequence("J"), self
+            )
+            self.original_projection_shortcut.activated.connect(
+                self.reconstructor.toggle_original_projection
+            )
             self.reconstructor.is_busy.connect(
                 lambda busy: self.tab_busy_changed(5, busy)
             )
@@ -308,6 +338,9 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             )
             self.reconstructor.updated_data.connect(
                 self.rod_data.receive_updated_data
+            )
+            self.reconstructor.updated_data.connect(
+                self.reconstructor.invalidate_smoothed_data
             )
             self.rod_data.data_loaded[str, str].connect(
                 self.reconstructor.set_cam_ids
@@ -472,6 +505,11 @@ class RodTrackWindow(QtWidgets.QMainWindow):
                 if self.rod_data.folder is not None
                 else None
             ),
+            "rod_data_output_folder": (
+                str(self.rod_data.out_folder)
+                if self.rod_data.out_folder is not None
+                else None
+            ),
             "calibration": calibration if reconstruction is not None else None,
             "transformation": (
                 transformation if reconstruction is not None else None
@@ -534,7 +572,15 @@ class RodTrackWindow(QtWidgets.QMainWindow):
 
         rod_data_folder = contents.get("rod_data_folder")
         if rod_data_folder and Path(rod_data_folder).is_dir():
-            self.rod_data.open_rod_folder(Path(rod_data_folder))
+            output_folder = contents.get("rod_data_output_folder")
+            if output_folder:
+                self.rod_data.open_rod_folder(
+                    Path(rod_data_folder),
+                    output_folder=Path(output_folder),
+                    load_saved_output=True,
+                )
+            else:
+                self.rod_data.open_rod_folder(Path(rod_data_folder))
 
         if self.reconstructor is not None:
             calibration = contents.get("calibration")
@@ -830,6 +876,22 @@ class RodTrackWindow(QtWidgets.QMainWindow):
             # Deactivated
             self.ui.view_3d.clear()
         self.rod_data.show_3D = bool(state)
+
+    def update_smoothed_data(self, data):
+        for camera in self.cameras:
+            camera.set_smoothed_data(data)
+
+    def set_smoothing_overlay_visible(self, visible: bool):
+        for camera in self.cameras:
+            camera.set_smoothed_overlay_visible(visible)
+
+    def set_original_projection_visible(self, visible: bool):
+        for camera in self.cameras:
+            camera.set_original_projection_visible(visible)
+
+    def update_original_projection_data(self, data):
+        for camera in self.cameras:
+            camera.set_original_projection_data(data)
 
     def show_next(self, direction: int):
         """Attempt to open the next image.

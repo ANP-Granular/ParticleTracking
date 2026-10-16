@@ -159,6 +159,10 @@ class RodImageWidget(QLabel):
         self._cam_id = "unknown"
         # Provides access to the loaded rod position data for previews
         self.rod_data = None
+        self._smoothed_data = None
+        self._original_projection_data = None
+        self._show_smoothed_overlay = False
+        self._show_original_projection = False
 
     # Access to properties ====================================================
     @property
@@ -298,6 +302,7 @@ class RodImageWidget(QLabel):
         """
         if self._logger is not None:
             self._logger.frame = frame
+            self.draw_rods()
 
     def set_autoselect(self, state: bool):
         """En-/Disable autoselection of rods based on the mouse distance.
@@ -352,32 +357,106 @@ class RodImageWidget(QLabel):
         -------
         Union[QPixmap, None]
         """
-        if self._rods is None:
-            # No rods available that might need redrawing
+        if self.base_pixmap is None:
             return
         rod_pixmap = QtGui.QPixmap(self.base_pixmap)
         painter = QtGui.QPainter(rod_pixmap)
-        for rod in self._rods:
-            rod_pos = self.adjust_rod_position(rod)
-            # Gets the display style from the rod number widget.
-            try:
-                pen = rod.pen
-            except rn.RodStateError:
-                dialogs.show_warning(
-                    "A rod with unknown state was " "encountered!"
-                )
-                pen = None
-            if pen is None:
-                continue
-            painter.setPen(pen)
-            painter.drawLine(*rod_pos)
+        if self._rods is not None:
+            for rod in self._rods:
+                rod_pos = self.adjust_rod_position(rod)
+                try:
+                    pen = rod.pen
+                except rn.RodStateError:
+                    dialogs.show_warning(
+                        "A rod with unknown state was " "encountered!"
+                    )
+                    pen = None
+                if pen is None:
+                    continue
+                painter.setPen(pen)
+                painter.drawLine(*rod_pos)
 
-        if self.show_previous_position and self.rod_data is not None:
+        if all(
+            (
+                self._rods is not None,
+                self.show_previous_position,
+                self.rod_data is not None,
+            )
+        ):
             self._draw_previous_position(painter)
+        if self._show_original_projection:
+            self._draw_projection_overlay(
+                painter, "original", QtGui.QColor(144, 238, 144)
+            )
+        if self._show_smoothed_overlay:
+            self._draw_projection_overlay(
+                painter,
+                "smooth",
+                QtGui.QColor(255, 0, 255),
+            )
 
         painter.end()
         self.setPixmap(rod_pixmap)
         return rod_pixmap
+
+    def set_smoothed_data(self, data: pd.DataFrame):
+        self._smoothed_data = data
+        self.draw_rods()
+
+    def set_original_projection_data(self, data: pd.DataFrame):
+        self._original_projection_data = data
+        self.draw_rods()
+
+    def set_smoothed_overlay_visible(self, visible: bool):
+        self._show_smoothed_overlay = visible
+        self.draw_rods()
+
+    def set_original_projection_visible(self, visible: bool):
+        self._show_original_projection = visible
+        self.draw_rods()
+
+    def _draw_projection_overlay(
+        self, painter: QtGui.QPainter, suffix: str, color: QtGui.QColor
+    ):
+        data = (
+            self._original_projection_data
+            if suffix == "original"
+            else self._smoothed_data
+        )
+        if data is None:
+            return
+        if data.empty or self._logger is None:
+            return
+        if self._logger.frame is None:
+            return
+        columns = [
+            f"{coord}{endpoint}_{self.cam_id}_{suffix}"
+            for endpoint in (1, 2)
+            for coord in "xy"
+        ]
+        if not set(columns).issubset(data.columns):
+            return
+        frame_data = data.loc[data.frame == self._logger.frame]
+        if self._current_color:
+            frame_data = frame_data.loc[
+                frame_data.color == self._current_color
+            ]
+        frame_data = frame_data[columns].dropna()
+        pen = QtGui.QPen(
+            color,
+            max(2, self._rod_thickness),
+            QtCore.Qt.DashLine,
+        )
+        painter.setPen(pen)
+        painter.setBrush(color)
+        for coords in frame_data.to_numpy(dtype=float):
+            scaled = [
+                int(self._position_scaling * self._scale_factor * coord)
+                for coord in coords
+            ]
+            painter.drawLine(*scaled)
+            painter.drawEllipse(QtCore.QPoint(scaled[0], scaled[1]), 3, 3)
+            painter.drawEllipse(QtCore.QPoint(scaled[2], scaled[3]), 3, 3)
 
     def _draw_previous_position(self, painter: QtGui.QPainter) -> None:
         """Draws the selected rod's position on the previous frame."""

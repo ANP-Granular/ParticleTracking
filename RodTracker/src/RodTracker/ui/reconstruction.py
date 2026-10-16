@@ -37,8 +37,13 @@ from PyQt5 import QtCore, QtWidgets
 
 import RodTracker.ui.mainwindow_layout as mw_l
 from RodTracker import exception_logger
+from RodTracker.backend import parallelism as pl
 from RodTracker.backend import reconstruction
 from RodTracker.backend.reconstruction import Plotter, Reconstructor, Tracker
+from RodTracker.backend.smoothing import (
+    project_trajectories,
+    smooth_trajectories,
+)
 from RodTracker.ui.dialogs import show_warning
 
 _logger = logging.getLogger(__name__)
@@ -144,6 +149,18 @@ class ReconstructorUI(QtWidgets.QWidget):
     """pyqtSignal(bool) : Notifies when a background task is started/finished.
     """
 
+    smoothed_data_ready = QtCore.pyqtSignal(pd.DataFrame)
+    """Emits the separately smoothed endpoint data frame."""
+
+    original_projection_data_ready = QtCore.pyqtSignal(pd.DataFrame)
+    """Emits independently computed original 3D reprojection coordinates."""
+
+    smoothing_overlay_changed = QtCore.pyqtSignal(bool)
+    """Emits whether the smoothed endpoint overlay should be visible."""
+
+    original_projection_changed = QtCore.pyqtSignal(bool)
+    """Emits whether the original 3D reprojection should be visible."""
+
     data: pd.DataFrame = None
     """DataFrame : Slice of the *main* ``DataFrame`` that is used for
     reconstruction/tracking.
@@ -181,6 +198,11 @@ class ReconstructorUI(QtWidgets.QWidget):
         self.start_frame = 0
         self.end_frame = 0
         self.first_update = False
+        self.smoothed_data = None
+        self._smoothing_request_pending = False
+        self._original_projection_request_pending = False
+        self._original_projection_revision = 0
+        self._available_colors = []
 
         # Signal connections
         tb_calibration = ui.findChild(QtWidgets.QToolButton, "tb_calibration")
@@ -238,6 +260,316 @@ class ReconstructorUI(QtWidgets.QWidget):
             QtWidgets.QProgressBar, "progress_reconstruction"
         )
         self.progress.setValue(100)
+        self._create_smoothing_panel()
+
+    def _create_smoothing_panel(self):
+        projection_panel = QtWidgets.QGroupBox("3D reprojection", self.ui)
+        projection_layout = QtWidgets.QVBoxLayout(projection_panel)
+        self.cb_original_projection = QtWidgets.QCheckBox(
+            "Show original 3D reprojection (J)", projection_panel
+        )
+        self.cb_original_projection.setObjectName("cb_original_projection")
+        self.cb_original_projection.setToolTip(
+            "Distortion-aware projection of the current unsmoothed 3D "
+            "endpoints (light green)."
+        )
+        self.cb_original_projection.setEnabled(False)
+        self.cb_original_projection.toggled.connect(
+            self._toggle_original_projection
+        )
+        projection_layout.addWidget(self.cb_original_projection)
+        self.ui.layout().insertWidget(1, projection_panel)
+
+        panel = QtWidgets.QGroupBox("Endpoint smoothing", self.ui)
+        panel_layout = QtWidgets.QVBoxLayout(panel)
+
+        frame_row = QtWidgets.QHBoxLayout()
+        self.smoothing_start = QtWidgets.QSpinBox(panel)
+        self.smoothing_start.setObjectName("smoothing_start_frame")
+        self.smoothing_end = QtWidgets.QSpinBox(panel)
+        self.smoothing_end.setObjectName("smoothing_end_frame")
+        frame_row.addWidget(QtWidgets.QLabel("Start frame", panel))
+        frame_row.addWidget(self.smoothing_start)
+        frame_row.addWidget(QtWidgets.QLabel("End frame", panel))
+        frame_row.addWidget(self.smoothing_end)
+        panel_layout.addLayout(frame_row)
+
+        self.smoothing_colors = QtWidgets.QGroupBox(
+            "Colors and nominal lengths", panel
+        )
+        self.smoothing_color_layout = QtWidgets.QGridLayout(
+            self.smoothing_colors
+        )
+        self.smoothing_color_controls = {}
+        panel_layout.addWidget(self.smoothing_colors)
+
+        parameter_form = QtWidgets.QFormLayout()
+        self.translation_noise = self._make_parameter_spin(
+            0.0001, 10000.0, 50.0, 4
+        )
+        self.orientation_noise = self._make_parameter_spin(
+            0.000001, 100.0, 0.5, 6
+        )
+        self.length_tolerance = self._make_parameter_spin(0.1, 100.0, 1.5, 2)
+        self.reprojection_tolerance = self._make_parameter_spin(
+            0.1, 1000.0, 15.0, 1
+        )
+        self.translation_noise.setToolTip(
+            "Higher values follow measured centers more closely."
+        )
+        self.orientation_noise.setToolTip(
+            "Higher values follow measured rod axes more closely."
+        )
+        self.length_tolerance.setToolTip(
+            "Length deviations beyond this value reduce observation weight."
+        )
+        self.reprojection_tolerance.setToolTip(
+            "Pixel residual scale used to reduce weights for poor projections."
+        )
+        parameter_form.addRow(
+            "Translation process noise", self.translation_noise
+        )
+        parameter_form.addRow(
+            "Orientation process noise", self.orientation_noise
+        )
+        parameter_form.addRow("Length tolerance (mm)", self.length_tolerance)
+        parameter_form.addRow(
+            "Reprojection outlier scale (px)", self.reprojection_tolerance
+        )
+        panel_layout.addLayout(parameter_form)
+
+        button_row = QtWidgets.QHBoxLayout()
+        self.pb_smooth = QtWidgets.QPushButton("Smooth endpoints", panel)
+        self.pb_smooth.setObjectName("pb_smooth_endpoints")
+        self.pb_smooth.clicked.connect(self.smooth_selected)
+        self.cb_smoothed_projection = QtWidgets.QCheckBox(
+            "Show smoothed 3D projection (K)", panel
+        )
+        self.cb_smoothed_projection.setObjectName("cb_smoothed_projection")
+        self.cb_smoothed_projection.setToolTip(
+            "Distortion-aware projection of the smoothed 3D endpoints."
+        )
+        self.cb_smoothed_projection.setEnabled(False)
+        self.cb_smoothed_projection.toggled.connect(
+            self.smoothing_overlay_changed.emit
+        )
+        button_row.addWidget(self.pb_smooth)
+        button_row.addWidget(self.cb_smoothed_projection)
+        panel_layout.addLayout(button_row)
+
+        self.pb_save_smoothed = QtWidgets.QPushButton(
+            "Export smoothed CSV", panel
+        )
+        self.pb_save_smoothed.setEnabled(False)
+        self.pb_save_smoothed.clicked.connect(self.save_smoothed_results)
+        panel_layout.addWidget(self.pb_save_smoothed)
+
+        self.ui.layout().insertWidget(2, panel)
+        self._update_original_projection_enabled()
+
+    @staticmethod
+    def _make_parameter_spin(minimum, maximum, value, decimals):
+        spin = QtWidgets.QDoubleSpinBox()
+        spin.setRange(minimum, maximum)
+        spin.setDecimals(decimals)
+        spin.setSingleStep(10 ** (-decimals))
+        spin.setValue(value)
+        return spin
+
+    def _update_smoothing_colors(self, colors):
+        while self.smoothing_color_layout.count():
+            item = self.smoothing_color_layout.takeAt(0)
+            if item.widget() is not None:
+                item.widget().deleteLater()
+        self.smoothing_color_controls.clear()
+        defaults = {
+            "blue": 10.0,
+            "yellow": 10.0,
+            "green": 15.0,
+            "red": 15.0,
+            "lilac": 15.0,
+        }
+        for row, color in enumerate(colors):
+            normalized_color = color.lower()
+            checkbox = QtWidgets.QCheckBox(
+                normalized_color, self.smoothing_colors
+            )
+            checkbox.setChecked(True)
+            length = self._make_parameter_spin(
+                0.1, 100.0, defaults.get(normalized_color, 10.0), 2
+            )
+            length.setSuffix(" mm")
+            self.smoothing_color_layout.addWidget(checkbox, row, 0)
+            self.smoothing_color_layout.addWidget(length, row, 1)
+            self.smoothing_color_controls[normalized_color] = (
+                checkbox,
+                length,
+            )
+
+    def smooth_selected(self):
+        if not self._calibration or not self._transformation:
+            show_warning(
+                "Smoothing requires camera calibration and world "
+                "transformation data."
+            )
+            return
+        colors = [
+            color
+            for color, (checkbox, _) in self.smoothing_color_controls.items()
+            if checkbox.isChecked()
+        ]
+        if not colors or any(not cam_id for cam_id in self.cam_ids):
+            show_warning(
+                "Smoothing requires selected colors and both camera IDs."
+            )
+            return
+        start = self.smoothing_start.value()
+        end = self.smoothing_end.value()
+        if start > end:
+            show_warning(
+                "The smoothing start frame must not exceed its end frame."
+            )
+            return
+        self._smoothing_request_pending = True
+        self.pb_smooth.setEnabled(False)
+        self.request_data.emit(list(range(start, end + 1)), colors)
+
+    def _start_smoothing(self, data):
+        if data.empty:
+            self._finish_smoothing(pd.DataFrame())
+            return
+        lengths = {
+            color: length.value()
+            for color, (_, length) in self.smoothing_color_controls.items()
+        }
+        worker = pl.Worker(
+            smooth_trajectories,
+            data.copy(deep=True),
+            lengths,
+            self._calibration,
+            self._transformation,
+            tuple(self.cam_ids),
+            translation_process_noise=self.translation_noise.value(),
+            orientation_process_noise=self.orientation_noise.value(),
+            length_tolerance=self.length_tolerance.value(),
+            reprojection_tolerance=self.reprojection_tolerance.value(),
+        )
+        worker.signals.result.connect(self._finish_smoothing)
+        worker.signals.error.connect(self._smoothing_failed)
+        self.is_busy.emit(True)
+        self._threads.start(worker)
+
+    def _finish_smoothing(self, result):
+        self.smoothed_data = result
+        self.pb_smooth.setEnabled(True)
+        self.cb_smoothed_projection.setEnabled(not result.empty)
+        self.pb_save_smoothed.setEnabled(not result.empty)
+        if self._threads.activeThreadCount() <= 1:
+            self.is_busy.emit(False)
+        self.smoothed_data_ready.emit(result)
+        if result.empty:
+            self.cb_smoothed_projection.setChecked(False)
+            show_warning("No valid 3D rod endpoints were available to smooth.")
+            return
+
+    def invalidate_smoothed_data(self, *_args):
+        """Clear projections computed from an outdated rod dataset."""
+        self._original_projection_revision += 1
+        self._original_projection_request_pending = False
+        self.smoothed_data = None
+        self.cb_smoothed_projection.setChecked(False)
+        self.cb_original_projection.setChecked(False)
+        self.cb_smoothed_projection.setEnabled(False)
+        self.pb_save_smoothed.setEnabled(False)
+        self.smoothed_data_ready.emit(pd.DataFrame())
+        self.original_projection_data_ready.emit(pd.DataFrame())
+        self._update_original_projection_enabled()
+
+    def _smoothing_failed(self, error):
+        self.pb_smooth.setEnabled(True)
+        if self._threads.activeThreadCount() <= 1:
+            self.is_busy.emit(False)
+        exception_logger(*error)
+        show_warning(f"Endpoint smoothing failed:\n{error[1]}")
+
+    def save_smoothed_results(self):
+        if self.smoothed_data is None or self.smoothed_data.empty:
+            return
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self.ui,
+            "Export smoothed endpoint data",
+            "smoothed_endpoints.csv",
+            "CSV files (*.csv)",
+        )
+        if path:
+            self.smoothed_data.to_csv(path, index=False)
+
+    def toggle_smoothing_overlay(self):
+        if self.cb_smoothed_projection.isEnabled():
+            self.cb_smoothed_projection.toggle()
+
+    def toggle_original_projection(self):
+        if self.cb_original_projection.isEnabled():
+            self.cb_original_projection.toggle()
+
+    def _update_original_projection_enabled(self):
+        enabled = bool(self._available_colors)
+        enabled = enabled and self._calibration is not None
+        enabled = enabled and self._transformation is not None
+        enabled = enabled and all(self.cam_ids)
+        self.cb_original_projection.setEnabled(enabled)
+
+    def _toggle_original_projection(self, visible: bool):
+        self.original_projection_changed.emit(visible)
+        if not visible:
+            self._original_projection_revision += 1
+            self._original_projection_request_pending = False
+            return
+        colors = list(self.used_colors)
+        start = self.start_frame
+        end = self.end_frame
+        if not colors or start > end:
+            self.cb_original_projection.setChecked(False)
+            return
+        self._original_projection_request_pending = True
+        self.request_data.emit(list(range(start, end + 1)), colors)
+
+    def _start_original_projection(self, data):
+        if data.empty:
+            self._finish_original_projection(
+                pd.DataFrame(), self._original_projection_revision
+            )
+            return
+        request_id = self._original_projection_revision
+        worker = pl.Worker(
+            project_trajectories,
+            data.copy(deep=True),
+            self._calibration,
+            self._transformation,
+            tuple(self.cam_ids),
+        )
+        worker.signals.result.connect(
+            lambda result: self._finish_original_projection(result, request_id)
+        )
+        worker.signals.error.connect(self._projection_failed)
+        self.is_busy.emit(True)
+        self._threads.start(worker)
+
+    def _finish_original_projection(self, result, request_id):
+        if self._threads.activeThreadCount() <= 1:
+            self.is_busy.emit(False)
+        if request_id != self._original_projection_revision:
+            return
+        if result.empty:
+            self.cb_original_projection.setChecked(False)
+        self.original_projection_data_ready.emit(result)
+
+    def _projection_failed(self, error):
+        if self._threads.activeThreadCount() <= 1:
+            self.is_busy.emit(False)
+        exception_logger(*error)
+        self.cb_original_projection.setChecked(False)
+        show_warning(f"Original 3D reprojection failed:\n{error[1]}")
 
     @QtCore.pyqtSlot(str)
     def set_calibration(self, path: str):
@@ -259,6 +591,8 @@ class ReconstructorUI(QtWidgets.QWidget):
         None
         """
         self._calibration = dl.load_camera_calibration(path)
+        self.invalidate_smoothed_data()
+        self._update_original_projection_enabled()
         if self._calibration and self._transformation:
             self.ui.findChild(QtWidgets.QPushButton, "pb_solve").setEnabled(
                 True
@@ -283,6 +617,8 @@ class ReconstructorUI(QtWidgets.QWidget):
             Path to the transformation data that shall be loaded here.
         """
         self._transformation = dl.load_world_transformation(path)
+        self.invalidate_smoothed_data()
+        self._update_original_projection_enabled()
         if self._calibration and self._transformation:
             self.ui.findChild(QtWidgets.QPushButton, "pb_solve").setEnabled(
                 True
@@ -327,6 +663,12 @@ class ReconstructorUI(QtWidgets.QWidget):
             reconstruction and tracking of particles.
         """
         self.data = data
+        if self._original_projection_request_pending:
+            self._original_projection_request_pending = False
+            self._start_original_projection(data)
+        if self._smoothing_request_pending:
+            self._smoothing_request_pending = False
+            self._start_smoothing(data)
         if any([cam == "" for cam in self.cam_ids]):
             # insufficient data for plotting given
             _logger.info("Insufficient data for plotting given. Skipping...")
@@ -560,6 +902,7 @@ class ReconstructorUI(QtWidgets.QWidget):
         None
         """
         self.cam_ids = [cam1, cam2]
+        self._update_original_projection_enabled()
 
     @QtCore.pyqtSlot(int, int, list)
     def data_loaded(self, f_min: int, f_max: int, colors: List[str]):
@@ -591,12 +934,21 @@ class ReconstructorUI(QtWidgets.QWidget):
         end.setRange(f_min, f_max)
         end.setValue(f_max)
         self._update_colors(colors)
+        self._available_colors = list(colors)
+        self.smoothing_start.setRange(f_min, f_max)
+        self.smoothing_end.setRange(f_min, f_max)
+        self.smoothing_start.setValue(max(f_min, 200))
+        self.smoothing_end.setValue(f_max)
+        self._update_smoothing_colors(colors)
+        self._update_original_projection_enabled()
         self.first_update = True
         self.select_data()
 
     def _update_colors(self, colors: List[str]):
         """Update the checkable colors displayed in the UI."""
-        color_group = self.ui.findChildren(QtWidgets.QGroupBox)[0]
+        color_group = self.ui.findChild(
+            QtWidgets.QGroupBox, "group_colors_reconstruction"
+        )
         color_cbs = color_group.findChildren(QtWidgets.QCheckBox)
         old_colors = [cb.text().lower() for cb in color_cbs]
         group_layout: QtWidgets.QGridLayout = color_group.layout()
@@ -630,9 +982,10 @@ class ReconstructorUI(QtWidgets.QWidget):
         _ : int
         """
         self.used_colors = []
-        for cb in self.ui.findChildren(QtWidgets.QCheckBox):
-            if "tracking" in cb.objectName():
-                continue
+        color_group = self.ui.findChild(
+            QtWidgets.QGroupBox, "group_colors_reconstruction"
+        )
+        for cb in color_group.findChildren(QtWidgets.QCheckBox):
             if cb.checkState():
                 self.used_colors.append(cb.objectName().split("_")[1])
         self.pb_plots.setEnabled(True)

@@ -17,14 +17,16 @@
 """Tests to verify the basic functionality of user actions before further
 tests.
 """
+
 import os
 import pathlib
 from typing import List
 
 import gui_actions as ga
 import importlib_resources
+import pandas as pd
 import pytest
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 from pytest import MonkeyPatch
 from pytestqt.qtbot import QtBot
 
@@ -47,6 +49,113 @@ def teardown_replacements(mp: MonkeyPatch):
         QtWidgets.QMessageBox, "clickedButton", lambda *args, **kwargs: None
     )
     mp.setattr(QtWidgets.QMessageBox, "exec", lambda *args, **kwargs: None)
+
+
+def test_original_and_smoothed_3d_projection_overlays(
+    main_window: RodTrackWindow,
+):
+    data = {"frame": [12], "color": ["black"]}
+    for camera_index, camera in enumerate(main_window.cameras):
+        camera.cam_id = f"cam{camera_index}"
+        camera._current_color = "black"
+        camera._position_scaling = 1.0
+        camera.frame(12)
+        camera.base_pixmap = QtGui.QPixmap(80, 80)
+        camera.base_pixmap.fill(QtCore.Qt.white)
+        for suffix, y_coord in (("smooth", 40), ("original", 65)):
+            data[f"x1_{camera.cam_id}_{suffix}"] = [10]
+            data[f"y1_{camera.cam_id}_{suffix}"] = [y_coord]
+            data[f"x2_{camera.cam_id}_{suffix}"] = [30]
+            data[f"y2_{camera.cam_id}_{suffix}"] = [y_coord]
+
+    main_window.update_original_projection_data(pd.DataFrame(data))
+    control = main_window.reconstructor
+    control._available_colors = ["black"]
+    control._calibration = {}
+    control._transformation = {}
+    control.cam_ids = ["cam0", "cam1"]
+    control._update_original_projection_enabled()
+    assert control.cb_original_projection.isEnabled()
+    assert not control.cb_smoothed_projection.isEnabled()
+    assert main_window.original_projection_shortcut.key().toString() == "J"
+    assert main_window.smoothing_shortcut.key().toString() == "K"
+    control.cb_original_projection.blockSignals(True)
+    control.cb_original_projection.setChecked(True)
+    control.cb_original_projection.blockSignals(False)
+    main_window.set_original_projection_visible(True)
+
+    for camera in main_window.cameras:
+        image = camera.pixmap().toImage()
+        assert camera._smoothed_data is None
+        assert image.pixelColor(10, 65) == QtGui.QColor(144, 238, 144)
+
+    control.cb_original_projection.blockSignals(True)
+    control.cb_original_projection.setChecked(False)
+    control.cb_original_projection.blockSignals(False)
+    main_window.set_original_projection_visible(False)
+    main_window.update_smoothed_data(pd.DataFrame(data))
+    control.cb_smoothed_projection.setEnabled(True)
+    control.cb_smoothed_projection.setChecked(True)
+
+    for camera in main_window.cameras:
+        image = camera.pixmap().toImage()
+        assert image.pixelColor(10, 40) == QtGui.QColor(255, 0, 255)
+
+    control.cb_original_projection.blockSignals(True)
+    control.cb_original_projection.setChecked(True)
+    control.cb_original_projection.blockSignals(False)
+    main_window.set_original_projection_visible(True)
+    for camera in main_window.cameras:
+        image = camera.pixmap().toImage()
+        assert image.pixelColor(10, 10) == QtGui.QColor(QtCore.Qt.white)
+        assert image.pixelColor(10, 40) == QtGui.QColor(255, 0, 255)
+        assert image.pixelColor(10, 65) == QtGui.QColor(144, 238, 144)
+
+    control.cb_smoothed_projection.setChecked(False)
+    for camera in main_window.cameras:
+        image = camera.pixmap().toImage()
+        assert image.pixelColor(10, 40) == QtGui.QColor(QtCore.Qt.white)
+        assert image.pixelColor(10, 65) == QtGui.QColor(144, 238, 144)
+
+    control.cb_original_projection.setChecked(False)
+    for camera in main_window.cameras:
+        assert camera.pixmap().toImage().pixelColor(10, 65) == QtGui.QColor(
+            QtCore.Qt.white
+        )
+
+
+def test_data_changes_invalidate_smoothed_overlays(
+    main_window: RodTrackWindow,
+):
+    control = main_window.reconstructor
+    data = {"frame": [12], "color": ["black"]}
+    for camera_index, camera in enumerate(main_window.cameras):
+        camera.cam_id = f"cam{camera_index}"
+        camera._current_color = "black"
+        camera.frame(12)
+        camera.base_pixmap = QtGui.QPixmap(80, 80)
+        camera.base_pixmap.fill(QtCore.Qt.white)
+        for suffix in ("overlay", "smooth", "original"):
+            for endpoint in (1, 2):
+                data[f"x{endpoint}_{camera.cam_id}_{suffix}"] = [10 * endpoint]
+                data[f"y{endpoint}_{camera.cam_id}_{suffix}"] = [10]
+
+    control._finish_smoothing(pd.DataFrame(data))
+    control.cb_smoothed_projection.setChecked(True)
+    control.cb_original_projection.setChecked(True)
+
+    control.invalidate_smoothed_data()
+
+    assert control.smoothed_data is None
+    assert not control.cb_smoothed_projection.isChecked()
+    assert not control.cb_original_projection.isChecked()
+    assert not control.cb_smoothed_projection.isEnabled()
+    assert not control.pb_save_smoothed.isEnabled()
+    assert all(camera._smoothed_data.empty for camera in main_window.cameras)
+    assert all(
+        camera._original_projection_data.empty
+        for camera in main_window.cameras
+    )
 
 
 data_opening = [

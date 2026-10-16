@@ -337,7 +337,12 @@ class RodData(QtCore.QObject):
 
             try_again = not self.open_rod_folder(chosen_folder)
 
-    def open_rod_folder(self, chosen_folder: Path) -> bool:
+    def open_rod_folder(
+        self,
+        chosen_folder: Path,
+        output_folder: Path = None,
+        load_saved_output: bool = False,
+    ) -> bool:
         """Attempts to open a folder with potential rod position data.
 
         It is evaluated which files in the folder are valid data files and what
@@ -364,15 +369,28 @@ class RodData(QtCore.QObject):
             - :attr:`data_loaded` [str, str]
             - :attr:`data_loaded` [int, int, list]
         """
+        chosen_folder = Path(chosen_folder)
         self._allow_overwrite = False
-        # Check whether there is already corrected data
-        out_folder = chosen_folder.stem + "_corrected"
-        out_folder = chosen_folder.parent / out_folder
+        if output_folder is None:
+            # Check whether there is already corrected data
+            out_folder = chosen_folder.parent / (
+                chosen_folder.stem + "_corrected"
+            )
+            self.folder = chosen_folder
+            self.out_folder = out_folder
+            corrected_files = self.folder_has_data(out_folder)
+        else:
+            out_folder = Path(output_folder)
+            corrected_files = (
+                load_saved_output
+                and out_folder.is_dir()
+                and self.folder_has_data(out_folder)
+            )
+            self.folder = out_folder if corrected_files else chosen_folder
+            self.out_folder = out_folder
+            self._allow_overwrite = corrected_files
 
-        self.folder = chosen_folder
-        self.out_folder = out_folder
-        corrected_files = self.folder_has_data(out_folder)
-        if corrected_files:
+        if corrected_files and output_folder is None:
             msg = QMessageBox()
             msg.setWindowIcon(QtGui.QIcon(fl.icon_path()))
             msg.setIcon(QMessageBox.Question)
